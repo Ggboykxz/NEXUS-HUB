@@ -7,12 +7,16 @@ import { Menu, Search } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 export default function Header() {
   const pathname = usePathname();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-transparent dark:bg-zinc-900/95">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
       <div className="container flex h-20 max-w-7xl items-center justify-between px-6 lg:px-12">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -41,9 +45,22 @@ export default function Header() {
         <div className="flex items-center gap-2">
             {/* Desktop Icons & Buttons */}
             <div className="hidden items-center gap-2 md:flex">
-               <Button variant="ghost" size="icon" className="text-foreground/90">
-                  <Search className="h-5 w-5" />
-               </Button>
+               {isSearchOpen ? (
+                    <div className="relative animate-in fade-in-0 slide-in-from-right-4 duration-300">
+                    <Input
+                        type="search"
+                        placeholder="Rechercher..."
+                        className="h-10 w-56 pr-10"
+                        autoFocus
+                        onBlur={() => setIsSearchOpen(false)}
+                    />
+                    <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                ) : (
+                    <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
+                        <Search className="h-5 w-5" />
+                    </Button>
+                )}
                <Button asChild variant="ghost">
                  <Link href="/login">Se connecter</Link>
                </Button>
