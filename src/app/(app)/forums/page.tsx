@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MessageSquare, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function ForumsPage() {
   return (
@@ -49,25 +50,27 @@ export default function ForumsPage() {
                       <Link href={`/forums/${thread.id}`} className="font-semibold hover:text-primary transition-colors">
                         {thread.title}
                       </Link>
-                      <p className="text-sm text-muted-foreground">
-                        par{' '}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        par
                         {authorIsArtist ? (
-                          <Link href={`/artists/${authorIsArtist.id}`} className="hover:text-primary transition-colors">{thread.author}</Link>
+                          <Link href={`/artists/${authorIsArtist.id}`} className="font-semibold hover:text-primary transition-colors">{thread.author}</Link>
                         ) : (
-                          thread.author
+                          <span className="font-semibold">{thread.author}</span>
                         )}
-                      </p>
+                        {authorIsArtist ? <Badge variant="secondary">Artiste</Badge> : <Badge variant="outline">Lecteur</Badge>}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">{thread.replies}</TableCell>
                     <TableCell className="text-center">{thread.views}</TableCell>
                     <TableCell>
-                      <p className="text-sm">
+                      <div className="flex items-center gap-2 text-sm">
                         {lastPostAuthorIsArtist ? (
-                          <Link href={`/artists/${lastPostAuthorIsArtist.id}`} className="hover:text-primary transition-colors">{thread.lastPost.author}</Link>
+                          <Link href={`/artists/${lastPostAuthorIsArtist.id}`} className="font-semibold hover:text-primary transition-colors">{thread.lastPost.author}</Link>
                         ) : (
-                          thread.lastPost.author
+                          <span className="font-semibold">{thread.lastPost.author}</span>
                         )}
-                      </p>
+                         {lastPostAuthorIsArtist ? <Badge variant="secondary">Artiste</Badge> : <Badge variant="outline">Lecteur</Badge>}
+                      </div>
                       <p className="text-xs text-muted-foreground">{thread.lastPost.time}</p>
                     </TableCell>
                   </TableRow>
