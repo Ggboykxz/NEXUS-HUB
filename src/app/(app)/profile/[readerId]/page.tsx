@@ -8,7 +8,7 @@ import { StoryCard } from '@/components/story-card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Ban } from 'lucide-react';
+import { Ban, Heart } from 'lucide-react';
 
 export default function ProfilePage({ params: propsParams }: { params: { readerId: string } }) {
   const params = use(propsParams);
@@ -38,7 +38,8 @@ export default function ProfilePage({ params: propsParams }: { params: { readerI
     });
   }
 
-  // Simulate reading history and recommendations
+  // Simulate reading history, favorites, and recommendations
+  const favoriteStories = stories.filter(s => ['1', '4', '5'].includes(s.id));
   const readingHistory = stories.slice(2, 7);
   const recommendations = stories.slice(0, 5).reverse();
 
@@ -65,6 +66,20 @@ export default function ProfilePage({ params: propsParams }: { params: { readerI
         )}
         
         <p className="text-md text-foreground/80 leading-relaxed mt-6 max-w-2xl">{reader.bio}</p>
+      </div>
+
+      <Separator className="my-12" />
+
+      <div className="mt-8">
+        <h2 className="text-3xl font-bold font-display mb-8 text-center flex items-center justify-center gap-3">
+          <Heart className="w-8 h-8 text-primary" />
+          Mes Favoris
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+          {favoriteStories.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
       </div>
 
       <Separator className="my-12" />

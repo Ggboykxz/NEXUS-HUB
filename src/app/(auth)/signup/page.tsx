@@ -39,13 +39,18 @@ export default function SignupPage() {
     // Simulate user creation
     console.log(values);
 
+    const isArtist = values.accountType === 'artist';
+    // Simulate user IDs for redirection
+    const userId = isArtist ? '1' : 'reader-1'; 
+
     // Set login state
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('accountType', values.accountType);
+    localStorage.setItem('userId', userId);
     // Dispatch custom event to update header immediately
     window.dispatchEvent(new Event('loginStateChange'));
 
-    if (values.accountType === 'artist') {
+    if (isArtist) {
       toast({
         title: "Compte artiste créé !",
         description: `Bienvenue, ${values.name} ! Vous allez être redirigé pour compléter votre profil.`,
@@ -58,8 +63,7 @@ export default function SignupPage() {
         description: `Bienvenue, ${values.name} ! Votre profil public est maintenant disponible.`,
       });
       // For readers, redirect to their new public profile
-      // For this simulation, we'll use a static ID.
-      router.push('/profile/reader-1');
+      router.push(`/profile/${userId}`);
     }
   }
 

@@ -30,6 +30,7 @@ export default function Header() {
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isArtist, setIsArtist] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -61,8 +62,10 @@ export default function Header() {
     const handleStorageChange = () => {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       const accountType = localStorage.getItem('accountType');
+      const storedUserId = localStorage.getItem('userId');
       setIsLoggedIn(loggedInStatus);
       setIsArtist(loggedInStatus && accountType === 'artist');
+      setUserId(loggedInStatus ? storedUserId : null);
     };
 
     handleStorageChange();
@@ -89,6 +92,7 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('accountType');
+    localStorage.removeItem('userId');
     window.dispatchEvent(new Event('loginStateChange')); 
     router.push('/');
     router.refresh();
@@ -159,7 +163,7 @@ export default function Header() {
              </div>
            </DropdownMenuLabel>
            <DropdownMenuSeparator />
-           <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
+           {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artists/${userId}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
            {isArtist && (
                <>
                    <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
@@ -205,9 +209,9 @@ export default function Header() {
           </>
       ) : (
           <Button asChild variant="secondary">
-              <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
+              {userId && <Link href={`/profile/${userId}`} className="flex items-center gap-2 justify-center">
                   <UserCircle /> Mon Profil
-              </Link>
+              </Link>}
           </Button>
       )}
        <Button asChild variant="ghost">

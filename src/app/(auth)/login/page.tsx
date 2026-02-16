@@ -33,7 +33,10 @@ export default function LoginPage() {
     console.log(values);
     
     // Set login state
+    // For this simulation, we'll assume a login always defaults to a reader account.
     localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('accountType', 'reader');
+    localStorage.setItem('userId', 'reader-1');
     // Dispatch custom event to update header immediately
     window.dispatchEvent(new Event('loginStateChange'));
 
