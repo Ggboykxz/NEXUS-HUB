@@ -33,7 +33,7 @@ export default function SubmitPage() {
                 </ul>
               </CardContent>
                <div className="p-6 pt-0">
-                <Button className="w-full" size="lg" variant="secondary">Publier sur AfriStory Draft</Button>
+                <Button className="w-full" size="lg" variant="secondary">Artiste amateur ? Publiez gratuitement !</Button>
               </div>
             </Card>
 
