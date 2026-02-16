@@ -3,15 +3,24 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { stories } from '@/lib/data';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function Header() {
   const pathname = usePathname();
@@ -21,6 +30,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const uniqueGenres = [...new Set(stories.map(s => s.genre))];
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -108,18 +119,49 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'hover:text-primary transition-colors duration-300',
-                pathname === link.href ? 'text-foreground dark:text-white font-semibold' : ''
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            if (link.label === 'Parcourir') {
+              return (
+                <DropdownMenu key={link.href}>
+                  <DropdownMenuTrigger
+                    className={cn(
+                      'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
+                      '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
+                      isActive ? 'text-foreground dark:text-white font-semibold' : ''
+                    )}
+                  >
+                    <span>{link.label}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem asChild>
+                      <Link href="/stories">Toutes les œuvres</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Genres</DropdownMenuLabel>
+                    {uniqueGenres.map((genre) => (
+                      <DropdownMenuItem key={genre} asChild>
+                        <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'hover:text-primary transition-colors duration-300',
+                  isActive ? 'text-foreground dark:text-white font-semibold' : ''
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right side: Icons for desktop, menu for mobile */}
@@ -235,12 +277,37 @@ export default function Header() {
                         <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
                             <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
                         </Link>
-                        <nav className="flex flex-col space-y-3 px-4">
-                            {navLinks.map((link) => (
-                            <Link key={link.href} href={link.href} className="text-lg font-medium">
-                                {link.label}
-                            </Link>
-                            ))}
+                        <nav className="flex flex-col space-y-2 px-4">
+                            {navLinks.map((link) => {
+                              if (link.label === 'Parcourir') {
+                                return (
+                                  <Accordion type="single" collapsible key={link.href} className="w-full">
+                                    <AccordionItem value="browse" className="border-b-0">
+                                      <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
+                                        <span>{link.label}</span>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="pt-2 pl-4">
+                                        <div className="flex flex-col space-y-2">
+                                            <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                Toutes les œuvres
+                                            </Link>
+                                            {uniqueGenres.map(genre => (
+                                                <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                    {genre}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  </Accordion>
+                                );
+                              }
+                              return (
+                                <Link key={link.href} href={link.href} className="text-lg font-medium">
+                                    {link.label}
+                                </Link>
+                              );
+                            })}
                         </nav>
                     </div>
                     <div className="mt-auto flex flex-col gap-2 border-t p-4">
