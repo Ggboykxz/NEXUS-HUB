@@ -2,15 +2,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
-import { stories } from '@/lib/data';
+import { stories, artists } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 
 export default function HomePage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
-  const popularStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 4);
-  const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 4);
-  const recommendedStories = [...stories].sort(() => 0.5 - Math.random()).slice(0, 5);
+  const popularStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 5);
+  const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
+  const featuredArtists = artists.slice(0, 5);
+  const popularGenres = [...new Set(stories.map(s => s.genre))].slice(0, 4);
 
   return (
     <>
@@ -50,9 +53,49 @@ export default function HomePage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
-        <StoryCarousel title="Œuvres Populaires" stories={popularStories} columns="4"/>
-        <StoryCarousel title="Nouveautés" stories={newStories} columns="4"/>
-        <StoryCarousel title="Recommandations" stories={recommendedStories} columns="5"/>
+        <StoryCarousel title="Œuvres Populaires" stories={popularStories} columns="5"/>
+        <StoryCarousel title="Dernières parutions" stories={newStories} columns="5"/>
+
+        <section>
+          <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
+            <h2 className="text-3xl font-display font-bold text-foreground">Artistes à l'honneur</h2>
+            <Link href="/artists" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Voir plus
+              <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-12">
+            {featuredArtists.map((artist) => (
+              <Link key={artist.id} href={`/artists/${artist.id}`} className="group flex flex-col items-center text-center">
+                  <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all duration-300 group-hover:ring-4">
+                    <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
+            <h2 className="text-3xl font-display font-bold text-foreground">Genres populaires</h2>
+             <Link href="/stories" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Explorer
+              <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {popularGenres.map((genre) => (
+              <Link key={genre} href={`/stories?genre=${genre}`}>
+                <Card className="group relative overflow-hidden rounded-lg transition-all hover:shadow-lg hover:-translate-y-1 h-32 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-50 group-hover:opacity-80 transition-opacity duration-300"></div>
+                     <h3 className="relative text-2xl font-display font-bold text-center text-foreground z-10">{genre}</h3>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
     </>
   );
