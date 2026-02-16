@@ -1,17 +1,33 @@
+'use client';
+
+import { useState } from 'react';
 import { artists, stories as allStories } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function ArtistProfilePage({ params }: { params: { artistId: string } }) {
+  const { toast } = useToast();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
   const artist = artists.find((a) => a.id === params.artistId);
 
   if (!artist) {
     notFound();
   }
+
+  const handleSubscribeClick = () => {
+    setIsSubscribed(!isSubscribed);
+    toast({
+      title: isSubscribed ? "Abonnement annulé" : "Abonné !",
+      description: `Vous ${isSubscribed ? "ne recevrez plus" : "recevrez désormais"} les notifications pour ${artist.name}.`,
+    });
+  };
 
   const artistStories = allStories.filter(story => story.artistId === artist.id);
 
@@ -23,9 +39,20 @@ export default function ArtistProfilePage({ params }: { params: { artistId: stri
             <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
             <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <h1 className="text-4xl font-bold mt-4">{artist.name}</h1>
           
-          <div className="flex gap-2 justify-center md:justify-start flex-wrap mt-4">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-x-4 gap-y-2 mt-4">
+            <h1 className="text-4xl font-bold">{artist.name}</h1>
+            <Button
+              onClick={handleSubscribeClick}
+              variant={isSubscribed ? 'secondary' : 'default'}
+              size="sm"
+            >
+              <Bell className={cn("mr-2 h-4 w-4", isSubscribed && "fill-current")} />
+              {isSubscribed ? 'Abonné' : 'S\'abonner'}
+            </Button>
+          </div>
+          
+          <div className="flex gap-2 justify-center md:justify-start flex-wrap mt-6">
             {artist.links.personal && (
               <Button variant="outline" asChild>
                 <a href={artist.links.personal} target="_blank" rel="noopener noreferrer">

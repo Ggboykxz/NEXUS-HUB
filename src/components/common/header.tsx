@@ -3,18 +3,24 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Header() {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // NOTE: This is a simulation. In a real app, this would come from an auth context.
+  const isLoggedIn = true; 
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -92,31 +98,91 @@ export default function Header() {
         <div className="flex items-center gap-2">
             {/* Desktop Icons & Buttons */}
             <div className="hidden items-center gap-2 md:flex">
-               {isSearchOpen ? (
-                    <div className="relative animate-in fade-in-0 slide-in-from-right-4 duration-300">
-                    <Input
-                        type="search"
-                        placeholder="Rechercher..."
-                        className="h-10 w-56 pr-10"
-                        autoFocus
-                        onBlur={() => setIsSearchOpen(false)}
-                    />
-                    <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                ) : (
-                    <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
-                        <Search className="h-5 w-5" />
-                    </Button>
-                )}
-               <Button asChild variant="ghost">
-                 <Link href="/login">Se connecter</Link>
-               </Button>
-               <Button asChild variant="outline">
-                 <Link href="/signup">S'inscrire</Link>
-               </Button>
-               <Button asChild>
-                 <Link href="/submit">Publier</Link>
-               </Button>
+               <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
+                    <Search className="h-5 w-5" />
+                </Button>
+               
+               {isLoggedIn ? (
+                 <>
+                   <Popover>
+                      <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="relative text-foreground/90">
+                              <Bell className="h-5 w-5" />
+                              <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                              </span>
+                          </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-96">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-medium leading-none">Notifications</h4>
+                            <p className="text-sm text-muted-foreground">Vous avez 2 notifications</p>
+                          </div>
+                          <div className="grid gap-4">
+                            <Link href="/stories/1" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+                              <Avatar className="h-10 w-10 border">
+                                  <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="The Orisha Chronicles" />
+                                  <AvatarFallback>OC</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="text-sm">Nouveau chapitre de <span className="font-semibold">The Orisha Chronicles</span> disponible !</p>
+                                  <p className="text-xs text-muted-foreground">par Jelani Adebayo - il y a 5 minutes</p>
+                              </div>
+                            </Link>
+                            <Link href="/artists/2" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+                              <Avatar className="h-10 w-10 border">
+                                <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="Amina Diallo" />
+                                <AvatarFallback>AD</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="text-sm"><span className="font-semibold">Amina Diallo</span> a commencé un nouveau projet : <span className="font-semibold">Cyber-Reines</span>.</p>
+                                  <p className="text-xs text-muted-foreground">il y a 2 heures</p>
+                              </div>
+                            </Link>
+                          </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
+                            <AvatarFallback>LD</AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">Léa Dubois</p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              lea.dubois@example.com
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="#"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </>
+               ) : (
+                 <>
+                   <Button asChild variant="ghost">
+                     <Link href="/login">Se connecter</Link>
+                   </Button>
+                   <Button asChild variant="outline">
+                     <Link href="/signup">S'inscrire</Link>
+                   </Button>
+                   <Button asChild>
+                     <Link href="/submit">Publier</Link>
+                   </Button>
+                 </>
+               )}
             </div>
             
             {/* Mobile Menu */}
@@ -124,6 +190,11 @@ export default function Header() {
                 <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                   <Search className="h-5 w-5" />
                 </Button>
+                {isLoggedIn && (
+                   <Button variant="ghost" size="icon" className="relative text-foreground/90">
+                      <Bell className="h-5 w-5" />
+                   </Button>
+                )}
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -145,15 +216,32 @@ export default function Header() {
                         </nav>
                     </div>
                     <div className="mt-auto flex flex-col gap-2 border-t p-4">
-                       <Button asChild>
-                         <Link href="/submit">Publier</Link>
-                       </Button>
-                       <Button asChild variant="outline">
-                         <Link href="/signup">S'inscrire</Link>
-                       </Button>
-                       <Button asChild variant="ghost">
-                         <Link href="/login">Se connecter</Link>
-                       </Button>
+                       {isLoggedIn ? (
+                          <>
+                             <Button asChild variant="secondary">
+                                <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
+                                    <UserCircle /> Mon Profil
+                                </Link>
+                             </Button>
+                             <Button asChild variant="ghost">
+                                <Link href="/" className="flex items-center gap-2 justify-center">
+                                    <LogOut /> Se déconnecter
+                                </Link>
+                            </Button>
+                          </>
+                       ) : (
+                          <>
+                             <Button asChild>
+                               <Link href="/submit">Publier</Link>
+                             </Button>
+                             <Button asChild variant="outline">
+                               <Link href="/signup">S'inscrire</Link>
+                             </Button>
+                             <Button asChild variant="ghost">
+                               <Link href="/login">Se connecter</Link>
+                             </Button>
+                          </>
+                       )}
                     </div>
                   </SheetContent>
                 </Sheet>
