@@ -1,11 +1,17 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { artists } from "@/lib/data";
 import { Paperclip, SendHorizonal, Smile } from "lucide-react";
+import Link from "next/link";
 
 export default function MessagesPage() {
+  // We'll use the first artist for the active chat simulation
+  const activeArtist = artists[0];
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
       {/* Sidebar with conversations */}
@@ -15,19 +21,20 @@ export default function MessagesPage() {
         </div>
         <ScrollArea className="h-[calc(100%-4rem)]">
           {artists.map((artist) => (
-            <div
-              key={artist.id}
-              className="flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-colors border-b"
-            >
-              <Avatar>
-                <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                <AvatarFallback>{artist.name.slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{artist.name}</p>
-                <p className="text-sm text-muted-foreground truncate">Oui, ça me semble parfait ! On...</p>
+            <Link href={`/artists/${artist.id}`} key={artist.id} className="block border-b">
+              <div
+                className="flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+              >
+                <Avatar>
+                  <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                  <AvatarFallback>{artist.name.slice(0, 2)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{artist.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">Oui, ça me semble parfait ! On...</p>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </ScrollArea>
       </aside>
@@ -37,11 +44,13 @@ export default function MessagesPage() {
         {/* Chat header */}
         <div className="p-4 border-b flex items-center gap-4 bg-card">
           <Avatar>
-            <AvatarImage src={artists[0].avatar.imageUrl} alt={artists[0].name} data-ai-hint={artists[0].avatar.imageHint} />
-            <AvatarFallback>{artists[0].name.slice(0, 2)}</AvatarFallback>
+            <AvatarImage src={activeArtist.avatar.imageUrl} alt={activeArtist.name} data-ai-hint={activeArtist.avatar.imageHint} />
+            <AvatarFallback>{activeArtist.name.slice(0, 2)}</AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="text-xl font-semibold">{artists[0].name}</h3>
+            <Link href={`/artists/${activeArtist.id}`}>
+                <h3 className="text-xl font-semibold hover:text-primary transition-colors">{activeArtist.name}</h3>
+            </Link>
             <p className="text-sm text-green-500">En ligne</p>
           </div>
         </div>
