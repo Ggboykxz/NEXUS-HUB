@@ -1,3 +1,100 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "Hero image for the homepage",
+      "imageUrl": "https://images.unsplash.com/photo-1612373931332-9fbb9b2290a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhZnJpY2FuJTIwYXJ0fGVufDB8fHx8MTc3MTE3MzIxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "african art"
+    },
+    {
+      "id": "story-1",
+      "description": "Cover for story 1",
+      "imageUrl": "https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fantasy comic"
+    },
+    {
+      "id": "story-2",
+      "description": "Cover for story 2",
+      "imageUrl": "https://images.unsplash.com/photo-1618230710477-ba90a649a0aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzY2ktZmklMjBjb21pY3xlbnwwfHx8fDE3NzEyNTI2ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi comic"
+    },
+    {
+      "id": "story-3",
+      "description": "Cover for story 3",
+      "imageUrl": "https://images.unsplash.com/photo-1766132078366-d5608da61ec1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhZHZlbnR1cmUlMjBjb21pY3xlbnwwfHx8fDE3NzEyNTI2ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "adventure comic"
+    },
+    {
+      "id": "story-4",
+      "description": "Cover for story 4",
+      "imageUrl": "https://images.unsplash.com/photo-1768401658097-f24dcd744134?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxteXN0ZXJ5JTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mystery comic"
+    },
+    {
+      "id": "story-5",
+      "description": "Cover for story 5",
+      "imageUrl": "https://images.unsplash.com/photo-1579718619873-d82333054124?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyb21hbmNlJTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "romance comic"
+    },
+    {
+      "id": "story-6",
+      "description": "Cover for story 6",
+      "imageUrl": "https://images.unsplash.com/photo-1650521552444-9051e78b4975?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxoaXN0b3JpY2FsJTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "historical comic"
+    },
+    {
+      "id": "artist-1",
+      "description": "Avatar for artist 1",
+      "imageUrl": "https://images.unsplash.com/photo-1561740303-a0fd9fabc646?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwb3J0cmFpdCUyMHBlcnNvbnxlbnwwfHx8fDE3NzExODk4MTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "portrait person"
+    },
+    {
+      "id": "artist-2",
+      "description": "Avatar for artist 2",
+      "imageUrl": "https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "portrait person"
+    },
+    {
+      "id": "artist-3",
+      "description": "Avatar for artist 3",
+      "imageUrl": "https://images.unsplash.com/photo-1662850886700-4ec19bd30d11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc3MTI0MzI1Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person smiling"
+    },
+    {
+      "id": "product-1",
+      "description": "Image for product 1",
+      "imageUrl": "https://images.unsplash.com/photo-1759572095317-3a96f9a98e2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0LXNoaXJ0JTIwZGVzaWdufGVufDB8fHx8MTc3MTI1MjY4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "t-shirt design"
+    },
+    {
+      "id": "product-2",
+      "description": "Image for product 2",
+      "imageUrl": "https://images.unsplash.com/photo-1711655371225-8f10046a7990?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwb3N0ZXIlMjBhcnR8ZW58MHx8fHwxNzcxMTc1ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "poster art"
+    },
+    {
+      "id": "product-3",
+      "description": "Image for product 3",
+      "imageUrl": "https://images.unsplash.com/photo-1522012188892-24beb302783d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjb2ZmZWUlMjBtdWd8ZW58MHx8fHwxNzcxMjM3NTUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coffee mug"
+    },
+    {
+      "id": "page-1",
+      "description": "Comic page 1",
+      "imageUrl": "https://images.unsplash.com/photo-1760113671986-63ccb46ae202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21pYyUyMHBhbmVsfGVufDB8fHx8MTc3MTIyMjMzNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "comic panel"
+    },
+    {
+      "id": "page-2",
+      "description": "Comic page 2",
+      "imageUrl": "https://images.unsplash.com/photo-1649111986925-c050b3ccea70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhY3Rpb24lMjBzY2VuZXxlbnwwfHx8fDE3NzEyNTI2ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "action scene"
+    },
+    {
+      "id": "page-3",
+      "description": "Comic page 3",
+      "imageUrl": "https://images.unsplash.com/photo-1760113671986-63ccb46ae202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkaWFsb2d1ZSUyMGNvbWljfGVufDB8fHx8MTc3MTI1MjY4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dialogue comic"
+    }
+  ]
 }
