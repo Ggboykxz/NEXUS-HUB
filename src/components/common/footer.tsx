@@ -14,29 +14,29 @@ export default function Footer() {
               <span className="font-display font-bold text-xl tracking-tight text-foreground">AfriStory Hub</span>
             </div>
             <p className="text-foreground/60 dark:text-stone-400 text-sm leading-relaxed max-w-sm font-light">
-              Celebrating and promoting African visual storytelling. A platform for artists, by enthusiasts.
+              Célébrer et promouvoir la narration visuelle africaine. Une plateforme pour les artistes, par des passionnés.
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-12 md:w-2/3">
             <div>
-              <h4 className="font-bold mb-6 text-sm text-foreground">Quick Links</h4>
+              <h4 className="font-bold mb-6 text-sm text-foreground">Liens Rapides</h4>
               <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
-                <li><Link href="/stories" className="hover:text-primary transition-colors">Browse Stories</Link></li>
-                <li><Link href="/artists" className="hover:text-primary transition-colors">Our Artists</Link></li>
-                <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link href="/stories" className="hover:text-primary transition-colors">Parcourir les œuvres</Link></li>
+                <li><Link href="/artists" className="hover:text-primary transition-colors">Nos Artistes</Link></li>
+                <li><Link href="/about" className="hover:text-primary transition-colors">À propos</Link></li>
                 <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-6 text-sm text-foreground">Community</h4>
+              <h4 className="font-bold mb-6 text-sm text-foreground">Communauté</h4>
               <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
                 <li><Link href="/forums" className="hover:text-primary transition-colors">Forums</Link></li>
-                <li><Link href="/submit" className="hover:text-primary transition-colors">Submit Your Work</Link></li>
+                <li><Link href="/submit" className="hover:text-primary transition-colors">Soumettre une œuvre</Link></li>
                 <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-6 text-sm text-foreground">Follow Us</h4>
+              <h4 className="font-bold mb-6 text-sm text-foreground">Suivez-nous</h4>
               <div className="flex gap-4">
                 <Link href="#" className="text-foreground/60 hover:text-primary transition-colors">
                   <Twitter className="w-5 h-5" />
@@ -52,7 +52,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-border/50 pt-8 text-center text-xs text-foreground/40 font-light">
-          <p>&copy; {new Date().getFullYear()} AfriStory Hub. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} AfriStory Hub. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
