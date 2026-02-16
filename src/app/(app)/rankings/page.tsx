@@ -51,7 +51,7 @@ function RankingList({ stories, metric }: RankingListProps) {
         <Card key={story.id} className="hover:bg-card/90 transition-colors">
           <CardContent className="p-4 flex items-start gap-4">
             <div className="text-3xl font-bold text-primary w-12 text-center shrink-0">#{index + 1}</div>
-            <Link href={`/read/${story.id}`} className="shrink-0">
+            <Link href={`/stories/${story.id}`} className="shrink-0">
               <Image
                 src={story.coverImage.imageUrl}
                 alt={story.title}
@@ -62,7 +62,7 @@ function RankingList({ stories, metric }: RankingListProps) {
               />
             </Link>
             <div className="flex-grow">
-              <Link href={`/read/${story.id}`}>
+              <Link href={`/stories/${story.id}`}>
                 <h3 className="text-xl font-display font-semibold hover:text-primary transition-colors">{story.title}</h3>
               </Link>
               <Link href={`/artists/${story.artistId}`}>
