@@ -48,7 +48,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-6">
             <p className="text-white text-sm line-clamp-5 flex-grow">{story.description}</p>
             <div className="flex items-center gap-2 font-semibold text-white border-2 border-white rounded-full px-4 py-2 text-sm mt-4">
-                Voir plus <ArrowRight className="ml-1 h-4 w-4" />
+                Voir plus <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
         </div>
       </div>
