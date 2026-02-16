@@ -16,9 +16,17 @@ export default function StoriesPage() {
   
   const [genreFilter, setGenreFilter] = useState(initialGenre);
   const [sortFilter, setSortFilter] = useState('popular');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const filteredAndSortedStories = useMemo(() => {
     let filteredStories = allStories;
+
+    // Filter by type
+    if (typeFilter === 'public') {
+      filteredStories = filteredStories.filter(story => !story.isPremium);
+    } else if (typeFilter === 'premium') {
+      filteredStories = filteredStories.filter(story => story.isPremium);
+    }
 
     // Filter by genre
     if (genreFilter !== 'all') {
@@ -43,7 +51,7 @@ export default function StoriesPage() {
     }
 
     return sortedStories;
-  }, [genreFilter, sortFilter]);
+  }, [genreFilter, sortFilter, typeFilter]);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -63,6 +71,17 @@ export default function StoriesPage() {
                 <span>Filtres :</span>
             </div>
             <div className="flex flex-wrap items-center gap-4 w-full">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Type d'œuvre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Toutes les œuvres</SelectItem>
+                        <SelectItem value="public">Publiques</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                </Select>
+
                  <Select value={genreFilter} onValueChange={setGenreFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]">
                         <SelectValue placeholder="Genre" />

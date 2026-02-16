@@ -10,7 +10,16 @@ import { Card } from '@/components/ui/card';
 
 export default function HomePage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
-  const popularStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 5);
+  
+  // Separate stories into public and premium
+  const publicStories = stories.filter(s => !s.isPremium);
+  const premiumStories = stories.filter(s => s.isPremium);
+
+  // Get popular public stories
+  const popularPublicStories = [...publicStories].sort((a, b) => b.views - a.views).slice(0, 5);
+  // Get featured premium stories (e.g., by likes)
+  const featuredPremiumStories = [...premiumStories].sort((a, b) => b.likes - a.likes).slice(0, 5);
+
   const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
   const featuredArtists = artists.slice(0, 5);
   const popularGenres = [...new Set(stories.map(s => s.genre))].slice(0, 4);
@@ -54,7 +63,8 @@ export default function HomePage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
-        <StoryCarousel title="Œuvres Populaires" stories={popularStories} columns="5"/>
+        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5"/>
+        <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5"/>
         <StoryCarousel title="Dernières parutions" stories={newStories} columns="5"/>
 
         <section>
