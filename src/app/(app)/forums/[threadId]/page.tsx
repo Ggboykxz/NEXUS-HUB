@@ -19,20 +19,20 @@ export default function ThreadPage({ params }: { params: { threadId: string } })
   const posts = [
     {
       author: thread.author,
-      content: "Does anyone have any wild theories about what's going to happen in the next arc? I feel like the prophecy from chapter 5 is about to come true.",
-      timestamp: '2 days ago',
+      content: "Quelqu'un a des théories folles sur ce qui va se passer dans le prochain arc ? J'ai l'impression que la prophétie du chapitre 5 est sur le point de se réaliser.",
+      timestamp: 'Il y a 2 jours',
       isOp: true
     },
     {
       author: 'Amina Diallo',
-      content: "Interesting theory! We've definitely laid some groundwork for that. You'll have to wait and see! 😉",
-      timestamp: '1 day ago',
+      content: "Théorie intéressante ! On a certainement préparé le terrain pour ça. Il faudra attendre pour voir ! 😉",
+      timestamp: 'Il y a 1 jour',
       isOp: false
     },
     {
       author: 'ComicReaderX',
-      content: "No way, the author replied! That's awesome. I think the villain's brother is secretly helping the protagonist. There were hints in chapter 12.",
-      timestamp: '1 day ago',
+      content: "Incroyable, l'auteur a répondu ! C'est génial. Je pense que le frère du méchant aide secrètement le protagoniste. Il y avait des indices dans le chapitre 12.",
+      timestamp: 'Il y a 1 jour',
       isOp: false
     },
   ];
@@ -44,7 +44,7 @@ export default function ThreadPage({ params }: { params: { threadId: string } })
             <CornerUpLeft className="h-4 w-4" /> Retour aux forums
         </Link>
         <h1 className="text-4xl font-bold">{thread.title}</h1>
-        <p className="text-muted-foreground">Discussion in <span className="text-primary">{thread.category}</span></p>
+        <p className="text-muted-foreground">Discussion dans la catégorie <span className="text-primary">{thread.category}</span></p>
       </div>
 
       <div className="space-y-6">
