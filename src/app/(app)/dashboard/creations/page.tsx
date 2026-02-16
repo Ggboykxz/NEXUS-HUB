@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { stories } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Brush } from 'lucide-react';
+import { PlusCircle, Brush, TrendingUp } from 'lucide-react';
 
 export default function CreationsDashboardPage() {
   // Simulate being logged in as artist '1'
@@ -24,12 +24,20 @@ export default function CreationsDashboardPage() {
             Gérez vos œuvres, suivez leurs performances et publiez de nouveaux chapitres.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/submit">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nouvelle œuvre
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+                <Link href="/dashboard/stats">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Statistiques
+                </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/submit">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nouvelle œuvre
+              </Link>
+            </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

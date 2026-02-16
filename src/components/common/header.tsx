@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -270,7 +270,10 @@ export default function Header() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
                         {isArtist && (
-                            <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
+                            <>
+                                <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/dashboard/stats"><TrendingUp className="mr-2"/>Statistiques</Link></DropdownMenuItem>
+                            </>
                         )}
                         <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -361,11 +364,18 @@ export default function Header() {
                        {isLoggedIn ? (
                           <>
                             {isArtist ? (
-                                <Button asChild variant="secondary">
-                                    <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
-                                        <Brush /> Mon Atelier
-                                    </Link>
-                                </Button>
+                                <>
+                                    <Button asChild variant="secondary">
+                                        <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
+                                            <Brush /> Mon Atelier
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="ghost">
+                                        <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
+                                            <TrendingUp /> Statistiques
+                                        </Link>
+                                    </Button>
+                                </>
                             ) : (
                                 <Button asChild variant="secondary">
                                     <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
