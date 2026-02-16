@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { stories, artists, comicPages } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -7,8 +10,13 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function StoryDetailPage({ params }: { params: { storyId: string } }) {
+  const { toast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(false);
+
   const story = stories.find((s) => s.id === params.storyId);
 
   if (!story) {
@@ -17,6 +25,14 @@ export default function StoryDetailPage({ params }: { params: { storyId: string 
   
   const artist = artists.find((a) => a.id === story.artistId);
   const excerptPage = comicPages[0];
+
+  const handleFavoriteClick = () => {
+    setIsFavorite(!isFavorite);
+    toast({
+      title: isFavorite ? "Retiré des favoris" : "Ajouté aux favoris !",
+      description: `L'oeuvre "${story.title}" a été ${isFavorite ? "retirée de" : "ajoutée à"} votre bibliothèque.`,
+    });
+  };
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-12">
@@ -76,9 +92,9 @@ export default function StoryDetailPage({ params }: { params: { storyId: string 
                         Commencer la lecture
                     </Link>
                 </Button>
-                <Button size="lg" variant="outline">
-                    <Heart className="mr-2 h-5 w-5" />
-                    Ajouter aux favoris
+                <Button size="lg" variant="outline" onClick={handleFavoriteClick}>
+                    <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-rose-500 text-rose-500")} />
+                    {isFavorite ? "Dans les favoris" : "Ajouter aux favoris"}
                 </Button>
             </div>
         </div>
