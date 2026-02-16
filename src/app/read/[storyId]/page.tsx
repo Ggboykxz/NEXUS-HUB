@@ -6,7 +6,7 @@ import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign, MoreHorizontal, Trash2, Ban } from 'lucide-react';
+import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign, MoreHorizontal, Trash2, Ban, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import type { CarouselApi } from '@/components/ui/carousel';
@@ -60,24 +60,24 @@ function CommentItem({ comment, storyAuthorId }: { comment: Comment, storyAuthor
 
     return (
         <div className="flex gap-4">
-            <Avatar className="h-10 w-10 border-2 border-gray-700">
+            <Avatar className="h-10 w-10 border-2 border-border">
                 <AvatarImage src={comment.authorAvatar.imageUrl} alt={comment.authorName} data-ai-hint={comment.authorAvatar.imageHint} />
                 <AvatarFallback>{comment.authorName.slice(0,2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-2">
-                        <p className="font-semibold text-white">{comment.authorName}</p>
-                        <p className="text-xs text-gray-400">{comment.timestamp}</p>
+                        <p className="font-semibold text-foreground">{comment.authorName}</p>
+                        <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
                     </div>
                     {isArtistAuthor && !isCommentFromArtistAuthor && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-gray-400 hover:text-white">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
                                     <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-white">
+                            <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Supprimer le commentaire
@@ -90,20 +90,20 @@ function CommentItem({ comment, storyAuthorId }: { comment: Comment, storyAuthor
                         </DropdownMenu>
                     )}
                 </div>
-                <p className="mt-1 text-gray-300 leading-relaxed">{comment.content}</p>
-                <div className="flex items-center gap-2 mt-2 text-sm text-gray-400">
-                    <Button variant="ghost" size="sm" onClick={handleLike} className="flex items-center gap-1.5 px-2 text-gray-400 hover:text-white">
+                <p className="mt-1 text-foreground/80 leading-relaxed">{comment.content}</p>
+                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    <Button variant="ghost" size="sm" onClick={handleLike} className="flex items-center gap-1.5 px-2 text-muted-foreground hover:text-foreground">
                         <Heart className={cn('h-4 w-4', liked && 'text-red-500 fill-current')} />
                         <span>{likeCount}</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleReply} className="flex items-center gap-1.5 px-2 text-gray-400 hover:text-white">
+                    <Button variant="ghost" size="sm" onClick={handleReply} className="flex items-center gap-1.5 px-2 text-muted-foreground hover:text-foreground">
                         <MessageSquare className="h-4 w-4" />
                         <span>Répondre</span>
                     </Button>
                 </div>
 
                 {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-6 space-y-6 pl-6 border-l-2 border-gray-800">
+                    <div className="mt-6 space-y-6 pl-6 border-l-2 border-border/50">
                         {comment.replies.map(reply => (
                             <CommentItem key={reply.id} comment={reply} storyAuthorId={storyAuthorId} />
                         ))}
@@ -125,6 +125,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
   const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
   const [userCoins, setUserCoins] = useState(150); // Simulated user balance
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!api) {
@@ -171,14 +172,14 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   };
 
   const headerElement = (
-    <header className="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700">
+    <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => router.back()} className="text-white hover:bg-gray-800 hover:text-white">
+          <Button variant="ghost" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
           </Button>
           <div className="text-center">
-            <h1 className="font-display text-lg truncate">{story.title}</h1>
+            <h1 className="font-display text-lg truncate text-foreground">{story.title}</h1>
             <p className="text-sm text-muted-foreground">Chapitre 1</p>
           </div>
           <div className="w-24"></div> {/* Spacer */}
@@ -190,14 +191,14 @@ export default function ReadPage(props: { params: { storyId: string } }) {
     return (
       <div className="relative">
         {headerElement}
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-black text-white px-4">
-          <Card className="bg-gray-900/80 border-gray-700 text-center max-w-md p-8">
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-background text-foreground px-4">
+          <Card className="bg-card border-border text-center max-w-md p-8">
             <CardHeader>
               <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 border-2 border-primary/20">
                 <Lock className="h-10 w-10 text-primary" />
               </div>
-              <CardTitle className="text-3xl text-white">Chapitre Premium</CardTitle>
-              <CardDescription className="text-gray-400 text-base">
+              <CardTitle className="text-3xl text-card-foreground">Chapitre Premium</CardTitle>
+              <CardDescription className="text-base">
                 Ce chapitre est un contenu exclusif. Débloquez-le pour continuer votre lecture.
               </CardDescription>
             </CardHeader>
@@ -208,7 +209,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
               </Button>
             </CardContent>
             <CardFooter className="flex-col gap-2 pt-6">
-              <p className="text-sm text-gray-500">Votre solde : {userCoins} coins</p>
+              <p className="text-sm text-muted-foreground">Votre solde : {userCoins} coins</p>
               <Button variant="link" onClick={() => router.push('/settings?tab=africoins')}>
                 Acheter plus de coins
               </Button>
@@ -236,15 +237,18 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
         <TabsContent value="scroll">
           <div className="flex flex-col items-center pt-4 bg-black">
-            {comicPages.map((page) => (
+            {comicPages.map((page, index) => (
               <Image
                 key={page.id}
                 src={page.imageUrl}
                 alt={page.description}
                 width={800}
                 height={1200}
-                className="max-w-full h-auto"
+                className="max-w-full h-auto cursor-zoom-in"
                 data-ai-hint={page.imageHint}
+                priority={index === 0}
+                sizes="(max-width: 800px) 100vw, 800px"
+                onClick={() => setZoomedImage(page.imageUrl)}
               />
             ))}
           </div>
@@ -253,21 +257,24 @@ export default function ReadPage(props: { params: { storyId: string } }) {
           <div className="flex items-center justify-center h-[calc(100vh-4rem)] pt-4 bg-black">
             <Carousel setApi={setApi} className="w-full max-w-2xl">
               <CarouselContent>
-                {comicPages.map((page) => (
+                {comicPages.map((page, index) => (
                   <CarouselItem key={page.id}>
                     <Image
                       src={page.imageUrl}
                       alt={page.description}
                       width={800}
                       height={1200}
-                      className="max-w-full h-auto mx-auto object-contain max-h-[calc(100vh-8rem)]"
+                      className="max-w-full h-auto mx-auto object-contain max-h-[calc(100vh-8rem)] cursor-zoom-in"
                       data-ai-hint={page.imageHint}
+                      priority={index === 0}
+                      sizes="(max-width: 768px) 100vw, 42rem"
+                      onClick={() => setZoomedImage(page.imageUrl)}
                     />
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="text-white hover:text-white bg-gray-800/50 hover:bg-gray-700/80 border-gray-700" />
-              <CarouselNext className="text-white hover:text-white bg-gray-800/50 hover:bg-gray-700/80 border-gray-700" />
+              <CarouselPrevious className="text-foreground hover:text-foreground bg-accent/50 hover:bg-accent/80 border-border" />
+              <CarouselNext className="text-foreground hover:text-foreground bg-accent/50 hover:bg-accent/80 border-border" />
             </Carousel>
           </div>
            <div className="py-2 text-center text-sm text-muted-foreground fixed bottom-20 left-1/2 -translate-x-1/2 z-20">
@@ -276,9 +283,34 @@ export default function ReadPage(props: { params: { storyId: string } }) {
         </TabsContent>
       </Tabs>
       
+      {zoomedImage && (
+        <div 
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
+            onClick={() => setZoomedImage(null)}
+        >
+            <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
+                <Image 
+                    src={zoomedImage} 
+                    alt="Image agrandie"
+                    width={1600}
+                    height={2400}
+                    className="max-w-none w-auto h-auto inline-block p-4"
+                />
+            </div>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
+                onClick={() => setZoomedImage(null)}
+            >
+                <X className="h-6 w-6" />
+            </Button>
+        </div>
+      )}
+
       <div className="container mx-auto max-w-3xl px-4 py-12 text-foreground">
-        <Separator className="my-8 bg-gray-700" />
-        <h2 className="text-3xl font-bold font-display mb-8 text-white">Commentaires (Chapitre 1)</h2>
+        <Separator className="my-8 bg-border" />
+        <h2 className="text-3xl font-bold font-display mb-8 text-foreground">Commentaires (Chapitre 1)</h2>
         
         <div className="flex gap-4 mb-12">
             <Avatar className="border-2 border-primary">
@@ -286,7 +318,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
                 <AvatarFallback>LD</AvatarFallback>
             </Avatar>
             <div className="w-full">
-                <Textarea placeholder="Écrivez votre commentaire..." className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:ring-primary focus:border-primary"/>
+                <Textarea placeholder="Écrivez votre commentaire..."/>
                 <Button onClick={handlePostComment} className="mt-2">Poster le commentaire</Button>
             </div>
         </div>
