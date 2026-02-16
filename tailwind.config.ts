@@ -8,6 +8,13 @@ export default {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
@@ -97,7 +104,27 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+       typography: (theme: (arg: string) => any) => ({
+        DEFAULT: {
+          css: {
+            color: 'hsl(var(--foreground))',
+            a: {
+              color: 'hsl(var(--primary))',
+              '&:hover': {
+                color: 'hsl(var(--primary))',
+              },
+            },
+            h1: { color: 'hsl(var(--foreground))' },
+            h2: { color: 'hsl(var(--foreground))' },
+            h3: { color: 'hsl(var(--foreground))' },
+            h4: { color: 'hsl(var(--foreground))' },
+            strong: { color: 'hsl(var(--foreground))' },
+            code: { color: 'hsl(var(--foreground))' },
+            blockquote: { color: 'hsl(var(--muted-foreground))', borderLeftColor: 'hsl(var(--border))' },
+          },
+        },
+      }),
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 } satisfies Config;
