@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .btn-border-anim {
+        @apply relative transition-all duration-300;
+        box-shadow: inset 0 0 0 1px hsl(var(--border));
+    }
+    .btn-border-anim:hover {
+        box-shadow: inset 0 0 0 2px hsl(var(--primary));
+        color: hsl(var(--primary));
+    }
+    
+    .btn-primary-anim {
+        @apply relative transition-all duration-300;
+        box-shadow: inset 0 0 0 0px hsl(var(--primary-foreground));
+    }
+    .btn-primary-anim:hover {
+        box-shadow: inset 0 0 0 2px hsl(var(--primary-foreground));
+    }
+}
+
 @layer base {
   :root {
     --background: 48 67% 98%; /* #FDFCF5 */
@@ -10,19 +29,19 @@
     --card-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 20%;
-    --primary: 45 65% 52%; /* #D4AF37 */
+    --primary: 45 100% 51%; /* #FFD700 -> or #D4AF37 which is 45 65% 52% */
     --primary-foreground: 0 0% 100%;
     --secondary: 60 11% 91%; /* a light gray for secondary elements */
     --secondary-foreground: 0 0% 20%;
     --muted: 60 11% 91%;
     --muted-foreground: 0 0% 40%;
-    --accent: 45 65% 52%; /* Using primary as accent */
+    --accent: 24 93% 53%; /* #CC6633 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 60 11% 88%; /* #E5E5E0 */
     --input: 60 11% 91%;
-    --ring: 45 65% 52%;
+    --ring: 45 100% 51%;
     --radius: 0.25rem;
   }
 
@@ -33,19 +52,19 @@
     --card-foreground: 0 0% 83%;
     --popover: 40 6% 7%;
     --popover-foreground: 0 0% 83%;
-    --primary: 45 65% 52%;
+    --primary: 45 100% 51%;
     --primary-foreground: 40 6% 7%;
     --secondary: 30 6% 15%;
     --secondary-foreground: 0 0% 83%;
     --muted: 30 6% 15%;
     --muted-foreground: 0 0% 60%;
-    --accent: 45 65% 52%;
-    --accent-foreground: 40 6% 7%;
+    --accent: 24 93% 53%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 45 65% 52%;
+    --ring: 45 100% 51%;
   }
 }
 
