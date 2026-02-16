@@ -4,13 +4,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { artists } from "@/lib/data";
+import { readers } from "@/lib/data";
 import { Paperclip, SendHorizonal, Smile } from "lucide-react";
 import Link from "next/link";
 
 export default function MessagesPage() {
-  // We'll use the first artist for the active chat simulation
-  const activeArtist = artists[0];
+  // Simulate being logged in as 'Léa Dubois' (reader-1)
+  const currentUserId = 'reader-1';
+  // Don't show the current user in the conversation list
+  const otherReaders = readers.filter(r => r.id !== currentUserId);
+
+  // We'll use the first other reader for the active chat simulation
+  const activeChatPartner = otherReaders[0];
 
   return (
     <div className="h-[calc(100vh-4rem)] flex">
@@ -18,23 +23,24 @@ export default function MessagesPage() {
       <aside className="w-1/4 border-r bg-card">
         <div className="p-4 border-b">
           <h2 className="text-2xl font-bold">Messagerie</h2>
+          <p className="text-sm text-muted-foreground">Discussions entre lecteurs</p>
         </div>
-        <ScrollArea className="h-[calc(100%-4rem)]">
-          {artists.map((artist) => (
-            <Link href={`/artists/${artist.id}`} key={artist.id} className="block border-b">
+        <ScrollArea className="h-[calc(100%-5.5rem)]">
+          {otherReaders.map((reader) => (
+            <div key={reader.id} className="block border-b">
               <div
                 className="flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-colors"
               >
                 <Avatar>
-                  <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                  <AvatarFallback>{artist.name.slice(0, 2)}</AvatarFallback>
+                  <AvatarImage src={reader.avatar.imageUrl} alt={reader.name} data-ai-hint={reader.avatar.imageHint} />
+                  <AvatarFallback>{reader.name.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{artist.name}</p>
-                  <p className="text-sm text-muted-foreground truncate">Oui, ça me semble parfait ! On...</p>
+                  <p className="font-semibold">{reader.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">Salut ! Tu as lu le dernier chapitre ?</p>
                 </div>
               </div>
-            </Link>
+            </div>
           ))}
         </ScrollArea>
       </aside>
@@ -44,12 +50,12 @@ export default function MessagesPage() {
         {/* Chat header */}
         <div className="p-4 border-b flex items-center gap-4 bg-card">
           <Avatar>
-            <AvatarImage src={activeArtist.avatar.imageUrl} alt={activeArtist.name} data-ai-hint={activeArtist.avatar.imageHint} />
-            <AvatarFallback>{activeArtist.name.slice(0, 2)}</AvatarFallback>
+            <AvatarImage src={activeChatPartner.avatar.imageUrl} alt={activeChatPartner.name} data-ai-hint={activeChatPartner.avatar.imageHint} />
+            <AvatarFallback>{activeChatPartner.name.slice(0, 2)}</AvatarFallback>
           </Avatar>
           <div>
-            <Link href={`/artists/${activeArtist.id}`}>
-                <h3 className="text-xl font-semibold hover:text-primary transition-colors">{activeArtist.name}</h3>
+            <Link href={`/profile/${activeChatPartner.id}`}>
+                <h3 className="text-xl font-semibold hover:text-primary transition-colors">{activeChatPartner.name}</h3>
             </Link>
             <p className="text-sm text-green-500">En ligne</p>
           </div>
@@ -60,19 +66,19 @@ export default function MessagesPage() {
           <div className="space-y-6">
             <div className="flex justify-start">
               <div className="bg-muted p-3 rounded-lg max-w-md">
-                <p>Salut ! J'ai regardé tes derniers croquis pour le chapitre 5. C'est incroyable !</p>
+                <p>Salut ! J'ai vu qu'on aimait tous les deux "The Orisha Chronicles". T'as pensé quoi du dernier chapitre ?</p>
                 <p className="text-xs text-muted-foreground mt-1 text-right">10:30 AM</p>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="bg-primary text-primary-foreground p-3 rounded-lg max-w-md">
-                <p>Merci beaucoup ! Je suis content que ça te plaise. J'hésitais sur le design du nouveau personnage.</p>
+                <p>Hey ! Ah oui, il était incroyable ! La fin m'a laissé sans voix. Je ne m'attendais pas du tout à cette révélation.</p>
                 <p className="text-xs text-primary-foreground/70 mt-1 text-right">10:32 AM</p>
               </div>
             </div>
              <div className="flex justify-start">
               <div className="bg-muted p-3 rounded-lg max-w-md">
-                <p>Ne t'en fais pas, c'est parfait. L'expression sur son visage est très réussie.</p>
+                <p>Pareil ! J'ai hâte de voir comment l'auteur va développer ça. Tu suis d'autres œuvres du même genre ?</p>
                 <p className="text-xs text-muted-foreground mt-1 text-right">10:33 AM</p>
               </div>
             </div>

@@ -109,6 +109,24 @@ export const readers: Reader[] = [
     name: 'Léa Dubois',
     bio: 'Passionnée de lecture depuis toujours, je suis à l\'affût des nouvelles pépites de la BD africaine. Mon genre de prédilection est la fantasy, mais je suis toujours ouverte à de nouvelles découvertes !',
     avatar: getImage('reader-1')!,
+  },
+  {
+    id: 'reader-2',
+    name: 'Yannick Beauchamp',
+    bio: 'Grand fan de science-fiction, je dévore tous les webtoons du genre. Toujours partant pour une bonne discussion sur les univers cyberpunk.',
+    avatar: getImage('reader-2')!,
+  },
+  {
+    id: 'reader-3',
+    name: 'Chloé Morin',
+    bio: 'Lectrice éclectique, j\'aime autant les mystères que les romances. Je suis ici pour découvrir de nouveaux talents et partager mes coups de cœur.',
+    avatar: getImage('reader-3')!,
+  },
+  {
+    id: 'reader-4',
+    name: 'Marc-André Lavoie',
+    bio: 'Amateur d\'aventure et d\'histoire. Je cherche des récits qui me font voyager dans le temps et l\'espace.',
+    avatar: getImage('reader-4')!,
   }
 ];
 
