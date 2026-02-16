@@ -7,7 +7,7 @@ export function Logo({ className }: { className?: string }) {
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="AfriStory Logo"
+      aria-label="NexusHub Logo"
     >
       <path
         d="M50 10C27.9086 10 10 27.9086 10 50C10 72.0914 27.9086 90 50 90"

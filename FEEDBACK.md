@@ -1,6 +1,6 @@
 # Journal des Modifications
 
-Ce document retrace l'ensemble des modifications et améliorations apportées au projet AfriStory.
+Ce document retrace l'ensemble des modifications et améliorations apportées au projet NexusHub.
 
 ## Conception Initiale et Structuration
 
@@ -33,4 +33,5 @@ Ce document retrace l'ensemble des modifications et améliorations apportées au
     - Mise en place des formulaires d'inscription (`/signup`) et de connexion (`/login`).
     - Utilisation de `react-hook-form` et `zod` pour une gestion de formulaire moderne avec validation des entrées en temps réel.
     - Ajout d'une option sur le formulaire d'inscription pour choisir entre un compte "Lecteur" et un compte "Artiste", conformément au cahier des charges.
+
 

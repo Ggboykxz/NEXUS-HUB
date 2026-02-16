@@ -236,220 +236,204 @@ export default function Header() {
   );
 
   return (
-    <>
-      {/* Mobile search view */}
-      <header className={cn(
-        "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 md:hidden",
-        isSearchOpen ? 'block' : 'hidden'
-      )}>
-        <div className={cn(
-            "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
-            isScrolled ? "h-16" : "h-20"
-        )}>
-            <div className="flex w-full items-center gap-2 animate-in fade-in-0">
-                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <Input
-                    type="search"
-                    placeholder="Rechercher..."
-                    className="h-10 w-full pr-10"
-                    autoFocus
-                />
-            </div>
-        </div>
-      </header>
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
+      <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all duration-300", isScrolled ? "h-16" : "h-20")}>
+        {/* Main Header Content */}
+        <div className={cn("flex w-full items-center justify-between", isSearchOpen && "hidden")}>
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+            </Link>
+          </div>
 
-      {/* Main header view */}
-      <header className={cn(
-        "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
-        isSearchOpen ? 'hidden md:block' : 'block' // Hide on mobile when search is open
-      )}>
-      <div className={cn(
-        "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
-        isScrolled ? "h-16" : "h-20"
-      )}>
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
-          </Link>
-        </div>
-
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-            if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
-              return (
-                <DropdownMenu key={link.label} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
-                  <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className="flex items-center">
-                    <DropdownMenuTrigger
-                      className={cn(
-                        'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
-                        '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
-                        isActive ? 'text-foreground dark:text-white font-semibold' : ''
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        {link.label}
-                        {link.badge && (
-                          <span className={cn(
-                            'h-2 w-2 rounded-full',
-                            link.badge.variant === 'green' && 'bg-green-500',
-                            link.badge.variant === 'orange' && 'bg-orange-500',
-                          )}></span>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+                return (
+                  <DropdownMenu key={link.label} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
+                    <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className="flex items-center">
+                      <DropdownMenuTrigger
+                        className={cn(
+                          'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
+                          '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
+                          isActive ? 'text-foreground dark:text-white font-semibold' : ''
                         )}
-                      </span>
-                      <ChevronDown className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {link.isGenreDropdown && (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link href="/stories">Toutes les œuvres</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuLabel>Genres</DropdownMenuLabel>
-                          {uniqueGenres.map((genre) => (
-                            <DropdownMenuItem key={genre} asChild>
-                              <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                      >
+                        <span className="flex items-center gap-2">
+                          {link.label}
+                          {link.badge && (
+                            <span className={cn(
+                              'h-2 w-2 rounded-full',
+                              link.badge.variant === 'green' && 'bg-green-500',
+                              link.badge.variant === 'orange' && 'bg-orange-500',
+                            )}></span>
+                          )}
+                        </span>
+                        <ChevronDown className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {link.isGenreDropdown && (
+                          <>
+                            <DropdownMenuItem asChild>
+                              <Link href="/stories">Toutes les œuvres</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Genres</DropdownMenuLabel>
+                            {uniqueGenres.map((genre) => (
+                              <DropdownMenuItem key={genre} asChild>
+                                <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </>
+                        )}
+                        {link.subLinks && link.subLinks.map((subLink) => (
+                            <DropdownMenuItem key={subLink.href} asChild>
+                              <Link href={subLink.href}>{subLink.label}</Link>
                             </DropdownMenuItem>
                           ))}
-                        </>
-                      )}
-                      {link.subLinks && link.subLinks.map((subLink) => (
-                          <DropdownMenuItem key={subLink.href} asChild>
-                            <Link href={subLink.href}>{subLink.label}</Link>
-                          </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                  </div>
-                </DropdownMenu>
-              );
-            }
-            return (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={cn(
-                  'flex items-center gap-2 hover:text-primary transition-colors duration-300',
-                  isActive ? 'text-foreground dark:text-white font-semibold' : ''
-                )}
-              >
-                <span>{link.label}</span>
-                {link.badge && (
-                  <span className={cn(
-                      'h-2 w-2 rounded-full',
-                      link.badge.variant === 'green' && 'bg-green-500',
-                      link.badge.variant === 'orange' && 'bg-orange-500',
-                  )}></span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right side: Icons for desktop, menu for mobile */}
-        <div className="flex items-center gap-2">
-            {/* Desktop Icons & Buttons */}
-            <div className="hidden items-center gap-2 md:flex">
-               <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
-                    <Search className="h-5 w-5" />
-                </Button>
-               
-               {hasMounted ? (isLoggedIn ? LoggedInNav : LoggedOutNav) : LoggedOutNav }
-            </div>
-            
-            {/* Mobile Menu */}
-            <div className="md:hidden flex items-center">
-                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
-                    <Search className="h-5 w-5" />
-                  </Button>
-                  {hasMounted && isLoggedIn && (
-                     <Button variant="ghost" size="icon" className="relative text-foreground/90">
-                        <Bell className="h-5 w-5" />
-                     </Button>
+                      </DropdownMenuContent>
+                    </div>
+                  </DropdownMenu>
+                );
+              }
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={cn(
+                    'flex items-center gap-2 hover:text-primary transition-colors duration-300',
+                    isActive ? 'text-foreground dark:text-white font-semibold' : ''
                   )}
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Menu className="h-5 w-5" />
-                        <span className="sr-only">Toggle Menu</span>
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="pr-0 bg-background flex flex-col">
-                      <div>
-                          <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
-                              <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
-                          </Link>
-                          <nav className="flex flex-col space-y-2 px-4">
-                              {navLinks.map((link) => {
-                                if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
-                                  return (
-                                    <Accordion type="single" collapsible key={link.label} className="w-full">
-                                      <AccordionItem value={link.label} className="border-b-0">
-                                        <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
-                                          <span className="flex items-center gap-2">
-                                            {link.label}
-                                            {link.badge && (
-                                              <span className={cn(
-                                                'h-2 w-2 rounded-full',
-                                                link.badge.variant === 'green' && 'bg-green-500',
-                                                link.badge.variant === 'orange' && 'bg-orange-500',
-                                              )}></span>
-                                            )}
-                                          </span>
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pt-2 pl-4">
-                                          <div className="flex flex-col space-y-2">
-                                              {link.isGenreDropdown && (
-                                                  <>
-                                                      <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                          Toutes les œuvres
-                                                      </Link>
-                                                      {uniqueGenres.map(genre => (
-                                                          <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                              {genre}
-                                                          </Link>
-                                                      ))}
-                                                  </>
-                                              )}
-                                              {link.subLinks && link.subLinks.map((subLink) => (
-                                                  <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                      {subLink.label}
-                                                  </Link>
-                                              ))}
-                                          </div>
-                                        </AccordionContent>
-                                      </AccordionItem>
-                                    </Accordion>
-                                  );
-                                }
-                                return (
-                                  <Link key={link.label} href={link.href} className="text-lg font-medium flex items-center gap-2">
-                                    <span>{link.label}</span>
-                                    {link.badge && (
-                                      <span className={cn(
-                                        'h-2 w-2 rounded-full',
-                                        link.badge.variant === 'green' && 'bg-green-500',
-                                        link.badge.variant === 'orange' && 'bg-orange-500',
-                                      )}></span>
-                                    )}
-                                  </Link>
-                                );
-                              })}
-                          </nav>
-                      </div>
-                      <div className="mt-auto flex flex-col gap-2 border-t p-4">
-                         {hasMounted ? (isLoggedIn ? MobileLoggedInNav : MobileLoggedOutNav) : MobileLoggedOutNav}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
+                >
+                  <span>{link.label}</span>
+                  {link.badge && (
+                    <span className={cn(
+                        'h-2 w-2 rounded-full',
+                        link.badge.variant === 'green' && 'bg-green-500',
+                        link.badge.variant === 'orange' && 'bg-orange-500',
+                    )}></span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Right side: Icons for desktop, menu for mobile */}
+          <div className="flex items-center gap-2">
+              {/* Desktop Icons & Buttons */}
+              <div className="hidden items-center gap-2 md:flex">
+                 <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
+                      <Search className="h-5 w-5" />
+                  </Button>
+                 
+                 {hasMounted ? (isLoggedIn ? LoggedInNav : LoggedOutNav) : LoggedOutNav }
               </div>
+              
+              {/* Mobile Menu */}
+              <div className="md:hidden flex items-center">
+                    <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
+                      <Search className="h-5 w-5" />
+                    </Button>
+                    {hasMounted && isLoggedIn && (
+                       <Button variant="ghost" size="icon" className="relative text-foreground/90">
+                          <Bell className="h-5 w-5" />
+                       </Button>
+                    )}
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Menu className="h-5 w-5" />
+                          <span className="sr-only">Toggle Menu</span>
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="left" className="pr-0 bg-background flex flex-col">
+                        <div>
+                            <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
+                                <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+                            </Link>
+                            <nav className="flex flex-col space-y-2 px-4">
+                                {navLinks.map((link) => {
+                                  if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+                                    return (
+                                      <Accordion type="single" collapsible key={link.label} className="w-full">
+                                        <AccordionItem value={link.label} className="border-b-0">
+                                          <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
+                                            <span className="flex items-center gap-2">
+                                              {link.label}
+                                              {link.badge && (
+                                                <span className={cn(
+                                                  'h-2 w-2 rounded-full',
+                                                  link.badge.variant === 'green' && 'bg-green-500',
+                                                  link.badge.variant === 'orange' && 'bg-orange-500',
+                                                )}></span>
+                                              )}
+                                            </span>
+                                          </AccordionTrigger>
+                                          <AccordionContent className="pt-2 pl-4">
+                                            <div className="flex flex-col space-y-2">
+                                                {link.isGenreDropdown && (
+                                                    <>
+                                                        <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                            Toutes les œuvres
+                                                        </Link>
+                                                        {uniqueGenres.map(genre => (
+                                                            <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                                {genre}
+                                                            </Link>
+                                                        ))}
+                                                    </>
+                                                )}
+                                                {link.subLinks && link.subLinks.map((subLink) => (
+                                                    <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                        {subLink.label}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                      </Accordion>
+                                    );
+                                  }
+                                  return (
+                                    <Link key={link.label} href={link.href} className="text-lg font-medium flex items-center gap-2">
+                                      <span>{link.label}</span>
+                                      {link.badge && (
+                                        <span className={cn(
+                                          'h-2 w-2 rounded-full',
+                                          link.badge.variant === 'green' && 'bg-green-500',
+                                          link.badge.variant === 'orange' && 'bg-orange-500',
+                                        )}></span>
+                                      )}
+                                    </Link>
+                                  );
+                                })}
+                            </nav>
+                        </div>
+                        <div className="mt-auto flex flex-col gap-2 border-t p-4">
+                           {hasMounted ? (isLoggedIn ? MobileLoggedInNav : MobileLoggedOutNav) : MobileLoggedOutNav}
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                </div>
+          </div>
+        </div>
+
+        {/* Mobile Search view */}
+        <div className={cn("flex w-full items-center gap-2 animate-in fade-in-0", !isSearchOpen && "hidden")}>
+          <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Input
+            type="search"
+            placeholder="Rechercher..."
+            className="h-10 w-full pr-10"
+            autoFocus
+          />
         </div>
       </div>
     </header>
-    </>
   );
 }
