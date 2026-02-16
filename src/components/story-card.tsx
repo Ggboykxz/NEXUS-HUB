@@ -1,16 +1,32 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Skeleton } from './ui/skeleton';
 
 interface StoryCardProps {
   story: Story;
   className?: string;
+  showUpdateDate?: boolean;
 }
 
-export function StoryCard({ story, className }: StoryCardProps) {
+export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
+  const [date, setDate] = useState('');
+
+  useEffect(() => {
+    // This will only run on the client, after hydration
+    if(showUpdateDate) {
+        setDate(format(new Date(story.updatedAt), 'd MMM yyyy', { locale: fr }));
+    }
+  }, [story.updatedAt, showUpdateDate]);
+
   return (
     <div className={cn("group", className)}>
       <Link href={`/stories/${story.id}`} className="cursor-pointer">
@@ -35,7 +51,14 @@ export function StoryCard({ story, className }: StoryCardProps) {
       <Link href={`/artists/${story.artistId}`} className="cursor-pointer">
         <p className="text-sm text-foreground/60 dark:text-stone-400 mb-3 font-light hover:text-primary transition-colors fade-in">par {story.artistName}</p>
       </Link>
-      <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
+      {showUpdateDate ? (
+        <div className="flex items-center justify-between text-xs">
+            <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
+            {date ? <p className="text-muted-foreground">{date}</p> : <Skeleton className="w-16 h-4" />}
+        </div>
+      ) : (
+         <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
+      )}
     </div>
   );
 }

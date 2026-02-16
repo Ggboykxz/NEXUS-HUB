@@ -65,7 +65,7 @@ export default function HomePage() {
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
         <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5"/>
         <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5"/>
-        <StoryCarousel title="Dernières parutions" stories={newStories} columns="5"/>
+        <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} />
 
         <section>
           <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
@@ -161,7 +161,7 @@ export default function HomePage() {
   );
 }
 
-function StoryCarousel({ title, stories, columns }: { title: string; stories: (typeof import('@/lib/data').stories)[0][]; columns: "4" | "5" }) {
+function StoryCarousel({ title, stories, columns, showUpdateDate }: { title: string; stories: (typeof import('@/lib/data').stories)[0][]; columns: "4" | "5"; showUpdateDate?: boolean }) {
   const gridClasses = {
     "4": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12",
     "5": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12"
@@ -178,7 +178,7 @@ function StoryCarousel({ title, stories, columns }: { title: string; stories: (t
       </div>
       <div className={`grid ${gridClasses[columns]}`}>
           {stories.map((story) => (
-             <StoryCard key={story.id} story={story} />
+             <StoryCard key={story.id} story={story} showUpdateDate={showUpdateDate} />
           ))}
       </div>
     </section>

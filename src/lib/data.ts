@@ -168,7 +168,7 @@ export const stories: Story[] = [
         { id: '1-2', title: 'L\'Épreuve', releaseDate: '2024-05-15', status: 'Publié', pageCount: 25 },
         { id: '1-3', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23 },
     ],
-    updatedAt: 'Il y a 2 jours',
+    updatedAt: '2024-07-16T10:00:00Z',
     collaborators: [
       {
         id: '2',
@@ -193,7 +193,7 @@ export const stories: Story[] = [
         { id: '2-1', title: 'Néons et Brouillard', releaseDate: '2024-04-20', status: 'Publié', pageCount: 30 },
         { id: '2-2', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28 },
     ],
-    updatedAt: 'Il y a 5 jours',
+    updatedAt: '2024-07-13T10:00:00Z',
   },
   {
     id: '3',
@@ -212,7 +212,7 @@ export const stories: Story[] = [
         { id: '3-3', title: 'Le Royaume Oublié', releaseDate: '2024-04-01', status: 'Publié', pageCount: 22 },
         { id: '3-4', title: 'Le Retour', releaseDate: '2024-04-15', status: 'Brouillon', pageCount: 0 },
     ],
-    updatedAt: 'Il y a 1 semaine',
+    updatedAt: '2024-07-11T10:00:00Z',
     collaborators: [
         {
             id: '2',
@@ -242,7 +242,7 @@ export const stories: Story[] = [
     chapters: [
         { id: '4-1', title: 'La Première Note', releaseDate: '2024-05-10', status: 'Publié', pageCount: 24 },
     ],
-    updatedAt: 'Il y a 3 jours',
+    updatedAt: '2024-07-15T10:00:00Z',
     isPremium: true,
     price: 50,
   },
@@ -260,7 +260,7 @@ export const stories: Story[] = [
     chapters: [
         { id: '5-1', title: 'L\'Entretien d\'embauche', releaseDate: '2024-05-20', status: 'Publié', pageCount: 20 },
     ],
-    updatedAt: 'Il y a 1 jour',
+    updatedAt: '2024-07-17T10:00:00Z',
   },
   {
     id: '6',
@@ -274,7 +274,7 @@ export const stories: Story[] = [
     likes: 41000,
     subscriptions: 25000,
     chapters: [],
-    updatedAt: 'Il y a 1 mois',
+    updatedAt: '2024-06-18T10:00:00Z',
     isPremium: true,
     price: 75,
   },
