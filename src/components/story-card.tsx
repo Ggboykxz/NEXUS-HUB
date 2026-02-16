@@ -11,7 +11,7 @@ interface StoryCardProps {
 export function StoryCard({ story, className }: StoryCardProps) {
   return (
     <div className={cn("group", className)}>
-      <Link href={`/read/${story.id}`} className="cursor-pointer">
+      <Link href={`/stories/${story.id}`} className="cursor-pointer">
         <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-5 shadow-sm transition-shadow hover:shadow-md">
           <Image
             src={story.coverImage.imageUrl}
