@@ -42,30 +42,30 @@ export default function CreationsDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {myStories.map(story => (
-          <Card key={story.id} className="flex flex-col">
-            <CardHeader className="flex-row items-start gap-4">
-              <Image
-                src={story.coverImage.imageUrl}
-                alt={story.title}
-                width={80}
-                height={120}
-                className="rounded-md object-cover aspect-[2/3]"
-                data-ai-hint={story.coverImage.imageHint}
-              />
-              <div className="flex-1">
-                <CardTitle>{story.title}</CardTitle>
-                <CardDescription>{story.chapters.length} {story.chapters.length > 1 ? 'chapitres' : 'chapitre'}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-               <p className="text-sm text-muted-foreground line-clamp-2">{story.description}</p>
-            </CardContent>
-            <CardFooter>
-              <Button asChild className="w-full">
-                <Link href={`/dashboard/creations/${story.id}`}>Gérer l'œuvre</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+          <Link key={story.id} href={`/dashboard/creations/${story.id}`} className="block h-full">
+            <Card className="flex flex-col h-full transition-all hover:shadow-lg hover:-translate-y-1">
+              <CardHeader className="flex-row items-start gap-4">
+                <Image
+                  src={story.coverImage.imageUrl}
+                  alt={story.title}
+                  width={80}
+                  height={120}
+                  className="rounded-md object-cover aspect-[2/3]"
+                  data-ai-hint={story.coverImage.imageHint}
+                />
+                <div className="flex-1">
+                  <CardTitle>{story.title}</CardTitle>
+                  <CardDescription>{story.chapters.length} {story.chapters.length > 1 ? 'chapitres' : 'chapitre'}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-sm text-muted-foreground line-clamp-2">{story.description}</p>
+              </CardContent>
+              <CardFooter>
+                <div className="w-full text-center text-primary font-semibold py-2">Gérer l'œuvre</div>
+              </CardFooter>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>
