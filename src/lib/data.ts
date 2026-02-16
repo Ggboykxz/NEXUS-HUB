@@ -56,6 +56,13 @@ export interface ForumThread {
   category: string;
 }
 
+export interface Reader {
+  id: string;
+  name: string;
+  bio: string;
+  avatar: ImagePlaceholder;
+}
+
 export const artists: Artist[] = [
   {
     id: '1',
@@ -81,6 +88,15 @@ export const artists: Artist[] = [
     portfolio: ['5', '6'],
     links: { personal: '#', twitter: '#', instagram: '#' },
   },
+];
+
+export const readers: Reader[] = [
+  {
+    id: 'reader-1',
+    name: 'Léa Dubois',
+    bio: 'Passionnée de lecture depuis toujours, je suis à l\'affût des nouvelles pépites de la BD africaine. Mon genre de prédilection est la fantasy, mais je suis toujours ouverte à de nouvelles découvertes !',
+    avatar: getImage('reader-1')!,
+  }
 ];
 
 export const stories: Story[] = [

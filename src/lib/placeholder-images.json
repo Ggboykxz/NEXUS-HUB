@@ -95,6 +95,12 @@
       "description": "Comic page 3",
       "imageUrl": "https://images.unsplash.com/photo-1760113671986-63ccb46ae202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkaWFsb2d1ZSUyMGNvbWljfGVufDB8fHx8MTc3MTI1MjY4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "dialogue comic"
+    },
+    {
+      "id": "reader-1",
+      "description": "Avatar for a reader",
+      "imageUrl": "https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
     }
   ]
 }

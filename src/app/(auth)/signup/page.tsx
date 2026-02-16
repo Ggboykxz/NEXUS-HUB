@@ -40,7 +40,7 @@ export default function SignupPage() {
     console.log(values);
     toast({
       title: "Compte créé !",
-      description: `Bienvenue, ${values.name} ! Vous êtes maintenant un ${values.accountType === 'reader' ? 'lecteur' : 'artiste'}.`,
+      description: `Bienvenue, ${values.name} ! Votre profil public est maintenant disponible.`,
     });
 
     // Simulate redirection after signup
@@ -49,8 +49,9 @@ export default function SignupPage() {
       // For now, redirecting to the main artist page as a simulation
       router.push('/artists');
     } else {
-      // For readers, redirect to homepage
-      router.push('/');
+      // For readers, redirect to their new public profile
+      // For this simulation, we'll use a static ID.
+      router.push('/profile/reader-1');
     }
   }
 
