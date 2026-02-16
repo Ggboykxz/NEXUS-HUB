@@ -1,18 +1,23 @@
+'use client';
+
+import { use } from 'react';
 import { readers, stories } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StoryCard } from '@/components/story-card';
 import { Separator } from '@/components/ui/separator';
 
-export default function ProfilePage({ params }: { params: { readerId: string } }) {
+export default function ProfilePage({ params: propsParams }: { params: { readerId: string } }) {
+  const params = use(propsParams);
   const reader = readers.find((r) => r.id === params.readerId);
 
   if (!reader) {
     notFound();
   }
 
-  // Placeholder for favorite stories
-  const favoriteStories = stories.slice(0, 5);
+  // Simulate reading history and recommendations
+  const readingHistory = stories.slice(2, 7);
+  const recommendations = stories.slice(0, 5).reverse();
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-12">
@@ -30,9 +35,20 @@ export default function ProfilePage({ params }: { params: { readerId: string } }
       <Separator className="my-12" />
 
       <div className="mt-8">
-        <h2 className="text-3xl font-bold font-display mb-8 text-center">Histoires Favorites (exemple)</h2>
+        <h2 className="text-3xl font-bold font-display mb-8 text-center">Historique de lecture</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-          {favoriteStories.map((story) => (
+          {readingHistory.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
+      </div>
+      
+      <Separator className="my-12" />
+
+      <div className="mt-8">
+        <h2 className="text-3xl font-bold font-display mb-8 text-center">Recommandations pour vous</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+          {recommendations.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </div>
