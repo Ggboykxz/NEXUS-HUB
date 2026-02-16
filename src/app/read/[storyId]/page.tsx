@@ -226,10 +226,10 @@ export default function ReadPage(props: { params: { storyId: string } }) {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
           <TabsList>
             <TabsTrigger value="scroll" className="gap-2">
-              <Layers className="h-4 w-4" /> Scroll
+              <Layers className="h-4 w-4" /> Webtoon
             </TabsTrigger>
             <TabsTrigger value="pages" className="gap-2">
-              <Book className="h-4 w-4" /> Pages
+              <Book className="h-4 w-4" /> BD
             </TabsTrigger>
           </TabsList>
         </div>
