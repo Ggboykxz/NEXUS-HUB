@@ -41,6 +41,7 @@ export default function SignupPage() {
 
     // Set login state
     localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('accountType', values.accountType);
     // Dispatch custom event to update header immediately
     window.dispatchEvent(new Event('loginStateChange'));
 

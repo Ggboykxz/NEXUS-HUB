@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isArtist, setIsArtist] = useState(false);
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: any }>({}).current;
@@ -52,7 +53,9 @@ export default function Header() {
   useEffect(() => {
     const handleStorageChange = () => {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
+      const accountType = localStorage.getItem('accountType');
       setIsLoggedIn(loggedInStatus);
+      setIsArtist(loggedInStatus && accountType === 'artist');
     };
 
     // This check is for client-side rendering only.
@@ -91,6 +94,7 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('accountType');
     // Dispatch custom event to update header immediately in the same tab
     window.dispatchEvent(new Event('loginStateChange')); 
     router.push('/');
@@ -265,6 +269,9 @@ export default function Header() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
+                        {isArtist && (
+                            <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
+                        )}
                         <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
@@ -353,11 +360,19 @@ export default function Header() {
                     <div className="mt-auto flex flex-col gap-2 border-t p-4">
                        {isLoggedIn ? (
                           <>
-                             <Button asChild variant="secondary">
-                                <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
-                                    <UserCircle /> Mon Profil
-                                </Link>
-                             </Button>
+                            {isArtist ? (
+                                <Button asChild variant="secondary">
+                                    <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
+                                        <Brush /> Mon Atelier
+                                    </Link>
+                                </Button>
+                            ) : (
+                                <Button asChild variant="secondary">
+                                    <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
+                                        <UserCircle /> Mon Profil
+                                    </Link>
+                                </Button>
+                            )}
                              <Button asChild variant="ghost">
                                 <Link href="/settings" className="flex items-center gap-2 justify-center">
                                     <Settings /> Paramètres

@@ -19,6 +19,14 @@ export interface Artist {
   isMentor?: boolean;
 }
 
+export interface Chapter {
+  id: string;
+  title: string;
+  releaseDate: string;
+  status: 'Publié' | 'Programmé' | 'Brouillon';
+  pageCount: number;
+}
+
 export interface Story {
   id: string;
   title: string;
@@ -31,7 +39,7 @@ export interface Story {
   views: number;
   likes: number;
   subscriptions: number;
-  chapters: number;
+  chapters: Chapter[];
   updatedAt: string;
   isPremium?: boolean;
   price?: number; // Price in AfriCoins
@@ -147,7 +155,11 @@ export const stories: Story[] = [
     views: 1200000,
     likes: 89000,
     subscriptions: 50000,
-    chapters: 24,
+    chapters: [
+        { id: '1-1', title: 'Le Réveil', releaseDate: '2024-05-01', status: 'Publié', pageCount: 22 },
+        { id: '1-2', title: 'L\'Épreuve', releaseDate: '2024-05-15', status: 'Publié', pageCount: 25 },
+        { id: '1-3', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23 },
+    ],
     updatedAt: 'Il y a 2 jours',
   },
   {
@@ -161,7 +173,10 @@ export const stories: Story[] = [
     views: 980000,
     likes: 75000,
     subscriptions: 42000,
-    chapters: 18,
+    chapters: [
+        { id: '2-1', title: 'Néons et Brouillard', releaseDate: '2024-04-20', status: 'Publié', pageCount: 30 },
+        { id: '2-2', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28 },
+    ],
     updatedAt: 'Il y a 5 jours',
   },
   {
@@ -175,7 +190,12 @@ export const stories: Story[] = [
     views: 750000,
     likes: 62000,
     subscriptions: 35000,
-    chapters: 30,
+    chapters: [
+        { id: '3-1', title: 'La Relique', releaseDate: '2024-03-01', status: 'Publié', pageCount: 18 },
+        { id: '3-2', title: 'Le Passage', releaseDate: '2024-03-15', status: 'Publié', pageCount: 20 },
+        { id: '3-3', title: 'Le Royaume Oublié', releaseDate: '2024-04-01', status: 'Publié', pageCount: 22 },
+        { id: '3-4', title: 'Le Retour', releaseDate: '2024-04-15', status: 'Brouillon', pageCount: 0 },
+    ],
     updatedAt: 'Il y a 1 semaine',
   },
   {
@@ -189,7 +209,9 @@ export const stories: Story[] = [
     views: 650000,
     likes: 55000,
     subscriptions: 30000,
-    chapters: 22,
+    chapters: [
+        { id: '4-1', title: 'La Première Note', releaseDate: '2024-05-10', status: 'Publié', pageCount: 24 },
+    ],
     updatedAt: 'Il y a 3 jours',
     isPremium: true,
     price: 50,
@@ -205,7 +227,9 @@ export const stories: Story[] = [
     views: 500000,
     likes: 48000,
     subscriptions: 28000,
-    chapters: 15,
+    chapters: [
+        { id: '5-1', title: 'L\'Entretien d\'embauche', releaseDate: '2024-05-20', status: 'Publié', pageCount: 20 },
+    ],
     updatedAt: 'Il y a 1 jour',
   },
   {
@@ -219,7 +243,7 @@ export const stories: Story[] = [
     views: 420000,
     likes: 41000,
     subscriptions: 25000,
-    chapters: 20,
+    chapters: [],
     updatedAt: 'Il y a 1 mois',
     isPremium: true,
     price: 75,
