@@ -31,11 +31,50 @@ Les fonctionnalités de monétisation principales sont en place.
 
 ## Conclusion
 
-Le projet a atteint un niveau de maturité remarquable, couvrant la quasi-totalité des fonctionnalités prévues dans la feuille de route initiale, y compris les plus avancées des phases 2 et 3.
+Le projet a atteint un niveau de maturité remarquable, couvrant la quasi-totalité des fonctionnalités prévues dans la feuille de route initiale, y compris les plus avancées des phases 2 et 3. Le projet est dans une excellente position pour être lancé auprès du public.
 
-**Prochaines Étapes Suggérées :**
-1.  **Stratégie publicitaire :** Définir et intégrer un modèle publicitaire.
-2.  **Développement commercial :** Initier les démarches pour les partenariats avec les éditeurs.
-3.  **Tests et Retours Utilisateurs :** Lancer une phase de bêta-test pour recueillir les retours des premiers utilisateurs et affiner l'expérience.
+## Planification des Prochaines Étapes
 
-Le projet est dans une excellente position pour être lancé auprès du public.
+Pour guider le développement futur, voici une proposition de planification détaillée, divisée en lots de travail.
+
+### Étape 4 : Optimisation et Lancement Bêta
+*   **Objectif :** Préparer la plateforme pour un lancement public en recueillant les premiers retours.
+*   **Actions Clés :**
+    *   **Tests et Retours Utilisateurs :**
+        *   Mettre en place un programme de bêta-test avec un groupe d'utilisateurs cibles (lecteurs et artistes).
+        *   Créer un formulaire ou un canal de communication dédié pour collecter les retours (ex: page de feedback, Discord).
+        *   Analyser les retours pour identifier les bugs, les points de friction et les axes d'amélioration de l'UX/UI.
+    *   **Optimisation des Performances :**
+        *   Auditer la vitesse de chargement des pages, notamment pour le lecteur de BD/Webtoon.
+        *   Optimiser le poids des images sur l'ensemble du site.
+        *   Vérifier et améliorer la réactivité du design sur une large gamme d'appareils.
+    *   **Amélioration de l'Accessibilité (a11y) :**
+        *   Effectuer un audit d'accessibilité pour s'assurer de la conformité avec les standards (WCAG).
+        *   Ajouter les attributs ARIA manquants et s'assurer de la parfaite navigation au clavier.
+
+### Étape 5 : Intégration Publicitaire
+*   **Objectif :** Mettre en place un premier modèle de revenus via la publicité non intrusive.
+*   **Actions Clés :**
+    *   **Définition de la Stratégie :**
+        *   Choisir un partenaire publicitaire ou une régie (ex: Google AdSense).
+        *   Définir les emplacements publicitaires (bannières sur les pages de lecture, entre les chapitres, etc.).
+    *   **Implémentation Technique :**
+        *   Intégrer le SDK du partenaire publicitaire.
+        *   Créer des composants React pour afficher les publicités aux endroits définis.
+        *   Gérer le consentement des utilisateurs (bannière de cookies conforme RGPD/CCPA).
+    *   **Tests et Suivi :**
+        *   Tester l'affichage des publicités et leur impact sur les performances.
+        *   Mettre en place un tableau de bord pour le suivi des revenus générés.
+
+### Étape 6 : Développement Commercial et Partenariats
+*   **Objectif :** Tisser des liens avec l'écosystème de l'édition pour ouvrir de nouvelles opportunités.
+*   **Actions Clés :**
+    *   **Prospection :**
+        *   Identifier et contacter des maisons d'édition africaines et internationales.
+        *   Préparer un dossier de présentation du projet NexusHub.
+    *   **Définition des Modèles de Partenariat :**
+        *   Explorer des collaborations : publication d'œuvres existantes, détection de talents pour l'édition papier.
+        *   Définir les aspects juridiques et financiers de ces partenariats.
+    *   **Fonctionnalités Associées (si nécessaire) :**
+        *   Développer des outils pour que les éditeurs puissent gérer leur catalogue sur la plateforme.
+        *   Créer une section "Éditeurs Partenaires" sur le site.
