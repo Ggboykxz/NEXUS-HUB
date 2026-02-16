@@ -3,14 +3,14 @@
     {
       "id": "hero",
       "description": "Image d'en-tête pour la page d'accueil, dans un style afro-futuriste",
-      "imageUrl": "https://images.unsplash.com/photo-1534787232399-525424424c3c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZnJvZnV0dXJpc218ZW58MHx8fHwxNzcxMjU3MjM5fDA&ixlib=rb-4.0.3&q=80&w=1080",
-      "imageHint": "afrofuturism portrait"
+      "imageUrl": "https://images.unsplash.com/photo-1609804213568-19c806540d6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhZnJvZnV0dXJpc20lMjBkZWl0eXxlbnwwfHx8fDE3MTI5NTg0MDB8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "afrofuturism deity"
     },
     {
       "id": "story-1",
-      "description": "Couverture pour l'histoire 1",
-      "imageUrl": "https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "fantasy comic"
+      "description": "Couverture pour l'histoire 1, Les Chroniques d'Orisha",
+      "imageUrl": "https://images.unsplash.com/photo-1645041922459-7fe89578648a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx5b3J1YmElMjBvcmtpc2hhfGVufDB8fHx8MTcxMjk1ODU0NHww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "orisha art"
     },
     {
       "id": "story-2",
@@ -32,9 +32,9 @@
     },
     {
       "id": "story-5",
-      "description": "Couverture pour l'histoire 5",
-      "imageUrl": "https://images.unsplash.com/photo-1579718619873-d82333054124?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyb21hbmNlJTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "romance comic"
+      "description": "Couverture pour l'histoire 5, La Toile d'Anansé",
+      "imageUrl": "https://images.unsplash.com/photo-1631024344446-324317924083?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwc3BpZGVyJTIwbXl0aHxlbnwwfHx8fDE3MTI5NTg2NjR8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "golden spiderweb"
     },
     {
       "id": "story-6",
@@ -44,21 +44,21 @@
     },
     {
       "id": "artist-1",
-      "description": "Avatar pour l'artiste 1",
-      "imageUrl": "https://images.unsplash.com/photo-1561740303-a0fd9fabc646?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwb3J0cmFpdCUyMHBlcnNvbnxlbnwwfHx8fDE3NzExODk4MTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "portrait person"
+      "description": "Avatar pour l'artiste Jelani Adebayo",
+      "imageUrl": "https://images.unsplash.com/photo-1530785602056-02a1e0c2f9e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhZnJpY2FuJTIwbWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzEyOTU4OTcxfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "african portrait"
     },
     {
       "id": "artist-2",
-      "description": "Avatar pour l'artiste 2",
-      "imageUrl": "https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "portrait person"
+      "description": "Avatar pour l'artiste Amina Diallo",
+      "imageUrl": "https://images.unsplash.com/photo-1602785139708-1442c75f6b28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwd29tYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3MTI5NTkwMTZ8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "african portrait"
     },
     {
       "id": "artist-3",
-      "description": "Avatar pour l'artiste 3",
-      "imageUrl": "https://images.unsplash.com/photo-1662850886700-4ec19bd30d11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc3MTI0MzI1Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person smiling"
+      "description": "Avatar pour l'artiste Kwame Osei",
+      "imageUrl": "https://images.unsplash.com/photo-1610640058814-e5b155a32663?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhZnJpY2FuJTIwbWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzEyOTU4OTcxfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "african man"
     },
     {
       "id": "product-1",

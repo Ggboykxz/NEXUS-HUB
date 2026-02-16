@@ -23,60 +23,60 @@
 
 @layer base {
   :root {
-    --background: 48 67% 98%; /* #FDFCF5 */
-    --foreground: 0 0% 20%; /* #333333 */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
-    --primary: 45 65% 52%; /* Muted Gold #D4AF37 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 20%; /* Charcoal #333333 */
-    --secondary-foreground: 0 0% 98%; /* Almost white */
-    --muted: 60 11% 91%; /* light gray */
-    --muted-foreground: 0 0% 40%;
-    --accent: 24 93% 53%; /* #CC6633 */
+    --background: 36 33% 96%; /* #F7F5F2 */
+    --foreground: 25 45% 18%; /* #3C2A18 */
+    --card: 36 33% 98%; /* #FCFAF7 */
+    --card-foreground: 25 45% 18%;
+    --popover: 36 33% 98%;
+    --popover-foreground: 25 45% 18%;
+    --primary: 42 74% 55%; /* Rich Gold #E6A93D */
+    --primary-foreground: 25 45% 18%;
+    --secondary: 25 45% 18%; /* Dark Brown */
+    --secondary-foreground: 36 33% 96%;
+    --muted: 30 15% 91%; /* #ECEAE8 */
+    --muted-foreground: 25 45% 38%;
+    --accent: 16 79% 51%; /* Terracotta #D96A3B */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 60 11% 88%; /* #E5E5E0 */
-    --input: 60 11% 91%;
-    --ring: 45 65% 52%;
-    --radius: 0.25rem; /* default 4px */
+    --border: 30 15% 88%; /* #E6E2DE */
+    --input: 30 15% 91%;
+    --ring: 42 74% 55%;
+    --radius: 0.25rem;
 
-    --chart-1: 45 65% 52%;
-    --chart-2: 24 93% 53%;
+    --chart-1: 42 74% 55%;
+    --chart-2: 16 79% 51%;
     --chart-3: 30 30% 60%;
-    --chart-4: 45 65% 72%;
-    --chart-5: 24 93% 73%;
+    --chart-4: 42 74% 75%;
+    --chart-5: 16 79% 71%;
   }
 
   .dark {
-    --background: 40 6% 7%; /* #121210 */
-    --foreground: 0 0% 83%; /* stone-300 */
-    --card: 30 6% 15%; /* stone-800 */
-    --card-foreground: 0 0% 83%;
-    --popover: 40 6% 7%;
-    --popover-foreground: 0 0% 83%;
-    --primary: 45 65% 52%;
-    --primary-foreground: 40 6% 7%;
-    --secondary: 30 6% 15%;
-    --secondary-foreground: 0 0% 83%;
-    --muted: 30 6% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 24 93% 53%;
+    --background: 25 25% 10%; /* #1F1913 */
+    --foreground: 36 33% 85%; /* #E0DCD6 */
+    --card: 25 25% 13%; /* #28211A */
+    --card-foreground: 36 33% 85%;
+    --popover: 25 25% 10%;
+    --popover-foreground: 36 33% 85%;
+    --primary: 42 74% 55%;
+    --primary-foreground: 25 25% 10%;
+    --secondary: 25 25% 13%;
+    --secondary-foreground: 36 33% 85%;
+    --muted: 25 25% 13%;
+    --muted-foreground: 36 33% 65%;
+    --accent: 16 79% 51%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 45 65% 52%;
+    --border: 25 25% 20%; /* #3B3228 */
+    --input: 25 25% 20%;
+    --ring: 42 74% 55%;
 
-    --chart-1: 45 65% 52%;
-    --chart-2: 24 93% 53%;
+    --chart-1: 42 74% 55%;
+    --chart-2: 16 79% 51%;
     --chart-3: 30 20% 40%;
-    --chart-4: 45 65% 62%;
-    --chart-5: 24 93% 63%;
+    --chart-4: 42 74% 65%;
+    --chart-5: 16 79% 61%;
   }
 }
 
@@ -93,10 +93,7 @@
 }
 
 .hero-overlay {
-    background: linear-gradient(180deg, rgba(253, 252, 245, 0) 0%, rgba(253, 252, 245, 0.8) 80%, rgba(253, 252, 245, 1) 100%);
-}
-.dark .hero-overlay {
-    background: linear-gradient(180deg, rgba(18, 18, 16, 0) 0%, rgba(18, 18, 16, 0.8) 80%, rgba(18, 18, 16, 1) 100%);
+    background: linear-gradient(180deg, hsla(var(--background), 0) 0%, hsla(var(--background), 0.8) 80%, hsla(var(--background), 1) 100%);
 }
 ::-webkit-scrollbar {
     width: 6px;

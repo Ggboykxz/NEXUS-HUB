@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-        display: ['"Playfair Display"', 'serif'],
+        display: ['"Yeseva One"', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
