@@ -7,7 +7,6 @@ export type NavLink = {
 };
 
 export const navLinks: NavLink[] = [
-  { href: "/", label: "Accueil", icon: Home },
   { href: "/rankings", label: "Classements", icon: Crown },
   { href: "/artists", label: "Artistes", icon: Users },
   { href: "/forums", label: "Forums", icon: MessageSquare },
