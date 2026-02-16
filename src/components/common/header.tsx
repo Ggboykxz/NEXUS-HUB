@@ -26,13 +26,11 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isArtist, setIsArtist] = useState(false);
 
-  // Add hasMounted state to prevent hydration errors
   const [hasMounted, setHasMounted] = useState(false);
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -53,15 +51,11 @@ export default function Header() {
 
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
 
-  // This effect runs only once on the client after the initial render
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-
   useEffect(() => {
-    // These effects now depend on `hasMounted` to ensure they only run on the client
-    // after the component has mounted, preventing hydration mismatch.
     if (!hasMounted) return;
 
     const handleStorageChange = () => {
@@ -83,17 +77,6 @@ export default function Header() {
   }, [hasMounted]);
 
   useEffect(() => {
-    if (!hasMounted) return;
-
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, [hasMounted]);
-
-  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -106,34 +89,10 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('accountType');
-    // Dispatch custom event to update header immediately in the same tab
     window.dispatchEvent(new Event('loginStateChange')); 
     router.push('/');
     router.refresh();
   };
-
-  if (hasMounted && isSearchOpen && isMobile) {
-    return (
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className={cn(
-            "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
-            isScrolled ? "h-16" : "h-20"
-        )}>
-            <div className="flex w-full items-center gap-2 animate-in fade-in-0">
-                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <Input
-                    type="search"
-                    placeholder="Rechercher..."
-                    className="h-10 w-full pr-10"
-                    autoFocus
-                />
-            </div>
-        </div>
-      </header>
-    );
-  }
 
   const LoggedInNav = (
     <>
@@ -277,7 +236,35 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+    <>
+      {/* Mobile search view */}
+      <header className={cn(
+        "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 md:hidden",
+        isSearchOpen ? 'block' : 'hidden'
+      )}>
+        <div className={cn(
+            "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
+            isScrolled ? "h-16" : "h-20"
+        )}>
+            <div className="flex w-full items-center gap-2 animate-in fade-in-0">
+                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Input
+                    type="search"
+                    placeholder="Rechercher..."
+                    className="h-10 w-full pr-10"
+                    autoFocus
+                />
+            </div>
+        </div>
+      </header>
+
+      {/* Main header view */}
+      <header className={cn(
+        "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
+        isSearchOpen ? 'hidden md:block' : 'block' // Hide on mobile when search is open
+      )}>
       <div className={cn(
         "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
         isScrolled ? "h-16" : "h-20"
@@ -375,12 +362,11 @@ export default function Header() {
             </div>
             
             {/* Mobile Menu */}
-            {hasMounted && isMobile ? (
-              <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center">
                   <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                     <Search className="h-5 w-5" />
                   </Button>
-                  {isLoggedIn && (
+                  {hasMounted && isLoggedIn && (
                      <Button variant="ghost" size="icon" className="relative text-foreground/90">
                         <Bell className="h-5 w-5" />
                      </Button>
@@ -456,20 +442,14 @@ export default function Header() {
                           </nav>
                       </div>
                       <div className="mt-auto flex flex-col gap-2 border-t p-4">
-                         {isLoggedIn ? MobileLoggedInNav : MobileLoggedOutNav}
+                         {hasMounted ? (isLoggedIn ? MobileLoggedInNav : MobileLoggedOutNav) : MobileLoggedOutNav}
                       </div>
                     </SheetContent>
                   </Sheet>
               </div>
-            ) : (
-              // Placeholder for mobile menu on initial load to prevent layout shift
-              <div className="md:hidden flex items-center">
-                  <div className="h-10 w-10"></div>
-                  <div className="h-10 w-10"></div>
-              </div>
-            )}
         </div>
       </div>
     </header>
+    </>
   );
 }
