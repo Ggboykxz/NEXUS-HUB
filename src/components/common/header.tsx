@@ -32,6 +32,9 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isArtist, setIsArtist] = useState(false);
 
+  // Add hasMounted state to prevent hydration errors
+  const [hasMounted, setHasMounted] = useState(false);
+
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: any }>({}).current;
 
@@ -50,7 +53,17 @@ export default function Header() {
 
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
 
+  // This effect runs only once on the client after the initial render
   useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+
+  useEffect(() => {
+    // These effects now depend on `hasMounted` to ensure they only run on the client
+    // after the component has mounted, preventing hydration mismatch.
+    if (!hasMounted) return;
+
     const handleStorageChange = () => {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       const accountType = localStorage.getItem('accountType');
@@ -58,12 +71,8 @@ export default function Header() {
       setIsArtist(loggedInStatus && accountType === 'artist');
     };
 
-    // This check is for client-side rendering only.
-    if (typeof window !== 'undefined') {
-        handleStorageChange();
-    }
+    handleStorageChange();
 
-    // Listen for changes (e.g., from other tabs or our custom event)
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('loginStateChange', handleStorageChange);
 
@@ -71,16 +80,18 @@ export default function Header() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('loginStateChange', handleStorageChange);
     };
-  }, []);
+  }, [hasMounted]);
 
   useEffect(() => {
+    if (!hasMounted) return;
+
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+  }, [hasMounted]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,7 +112,7 @@ export default function Header() {
     router.refresh();
   };
 
-  if (isSearchOpen && isMobile) {
+  if (hasMounted && isSearchOpen && isMobile) {
     return (
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className={cn(
@@ -123,6 +134,147 @@ export default function Header() {
       </header>
     );
   }
+
+  const LoggedInNav = (
+    <>
+      <Link href="/settings?tab=africoins" className="flex items-center gap-1.5 border-r pr-3 mr-1 hover:bg-muted p-2 rounded-md transition-colors">
+         <CircleDollarSign className="h-5 w-5 text-primary" />
+         <span className="font-semibold text-sm">150</span>
+       </Link>
+      <Popover>
+         <PopoverTrigger asChild>
+             <Button variant="ghost" size="icon" className="relative text-foreground/90">
+                 <Bell className="h-5 w-5" />
+                 <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                 </span>
+             </Button>
+         </PopoverTrigger>
+         <PopoverContent align="end" className="w-96">
+             <div className="flex justify-between items-center mb-4">
+               <h4 className="font-medium leading-none">Notifications</h4>
+               <p className="text-sm text-muted-foreground">Vous avez 2 notifications</p>
+             </div>
+             <div className="grid gap-4">
+               <Link href="/stories/1" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+                 <Avatar className="h-10 w-10 border">
+                     <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="The Orisha Chronicles" />
+                     <AvatarFallback>OC</AvatarFallback>
+                 </Avatar>
+                 <div>
+                     <p className="text-sm">Nouveau chapitre de <span className="font-semibold">The Orisha Chronicles</span> disponible !</p>
+                     <p className="text-xs text-muted-foreground">par Jelani Adebayo - il y a 5 minutes</p>
+                 </div>
+               </Link>
+               <Link href="/artists/2" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+                 <Avatar className="h-10 w-10 border">
+                   <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="Amina Diallo" />
+                   <AvatarFallback>AD</AvatarFallback>
+                 </Avatar>
+                 <div>
+                     <p className="text-sm"><span className="font-semibold">Amina Diallo</span> a commencé un nouveau projet : <span className="font-semibold">Cyber-Reines</span>.</p>
+                     <p className="text-xs text-muted-foreground">il y a 2 heures</p>
+                 </div>
+               </Link>
+             </div>
+         </PopoverContent>
+       </Popover>
+
+       <DropdownMenu>
+         <DropdownMenuTrigger asChild>
+           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+             <Avatar className="h-10 w-10">
+               <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
+               <AvatarFallback>LD</AvatarFallback>
+             </Avatar>
+           </Button>
+         </DropdownMenuTrigger>
+         <DropdownMenuContent className="w-56" align="end" forceMount>
+           <DropdownMenuLabel className="font-normal">
+             <div className="flex flex-col space-y-1">
+               <p className="text-sm font-medium leading-none">Léa Dubois</p>
+               <p className="text-xs leading-none text-muted-foreground">
+                 lea.dubois@example.com
+               </p>
+             </div>
+           </DropdownMenuLabel>
+           <DropdownMenuSeparator />
+           <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
+           {isArtist && (
+               <>
+                   <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
+                   <DropdownMenuItem asChild><Link href="/dashboard/stats"><TrendingUp className="mr-2"/>Statistiques</Link></DropdownMenuItem>
+               </>
+           )}
+           <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
+           <DropdownMenuSeparator />
+           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
+         </DropdownMenuContent>
+       </DropdownMenu>
+    </>
+  );
+
+  const LoggedOutNav = (
+    <>
+      <Button asChild variant="ghost">
+        <Link href="/login">Se connecter</Link>
+      </Button>
+      <Button asChild variant="outline">
+        <Link href="/signup">S'inscrire</Link>
+      </Button>
+      <Button asChild>
+        <Link href="/submit">Publier</Link>
+      </Button>
+    </>
+  );
+
+    const MobileLoggedInNav = (
+    <>
+      {isArtist ? (
+          <>
+              <Button asChild variant="secondary">
+                  <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
+                      <Brush /> Mon Atelier
+                  </Link>
+              </Button>
+              <Button asChild variant="ghost">
+                  <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
+                      <TrendingUp /> Statistiques
+                  </Link>
+              </Button>
+          </>
+      ) : (
+          <Button asChild variant="secondary">
+              <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
+                  <UserCircle /> Mon Profil
+              </Link>
+          </Button>
+      )}
+       <Button asChild variant="ghost">
+          <Link href="/settings" className="flex items-center gap-2 justify-center">
+              <Settings /> Paramètres
+          </Link>
+       </Button>
+       <Button variant="outline" onClick={handleLogout} className="w-full">
+          <LogOut className="mr-2"/> Se déconnecter
+      </Button>
+    </>
+  );
+
+  const MobileLoggedOutNav = (
+    <>
+       <Button asChild>
+         <Link href="/submit">Publier</Link>
+       </Button>
+       <Button asChild variant="outline">
+         <Link href="/signup">S'inscrire</Link>
+       </Button>
+       <Button asChild variant="ghost">
+         <Link href="/login">Se connecter</Link>
+       </Button>
+    </>
+  );
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
@@ -203,212 +355,87 @@ export default function Header() {
                     <Search className="h-5 w-5" />
                 </Button>
                
-               {isLoggedIn ? (
-                 <>
-                   <Link href="/settings?tab=africoins" className="flex items-center gap-1.5 border-r pr-3 mr-1 hover:bg-muted p-2 rounded-md transition-colors">
-                      <CircleDollarSign className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-sm">150</span>
-                    </Link>
-                   <Popover>
-                      <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="relative text-foreground/90">
-                              <Bell className="h-5 w-5" />
-                              <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                              </span>
-                          </Button>
-                      </PopoverTrigger>
-                      <PopoverContent align="end" className="w-96">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-medium leading-none">Notifications</h4>
-                            <p className="text-sm text-muted-foreground">Vous avez 2 notifications</p>
-                          </div>
-                          <div className="grid gap-4">
-                            <Link href="/stories/1" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
-                              <Avatar className="h-10 w-10 border">
-                                  <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="The Orisha Chronicles" />
-                                  <AvatarFallback>OC</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                  <p className="text-sm">Nouveau chapitre de <span className="font-semibold">The Orisha Chronicles</span> disponible !</p>
-                                  <p className="text-xs text-muted-foreground">par Jelani Adebayo - il y a 5 minutes</p>
-                              </div>
-                            </Link>
-                            <Link href="/artists/2" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
-                              <Avatar className="h-10 w-10 border">
-                                <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="Amina Diallo" />
-                                <AvatarFallback>AD</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                  <p className="text-sm"><span className="font-semibold">Amina Diallo</span> a commencé un nouveau projet : <span className="font-semibold">Cyber-Reines</span>.</p>
-                                  <p className="text-xs text-muted-foreground">il y a 2 heures</p>
-                              </div>
-                            </Link>
-                          </div>
-                      </PopoverContent>
-                    </Popover>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
-                            <AvatarFallback>LD</AvatarFallback>
-                          </Avatar>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56" align="end" forceMount>
-                        <DropdownMenuLabel className="font-normal">
-                          <div className="flex flex-col space-y-1">
-                            <p className="text-sm font-medium leading-none">Léa Dubois</p>
-                            <p className="text-xs leading-none text-muted-foreground">
-                              lea.dubois@example.com
-                            </p>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
-                        {isArtist && (
-                            <>
-                                <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
-                                <DropdownMenuItem asChild><Link href="/dashboard/stats"><TrendingUp className="mr-2"/>Statistiques</Link></DropdownMenuItem>
-                            </>
-                        )}
-                        <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                 </>
-               ) : (
-                 <>
-                   <Button asChild variant="ghost">
-                     <Link href="/login">Se connecter</Link>
-                   </Button>
-                   <Button asChild variant="outline">
-                     <Link href="/signup">S'inscrire</Link>
-                   </Button>
-                   <Button asChild>
-                     <Link href="/submit">Publier</Link>
-                   </Button>
-                 </>
-               )}
+               {hasMounted ? (isLoggedIn ? LoggedInNav : LoggedOutNav) : LoggedOutNav }
             </div>
             
             {/* Mobile Menu */}
-            <div className="md:hidden flex items-center">
-                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
-                  <Search className="h-5 w-5" />
-                </Button>
-                {isLoggedIn && (
-                   <Button variant="ghost" size="icon" className="relative text-foreground/90">
-                      <Bell className="h-5 w-5" />
-                   </Button>
-                )}
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Menu className="h-5 w-5" />
-                      <span className="sr-only">Toggle Menu</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="pr-0 bg-background flex flex-col">
-                    <div>
-                        <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
-                            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
-                        </Link>
-                        <nav className="flex flex-col space-y-2 px-4">
-                            {navLinks.map((link) => {
-                              if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+            {hasMounted && isMobile ? (
+              <div className="md:hidden flex items-center">
+                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
+                    <Search className="h-5 w-5" />
+                  </Button>
+                  {isLoggedIn && (
+                     <Button variant="ghost" size="icon" className="relative text-foreground/90">
+                        <Bell className="h-5 w-5" />
+                     </Button>
+                  )}
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle Menu</span>
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="pr-0 bg-background flex flex-col">
+                      <div>
+                          <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
+                              <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
+                          </Link>
+                          <nav className="flex flex-col space-y-2 px-4">
+                              {navLinks.map((link) => {
+                                if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+                                  return (
+                                    <Accordion type="single" collapsible key={link.href} className="w-full">
+                                      <AccordionItem value={link.label} className="border-b-0">
+                                        <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
+                                          <span>{link.label}</span>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2 pl-4">
+                                          <div className="flex flex-col space-y-2">
+                                              {link.isGenreDropdown && (
+                                                  <>
+                                                      <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                          Toutes les œuvres
+                                                      </Link>
+                                                      {uniqueGenres.map(genre => (
+                                                          <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                              {genre}
+                                                          </Link>
+                                                      ))}
+                                                  </>
+                                              )}
+                                              {link.subLinks && link.subLinks.map((subLink) => (
+                                                  <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                      {subLink.label}
+                                                  </Link>
+                                              ))}
+                                          </div>
+                                        </AccordionContent>
+                                      </AccordionItem>
+                                    </Accordion>
+                                  );
+                                }
                                 return (
-                                  <Accordion type="single" collapsible key={link.href} className="w-full">
-                                    <AccordionItem value={link.label} className="border-b-0">
-                                      <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
-                                        <span>{link.label}</span>
-                                      </AccordionTrigger>
-                                      <AccordionContent className="pt-2 pl-4">
-                                        <div className="flex flex-col space-y-2">
-                                            {link.isGenreDropdown && (
-                                                <>
-                                                    <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                        Toutes les œuvres
-                                                    </Link>
-                                                    {uniqueGenres.map(genre => (
-                                                        <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                            {genre}
-                                                        </Link>
-                                                    ))}
-                                                </>
-                                            )}
-                                            {link.subLinks && link.subLinks.map((subLink) => (
-                                                <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                    {subLink.label}
-                                                </Link>
-                                            ))}
-                                        </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  </Accordion>
+                                  <Link key={link.href} href={link.href} className="text-lg font-medium">
+                                      {link.label}
+                                  </Link>
                                 );
-                              }
-                              return (
-                                <Link key={link.href} href={link.href} className="text-lg font-medium">
-                                    {link.label}
-                                </Link>
-                              );
-                            })}
-                        </nav>
-                    </div>
-                    <div className="mt-auto flex flex-col gap-2 border-t p-4">
-                       {isLoggedIn ? (
-                          <>
-                            {isArtist ? (
-                                <>
-                                    <Button asChild variant="secondary">
-                                        <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
-                                            <Brush /> Mon Atelier
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="ghost">
-                                        <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
-                                            <TrendingUp /> Statistiques
-                                        </Link>
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button asChild variant="secondary">
-                                    <Link href="/profile/reader-1" className="flex items-center gap-2 justify-center">
-                                        <UserCircle /> Mon Profil
-                                    </Link>
-                                </Button>
-                            )}
-                             <Button asChild variant="ghost">
-                                <Link href="/settings" className="flex items-center gap-2 justify-center">
-                                    <Settings /> Paramètres
-                                </Link>
-                             </Button>
-                             <Button variant="outline" onClick={handleLogout} className="w-full">
-                                <LogOut className="mr-2"/> Se déconnecter
-                            </Button>
-                          </>
-                       ) : (
-                          <>
-                             <Button asChild>
-                               <Link href="/submit">Publier</Link>
-                             </Button>
-                             <Button asChild variant="outline">
-                               <Link href="/signup">S'inscrire</Link>
-                             </Button>
-                             <Button asChild variant="ghost">
-                               <Link href="/login">Se connecter</Link>
-                             </Button>
-                          </>
-                       )}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-            </div>
+                              })}
+                          </nav>
+                      </div>
+                      <div className="mt-auto flex flex-col gap-2 border-t p-4">
+                         {isLoggedIn ? MobileLoggedInNav : MobileLoggedOutNav}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+              </div>
+            ) : (
+              // Placeholder for mobile menu on initial load to prevent layout shift
+              <div className="md:hidden flex items-center">
+                  <div className="h-10 w-10"></div>
+                  <div className="h-10 w-10"></div>
+              </div>
+            )}
         </div>
       </div>
     </header>
