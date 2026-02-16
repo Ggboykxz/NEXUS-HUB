@@ -41,7 +41,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
             {/* Desktop Icons & Buttons */}
             <div className="hidden items-center gap-2 md:flex">
-               <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+               <Button variant="ghost" size="icon" className="text-foreground/90">
                   <Search className="h-5 w-5" />
                </Button>
                <Button asChild variant="ghost">
@@ -57,7 +57,7 @@ export default function Header() {
             
             {/* Mobile Menu */}
             <div className="md:hidden flex items-center">
-                <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+                <Button variant="ghost" size="icon" className="text-foreground/90">
                   <Search className="h-5 w-5" />
                 </Button>
                 <Sheet>
