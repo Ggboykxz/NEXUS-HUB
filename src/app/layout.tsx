@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'AfriStory Hub | Récits Africains Numériques',
+  title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
   description: 'La plateforme de la narration visuelle africaine',
 };
 
