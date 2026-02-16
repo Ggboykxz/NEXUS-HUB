@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award, Eye, Star } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 export default function ArtistProfilePage(props: { params: { artistId: string } }) {
   const params = use(props.params);
@@ -52,6 +54,21 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
   }
 
   const artistStories = allStories.filter(story => story.artistId === artist.id);
+
+  const totalViews = artistStories.reduce((acc, story) => acc + story.views, 0);
+  const totalLikes = artistStories.reduce((acc, story) => acc + story.likes, 0);
+  const totalSubscriptions = artistStories.reduce((acc, story) => acc + story.subscriptions, 0);
+  const totalWorks = artistStories.length;
+
+  const formatStat = (num: number): string => {
+    if (num >= 1_000_000) {
+      return `${(num / 1_000_000).toFixed(1)}M`;
+    }
+    if (num >= 1_000) {
+      return `${(num / 1_000).toFixed(0)}k`;
+    }
+    return num.toString();
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -186,6 +203,47 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
           <h2 className="text-2xl font-bold font-display mb-2">Biographie</h2>
           <p className="text-lg text-foreground/80 leading-relaxed">{artist.bio}</p>
         </div>
+      </div>
+
+      <Separator className="my-12" />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vues Totales</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatStat(totalViews)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Likes Totaux</CardTitle>
+            <Heart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatStat(totalLikes)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Abonnés</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatStat(totalSubscriptions)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Œuvres</CardTitle>
+            <Book className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalWorks}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mt-16">
