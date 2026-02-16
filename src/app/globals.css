@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 60 56% 91%;
-    --foreground: 25 47% 18%;
-    --card: 60 50% 95%;
-    --card-foreground: 25 47% 18%;
-    --popover: 60 50% 95%;
-    --popover-foreground: 25 47% 18%;
-    --primary: 51 100% 50%;
-    --primary-foreground: 25 47% 18%;
-    --secondary: 60 30% 85%;
-    --secondary-foreground: 25 47% 18%;
-    --muted: 60 30% 88%;
-    --muted-foreground: 25 20% 40%;
-    --accent: 20 60% 50%;
-    --accent-foreground: 60 56% 91%;
+    --background: 35 60% 96%; /* Very light warm beige */
+    --foreground: 25 50% 15%; /* Dark, rich brown */
+    --card: 35 55% 99%; /* Slightly off-white card */
+    --card-foreground: 25 50% 15%;
+    --popover: 35 55% 99%;
+    --popover-foreground: 25 50% 15%;
+    --primary: 45 95% 51%; /* Gold */
+    --primary-foreground: 30 50% 10%; /* Dark brown for contrast */
+    --secondary: 120 25% 92%; /* Light earthy green */
+    --secondary-foreground: 120 25% 15%; /* Dark green */
+    --muted: 35 40% 92%; /* Lighter beige */
+    --muted-foreground: 25 30% 35%; /* Muted brown */
+    --accent: 10 78% 55%; /* Rich red */
+    --accent-foreground: 0 0% 100%; /* White */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 60 20% 80%;
-    --input: 60 20% 85%;
-    --ring: 51 100% 50%;
+    --border: 35 20% 85%;
+    --input: 35 20% 90%;
+    --ring: 45 95% 51%; /* Gold */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 25 20% 8%;
-    --foreground: 60 30% 85%;
-    --card: 25 20% 12%;
-    --card-foreground: 60 30% 85%;
-    --popover: 25 20% 8%;
-    --popover-foreground: 60 30% 85%;
-    --primary: 51 100% 50%;
-    --primary-foreground: 25 47% 18%;
-    --secondary: 25 20% 18%;
-    --secondary-foreground: 60 30% 85%;
-    --muted: 25 20% 15%;
-    --muted-foreground: 60 20% 60%;
-    --accent: 20 60% 50%;
-    --accent-foreground: 60 30% 85%;
+    --background: 25 20% 10%; /* Dark brown */
+    --foreground: 35 30% 88%; /* Light warm beige */
+    --card: 25 20% 14%; /* Slightly lighter dark brown */
+    --card-foreground: 35 30% 88%;
+    --popover: 25 20% 10%;
+    --popover-foreground: 35 30% 88%;
+    --primary: 45 95% 51%; /* Gold */
+    --primary-foreground: 30 50% 10%;
+    --secondary: 120 10% 20%; /* Dark, muted green */
+    --secondary-foreground: 120 20% 85%; /* Light green text */
+    --muted: 25 20% 20%;
+    --muted-foreground: 35 20% 65%;
+    --accent: 10 80% 60%; /* Rich red for dark mode */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 25 20% 20%;
-    --input: 25 20% 20%;
-    --ring: 51 100% 50%;
+    --border: 25 20% 25%;
+    --input: 25 20% 25%;
+    --ring: 45 95% 51%;
   }
 }
 
