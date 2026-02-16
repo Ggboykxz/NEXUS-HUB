@@ -12,6 +12,9 @@ export interface Artist {
   links: {
     personal?: string;
     amazon?: string;
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
   };
 }
 
@@ -60,7 +63,7 @@ export const artists: Artist[] = [
     bio: 'Jelani Adebayo is a visionary storyteller from Lagos, Nigeria, known for his epic fantasy series that weave Yoruba mythology into breathtaking visual narratives. With a background in fine arts and a passion for afrofuturism, his work has captivated audiences worldwide.',
     avatar: getImage('artist-1')!,
     portfolio: ['1', '3'],
-    links: { personal: '#', amazon: '#' },
+    links: { personal: '#', amazon: '#', twitter: '#', instagram: '#' },
   },
   {
     id: '2',
@@ -68,7 +71,7 @@ export const artists: Artist[] = [
     bio: 'From Dakar, Senegal, Amina Diallo is a celebrated artist whose work explores themes of identity, tradition, and modernity. Her sci-fi comics are praised for their intricate world-building and strong, relatable characters.',
     avatar: getImage('artist-2')!,
     portfolio: ['2', '4'],
-    links: { personal: '#', amazon: '#' },
+    links: { personal: '#', amazon: '#', facebook: '#' },
   },
    {
     id: '3',
@@ -76,7 +79,7 @@ export const artists: Artist[] = [
     bio: 'Based in Accra, Ghana, Kwame Osei is a master of mystery and suspense. His graphic novels are known for their gripping plots and atmospheric artwork, often set against the backdrop of bustling West African cities.',
     avatar: getImage('artist-3')!,
     portfolio: ['5', '6'],
-    links: { personal: '#' },
+    links: { personal: '#', twitter: '#', instagram: '#' },
   },
 ];
 
