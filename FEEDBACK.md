@@ -1,6 +1,6 @@
 # Journal des Modifications
 
-Ce document retrace l'ensemble des modifications et améliorations apportées au projet AfriStory Hub.
+Ce document retrace l'ensemble des modifications et améliorations apportées au projet NexusHub.
 
 ## Conception Initiale et Structuration
 

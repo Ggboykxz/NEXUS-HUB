@@ -191,10 +191,10 @@ export const products: Product[] = [
   },
   {
     id: 'prod-3',
-    name: 'AfriStory Hub Mug',
+    name: 'NexusHub Mug',
     price: 15.99,
     image: getImage('product-3')!,
-    description: 'Start your day with your favorite beverage in this custom-designed AfriStory Hub mug.'
+    description: 'Start your day with your favorite beverage in this custom-designed NexusHub mug.'
   },
 ];
 

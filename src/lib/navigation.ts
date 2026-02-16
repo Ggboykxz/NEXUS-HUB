@@ -1,4 +1,4 @@
-import { BookOpen, Crown, Home, MessageSquare, Store, Users } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users } from "lucide-react";
 
 export type NavLink = {
   href: string;
@@ -7,6 +7,7 @@ export type NavLink = {
 };
 
 export const navLinks: NavLink[] = [
+  { href: "/stories", label: "Parcourir", icon: BookOpen },
   { href: "/rankings", label: "Classements", icon: Crown },
   { href: "/artists", label: "Artistes", icon: Users },
   { href: "/forums", label: "Forums", icon: MessageSquare },

@@ -68,7 +68,7 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
+            <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
           </Link>
         </div>
 
@@ -134,7 +134,7 @@ export default function Header() {
                   <SheetContent side="left" className="pr-0 bg-background flex flex-col">
                     <div>
                         <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
-                            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
+                            <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
                         </Link>
                         <nav className="flex flex-col space-y-3 px-4">
                             {navLinks.map((link) => (
