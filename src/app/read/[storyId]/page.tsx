@@ -6,7 +6,7 @@ import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign } from 'lucide-react';
+import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign, MoreHorizontal, Trash2, Ban } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import type { CarouselApi } from '@/components/ui/carousel';
@@ -17,12 +17,19 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
+// Simulate logged-in user being artist '1'
+const LOGGED_IN_ARTIST_ID = '1';
 
-function CommentItem({ comment }: { comment: Comment }) {
+function CommentItem({ comment, storyAuthorId }: { comment: Comment, storyAuthorId: string }) {
     const { toast } = useToast();
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(comment.likes);
+
+    const isArtistAuthor = LOGGED_IN_ARTIST_ID === storyAuthorId;
+    // Artists can't moderate their own comments
+    const isCommentFromArtistAuthor = storyAuthorId === comment.authorId;
 
     const handleLike = () => {
         setLikeCount(liked ? likeCount - 1 : likeCount + 1);
@@ -36,6 +43,21 @@ function CommentItem({ comment }: { comment: Comment }) {
         });
     }
 
+    const handleDelete = () => {
+        toast({
+            title: "Commentaire supprimé",
+            description: "Le commentaire a été supprimé (simulation)."
+        });
+    };
+
+    const handleBlock = () => {
+        toast({
+            title: "Lecteur bloqué",
+            description: `${comment.authorName} a été bloqué et ne pourra plus commenter vos œuvres (simulation).`,
+            variant: "destructive"
+        });
+    };
+
     return (
         <div className="flex gap-4">
             <Avatar className="h-10 w-10 border-2 border-gray-700">
@@ -43,9 +65,30 @@ function CommentItem({ comment }: { comment: Comment }) {
                 <AvatarFallback>{comment.authorName.slice(0,2)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                    <p className="font-semibold text-white">{comment.authorName}</p>
-                    <p className="text-xs text-gray-400">{comment.timestamp}</p>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-baseline gap-2">
+                        <p className="font-semibold text-white">{comment.authorName}</p>
+                        <p className="text-xs text-gray-400">{comment.timestamp}</p>
+                    </div>
+                    {isArtistAuthor && !isCommentFromArtistAuthor && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-gray-400 hover:text-white">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-white">
+                                <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Supprimer le commentaire
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleBlock} className="text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
+                                    <Ban className="mr-2 h-4 w-4" />
+                                    Bloquer {comment.authorName}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
                 <p className="mt-1 text-gray-300 leading-relaxed">{comment.content}</p>
                 <div className="flex items-center gap-2 mt-2 text-sm text-gray-400">
@@ -62,7 +105,7 @@ function CommentItem({ comment }: { comment: Comment }) {
                 {comment.replies && comment.replies.length > 0 && (
                     <div className="mt-6 space-y-6 pl-6 border-l-2 border-gray-800">
                         {comment.replies.map(reply => (
-                            <CommentItem key={reply.id} comment={reply} />
+                            <CommentItem key={reply.id} comment={reply} storyAuthorId={storyAuthorId} />
                         ))}
                     </div>
                 )}
@@ -250,7 +293,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
         <div className="space-y-8">
           {chapterComments.map(comment => (
-            <CommentItem key={comment.id} comment={comment} />
+            <CommentItem key={comment.id} comment={comment} storyAuthorId={story.artistId} />
           ))}
         </div>
       </div>
