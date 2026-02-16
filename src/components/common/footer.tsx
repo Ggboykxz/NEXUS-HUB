@@ -29,6 +29,7 @@ export default function Footer() {
             <h4 className="font-bold mb-6 text-sm text-foreground">Communauté</h4>
             <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
               <li><Link href="/forums" className="hover:text-primary transition-colors">Forums</Link></li>
+              <li><Link href="/mentorship" className="hover:text-primary transition-colors">Mentorat</Link></li>
               <li><Link href="/submit" className="hover:text-primary transition-colors">Publier</Link></li>
               <li><Link href="/shop" className="hover:text-primary transition-colors">Boutique</Link></li>
             </ul>

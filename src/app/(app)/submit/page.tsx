@@ -57,6 +57,7 @@ export default function SubmitPage() {
                     <li><strong>Monétisation :</strong> Accès aux abonnements, dons, et partage de revenus.</li>
                     <li><strong>Visibilité internationale :</strong> Mise en avant sur la page d'accueil et dans nos collections.</li>
                     <li><strong>Badge certifié :</strong> Un badge de certification pour asseoir votre crédibilité.</li>
+                    <li><strong>Devenez Mentor :</strong> Partagez votre expertise et guidez la nouvelle génération d'artistes.</li>
                 </ul>
               </CardContent>
               <div className="p-6 pt-0">

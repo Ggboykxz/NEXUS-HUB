@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, School } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -29,6 +29,7 @@ export const navLinks: NavLink[] = [
     ]
   },
   { href: "/artists", label: "Artistes", icon: Users },
+  { href: "/mentorship", label: "Mentorat", icon: School },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
   { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { variant: 'green' } },
