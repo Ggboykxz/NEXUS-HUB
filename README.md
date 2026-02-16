@@ -14,6 +14,10 @@ Open [http://localhost:9002](http://localhost:9002) with your browser to see the
 
 You can start editing the main page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
 
+## Journal des Modifications
+
+Pour un suivi détaillé de toutes les modifications apportées au projet, veuillez consulter le fichier [FEEDBACK.md](./FEEDBACK.md).
+
 ## Tech Stack
 
 *   **Framework:** [Next.js](https://nextjs.org/) (with App Router)
