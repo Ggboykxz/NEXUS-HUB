@@ -32,6 +32,8 @@ export interface Story {
   subscriptions: number;
   chapters: number;
   updatedAt: string;
+  isPremium?: boolean;
+  price?: number; // Price in AfriCoins
 }
 
 export interface Product {
@@ -186,6 +188,8 @@ export const stories: Story[] = [
     subscriptions: 30000,
     chapters: 22,
     updatedAt: 'Il y a 3 jours',
+    isPremium: true,
+    price: 50,
   },
    {
     id: '5',
@@ -214,6 +218,8 @@ export const stories: Story[] = [
     subscriptions: 25000,
     chapters: 20,
     updatedAt: 'Il y a 1 mois',
+    isPremium: true,
+    price: 75,
   },
 ].map(story => ({
   ...story,

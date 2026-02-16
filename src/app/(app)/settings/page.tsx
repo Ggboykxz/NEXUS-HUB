@@ -2,12 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings } from 'lucide-react';
+import { Settings, CircleDollarSign } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
   return (
@@ -18,10 +19,11 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Sécurité</TabsTrigger>
+          <TabsTrigger value="africoins">AfriCoins</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile">
@@ -111,6 +113,55 @@ export default function SettingsPage() {
                 <Input id="confirm-password" type="password" />
               </div>
               <Button>Changer le mot de passe</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="africoins">
+          <Card>
+            <CardHeader>
+              <CardTitle>AfriCoins</CardTitle>
+              <CardDescription>
+                Achetez des AfriCoins pour débloquer des chapitres premium et soutenir vos créateurs préférés.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Votre Solde</Label>
+                  <p className="text-2xl font-bold flex items-center gap-2">
+                    <CircleDollarSign className="h-6 w-6 text-primary"/> 150
+                  </p>
+                </div>
+                <Button variant="outline">Historique d'achats</Button>
+              </div>
+              
+              <div className="space-y-4 pt-4">
+                <h3 className="font-semibold">Recharger vos AfriCoins</h3>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <Card className="flex flex-col items-center justify-center p-4 text-center">
+                    <p className="text-3xl font-bold flex items-center gap-2">
+                      <CircleDollarSign className="h-6 w-6 text-primary"/> 100
+                    </p>
+                    <Button className="mt-4 w-full">Acheter pour 1,99€</Button>
+                  </Card>
+                  <Card className="flex flex-col items-center justify-center p-4 text-center border-primary border-2 relative">
+                     <Badge className="absolute -top-3">Populaire</Badge>
+                     <p className="text-3xl font-bold flex items-center gap-2">
+                      <CircleDollarSign className="h-6 w-6 text-primary"/> 550
+                    </p>
+                    <p className="text-sm text-primary font-semibold">+10% Bonus</p>
+                    <Button className="mt-4 w-full">Acheter pour 9,99€</Button>
+                  </Card>
+                  <Card className="flex flex-col items-center justify-center p-4 text-center">
+                     <p className="text-3xl font-bold flex items-center gap-2">
+                      <CircleDollarSign className="h-6 w-6 text-primary"/> 1200
+                    </p>
+                    <p className="text-sm text-primary font-semibold">+20% Bonus</p>
+                    <Button className="mt-4 w-full">Acheter pour 19,99€</Button>
+                  </Card>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

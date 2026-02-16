@@ -2,6 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { cn } from '@/lib/utils';
+import { Crown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface StoryCardProps {
   story: Story;
@@ -21,6 +23,12 @@ export function StoryCard({ story, className }: StoryCardProps) {
             data-ai-hint={story.coverImage.imageHint}
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
+           {story.isPremium && (
+            <Badge variant="default" className="absolute top-2 right-2 z-10 gap-1 pl-2 pr-2.5 bg-primary/90 text-white backdrop-blur-sm">
+              <Crown className="h-3 w-3" />
+              Premium
+            </Badge>
+          )}
         </div>
         <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
       </Link>

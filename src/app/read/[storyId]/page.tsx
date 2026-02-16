@@ -6,7 +6,7 @@ import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import type { CarouselApi } from '@/components/ui/carousel';
@@ -15,6 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from "@/components/ui/toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 function CommentItem({ comment }: { comment: Comment }) {
     const { toast } = useToast();
@@ -77,6 +80,9 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const [count, setCount] = useState(0);
   const { toast } = useToast();
 
+  const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
+  const [userCoins, setUserCoins] = useState(150); // Simulated user balance
+
   useEffect(() => {
     if (!api) {
       return;
@@ -103,9 +109,26 @@ export default function ReadPage(props: { params: { storyId: string } }) {
       });
   }
 
-  return (
-    <div className="relative">
-      <header className="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700">
+  const handleUnlock = () => {
+    if (userCoins >= (story.price || 0)) {
+      setUserCoins(userCoins - (story.price || 0)); // Simulate deduction
+      setIsUnlocked(true);
+      toast({
+        title: "Chapitre débloqué !",
+        description: `Vous pouvez maintenant lire ce chapitre. Bonnen lecture !`,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Solde insuffisant",
+        description: `Vous n'avez pas assez d'AfriCoins pour débloquer ce chapitre.`,
+        action: <ToastAction altText="Acheter" onClick={() => router.push('/settings?tab=africoins')}>Acheter des coins</ToastAction>,
+      });
+    }
+  };
+
+  const headerElement = (
+    <header className="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-lg border-b border-gray-700">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Button variant="ghost" onClick={() => router.back()} className="text-white hover:bg-gray-800 hover:text-white">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -117,8 +140,45 @@ export default function ReadPage(props: { params: { storyId: string } }) {
           </div>
           <div className="w-24"></div> {/* Spacer */}
         </div>
-      </header>
+    </header>
+  );
 
+  if (!isUnlocked) {
+    return (
+      <div className="relative">
+        {headerElement}
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-black text-white px-4">
+          <Card className="bg-gray-900/80 border-gray-700 text-center max-w-md p-8">
+            <CardHeader>
+              <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 border-2 border-primary/20">
+                <Lock className="h-10 w-10 text-primary" />
+              </div>
+              <CardTitle className="text-3xl text-white">Chapitre Premium</CardTitle>
+              <CardDescription className="text-gray-400 text-base">
+                Ce chapitre est un contenu exclusif. Débloquez-le pour continuer votre lecture.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button size="lg" className="w-full text-lg" onClick={handleUnlock}>
+                <CircleDollarSign className="mr-2 h-6 w-6"/>
+                Débloquer pour {story.price} coins
+              </Button>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 pt-6">
+              <p className="text-sm text-gray-500">Votre solde : {userCoins} coins</p>
+              <Button variant="link" onClick={() => router.push('/settings?tab=africoins')}>
+                Acheter plus de coins
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {headerElement}
       <Tabs defaultValue="scroll" className="w-full">
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
           <TabsList>

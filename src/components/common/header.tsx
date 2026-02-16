@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -201,6 +201,10 @@ export default function Header() {
                
                {isLoggedIn ? (
                  <>
+                   <Link href="/settings?tab=africoins" className="flex items-center gap-1.5 border-r pr-3 mr-1 hover:bg-muted p-2 rounded-md transition-colors">
+                      <CircleDollarSign className="h-5 w-5 text-primary" />
+                      <span className="font-semibold text-sm">150</span>
+                    </Link>
                    <Popover>
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" className="relative text-foreground/90">
