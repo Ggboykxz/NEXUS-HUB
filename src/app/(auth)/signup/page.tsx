@@ -44,17 +44,18 @@ export default function SignupPage() {
     // Dispatch custom event to update header immediately
     window.dispatchEvent(new Event('loginStateChange'));
 
-    toast({
-      title: "Compte créé !",
-      description: `Bienvenue, ${values.name} ! Votre profil public est maintenant disponible.`,
-    });
-
-    // Simulate redirection after signup
     if (values.accountType === 'artist') {
-      // For artists, we could redirect to a profile setup page
-      // For now, redirecting to the main artist page as a simulation
-      router.push('/artists');
+      toast({
+        title: "Compte artiste créé !",
+        description: `Bienvenue, ${values.name} ! Vous allez être redirigé pour compléter votre profil.`,
+      });
+      // For artists, redirect to profile setup page
+      router.push('/settings');
     } else {
+      toast({
+        title: "Compte créé !",
+        description: `Bienvenue, ${values.name} ! Votre profil public est maintenant disponible.`,
+      });
       // For readers, redirect to their new public profile
       // For this simulation, we'll use a static ID.
       router.push('/profile/reader-1');
