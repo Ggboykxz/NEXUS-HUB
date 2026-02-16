@@ -1,4 +1,4 @@
-import { forumThreads } from '@/lib/data';
+import { forumThreads, artists } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,22 +39,40 @@ export default function ForumsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {forumThreads.map((thread) => (
-                <TableRow key={thread.id}>
-                  <TableCell>
-                    <Link href={`/forums/${thread.id}`} className="font-semibold hover:text-primary transition-colors">
-                      {thread.title}
-                    </Link>
-                    <p className="text-sm text-muted-foreground">par {thread.author}</p>
-                  </TableCell>
-                  <TableCell className="text-center">{thread.replies}</TableCell>
-                  <TableCell className="text-center">{thread.views}</TableCell>
-                  <TableCell>
-                    <p className="text-sm">{thread.lastPost.author}</p>
-                    <p className="text-xs text-muted-foreground">{thread.lastPost.time}</p>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {forumThreads.map((thread) => {
+                const authorIsArtist = artists.find(a => a.name === thread.author);
+                const lastPostAuthorIsArtist = artists.find(a => a.name === thread.lastPost.author);
+                
+                return (
+                  <TableRow key={thread.id}>
+                    <TableCell>
+                      <Link href={`/forums/${thread.id}`} className="font-semibold hover:text-primary transition-colors">
+                        {thread.title}
+                      </Link>
+                      <p className="text-sm text-muted-foreground">
+                        par{' '}
+                        {authorIsArtist ? (
+                          <Link href={`/artists/${authorIsArtist.id}`} className="hover:text-primary transition-colors">{thread.author}</Link>
+                        ) : (
+                          thread.author
+                        )}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">{thread.replies}</TableCell>
+                    <TableCell className="text-center">{thread.views}</TableCell>
+                    <TableCell>
+                      <p className="text-sm">
+                        {lastPostAuthorIsArtist ? (
+                          <Link href={`/artists/${lastPostAuthorIsArtist.id}`} className="hover:text-primary transition-colors">{thread.lastPost.author}</Link>
+                        ) : (
+                          thread.lastPost.author
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{thread.lastPost.time}</p>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

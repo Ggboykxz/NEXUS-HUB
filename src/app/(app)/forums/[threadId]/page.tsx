@@ -58,7 +58,13 @@ export default function ThreadPage({ params }: { params: { threadId: string } })
                   <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{post.author}</p>
+                  {authorInfo ? (
+                    <Link href={`/artists/${authorInfo.id}`}>
+                      <p className="font-semibold hover:text-primary transition-colors">{post.author}</p>
+                    </Link>
+                  ) : (
+                    <p className="font-semibold">{post.author}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">{post.timestamp}</p>
                 </div>
               </CardHeader>
