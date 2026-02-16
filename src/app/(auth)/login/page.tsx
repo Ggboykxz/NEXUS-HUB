@@ -31,6 +31,12 @@ export default function LoginPage() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Simulate user login
     console.log(values);
+    
+    // Set login state
+    localStorage.setItem('isLoggedIn', 'true');
+    // Dispatch custom event to update header immediately
+    window.dispatchEvent(new Event('loginStateChange'));
+
     toast({
       title: "Connexion réussie !",
       description: "Bienvenue à nouveau !",

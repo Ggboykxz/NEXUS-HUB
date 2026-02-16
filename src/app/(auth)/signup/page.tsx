@@ -38,6 +38,12 @@ export default function SignupPage() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Simulate user creation
     console.log(values);
+
+    // Set login state
+    localStorage.setItem('isLoggedIn', 'true');
+    // Dispatch custom event to update header immediately
+    window.dispatchEvent(new Event('loginStateChange'));
+
     toast({
       title: "Compte créé !",
       description: `Bienvenue, ${values.name} ! Votre profil public est maintenant disponible.`,

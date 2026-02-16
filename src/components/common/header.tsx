@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,33 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   
-  // NOTE: This is a simulation. In a real app, this would come from an auth context.
-  const isLoggedIn = true; 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
+      setIsLoggedIn(loggedInStatus);
+    };
+
+    // This check is for client-side rendering only.
+    if (typeof window !== 'undefined') {
+        handleStorageChange();
+    }
+
+    // Listen for changes (e.g., from other tabs or our custom event)
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('loginStateChange', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('loginStateChange', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -41,6 +62,13 @@ export default function Header() {
     };
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    // Dispatch custom event to update header immediately in the same tab
+    window.dispatchEvent(new Event('loginStateChange')); 
+    router.push('/');
+    router.refresh();
+  };
 
   if (isSearchOpen && isMobile) {
     return (
@@ -166,7 +194,7 @@ export default function Header() {
                         <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
                         <DropdownMenuItem asChild><Link href="#"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                  </>
@@ -223,10 +251,8 @@ export default function Header() {
                                     <UserCircle /> Mon Profil
                                 </Link>
                              </Button>
-                             <Button asChild variant="ghost">
-                                <Link href="/" className="flex items-center gap-2 justify-center">
-                                    <LogOut /> Se déconnecter
-                                </Link>
+                             <Button variant="ghost" onClick={handleLogout} className="w-full">
+                                <LogOut /> Se déconnecter
                             </Button>
                           </>
                        ) : (
