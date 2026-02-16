@@ -8,7 +8,7 @@ export default function SubmitPage() {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold font-display mb-4">Partagez Votre Talent</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          AfriStory est votre scène. Que vous soyez un artiste établi ou un créateur émergent, nous avons l'espace parfait pour votre histoire.
+          NexusHub est votre scène. Que vous soyez un artiste établi ou un créateur émergent, nous avons l'espace parfait pour votre histoire.
         </p>
       </div>
 
@@ -16,12 +16,12 @@ export default function SubmitPage() {
         <Card className="flex flex-col border-primary/50 border-2 shadow-lg">
           <CardHeader className="text-center">
             <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-            <CardTitle className="text-2xl">AfriStory Pro</CardTitle>
+            <CardTitle className="text-2xl">NexusHub Pro</CardTitle>
             <CardDescription>Pour les artistes et œuvres aboutis</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
             <p className="text-center text-muted-foreground mb-6">
-              Rejoignez notre sélection d'artistes certifiés et donnez à vos œuvres la visibilité qu'elles méritent. AfriStory Pro est conçu pour les créateurs qui cherchent à professionnaliser leur art et à atteindre un public plus large.
+              Rejoignez notre sélection d'artistes certifiés et donnez à vos œuvres la visibilité qu'elles méritent. NexusHub Pro est conçu pour les créateurs qui cherchent à professionnaliser leur art et à atteindre un public plus large.
             </p>
             <ul className="list-disc list-inside space-y-2 text-sm text-foreground/80">
                 <li><strong>Visibilité Premium :</strong> Mise en avant sur la page d'accueil et dans nos collections.</li>
@@ -31,29 +31,29 @@ export default function SubmitPage() {
             </ul>
           </CardContent>
           <div className="p-6 pt-0">
-            <Button className="w-full" size="lg" disabled>Candidater à AfriStory Pro (bientôt)</Button>
+            <Button className="w-full" size="lg" disabled>Candidater à NexusHub Pro (bientôt)</Button>
           </div>
         </Card>
 
         <Card className="flex flex-col">
           <CardHeader className="text-center">
             <PenSquare className="w-12 h-12 text-accent mx-auto mb-4" />
-            <CardTitle className="text-2xl">AfriStory Draft</CardTitle>
+            <CardTitle className="text-2xl">NexusHub Draft</CardTitle>
             <CardDescription>Le laboratoire de la créativité</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
             <p className="text-center text-muted-foreground mb-6">
-                Lancez-vous sans attendre ! AfriStory Draft est un terrain de jeu ouvert à tous pour partager des projets en cours, des idées nouvelles et recevoir des retours instantanés de la part d'une communauté passionnée.
+                Lancez-vous sans attendre ! NexusHub Draft est un terrain de jeu ouvert à tous pour partager des projets en cours, des idées nouvelles et recevoir des retours instantanés de la part d'une communauté passionnée.
             </p>
             <ul className="list-disc list-inside space-y-2 text-sm text-foreground/80">
                 <li><strong>Publication Libre :</strong> Mettez en ligne vos chapitres et illustrations sans validation.</li>
                 <li><strong>Interaction Directe :</strong> Échangez avec vos lecteurs et construisez votre audience.</li>
                 <li><strong>Flexibilité Totale :</strong> Idéal pour les webtoons, les strips, et les expérimentations.</li>
-                <li><strong>Détection de Talents :</strong> Les œuvres populaires peuvent être repérées pour AfriStory Pro.</li>
+                <li><strong>Détection de Talents :</strong> Les œuvres populaires peuvent être repérées pour NexusHub Pro.</li>
             </ul>
           </CardContent>
            <div className="p-6 pt-0">
-            <Button className="w-full" size="lg" variant="secondary">Publier sur AfriStory Draft</Button>
+            <Button className="w-full" size="lg" variant="secondary">Publier sur NexusHub Draft</Button>
           </div>
         </Card>
       </div>
