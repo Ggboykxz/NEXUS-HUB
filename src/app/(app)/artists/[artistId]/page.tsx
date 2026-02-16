@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Badge } from '@/components/ui/badge';
 
 export default function ArtistProfilePage(props: { params: { artistId: string } }) {
   const params = use(props.params);
@@ -62,7 +63,15 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
           </Avatar>
           
           <div className="flex flex-col items-center md:items-start mt-4 gap-y-4">
-            <h1 className="text-4xl font-bold">{artist.name}</h1>
+            <div className="flex items-center gap-x-3">
+              <h1 className="text-4xl font-bold">{artist.name}</h1>
+              {artist.isMentor && (
+                <Badge variant="secondary" className="flex items-center gap-1.5 whitespace-nowrap text-sm h-fit py-1 px-2.5">
+                    <Award className="h-4 w-4" />
+                    Mentor
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={handleSubscribeClick}

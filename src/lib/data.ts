@@ -16,6 +16,7 @@ export interface Artist {
     instagram?: string;
     facebook?: string;
   };
+  isMentor?: boolean;
 }
 
 export interface Story {
@@ -86,6 +87,7 @@ export const artists: Artist[] = [
     avatar: getImage('artist-1')!,
     portfolio: ['1', '3'],
     links: { personal: '#', amazon: '#', twitter: '#', instagram: '#' },
+    isMentor: true,
   },
   {
     id: '2',
@@ -102,6 +104,7 @@ export const artists: Artist[] = [
     avatar: getImage('artist-3')!,
     portfolio: ['5', '6'],
     links: { personal: '#', twitter: '#', instagram: '#' },
+    isMentor: true,
   },
 ];
 
