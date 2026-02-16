@@ -7,14 +7,15 @@ import { Menu, Search, Bell, User } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-sm">
-      <div className="container flex h-20 max-w-7xl items-center justify-between">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-transparent dark:bg-zinc-900/95">
+      <div className="container flex h-20 max-w-7xl items-center justify-between px-6 lg:px-12">
+        {/* Logo */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
             <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
@@ -37,40 +38,46 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Mobile Menu */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="pr-0 bg-background">
-            <Link href="/" className="flex items-center space-x-2 mb-6">
-                <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
-            </Link>
-            <div className="flex flex-col space-y-3">
-                {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-lg font-medium">
-                    {link.label}
+        {/* Right side: Icons for desktop, menu for mobile */}
+        <div className="flex items-center gap-5">
+            {/* Desktop Icons */}
+            <div className="hidden items-center space-x-5 md:flex">
+               <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+                  <Search className="h-5 w-5" />
+               </Button>
+                <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+                    <Bell className="h-5 w-5" />
+                </Button>
+                <Link href="/login">
+                    <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-offset-2 ring-primary/20">
+                        <AvatarFallback><User /></AvatarFallback>
+                    </Avatar>
                 </Link>
-                ))}
             </div>
-          </SheetContent>
-        </Sheet>
-        
-        <div className="hidden md:flex flex-1 items-center justify-end space-x-5">
-           <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
-              <Search className="h-5 w-5" />
-           </Button>
-            <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
-                <Bell className="h-5 w-5" />
-            </Button>
-            <Link href="/login">
-                <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-offset-2 ring-primary/20">
-                    <AvatarFallback><User /></AvatarFallback>
-                </Avatar>
-            </Link>
+            
+            {/* Mobile Menu */}
+            <div className="md:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Toggle Menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="pr-0 bg-background">
+                    <Link href="/" className="flex items-center space-x-2 mb-6">
+                        <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
+                    </Link>
+                    <div className="flex flex-col space-y-3">
+                        {navLinks.map((link) => (
+                        <Link key={link.href} href={link.href} className="text-lg font-medium">
+                            {link.label}
+                        </Link>
+                        ))}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+            </div>
         </div>
       </div>
     </header>
