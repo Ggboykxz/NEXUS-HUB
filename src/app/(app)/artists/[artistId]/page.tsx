@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { artists, stories as allStories } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -11,7 +11,8 @@ import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export default function ArtistProfilePage({ params }: { params: { artistId: string } }) {
+export default function ArtistProfilePage(props: { params: { artistId: string } }) {
+  const params = use(props.params);
   const { toast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
 

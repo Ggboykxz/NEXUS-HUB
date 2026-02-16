@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { stories, artists, comicPages } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -13,7 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export default function StoryDetailPage({ params }: { params: { storyId: string } }) {
+export default function StoryDetailPage(props: { params: { storyId: string } }) {
+  const params = use(props.params);
   const { toast } = useToast();
   const [isFavorite, setIsFavorite] = useState(false);
 

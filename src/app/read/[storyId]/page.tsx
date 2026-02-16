@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { stories, comicPages, comments as allComments } from '@/lib/data';
 import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
@@ -68,7 +68,8 @@ function CommentItem({ comment }: { comment: Comment }) {
     )
 }
 
-export default function ReadPage({ params }: { params: { storyId: string } }) {
+export default function ReadPage(props: { params: { storyId: string } }) {
+  const params = use(props.params);
   const story = stories.find((s) => s.id === params.storyId);
   const router = useRouter();
   const [api, setApi] = useState<CarouselApi>();
