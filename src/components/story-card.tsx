@@ -27,6 +27,8 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     }
   }, [story.updatedAt, showUpdateDate]);
 
+  const chapterCount = story.chapters.length;
+
   return (
     <Link href={`/stories/${story.id}`} className={cn("group block", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-5 shadow-sm transition-all duration-300 group-hover:shadow-xl">
@@ -53,7 +55,8 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         </div>
       </div>
       <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
-      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-3 font-light transition-colors fade-in">par {story.artistName}</p>
+      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">par {story.artistName}</p>
+      <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
       {showUpdateDate ? (
         <div className="flex items-center justify-between text-xs">
             <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
