@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, Bell, User } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '../ui/avatar';
 
 export default function Header() {
   const pathname = usePathname();
@@ -39,24 +38,28 @@ export default function Header() {
         </nav>
 
         {/* Right side: Icons for desktop, menu for mobile */}
-        <div className="flex items-center gap-5">
-            {/* Desktop Icons */}
-            <div className="hidden items-center space-x-5 md:flex">
+        <div className="flex items-center gap-2">
+            {/* Desktop Icons & Buttons */}
+            <div className="hidden items-center gap-2 md:flex">
                <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
                   <Search className="h-5 w-5" />
                </Button>
-                <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
-                    <Bell className="h-5 w-5" />
-                </Button>
-                <Link href="/login">
-                    <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-offset-2 ring-primary/20">
-                        <AvatarFallback><User /></AvatarFallback>
-                    </Avatar>
-                </Link>
+               <Button asChild variant="ghost">
+                 <Link href="/login">Se connecter</Link>
+               </Button>
+               <Button asChild variant="outline">
+                 <Link href="/signup">S'inscrire</Link>
+               </Button>
+               <Button asChild>
+                 <Link href="/submit">Publier</Link>
+               </Button>
             </div>
             
             {/* Mobile Menu */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center">
+                <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+                  <Search className="h-5 w-5" />
+                </Button>
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -64,16 +67,29 @@ export default function Header() {
                       <span className="sr-only">Toggle Menu</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="pr-0 bg-background">
-                    <Link href="/" className="flex items-center space-x-2 mb-6">
-                        <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
-                    </Link>
-                    <div className="flex flex-col space-y-3">
-                        {navLinks.map((link) => (
-                        <Link key={link.href} href={link.href} className="text-lg font-medium">
-                            {link.label}
+                  <SheetContent side="left" className="pr-0 bg-background flex flex-col">
+                    <div>
+                        <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
+                            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
                         </Link>
-                        ))}
+                        <nav className="flex flex-col space-y-3 px-4">
+                            {navLinks.map((link) => (
+                            <Link key={link.href} href={link.href} className="text-lg font-medium">
+                                {link.label}
+                            </Link>
+                            ))}
+                        </nav>
+                    </div>
+                    <div className="mt-auto flex flex-col gap-2 border-t p-4">
+                       <Button asChild>
+                         <Link href="/submit">Publier</Link>
+                       </Button>
+                       <Button asChild variant="outline">
+                         <Link href="/signup">S'inscrire</Link>
+                       </Button>
+                       <Button asChild variant="ghost">
+                         <Link href="/login">Se connecter</Link>
+                       </Button>
                     </div>
                   </SheetContent>
                 </Sheet>
