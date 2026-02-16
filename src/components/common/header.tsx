@@ -192,7 +192,7 @@ export default function Header() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild><Link href="/profile/reader-1"><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="#"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
                       </DropdownMenuContent>
@@ -251,8 +251,13 @@ export default function Header() {
                                     <UserCircle /> Mon Profil
                                 </Link>
                              </Button>
-                             <Button variant="ghost" onClick={handleLogout} className="w-full">
-                                <LogOut /> Se déconnecter
+                             <Button asChild variant="ghost">
+                                <Link href="/settings" className="flex items-center gap-2 justify-center">
+                                    <Settings /> Paramètres
+                                </Link>
+                             </Button>
+                             <Button variant="outline" onClick={handleLogout} className="w-full">
+                                <LogOut className="mr-2"/> Se déconnecter
                             </Button>
                           </>
                        ) : (
