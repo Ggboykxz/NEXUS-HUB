@@ -22,10 +22,10 @@ export function StoryCard({ story, className }: StoryCardProps) {
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
         </div>
-        <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors truncate">{story.title}</h3>
+        <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
       </Link>
       <Link href={`/artists/${story.artistId}`} className="cursor-pointer">
-        <p className="text-sm text-foreground/60 dark:text-stone-400 mb-3 font-light hover:text-primary transition-colors">By {story.artistName}</p>
+        <p className="text-sm text-foreground/60 dark:text-stone-400 mb-3 font-light hover:text-primary transition-colors fade-in">By {story.artistName}</p>
       </Link>
       <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
     </div>
