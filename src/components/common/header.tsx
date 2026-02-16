@@ -3,17 +3,47 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search } from 'lucide-react';
+import { Menu, Search, ArrowLeft } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 
 export default function Header() {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+
+  if (isSearchOpen && isMobile) {
+    return (
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <div className="container flex h-20 max-w-7xl items-center justify-between px-6 lg:px-12">
+            <div className="flex w-full items-center gap-2 animate-in fade-in-0">
+                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Input
+                    type="search"
+                    placeholder="Rechercher..."
+                    className="h-10 w-full pr-10"
+                    autoFocus
+                />
+            </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
@@ -74,7 +104,7 @@ export default function Header() {
             
             {/* Mobile Menu */}
             <div className="md:hidden flex items-center">
-                <Button variant="ghost" size="icon" className="text-foreground/90">
+                <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                   <Search className="h-5 w-5" />
                 </Button>
                 <Sheet>
