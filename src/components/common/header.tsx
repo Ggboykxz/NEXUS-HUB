@@ -7,7 +7,7 @@ import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDow
 import { navLinks } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
@@ -30,6 +30,22 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownTimers = useRef<{ [key: string]: any }>({}).current;
+
+  const handleDropdownEnter = (label: string) => {
+      if (dropdownTimers[label]) {
+          clearTimeout(dropdownTimers[label]);
+      }
+      setOpenDropdown(label);
+  };
+
+  const handleDropdownLeave = (label: string) => {
+      dropdownTimers[label] = setTimeout(() => {
+          setOpenDropdown(null);
+      }, 200);
+  };
 
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
 
@@ -121,31 +137,42 @@ export default function Header() {
         <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-            if (link.label === 'Parcourir') {
+            if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
               return (
-                <DropdownMenu key={link.href}>
-                  <DropdownMenuTrigger
-                    className={cn(
-                      'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
-                      '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
-                      isActive ? 'text-foreground dark:text-white font-semibold' : ''
-                    )}
-                  >
-                    <span>{link.label}</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem asChild>
-                      <Link href="/stories">Toutes les œuvres</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Genres</DropdownMenuLabel>
-                    {uniqueGenres.map((genre) => (
-                      <DropdownMenuItem key={genre} asChild>
-                        <Link href={`/stories?genre=${genre}`}>{genre}</Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
+                <DropdownMenu key={link.href} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
+                  <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className="flex items-center">
+                    <DropdownMenuTrigger
+                      className={cn(
+                        'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
+                        '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
+                        isActive ? 'text-foreground dark:text-white font-semibold' : ''
+                      )}
+                    >
+                      <span>{link.label}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {link.isGenreDropdown && (
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link href="/stories">Toutes les œuvres</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel>Genres</DropdownMenuLabel>
+                          {uniqueGenres.map((genre) => (
+                            <DropdownMenuItem key={genre} asChild>
+                              <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </>
+                      )}
+                      {link.subLinks && link.subLinks.map((subLink) => (
+                          <DropdownMenuItem key={subLink.href} asChild>
+                            <Link href={subLink.href}>{subLink.label}</Link>
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                  </div>
                 </DropdownMenu>
               );
             }
@@ -279,21 +306,30 @@ export default function Header() {
                         </Link>
                         <nav className="flex flex-col space-y-2 px-4">
                             {navLinks.map((link) => {
-                              if (link.label === 'Parcourir') {
+                              if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
                                 return (
                                   <Accordion type="single" collapsible key={link.href} className="w-full">
-                                    <AccordionItem value="browse" className="border-b-0">
+                                    <AccordionItem value={link.label} className="border-b-0">
                                       <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
                                         <span>{link.label}</span>
                                       </AccordionTrigger>
                                       <AccordionContent className="pt-2 pl-4">
                                         <div className="flex flex-col space-y-2">
-                                            <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                Toutes les œuvres
-                                            </Link>
-                                            {uniqueGenres.map(genre => (
-                                                <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                    {genre}
+                                            {link.isGenreDropdown && (
+                                                <>
+                                                    <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                        Toutes les œuvres
+                                                    </Link>
+                                                    {uniqueGenres.map(genre => (
+                                                        <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                            {genre}
+                                                        </Link>
+                                                    ))}
+                                                </>
+                                            )}
+                                            {link.subLinks && link.subLinks.map((subLink) => (
+                                                <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                    {subLink.label}
                                                 </Link>
                                             ))}
                                         </div>

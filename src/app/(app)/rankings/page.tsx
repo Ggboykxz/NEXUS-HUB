@@ -1,12 +1,18 @@
+'use client';
+
 import { stories } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Crown, Eye, Heart, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'next/navigation';
 
 export default function RankingsPage() {
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'popular';
+  
   const popular = [...stories].sort((a, b) => b.views - a.views);
   const trending = [...stories].sort((a, b) => b.likes - a.likes);
   const newest = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -19,7 +25,7 @@ export default function RankingsPage() {
       </div>
       <p className="text-lg text-muted-foreground mb-8">Découvrez les œuvres qui captivent notre communauté.</p>
 
-      <Tabs defaultValue="popular" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
           <TabsTrigger value="popular">Populaires</TabsTrigger>
           <TabsTrigger value="trending">Tendance</TabsTrigger>
