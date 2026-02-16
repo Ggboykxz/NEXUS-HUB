@@ -5,7 +5,7 @@ import { stories, artists, type Chapter } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { PlusCircle, ArrowLeft, CalendarIcon, UploadCloud, FilePen, Trash2, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, ArrowLeft, CalendarIcon, UploadCloud, FilePen, Trash2, MoreHorizontal, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -24,6 +24,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function ManageStoryPage({ params }: { params: { storyId: string } }) {
@@ -86,6 +88,96 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
         </CardHeader>
       </Card>
       
+      <div className="mt-12">
+        <Card>
+          <CardHeader>
+              <div className="flex items-center gap-4">
+                    <Users className="h-6 w-6 text-primary" />
+                    <CardTitle>Équipe créative</CardTitle>
+              </div>
+              <CardDescription>Gérez les collaborateurs qui travaillent sur cette œuvre.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="space-y-4">
+                  {artist && (
+                      <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                              <Avatar>
+                                  <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                                  <AvatarFallback>{artist.name.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="font-semibold">{artist.name}</p>
+                                  <p className="text-sm text-muted-foreground">Auteur principal</p>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  {story.collaborators && story.collaborators.map(collab => (
+                        <div key={collab.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                              <Avatar>
+                                  <AvatarImage src={collab.avatar.imageUrl} alt={collab.name} data-ai-hint={collab.avatar.imageHint} />
+                                  <AvatarFallback>{collab.name.slice(0, 2)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="font-semibold">{collab.name}</p>
+                                  <p className="text-sm text-muted-foreground">{collab.role}</p>
+                              </div>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => toast({ title: "Collaborateur retiré (Simulation)" })}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                      </div>
+                  ))}
+              </div>
+          </CardContent>
+          <CardFooter className="border-t pt-6">
+                <Dialog>
+                  <DialogTrigger asChild>
+                      <Button variant="outline">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Ajouter un collaborateur
+                      </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                          <DialogTitle>Inviter un collaborateur</DialogTitle>
+                          <DialogDescription>
+                              Entrez l'email du membre et assignez-lui un rôle. Il recevra une invitation à rejoindre le projet.
+                          </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="email">Email du membre</Label>
+                              <Input id="email" type="email" placeholder="membre@example.com" />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="role">Rôle</Label>
+                              <Select>
+                                  <SelectTrigger id="role">
+                                      <SelectValue placeholder="Sélectionner un rôle" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      <SelectItem value="scenariste">Scénariste</SelectItem>
+                                      <SelectItem value="coloriste">Coloriste</SelectItem>
+                                      <SelectItem value="dessinateur">Dessinateur</SelectItem>
+                                      <SelectItem value="illustrateur">Illustrateur</SelectItem>
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                      </div>
+                      <DialogFooter>
+                          <Button type="submit" onClick={() => toast({ title: "Invitation envoyée (Simulation)" })}>Envoyer l'invitation</Button>
+                      </DialogFooter>
+                  </DialogContent>
+              </Dialog>
+          </CardFooter>
+      </Card>
+    </div>
+
+
       <div className="mt-12">
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold font-display">Gestion des chapitres</h2>

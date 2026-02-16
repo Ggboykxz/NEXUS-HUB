@@ -27,6 +27,13 @@ export interface Chapter {
   pageCount: number;
 }
 
+export interface Collaborator {
+  id: string;
+  name: string;
+  role: 'Scénariste' | 'Coloriste' | 'Dessinateur' | 'Illustrateur';
+  avatar: ImagePlaceholder;
+}
+
 export interface Story {
   id: string;
   title: string;
@@ -43,6 +50,7 @@ export interface Story {
   updatedAt: string;
   isPremium?: boolean;
   price?: number; // Price in AfriCoins
+  collaborators?: Collaborator[];
 }
 
 export interface Product {
@@ -108,7 +116,7 @@ export const artists: Artist[] = [
    {
     id: '3',
     name: 'Kwame Osei',
-    bio: 'Basé à Accra, au Ghana, Kwame Osei est un maître du mystère et du suspense. Ses romans graphiques sont connus pour leurs intrigues captivantes et leurs illustrations atmosphériques, souvent sur fond de villes animées d\'Afrique de l\'Ouest.',
+    bio: 'Basé à Accra, au Ghana, Kwame Osei est un maître du mystère et du suspense. Ses romans graphiques sont connus pour leurs intrigues captivantes et leurs illustrations atmosphériques, often sur fond de villes animées d\'Afrique de l\'Ouest.',
     avatar: getImage('artist-3')!,
     portfolio: ['5', '6'],
     links: { personal: '#', twitter: '#', instagram: '#' },
@@ -161,6 +169,14 @@ export const stories: Story[] = [
         { id: '1-3', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23 },
     ],
     updatedAt: 'Il y a 2 jours',
+    collaborators: [
+      {
+        id: '2',
+        name: 'Amina Diallo',
+        role: 'Scénariste',
+        avatar: getImage('artist-2')!,
+      }
+    ],
   },
   {
     id: '2',
@@ -197,6 +213,20 @@ export const stories: Story[] = [
         { id: '3-4', title: 'Le Retour', releaseDate: '2024-04-15', status: 'Brouillon', pageCount: 0 },
     ],
     updatedAt: 'Il y a 1 semaine',
+    collaborators: [
+        {
+            id: '2',
+            name: 'Amina Diallo',
+            role: 'Coloriste',
+            avatar: getImage('artist-2')!,
+        },
+        {
+            id: '3',
+            name: 'Kwame Osei',
+            role: 'Scénariste',
+            avatar: getImage('artist-3')!,
+        }
+    ],
   },
   {
     id: '4',

@@ -67,6 +67,26 @@ export default function StoryDetailPage(props: { params: { storyId: string } }) 
                 </Link>
             )}
 
+            {story.collaborators && story.collaborators.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-base font-semibold mb-3 text-foreground/90">Autres contributeurs</h3>
+                <div className="flex flex-wrap gap-x-6 gap-y-4">
+                  {story.collaborators.map(collab => (
+                    <Link key={collab.id} href={`/artists/${collab.id}`} className="flex items-center gap-3 group w-fit">
+                      <Avatar className="h-10 w-10 border-2 border-background ring-1 ring-primary/50">
+                        <AvatarImage src={collab.avatar.imageUrl} alt={collab.name} data-ai-hint={collab.avatar.imageHint} />
+                        <AvatarFallback>{collab.name.slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-semibold group-hover:text-primary transition-colors">{collab.name}</p>
+                        <p className="text-xs text-muted-foreground">{collab.role}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="text-lg text-foreground/80 leading-relaxed mb-6">
                 {story.description}
             </p>
