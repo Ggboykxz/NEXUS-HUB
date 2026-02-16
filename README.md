@@ -1,6 +1,6 @@
 # AfriStory Hub
 
-This is a Next.js project bootstrapped with Firebase Studio. It's a platform for showcasing African visual storytelling, including comics, webtoons, and graphic novels.
+AfriStory est une plateforme panafricaine de lecture en ligne et de mise en valeur des artistes graphiques et narratifs (dessinateurs, scénaristes, coloristes, illustrateurs, auteurs BD, webtoonistes...). L’objectif est de devenir le hub créatif africain, un lieu où professionnels et amateurs peuvent publier, lire, échanger et vivre de leur art.
 
 ## Getting Started
 
@@ -40,6 +40,27 @@ You can start editing the main page by modifying `src/app/page.tsx`. The page au
     *   `utils.ts`: Utility functions.
 *   `src/ai`: Contains Genkit AI flows and configuration.
 *   `public`: Static assets.
+
+## Feuille de Route (Roadmap)
+
+Le développement de la plateforme suivra les phases suivantes, conformément au cahier des charges :
+
+### Phase 1 – MVP (6 mois)
+*   Inscription des utilisateurs et création des profils artistes.
+*   Publication des œuvres et module de lecture en ligne.
+*   Système de commentaires et statistiques de base.
+
+### Phase 2 – Communauté (6 à 8 mois)
+*   Développement des forums communautaires.
+*   Mise en place du suivi d'artistes et des notifications.
+*   Création des classements (likes, vues).
+*   Intégration du système de dons et des publicités.
+
+### Phase 3 – Monétisation (12 mois)
+*   Lancement de la monnaie virtuelle (AfriCoins).
+*   Mise en place des abonnements premium.
+*   Création de la boutique de produits dérivés (goodies).
+*   Développement de partenariats avec des éditeurs.
 
 ## Learn More
 
