@@ -1,6 +1,6 @@
-# NexusHub
+# AfriStory
 
-NexusHub est une plateforme panafricaine de lecture en ligne et de mise en valeur des artistes graphiques et narratifs (dessinateurs, scénaristes, coloristes, illustrateurs, auteurs BD, webtoonistes...). L’objectif est de devenir le hub créatif africain, un lieu où professionnels et amateurs peuvent publier, lire, échanger et vivre de leur art.
+AfriStory est une plateforme panafricaine de lecture en ligne et de mise en valeur des artistes graphiques et narratifs (dessinateurs, scénaristes, coloristes, illustrateurs, auteurs BD, webtoonistes...). L’objectif est de devenir le hub créatif africain, un lieu où professionnels et amateurs peuvent publier, lire, échanger et vivre de leur art.
 
 ## Pour commencer
 
