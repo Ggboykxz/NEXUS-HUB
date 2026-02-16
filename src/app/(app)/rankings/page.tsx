@@ -63,7 +63,7 @@ function RankingList({ stories, metric }: RankingListProps) {
             </Link>
             <div className="flex-grow">
               <Link href={`/read/${story.id}`}>
-                <h3 className="text-xl font-headline font-semibold hover:text-primary transition-colors">{story.title}</h3>
+                <h3 className="text-xl font-display font-semibold hover:text-primary transition-colors">{story.title}</h3>
               </Link>
               <Link href={`/artists/${story.artistId}`}>
                 <p className="text-sm text-muted-foreground hover:text-accent transition-colors">par {story.artistName}</p>

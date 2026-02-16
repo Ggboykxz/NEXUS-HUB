@@ -44,13 +44,13 @@ export default function ArtistProfilePage({ params }: { params: { artistId: stri
         </div>
 
         <div className="md:w-2/3 mt-8 md:mt-0">
-          <h2 className="text-2xl font-bold font-headline mb-2">Biographie</h2>
+          <h2 className="text-2xl font-bold font-display mb-2">Biographie</h2>
           <p className="text-lg text-foreground/80 leading-relaxed">{artist.bio}</p>
         </div>
       </div>
 
       <div className="mt-16">
-        <h2 className="text-3xl font-bold font-headline mb-6">Portfolio</h2>
+        <h2 className="text-3xl font-bold font-display mb-6">Portfolio</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {artistStories.map((story) => (
             <StoryCard key={story.id} story={story} />

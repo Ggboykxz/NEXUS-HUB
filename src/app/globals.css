@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 35 60% 96%; /* Very light warm beige */
-    --foreground: 25 50% 15%; /* Dark, rich brown */
-    --card: 35 55% 99%; /* Slightly off-white card */
-    --card-foreground: 25 50% 15%;
-    --popover: 35 55% 99%;
-    --popover-foreground: 25 50% 15%;
-    --primary: 45 95% 51%; /* Gold */
-    --primary-foreground: 30 50% 10%; /* Dark brown for contrast */
-    --secondary: 120 25% 92%; /* Light earthy green */
-    --secondary-foreground: 120 25% 15%; /* Dark green */
-    --muted: 35 40% 92%; /* Lighter beige */
-    --muted-foreground: 25 30% 35%; /* Muted brown */
-    --accent: 10 78% 55%; /* Rich red */
-    --accent-foreground: 0 0% 100%; /* White */
+    --background: 48 67% 98%; /* #FDFCF5 */
+    --foreground: 0 0% 20%; /* #333333 */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+    --primary: 45 65% 52%; /* #D4AF37 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 60 11% 91%; /* a light gray for secondary elements */
+    --secondary-foreground: 0 0% 20%;
+    --muted: 60 11% 91%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 45 65% 52%; /* Using primary as accent */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 35 20% 85%;
-    --input: 35 20% 90%;
-    --ring: 45 95% 51%; /* Gold */
-    --radius: 0.5rem;
+    --border: 60 11% 88%; /* #E5E5E0 */
+    --input: 60 11% 91%;
+    --ring: 45 65% 52%;
+    --radius: 0.25rem;
   }
 
   .dark {
-    --background: 25 20% 10%; /* Dark brown */
-    --foreground: 35 30% 88%; /* Light warm beige */
-    --card: 25 20% 14%; /* Slightly lighter dark brown */
-    --card-foreground: 35 30% 88%;
-    --popover: 25 20% 10%;
-    --popover-foreground: 35 30% 88%;
-    --primary: 45 95% 51%; /* Gold */
-    --primary-foreground: 30 50% 10%;
-    --secondary: 120 10% 20%; /* Dark, muted green */
-    --secondary-foreground: 120 20% 85%; /* Light green text */
-    --muted: 25 20% 20%;
-    --muted-foreground: 35 20% 65%;
-    --accent: 10 80% 60%; /* Rich red for dark mode */
-    --accent-foreground: 0 0% 100%;
+    --background: 40 6% 7%; /* #121210 */
+    --foreground: 0 0% 83%; /* stone-300 */
+    --card: 30 6% 15%; /* stone-800 */
+    --card-foreground: 0 0% 83%;
+    --popover: 40 6% 7%;
+    --popover-foreground: 0 0% 83%;
+    --primary: 45 65% 52%;
+    --primary-foreground: 40 6% 7%;
+    --secondary: 30 6% 15%;
+    --secondary-foreground: 0 0% 83%;
+    --muted: 30 6% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 45 65% 52%;
+    --accent-foreground: 40 6% 7%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 25 20% 25%;
-    --input: 25 20% 25%;
-    --ring: 45 95% 51%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 45 65% 52%;
   }
 }
 
@@ -54,11 +54,28 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans transition-colors duration-300 antialiased selection:bg-primary/20;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
+    @apply font-display;
   }
+}
+
+.hero-overlay {
+    background: linear-gradient(180deg, rgba(253, 252, 245, 0) 0%, rgba(253, 252, 245, 0.8) 80%, rgba(253, 252, 245, 1) 100%);
+}
+.dark .hero-overlay {
+    background: linear-gradient(180deg, rgba(18, 18, 16, 0) 0%, rgba(18, 18, 16, 0.8) 80%, rgba(18, 18, 16, 1) 100%);
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 3px;
 }
 
 @keyframes fade-in {

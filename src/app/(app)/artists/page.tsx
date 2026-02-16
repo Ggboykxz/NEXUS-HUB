@@ -24,7 +24,7 @@ export default function ArtistsPage() {
                   <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
                   <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <h2 className="text-lg font-headline font-semibold">{artist.name}</h2>
+                <h2 className="text-lg font-display font-semibold">{artist.name}</h2>
               </CardContent>
             </Card>
           </Link>

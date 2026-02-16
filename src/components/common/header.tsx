@@ -3,39 +3,39 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, User } from 'lucide-react';
-import { Logo } from '@/components/icons/logo';
+import { Menu, Search, Bell, User } from 'lucide-react';
 import { navLinks } from '@/lib/navigation';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Input } from '../ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-7xl items-center">
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Logo />
-            <span className="hidden font-bold sm:inline-block font-headline">AfriStory Hub</span>
+    <header className="sticky top-0 z-50 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-sm">
+      <div className="container flex h-20 max-w-7xl items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'transition-colors hover:text-foreground/80',
-                  pathname === link.href ? 'text-foreground' : 'text-foreground/60'
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
         </div>
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'hover:text-primary transition-colors duration-300',
+                pathname === link.href ? 'text-foreground dark:text-white font-semibold' : ''
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
 
         {/* Mobile Menu */}
         <Sheet>
@@ -45,14 +45,13 @@ export default function Header() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="pr-0">
+          <SheetContent side="left" className="pr-0 bg-background">
             <Link href="/" className="flex items-center space-x-2 mb-6">
-                <Logo />
-                <span className="font-bold font-headline">AfriStory Hub</span>
+                <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
             </Link>
             <div className="flex flex-col space-y-3">
                 {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-lg">
+                <Link key={link.href} href={link.href} className="text-lg font-medium">
                     {link.label}
                 </Link>
                 ))}
@@ -60,21 +59,18 @@ export default function Header() {
           </SheetContent>
         </Sheet>
         
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search stories..." className="pl-9" />
-            </div>
-          </div>
-          <nav className="flex items-center">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/login">
-                <User className="h-5 w-5" />
-                <span className="sr-only">User Profile</span>
-              </Link>
+        <div className="hidden md:flex flex-1 items-center justify-end space-x-5">
+           <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+              <Search className="h-5 w-5" />
+           </Button>
+            <Button variant="ghost" size="icon" className="text-foreground/60 hover:text-primary transition-colors">
+                <Bell className="h-5 w-5" />
             </Button>
-          </nav>
+            <Link href="/login">
+                <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-offset-2 ring-primary/20">
+                    <AvatarFallback><User /></AvatarFallback>
+                </Avatar>
+            </Link>
         </div>
       </div>
     </header>

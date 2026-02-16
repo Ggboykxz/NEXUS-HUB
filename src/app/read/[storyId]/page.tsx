@@ -44,7 +44,7 @@ export default function ReadPage({ params }: { params: { storyId: string } }) {
             Retour
           </Button>
           <div className="text-center">
-            <h1 className="font-headline text-lg truncate">{story.title}</h1>
+            <h1 className="font-display text-lg truncate">{story.title}</h1>
             <p className="text-sm text-muted-foreground">Chapitre 1</p>
           </div>
           <div className="w-24"></div> {/* Spacer */}
