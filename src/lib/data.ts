@@ -247,10 +247,10 @@ export const products: Product[] = [
   },
   {
     id: 'prod-3',
-    name: 'Mug NexusHub',
+    name: 'Mug AfriStory',
     price: 15.99,
     image: getImage('product-3')!,
-    description: 'Commencez votre journée avec votre boisson préférée dans ce mug NexusHub au design personnalisé.'
+    description: 'Commencez votre journée avec votre boisson préférée dans ce mug AfriStory au design personnalisé.'
   },
 ];
 
@@ -316,12 +316,36 @@ export const comments: Comment[] = [
         id: 'comment-2',
         storyId: '1',
         chapter: 1,
-        authorId: 'artist-3',
-        authorName: 'FanDeFantaisie',
-        authorAvatar: getImage('artist-3')!,
+        authorId: 'reader-3',
+        authorName: 'Chloé Morin',
+        authorAvatar: getImage('reader-3')!,
         content: "La direction artistique est sublime. Chaque panneau est une œuvre d'art. Quelqu'un a une théorie sur le mystérieux personnage à la fin ?",
         timestamp: 'Il y a 45 minutes',
         likes: 23,
+        replies: []
+    },
+    {
+        id: 'comment-3',
+        storyId: '2',
+        chapter: 1,
+        authorId: 'reader-2',
+        authorName: 'Yannick Beauchamp',
+        authorAvatar: getImage('reader-2')!,
+        content: "L'ambiance cyberpunk est tellement bien retranscrite, c'est fou ! Le détective a la classe.",
+        timestamp: 'Il y a 8 heures',
+        likes: 19,
+        replies: []
+    },
+    {
+        id: 'comment-4',
+        storyId: '5',
+        chapter: 1,
+        authorId: 'reader-4',
+        authorName: 'Marc-André Lavoie',
+        authorAvatar: getImage('reader-4')!,
+        content: "Hilarant ! J'adore comment les mythes sont modernisés. Anansé en consultant en entreprise, il fallait y penser.",
+        timestamp: 'Il y a 1 jour',
+        likes: 31,
         replies: []
     }
 ];

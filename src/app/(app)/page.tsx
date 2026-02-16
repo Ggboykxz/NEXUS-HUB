@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
-import { stories, artists } from '@/lib/data';
+import { stories, artists, comments, readers } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ export default function HomePage() {
   const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
   const featuredArtists = artists.slice(0, 5);
   const popularGenres = [...new Set(stories.map(s => s.genre))].slice(0, 4);
+  const topLevelComments = comments.slice(0, 3);
 
   return (
     <>
@@ -96,6 +97,55 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+        
+        <section>
+          <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
+            <h2 className="text-3xl font-display font-bold text-foreground">Derniers Commentaires</h2>
+            <Link href="/forums" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Rejoindre la discussion
+              <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {topLevelComments.map((comment) => {
+                const story = stories.find(s => s.id === comment.storyId);
+                
+                const authorLink = artists.some(a => a.id === comment.authorId)
+                    ? `/artists/${comment.authorId}`
+                    : readers.some(r => r.id === comment.authorId)
+                        ? `/profile/${comment.authorId}`
+                        : '#';
+
+                return (
+                    <Card key={comment.id} className="flex flex-col p-6 transition-all hover:shadow-lg hover:-translate-y-1">
+                        <div className="flex items-start gap-4 mb-4">
+                            <Link href={authorLink}>
+                                <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-primary">
+                                    <AvatarImage src={comment.authorAvatar.imageUrl} alt={comment.authorName} data-ai-hint={comment.authorAvatar.imageHint} />
+                                    <AvatarFallback>{comment.authorName.slice(0, 2)}</AvatarFallback>
+                                </Avatar>
+                            </Link>
+                            <div>
+                                <Link href={authorLink}>
+                                    <p className="font-semibold hover:text-primary transition-colors">{comment.authorName}</p>
+                                </Link>
+                                <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                            </div>
+                        </div>
+                        <blockquote className="italic border-l-2 border-primary/50 pl-4 text-foreground/80 flex-grow mb-4 text-base">
+                           "{comment.content}"
+                        </blockquote>
+                        {story && (
+                            <p className="text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
+                                sur <Link href={`/stories/${story.id}`} className="font-semibold text-primary hover:underline">{story.title}</Link>
+                            </p>
+                        )}
+                    </Card>
+                )
+            })}
+          </div>
+        </section>
+
       </main>
     </>
   );
