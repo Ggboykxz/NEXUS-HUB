@@ -68,10 +68,9 @@ export default {
       borderRadius: {
         '2xl': '1rem',
         xl: '0.75rem',
-        lg: "0.5rem",
-        DEFAULT: "0.25rem",
-        md: "calc(0.25rem - 2px)",
-        sm: "calc(0.25rem - 4px)",
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       spacing: {
         '128': '32rem',

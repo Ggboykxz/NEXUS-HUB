@@ -29,11 +29,11 @@
     --card-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 20%;
-    --primary: 45 100% 51%; /* #FFD700 -> or #D4AF37 which is 45 65% 52% */
+    --primary: 45 65% 52%; /* Muted Gold #D4AF37 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 60 11% 91%; /* a light gray for secondary elements */
-    --secondary-foreground: 0 0% 20%;
-    --muted: 60 11% 91%;
+    --secondary: 0 0% 20%; /* Charcoal #333333 */
+    --secondary-foreground: 0 0% 98%; /* Almost white */
+    --muted: 60 11% 91%; /* light gray */
     --muted-foreground: 0 0% 40%;
     --accent: 24 93% 53%; /* #CC6633 */
     --accent-foreground: 0 0% 100%;
@@ -41,8 +41,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 60 11% 88%; /* #E5E5E0 */
     --input: 60 11% 91%;
-    --ring: 45 100% 51%;
-    --radius: 0.25rem;
+    --ring: 45 65% 52%;
+    --radius: 0.25rem; /* default 4px */
   }
 
   .dark {
@@ -52,7 +52,7 @@
     --card-foreground: 0 0% 83%;
     --popover: 40 6% 7%;
     --popover-foreground: 0 0% 83%;
-    --primary: 45 100% 51%;
+    --primary: 45 65% 52%;
     --primary-foreground: 40 6% 7%;
     --secondary: 30 6% 15%;
     --secondary-foreground: 0 0% 83%;
@@ -64,7 +64,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 45 100% 51%;
+    --ring: 45 65% 52%;
   }
 }
 
