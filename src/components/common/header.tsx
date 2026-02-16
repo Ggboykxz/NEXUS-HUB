@@ -14,6 +14,7 @@ export default function Header() {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -24,11 +25,24 @@ export default function Header() {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
 
   if (isSearchOpen && isMobile) {
     return (
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="container flex h-20 max-w-7xl items-center justify-between px-6 lg:px-12">
+        <div className={cn(
+            "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
+            isScrolled ? "h-16" : "h-20"
+        )}>
             <div className="flex w-full items-center gap-2 animate-in fade-in-0">
                 <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
                     <ArrowLeft className="h-5 w-5" />
@@ -47,7 +61,10 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
-      <div className="container flex h-20 max-w-7xl items-center justify-between px-6 lg:px-12">
+      <div className={cn(
+        "container flex max-w-7xl items-center justify-between px-6 lg:px-12 transition-all duration-300",
+        isScrolled ? "h-16" : "h-20"
+      )}>
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
