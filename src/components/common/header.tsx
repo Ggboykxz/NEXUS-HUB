@@ -295,7 +295,7 @@ export default function Header() {
             const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
             if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
               return (
-                <DropdownMenu key={link.href} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
+                <DropdownMenu key={link.label} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
                   <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className="flex items-center">
                     <DropdownMenuTrigger
                       className={cn(
@@ -304,7 +304,16 @@ export default function Header() {
                         isActive ? 'text-foreground dark:text-white font-semibold' : ''
                       )}
                     >
-                      <span>{link.label}</span>
+                      <span className="flex items-center gap-2">
+                        {link.label}
+                        {link.badge && (
+                          <span className={cn(
+                            'h-2 w-2 rounded-full',
+                            link.badge.variant === 'green' && 'bg-green-500',
+                            link.badge.variant === 'orange' && 'bg-orange-500',
+                          )}></span>
+                        )}
+                      </span>
                       <ChevronDown className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
@@ -334,14 +343,21 @@ export default function Header() {
             }
             return (
               <Link
-                key={link.href}
+                key={link.label}
                 href={link.href}
                 className={cn(
-                  'hover:text-primary transition-colors duration-300',
+                  'flex items-center gap-2 hover:text-primary transition-colors duration-300',
                   isActive ? 'text-foreground dark:text-white font-semibold' : ''
                 )}
               >
-                {link.label}
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span className={cn(
+                      'h-2 w-2 rounded-full',
+                      link.badge.variant === 'green' && 'bg-green-500',
+                      link.badge.variant === 'orange' && 'bg-orange-500',
+                  )}></span>
+                )}
               </Link>
             );
           })}
@@ -385,10 +401,19 @@ export default function Header() {
                               {navLinks.map((link) => {
                                 if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
                                   return (
-                                    <Accordion type="single" collapsible key={link.href} className="w-full">
+                                    <Accordion type="single" collapsible key={link.label} className="w-full">
                                       <AccordionItem value={link.label} className="border-b-0">
                                         <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
-                                          <span>{link.label}</span>
+                                          <span className="flex items-center gap-2">
+                                            {link.label}
+                                            {link.badge && (
+                                              <span className={cn(
+                                                'h-2 w-2 rounded-full',
+                                                link.badge.variant === 'green' && 'bg-green-500',
+                                                link.badge.variant === 'orange' && 'bg-orange-500',
+                                              )}></span>
+                                            )}
+                                          </span>
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-2 pl-4">
                                           <div className="flex flex-col space-y-2">
@@ -416,8 +441,15 @@ export default function Header() {
                                   );
                                 }
                                 return (
-                                  <Link key={link.href} href={link.href} className="text-lg font-medium">
-                                      {link.label}
+                                  <Link key={link.label} href={link.href} className="text-lg font-medium flex items-center gap-2">
+                                    <span>{link.label}</span>
+                                    {link.badge && (
+                                      <span className={cn(
+                                        'h-2 w-2 rounded-full',
+                                        link.badge.variant === 'green' && 'bg-green-500',
+                                        link.badge.variant === 'orange' && 'bg-orange-500',
+                                      )}></span>
+                                    )}
                                   </Link>
                                 );
                               })}
