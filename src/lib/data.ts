@@ -63,6 +63,19 @@ export interface Reader {
   avatar: ImagePlaceholder;
 }
 
+export interface Comment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: ImagePlaceholder;
+  storyId: string;
+  chapter: number;
+  content: string;
+  timestamp: string;
+  likes: number;
+  replies?: Comment[];
+}
+
 export const artists: Artist[] = [
   {
     id: '1',
@@ -245,6 +258,45 @@ export const forumThreads: ForumThread[] = [
     lastPost: { author: 'FutureScribe', time: '1d ago' },
     category: 'Collaborations',
   },
+];
+
+export const comments: Comment[] = [
+    {
+        id: 'comment-1',
+        storyId: '1',
+        chapter: 1,
+        authorId: 'reader-1',
+        authorName: 'Léa Dubois',
+        authorAvatar: getImage('reader-1')!,
+        content: "Ce premier chapitre est incroyable ! L'univers est tellement riche. J'ai hâte de voir la suite.",
+        timestamp: 'Il y a 2 heures',
+        likes: 15,
+        replies: [
+            {
+                id: 'reply-1',
+                storyId: '1',
+                chapter: 1,
+                authorId: '1',
+                authorName: 'Jelani Adebayo',
+                authorAvatar: getImage('artist-1')!,
+                content: "Merci beaucoup Léa ! Ça me fait très plaisir de lire ça. Le meilleur est à venir ! 😉",
+                timestamp: 'Il y a 1 heure',
+                likes: 8,
+            }
+        ]
+    },
+    {
+        id: 'comment-2',
+        storyId: '1',
+        chapter: 1,
+        authorId: 'artist-3',
+        authorName: 'FanDeFantaisie',
+        authorAvatar: getImage('artist-3')!,
+        content: "La direction artistique est sublime. Chaque panneau est une œuvre d'art. Quelqu'un a une théorie sur le mystérieux personnage à la fin ?",
+        timestamp: 'Il y a 45 minutes',
+        likes: 23,
+        replies: []
+    }
 ];
 
 export const comicPages = [
