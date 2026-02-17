@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useCallback } from 'react';
 import { stories, comicPages, comments as allComments } from '@/lib/data';
 import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
@@ -140,6 +140,8 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   
   const [viewMode, setViewMode] = useState('scroll');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -147,14 +149,28 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const [userCoins, setUserCoins] = useState(150);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   
-  useEffect(() => {
-    if (!api) return;
+  const onSelect = useCallback((api: CarouselApi) => {
+    if (!api) {
+      return;
+    }
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-    });
-  }, [api]);
+    setCanScrollPrev(api.canScrollPrev());
+    setCanScrollNext(api.canScrollNext());
+  }, []);
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    onSelect(api);
+    api.on("reInit", onSelect);
+    api.on("select", onSelect);
+    return () => {
+      api?.off("select", onSelect);
+      api?.off("reInit", onSelect);
+    };
+  }, [api, onSelect]);
 
   if (!story) {
     notFound();
@@ -276,7 +292,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
         {/* MAIN CONTENT */}
         <main className="flex-1 relative overflow-hidden">
-          <Tabs value={viewMode} className="w-full h-full">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full relative">
             <TabsContent value="scroll" className="m-0 h-full">
               <ScrollArea className="h-full">
                 <div className="flex flex-col items-center">
@@ -320,15 +336,15 @@ export default function ReadPage(props: { params: { storyId: string } }) {
                   </CarouselContent>
                 </Carousel>
             </TabsContent>
+          
+            {/* Floating View Switcher */}
+            <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-10">
+              <TabsList>
+                <TabsTrigger value="scroll" className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
+                <TabsTrigger value="pages" className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
+              </TabsList>
+            </div>
           </Tabs>
-
-          {/* Floating View Switcher */}
-          <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-10">
-            <TabsList>
-              <TabsTrigger value="scroll" onClick={() => setViewMode('scroll')} className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
-              <TabsTrigger value="pages" onClick={() => setViewMode('pages')} className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
-            </TabsList>
-          </div>
         </main>
 
         {/* FOOTER */}
