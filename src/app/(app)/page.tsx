@@ -140,7 +140,7 @@ export default function HomePage() {
                       <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
                       <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                         <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
                         {artist.isMentor ? (
                           <Badge variant="secondary" className="gap-1 text-xs">
