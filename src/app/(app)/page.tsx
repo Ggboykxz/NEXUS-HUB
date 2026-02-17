@@ -1,15 +1,28 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
-import { stories, artists, comments, readers } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { stories, artists, comments } from '@/lib/data';
 import { ArrowRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
-  const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
+  const plugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  );
   
   // Separate stories into public and premium
   const publicStories = stories.filter(s => !s.isPremium);
@@ -24,41 +37,69 @@ export default function HomePage() {
   const featuredArtists = artists.slice(0, 5);
   const popularGenres = [...new Set(stories.map(s => s.genre))].slice(0, 4);
   const topLevelComments = comments.slice(0, 3);
+  const featuredStoriesForCarousel = stories.filter(s => ['1', '2', '4'].includes(s.id));
 
   return (
     <>
-      <header className="relative pt-12 pb-24 overflow-hidden">
+      <header className="relative pt-12 pb-12 md:pb-24">
         <div className="container max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-16">
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground mb-6 leading-tight">
-              Plongez au Cœur des <br/>
-              <span className="italic text-primary">Histoires Africaines</span>
-            </h1>
-            <p className="text-lg text-foreground/70 dark:text-stone-400 font-light max-w-2xl mx-auto mb-10">
-              Découvrez un univers de bandes dessinées, webtoons et romans graphiques créés par des artistes africains talentueux.
-            </p>
-            <div className="flex gap-6 justify-center">
-              <Button asChild size="lg" className="bg-primary hover:bg-yellow-600 text-white font-medium px-8 py-3 rounded shadow-sm hover:shadow-md transition-all duration-300">
-                <Link href="/stories">Commencer la lecture</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="bg-transparent border border-foreground/20 hover:border-foreground text-foreground dark:text-stone-300 px-8 py-3 rounded transition-all duration-300">
-                 <Link href="/submit">Soumettre une œuvre</Link>
-              </Button>
-            </div>
-          </div>
-          <div className="relative w-full aspect-[21/9] md:aspect-[2.5/1] rounded-xl overflow-hidden shadow-sm">
-            {heroImage && (
-              <Image
-                src={heroImage.imageUrl}
-                alt={heroImage.description}
-                fill
-                className="object-cover object-top"
-                priority
-                data-ai-hint={heroImage.imageHint}
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent dark:from-background/80 h-1/3 bottom-0 top-auto"></div>
-          </div>
+            <Carousel
+                opts={{
+                    loop: true,
+                }}
+                plugins={[plugin.current]}
+                className="w-full"
+                onMouseEnter={plugin.current.stop}
+                onMouseLeave={plugin.current.reset}
+            >
+                <CarouselContent>
+                    {featuredStoriesForCarousel.map((story) => (
+                        <CarouselItem key={story.id}>
+                            <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden">
+                                <Image
+                                    src={story.coverImage.imageUrl}
+                                    alt={`Promotion pour ${story.title}`}
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                    data-ai-hint={story.coverImage.imageHint}
+                                    sizes="(max-width: 768px) 100vw, 70vw"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent p-8 sm:p-12 md:p-24 flex flex-col justify-center items-start text-left">
+                                    <Badge variant="secondary" className="mb-4 backdrop-blur-sm">{story.genre}</Badge>
+                                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
+                                        {story.title}
+                                    </h1>
+                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 line-clamp-2 md:line-clamp-3 drop-shadow-sm">
+                                        {story.description}
+                                    </p>
+                                    <Button asChild size="lg">
+                                        <Link href={`/stories/${story.id}`}>Découvrir l'œuvre</Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                    {/* Slide for pub */}
+                     <CarouselItem>
+                        <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                            <div className="p-8 sm:p-12 md:p-24 flex flex-col justify-center items-center text-center">
+                                <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold text-foreground mb-4 max-w-3xl leading-tight">
+                                    Partagez Votre Vision
+                                </h1>
+                                <p className="text-base md:text-lg text-foreground/80 font-light max-w-xl mb-8">
+                                    Rejoignez notre communauté d'artistes et partagez votre talent avec un public mondial.
+                                </p>
+                                <Button asChild size="lg" variant="default">
+                                    <Link href="/submit">Soumettre une œuvre</Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </CarouselItem>
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex" />
+            </Carousel>
         </div>
       </header>
 
