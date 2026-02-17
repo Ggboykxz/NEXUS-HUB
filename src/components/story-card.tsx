@@ -4,12 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, ArrowRight } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
+import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface StoryCardProps {
   story: Story;
@@ -19,6 +21,7 @@ interface StoryCardProps {
 
 export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
   const [date, setDate] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     // This will only run on the client, after hydration
@@ -28,6 +31,15 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   }, [story.updatedAt, showUpdateDate]);
 
   const chapterCount = story.chapters.length;
+
+  const handleActionClick = (e: React.MouseEvent, message: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toast({
+      title: message,
+    });
+  };
+
 
   return (
     <Link href={`/stories/${story.id}`} className={cn("group block", className)}>
@@ -47,10 +59,37 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
           </Badge>
         )}
         {/* Overlay */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-6">
-            <p className="text-white text-sm line-clamp-5 flex-grow">{story.description}</p>
-            <div className="flex items-center gap-2 font-semibold text-white border-2 border-white rounded-full px-4 py-2 text-sm mt-4">
-                Voir plus <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end text-center bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex w-full items-center justify-center gap-x-6">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-white hover:bg-white/20 hover:text-white"
+                  onClick={(e) => handleActionClick(e, "Bientôt disponible: Playlists")}
+                  aria-label="Ajouter à une playlist"
+                >
+                    <ListPlus className="h-6 w-6" />
+                </Button>
+                
+                <Link href={`/read/${story.id}`} onClick={(e) => e.stopPropagation()} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30" aria-label="Commencer la lecture">
+                    <Play className="ml-1 h-8 w-8 fill-white" />
+                </Link>
+
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-white hover:bg-white/20 hover:text-white"
+                  onClick={(e) => handleActionClick(e, "Ajouté aux favoris!")}
+                  aria-label="Ajouter aux favoris"
+                >
+                    <Heart className="h-6 w-6" />
+                </Button>
+            </div>
+
+            <div className="w-full">
+                <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
+                <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
             </div>
         </div>
       </div>
