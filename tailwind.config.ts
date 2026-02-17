@@ -104,11 +104,33 @@ export default {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
         },
+        'cover-reveal': {
+            from: { opacity: '0', transform: 'translateY(calc(-50% + 40px))', filter: 'blur(10px)' },
+            to: { opacity: '1', transform: 'translateY(-50%)', filter: 'blur(0)' },
+        },
+        'hero-content-in': {
+            from: { opacity: '0', transform: 'translateY(30px)' },
+            to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'particle-drift': {
+            '0%': { transform: 'translate(0,0) scale(0)', opacity: '0' },
+            '20%': { opacity: '0.8', transform: 'translate(var(--tx,10px), var(--ty,-20px)) scale(1)' },
+            '80%': { opacity: '0.3' },
+            '100%': { transform: 'translate(var(--tx2,30px), var(--ty2,-80px)) scale(0.2)', opacity: '0' },
+        },
+        'fade-in-up': {
+            from: { opacity: '0', transform: 'translateY(20px)' },
+            to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'marquee': 'marquee 60s linear infinite',
+        'cover-reveal': 'cover-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.3s both',
+        'hero-content-in': 'hero-content-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both',
+        'particle': 'particle-drift var(--dur, 8s) ease-in-out infinite',
+        'fade-in-up': 'fade-in-up 0.6s cubic-bezier(0.16,1,0.3,1) both',
       },
        typography: (theme: (arg: string) => any) => ({
         DEFAULT: {
