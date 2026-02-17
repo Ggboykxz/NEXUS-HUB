@@ -51,7 +51,9 @@ export default function StoryDetailPage(props: { params: { storyId: string } }) 
           </div>
         </div>
         <div className="md:col-span-2 flex flex-col justify-center">
-            <Badge variant="secondary" className="w-fit mb-4">{story.genre}</Badge>
+            <Link href={`/stories?genre=${story.genre}`}>
+              <Badge variant="secondary" className="w-fit mb-4 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">{story.genre}</Badge>
+            </Link>
             <h1 className="text-4xl lg:text-5xl font-bold font-display mb-4">{story.title}</h1>
             
             {artist && (

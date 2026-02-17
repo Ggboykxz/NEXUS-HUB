@@ -104,13 +104,15 @@ export default function HomePage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
-        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5"/>
-        <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5"/>
-        <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} />
+        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5" link="/stories" />
+        <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5" link="/stories?type=premium" />
+        <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} link="/stories?sort=newest" />
 
         <section>
           <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
-            <h2 className="text-3xl font-display font-bold text-foreground">Artistes à l'honneur</h2>
+            <Link href="/artists" className="group">
+              <h2 className="text-3xl font-display font-bold text-foreground group-hover:text-primary transition-colors">Artistes à l'honneur</h2>
+            </Link>
             <Link href="/artists" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Voir plus
               <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
@@ -131,7 +133,9 @@ export default function HomePage() {
 
         <section>
           <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
-            <h2 className="text-3xl font-display font-bold text-foreground">Genres populaires</h2>
+            <Link href="/stories" className="group">
+                <h2 className="text-3xl font-display font-bold text-foreground group-hover:text-primary transition-colors">Genres populaires</h2>
+            </Link>
              <Link href="/stories" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Explorer
               <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
@@ -151,7 +155,9 @@ export default function HomePage() {
         
         <section>
           <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
-            <h2 className="text-3xl font-display font-bold text-foreground">Derniers Commentaires</h2>
+             <Link href="/forums" className="group">
+                <h2 className="text-3xl font-display font-bold text-foreground group-hover:text-primary transition-colors">Derniers Commentaires</h2>
+            </Link>
             <Link href="/forums" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Rejoindre la discussion
               <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
@@ -193,7 +199,7 @@ export default function HomePage() {
   );
 }
 
-function StoryCarousel({ title, stories, columns, showUpdateDate }: { title: string; stories: (typeof import('@/lib/data').stories)[0][]; columns: "4" | "5"; showUpdateDate?: boolean }) {
+function StoryCarousel({ title, stories, columns, showUpdateDate, link }: { title: string; stories: (typeof import('@/lib/data').stories)[0][]; columns: "4" | "5"; showUpdateDate?: boolean; link: string; }) {
   const gridClasses = {
     "4": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12",
     "5": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12"
@@ -202,8 +208,10 @@ function StoryCarousel({ title, stories, columns, showUpdateDate }: { title: str
   return (
     <section>
       <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
-        <h2 className="text-3xl font-display font-bold text-foreground">{title}</h2>
-        <Link href="/stories" className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+        <Link href={link} className="group">
+          <h2 className="text-3xl font-display font-bold text-foreground group-hover:text-primary transition-colors">{title}</h2>
+        </Link>
+        <Link href={link} className="group flex items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
           Voir plus
           <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
         </Link>

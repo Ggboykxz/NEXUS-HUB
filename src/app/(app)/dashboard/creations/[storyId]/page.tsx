@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 
 export default function ManageStoryPage({ params }: { params: { storyId: string } }) {
@@ -80,8 +81,10 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
               className="rounded-lg object-cover aspect-[2/3] shadow-lg"
             />
             <div className="flex-1">
-              <CardTitle className="text-4xl font-display mb-2">{story.title}</CardTitle>
-              {artist && <p className="text-lg text-muted-foreground">par {artist.name}</p>}
+              <Link href={`/stories/${story.id}`} target="_blank" rel="noopener noreferrer">
+                <CardTitle className="text-4xl font-display mb-2 hover:text-primary transition-colors">{story.title}</CardTitle>
+              </Link>
+              {artist && <p className="text-lg text-muted-foreground">par <Link className="hover:text-primary transition-colors" href={`/artists/${artist.id}`}>{artist.name}</Link></p>}
               <CardDescription className="mt-4 text-base leading-relaxed">{story.description}</CardDescription>
             </div>
           </div>
@@ -269,7 +272,11 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
                     <TableBody>
                         {story.chapters.length > 0 ? story.chapters.map((chapter) => (
                         <TableRow key={chapter.id}>
-                            <TableCell className="font-medium">{chapter.title}</TableCell>
+                            <TableCell className="font-medium">
+                                <Link href={`/read/${story.id}`} className="hover:text-primary transition-colors">
+                                    {chapter.title}
+                                </Link>
+                            </TableCell>
                             <TableCell>{getStatusBadge(chapter.status)}</TableCell>
                             <TableCell>{format(new Date(chapter.releaseDate), 'dd MMMM yyyy', { locale: fr })}</TableCell>
                             <TableCell className="text-center">{chapter.pageCount}</TableCell>

@@ -42,16 +42,18 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
 
 
   return (
-    <Link href={`/stories/${story.id}`} className={cn("group block", className)}>
+    <div className={cn("group", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-5 shadow-sm transition-all duration-300 group-hover:shadow-xl">
-        <Image
-          src={story.coverImage.imageUrl}
-          alt={`Couverture de ${story.title}`}
-          fill
-          className="object-cover transition-all duration-500 ease-in-out group-hover:scale-110 group-hover:blur-sm"
-          data-ai-hint={story.coverImage.imageHint}
-          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-        />
+        <Link href={`/stories/${story.id}`}>
+            <Image
+              src={story.coverImage.imageUrl}
+              alt={`Couverture de ${story.title}`}
+              fill
+              className="object-cover transition-all duration-500 ease-in-out group-hover:scale-110 group-hover:blur-sm"
+              data-ai-hint={story.coverImage.imageHint}
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            />
+        </Link>
         {story.isPremium && (
           <Badge variant="default" className="absolute top-2 right-2 z-20 gap-1 pl-2 pr-2.5 bg-primary/90 text-white backdrop-blur-sm">
             <Crown className="h-3 w-3" />
@@ -87,27 +89,33 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 </Button>
             </div>
 
-            <div className="w-full">
+            <Link href={`/stories/${story.id}`} className="w-full">
                 <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
                 <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
                 <div className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-white transition-colors group-hover:text-primary">
                     Voir plus
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </div>
-            </div>
+            </Link>
         </div>
       </div>
-      <h3 className="font-display font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
-      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">par {story.artistName}</p>
+      <Link href={`/stories/${story.id}`}>
+        <h3 className="font-display font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
+      </Link>
+      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">par <Link href={`/artists/${story.artistId}`} className="hover:text-primary hover:underline transition-colors">{story.artistName}</Link></p>
       <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
       {showUpdateDate ? (
         <div className="flex items-center justify-between text-xs">
-            <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
+            <Link href={`/stories?genre=${story.genre}`}>
+                <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
+            </Link>
             {date ? <p className="text-muted-foreground">{date}</p> : <Skeleton className="w-16 h-4" />}
         </div>
       ) : (
-          <span className="inline-block px-3 py-1 bg-stone-100 dark:bg-stone-800 text-foreground/70 dark:text-stone-300 text-xs rounded-full">{story.genre}</span>
+          <Link href={`/stories?genre=${story.genre}`}>
+              <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
+          </Link>
       )}
-    </Link>
+    </div>
   );
 }
