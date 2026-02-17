@@ -64,30 +64,30 @@ export default function HomePage() {
                                     data-ai-hint={story.coverImage.imageHint}
                                     sizes="(max-width: 768px) 100vw, 70vw"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent p-8 sm:p-12 md:p-24 flex flex-col justify-center items-start text-left">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-6 sm:p-8 md:p-12 flex flex-col justify-end items-start text-left">
                                     <Link href={`/stories?genre=${story.genre}`}>
-                                        <Badge variant="secondary" className="mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
+                                        <Badge variant="secondary" className="mb-2 md:mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
                                     </Link>
                                     <Link href={`/stories/${story.id}`}>
-                                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 max-w-2xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
+                                        <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2 max-w-xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
                                             {story.title}
                                         </h1>
                                     </Link>
                                      <Link href={`/artists/${story.artistId}`}>
-                                        <p className="text-lg text-white/90 font-semibold mb-4 drop-shadow-sm hover:text-primary/90 transition-colors">par {story.artistName}</p>
+                                        <p className="text-sm md:text-base text-white/90 font-semibold mb-3 md:mb-4 drop-shadow-sm hover:text-primary/90 transition-colors">par {story.artistName}</p>
                                     </Link>
-                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
+                                    <p className="hidden sm:block text-sm md:text-base text-white/90 font-light max-w-lg mb-6 drop-shadow-sm line-clamp-2">
                                         {story.description}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-4">
-                                        <Button asChild size="lg">
+                                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                        <Button asChild size="default">
                                             <Link href={`/read/${story.id}`}>
-                                                <Play className="mr-2 h-5 w-5 fill-current" />
-                                                Commencer la lecture
+                                                <Play className="mr-2 h-4 w-4 fill-current" />
+                                                Lire maintenant
                                             </Link>
                                         </Button>
-                                        <Button asChild size="lg" variant="outline" className="border-white/50 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white">
-                                            <Link href={`/stories/${story.id}`}>En savoir plus</Link>
+                                        <Button asChild size="sm" variant="outline" className="border-white/50 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white">
+                                            <Link href={`/stories/${story.id}`}>Détails</Link>
                                         </Button>
                                     </div>
                                 </div>
@@ -97,14 +97,14 @@ export default function HomePage() {
                     {/* Slide for pub */}
                      <CarouselItem>
                         <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary to-accent">
-                            <div className="absolute inset-0 bg-black/60 p-8 sm:p-12 md:p-24 flex flex-col justify-center items-center text-center">
-                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-3xl leading-tight drop-shadow-lg">
+                            <div className="absolute inset-0 bg-black/60 p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
+                                <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-2 md:mb-4 max-w-2xl leading-tight drop-shadow-lg">
                                     Partagez Votre Vision
                                 </h1>
-                                <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
+                                <p className="text-sm md:text-base text-white/90 font-light max-w-lg mb-6 drop-shadow-sm">
                                     Rejoignez notre communauté d'artistes et partagez votre talent avec un public mondial.
                                 </p>
-                                <Button asChild size="lg" variant="default">
+                                <Button asChild size="default" variant="default">
                                     <Link href="/submit">Soumettre une œuvre</Link>
                                 </Button>
                             </div>
