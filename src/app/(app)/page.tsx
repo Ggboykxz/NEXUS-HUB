@@ -69,7 +69,7 @@ export default function HomePage() {
                                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
                                         {story.title}
                                     </h1>
-                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 line-clamp-2 drop-shadow-sm">
+                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
                                         {story.description}
                                     </p>
                                     <Button asChild size="lg">
@@ -96,8 +96,8 @@ export default function HomePage() {
                         </div>
                     </CarouselItem>
                 </CarouselContent>
-                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex bg-background/50 hover:bg-background/70" />
-                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex bg-background/50 hover:bg-background/70" />
+                <CarouselPrevious variant="ghost" className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden bg-black/30 text-white hover:bg-black/40 md:flex" />
+                <CarouselNext variant="ghost" className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden bg-black/30 text-white hover:bg-black/40 md:flex" />
             </Carousel>
         </div>
       </header>
