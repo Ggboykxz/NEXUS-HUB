@@ -95,7 +95,7 @@
 /* ─── Story Detail Page Styles ─── */
 
 .hero {
-  @apply relative flex items-end overflow-hidden py-16 md:min-h-0;
+  @apply relative flex items-end overflow-hidden pt-16 md:min-h-0;
 }
 
 .hero-bg {
@@ -182,8 +182,8 @@
 }
 .hero-status-badge {
   @apply uppercase text-xs font-semibold tracking-[0.1em] px-3 py-1 rounded-sm flex items-center gap-1.5;
-  background: hsl(148, 56%, 32%, 0.2);
-  border: 1px solid hsl(148, 56%, 32%, 0.4);
+  background: hsl(148 56% 32% / 0.2);
+  border: 1px solid hsl(148 56% 32% / 0.4);
   color: hsl(var(--green-l));
 }
 .status-dot { @apply w-1.5 h-1.5 rounded-full animate-pulse; background-color: hsl(var(--green-l)); }
@@ -280,6 +280,7 @@
 .big-rating-val { @apply font-display text-6xl leading-none mb-2; color: hsl(var(--primary)); }
 .big-stars { @apply flex gap-1 mb-1.5; }
 .big-star { @apply w-5 h-5; color: hsl(var(--primary)); }
+.big-star.empty { opacity: 0.2; }
 .big-rating-count { @apply text-sm text-muted-foreground; }
 .rating-bars { @apply flex flex-col justify-center gap-2; }
 .rating-bar-row { @apply flex items-center gap-2.5; }
@@ -353,6 +354,13 @@
 .info-key { @apply text-[11px] text-muted-foreground/60 w-24 flex-shrink-0 pt-px uppercase tracking-wider; }
 .info-val { @apply text-sm text-foreground flex-1 flex flex-wrap gap-1 items-center; }
 .tag-pill { @apply px-2 py-0.5 text-xs; }
+
+.activity-item { @apply flex items-start gap-3 py-2.5 border-b; border-color: hsl(var(--border) / 0.5); }
+.activity-item:last-child { @apply border-b-0; }
+.activity-av { @apply w-7 h-7; }
+.activity-text p { @apply text-sm text-muted-foreground leading-snug; }
+.activity-time { @apply text-xs text-muted-foreground/50 mt-0.5; }
+
 
 @media (max-width: 900px) {
   .hero {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, use, useEffect } from 'react';
-import { stories, artists, comments as allComments, type Story, type Artist, type Chapter } from '@/lib/data';
+import { stories, artists, comments as allComments, readers, type Story, type Artist, type Chapter } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -99,14 +99,14 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                 ))}
             </div>
             
-            <div className="hero-rating">
+            <a href="#reviews-section" className="hero-rating no-underline transition-opacity hover:opacity-80">
                 <div className="stars-display">
                     {[...Array(4)].map((_, i) => <Star key={i} className="star-icon fill-current" />)}
                     <Star className="star-icon half" />
                 </div>
                 <span className="rating-val">4.8</span>
                 <span className="rating-count">· 3,842 évaluations</span>
-            </div>
+            </a>
 
 
             <p className="hero-synopsis">{story.description}</p>
@@ -228,7 +228,7 @@ const ChaptersSection = ({ story }: { story: Story }) => {
                             key={filter}
                             variant="ghost"
                             className={cn("filter-btn", activeFilter === filter && "active")}
-                            onClick={() => setActiveFilter(filter)}
+                            onClick={() => { setActiveFilter(filter); toast({title: `Filtre: ${filter}`})}}
                         >
                             {filter}
                         </Button>
@@ -277,7 +277,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
     ];
     
     return (
-        <div className="reviews-block fade-in">
+        <div id="reviews-section" className="reviews-block fade-in scroll-mt-20">
              <div className="section-heading">
                 <div className="section-gold-dot"></div>
                 <h2>Évaluations</h2>
@@ -314,7 +314,9 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                                 <AvatarFallback>{comment.authorName.slice(0,1)}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="reviewer-name">{comment.authorName} <Badge variant="secondary">Supporter</Badge></p>
+                                <p className="reviewer-name">
+                                    {comment.authorName} <Badge variant="secondary">Supporter</Badge>
+                                </p>
                                 <p className="reviewer-meta">
                                     <span>Lagos, Nigeria</span>·<span>284 avis</span>
                                 </p>
@@ -383,6 +385,45 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
         toast({ title: isFollowing ? `Vous ne suivez plus ${artist.name}` : `Vous suivez maintenant ${artist.name}` });
     };
 
+    const communityActivity = [
+        {
+            id: 'act-1',
+            user: { name: 'Aminata_K', avatar: readers.find(r => r.id === 'reader-1')?.avatar },
+            action: 'a laissé un commentaire sur',
+            target: 'Chap. 7',
+            time: 'il y a 2 minutes',
+            link: `/stories/${story.id}#reviews-section`,
+            userLink: '/profile/reader-1'
+        },
+        {
+            id: 'act-2',
+            user: { name: 'Ola_reads', avatar: readers.find(r => r.id === 'reader-2')?.avatar },
+            action: 'a aimé la série',
+            target: '',
+            time: 'il y a 8 minutes',
+            link: '#',
+            userLink: '/profile/reader-2'
+        },
+        {
+            id: 'act-3',
+            user: { name: 'KofiBD', avatar: readers.find(r => r.id === 'reader-3')?.avatar },
+            action: 'a publié une évaluation 5★',
+            target: '',
+            time: 'il y a 23 minutes',
+            link: `#reviews-section`,
+            userLink: '/profile/reader-3'
+        },
+        {
+            id: 'act-4',
+            user: { name: 'Jelani Adebayo', avatar: artist.avatar },
+            action: 'a publié',
+            target: 'Chapitre 7 🎉',
+            time: 'il y a 3h',
+            link: `/read/${story.id}`,
+            userLink: `/artists/${artist.id}`
+        }
+    ];
+
     return (
         <div className="right-col">
             <div className="sticky-col">
@@ -438,10 +479,49 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                             <div className="info-row"><span className="info-key">Mise à jour</span><span className="info-val">Bimensuelle · Vendredi</span></div>
                             <div className="info-row"><span className="info-key">Tags</span>
                                 <div className="info-val">
-                                    {story.tags.map(tag => <Badge key={tag} variant="outline" className="tag-pill">{tag}</Badge>)}
+                                    {story.tags.map(tag => (
+                                        <Link key={tag} href={`/stories?genre=${tag}`}>
+                                            <Badge variant="outline" className="tag-pill cursor-pointer">{tag}</Badge>
+                                        </Link>
+                                    ))}
                                 </div>
                             </div>
                             <div className="info-row"><span className="info-key">Licence</span><span className="info-val">© NexusHub Pro · Tous droits réservés</span></div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="side-card">
+                    <CardHeader className="side-card-header">
+                        <span>Activité récente</span>
+                        <span className="text-xs text-muted-foreground/60">En direct</span>
+                    </CardHeader>
+                    <CardContent className="side-card-body">
+                        <div className="flex flex-col">
+                            {communityActivity.map(activity => (
+                                <div key={activity.id} className="activity-item">
+                                    <Link href={activity.userLink} className="flex-shrink-0">
+                                        <Avatar className="activity-av">
+                                            <AvatarImage src={activity.user.avatar?.imageUrl} alt={activity.user.name} />
+                                            <AvatarFallback>{activity.user.name.slice(0,1)}</AvatarFallback>
+                                        </Avatar>
+                                    </Link>
+                                    <div className="activity-text">
+                                        <p>
+                                            <Link href={activity.userLink} className="font-semibold text-foreground hover:text-primary">
+                                                {activity.user.name}
+                                            </Link>
+                                            {' '}{activity.action}{' '}
+                                            {activity.target && (
+                                                <Link href={activity.link} className="font-semibold text-primary hover:underline">
+                                                    {activity.target}
+                                                </Link>
+                                            )}
+                                        </p>
+                                        <div className="activity-time">{activity.time}</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
