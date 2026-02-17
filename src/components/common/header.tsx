@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ThemeToggle } from './theme-toggle';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
@@ -405,6 +406,7 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
               <div className="hidden items-center gap-2 md:flex">
+                 <ThemeToggle />
                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                   </Button>
@@ -418,6 +420,7 @@ export default function Header() {
               </div>
               
               <div className="md:hidden flex items-center">
+                    <ThemeToggle />
                     <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                     </Button>
