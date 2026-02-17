@@ -145,7 +145,6 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
   const [userCoins, setUserCoins] = useState(150);
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
   const onSelect = useCallback((api: CarouselApi) => {
@@ -265,17 +264,12 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
   return (
     <div className="bg-black text-foreground">
-      {/* Mobile Overlay */}
-      {isCommentsOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/80 md:hidden"
-          onClick={() => setIsCommentsOpen(false)}
-        />
-      )}
-      
       <div className="flex h-screen">
         {/* Main Reader Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={cn(
+          "flex-1 flex flex-col min-w-0 transition-[width] duration-300 ease-in-out",
+          isCommentsOpen ? "md:w-[calc(100%-420px)]" : "md:w-full"
+        )}>
           <header className="flex-shrink-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
             <div className="container mx-auto px-2 sm:px-4 h-14 flex items-center">
               <div className="flex-1 flex justify-start">
@@ -310,11 +304,10 @@ export default function ReadPage(props: { params: { storyId: string } }) {
                         alt={page.description}
                         width={800}
                         height={1200}
-                        className="max-w-full h-auto cursor-zoom-in"
+                        className="max-w-full h-auto"
                         data-ai-hint={page.imageHint}
                         priority={index < 2}
                         sizes="(max-width: 800px) 100vw, 800px"
-                        onClick={() => setZoomedImage(page.imageUrl)}
                       />
                     ))}
                   </div>
@@ -331,11 +324,10 @@ export default function ReadPage(props: { params: { storyId: string } }) {
                               alt={page.description}
                               width={800}
                               height={1200}
-                              className="max-w-full max-h-full object-contain cursor-zoom-in"
+                              className="max-w-full max-h-full object-contain"
                               data-ai-hint={page.imageHint}
                               priority
                               sizes="(max-width: 768px) 100vw, 80vw"
-                              onClick={() => setZoomedImage(page.imageUrl)}
                             />
                           </div>
                         </CarouselItem>
@@ -373,11 +365,9 @@ export default function ReadPage(props: { params: { storyId: string } }) {
         {/* Comments Panel */}
         <aside
           className={cn(
-            'fixed top-0 right-0 h-full w-full sm:max-w-md flex-col bg-background text-foreground border-l z-50 transition-transform duration-300 ease-in-out',
-            'md:static md:h-auto md:w-[420px] md:z-auto md:border-l md:transform-none md:transition-none',
-            isCommentsOpen
-              ? 'translate-x-0 md:flex'
-              : 'translate-x-full md:hidden'
+            'fixed top-0 right-0 h-full w-full sm:max-w-md flex-col bg-background text-foreground border-l z-40 transition-transform duration-300 ease-in-out',
+            'md:relative md:h-auto md:w-[420px] md:z-auto md:border-l md:transform-none md:transition-none md:flex',
+            isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
           )}
         >
           <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
@@ -386,6 +376,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
               variant="ghost"
               size="icon"
               onClick={() => setIsCommentsOpen(false)}
+              className="md:hidden"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -417,46 +408,24 @@ export default function ReadPage(props: { params: { storyId: string } }) {
       </div>
 
       {/* Floating Trigger */}
-      {!isCommentsOpen && (
-        <Button
-          onClick={() => setIsCommentsOpen(true)}
-          variant="default"
-          size="lg"
-          className="fixed bottom-6 right-6 z-30 rounded-full shadow-lg h-16 w-16"
-          aria-label="Ouvrir les commentaires"
-        >
-          <MessageSquare className="h-7 w-7" />
-          <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
-            {chapterComments.length}
-          </span>
-        </Button>
-      )}
-
-      {/* ZOOMED IMAGE */}
-      {zoomedImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
-          onClick={() => setZoomedImage(null)}
-        >
-          <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
-            <Image
-              src={zoomedImage}
-              alt="Image agrandie"
-              width={1600}
-              height={2400}
-              className="max-w-none w-auto h-auto inline-block p-4"
-            />
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
-            onClick={() => setZoomedImage(null)}
-          >
-            <X className="h-6 w-6" />
-          </Button>
-        </div>
-      )}
+      <Button
+        onClick={() => setIsCommentsOpen(!isCommentsOpen)}
+        variant="default"
+        size="lg"
+        className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg h-16 w-16"
+        aria-label={isCommentsOpen ? "Fermer les commentaires" : "Ouvrir les commentaires"}
+      >
+        {isCommentsOpen ? (
+          <X className="h-7 w-7" />
+        ) : (
+          <>
+            <MessageSquare className="h-7 w-7" />
+            <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
+              {chapterComments.length}
+            </span>
+          </>
+        )}
+      </Button>
     </div>
   );
 }
