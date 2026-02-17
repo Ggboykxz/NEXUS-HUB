@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -282,6 +282,7 @@ export default function Header() {
            </DropdownMenuLabel>
            <DropdownMenuSeparator />
            {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artists/${userId}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
+           {isLoggedIn && <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>Mes Playlists</Link></DropdownMenuItem>}
            {isArtist && (
                <>
                    <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
@@ -332,6 +333,11 @@ export default function Header() {
               </Link>}
           </Button>
       )}
+       <Button asChild variant="ghost">
+            <Link href="/playlists" className="flex items-center gap-2 justify-center">
+                <ListMusic /> Mes Playlists
+            </Link>
+        </Button>
        <Button asChild variant="ghost">
           <Link href="/settings" className="flex items-center gap-2 justify-center">
               <Settings /> Paramètres

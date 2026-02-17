@@ -95,6 +95,15 @@ export interface Comment {
   replies?: Comment[];
 }
 
+export interface Playlist {
+  id: string;
+  name: string;
+  description: string;
+  storyIds: string[];
+  isPublic: boolean;
+  authorId: string;
+}
+
 export const artists: Artist[] = [
   {
     id: '1',
@@ -402,6 +411,33 @@ export const comments: Comment[] = [
         likes: 31,
         replies: []
     }
+];
+
+export const playlists: Playlist[] = [
+  {
+    id: 'playlist-1',
+    name: 'Épopées Fantastiques',
+    description: 'Une collection des meilleures bandes dessinées de fantasy et de mythologie.',
+    storyIds: ['1', '3', '4'],
+    isPublic: true,
+    authorId: 'reader-1',
+  },
+  {
+    id: 'playlist-2',
+    name: 'Aventures Cyberpunk',
+    description: 'Plongez dans des mondes futuristes et des intrigues high-tech.',
+    storyIds: ['2'],
+    isPublic: true,
+    authorId: 'reader-1',
+  },
+  {
+    id: 'playlist-3',
+    name: 'À lire plus tard',
+    description: 'Mes prochaines lectures.',
+    storyIds: ['5', '6'],
+    isPublic: false,
+    authorId: 'reader-1',
+  }
 ];
 
 export const comicPages = [

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, ArrowRight } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -12,6 +12,15 @@ import { fr } from 'date-fns/locale';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { playlists as allPlaylists } from '@/lib/data';
 
 interface StoryCardProps {
   story: Story;
@@ -23,6 +32,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const [date, setDate] = useState('');
   const { toast } = useToast();
 
+  // Simulate user being logged in and having playlists
+  const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
+
   useEffect(() => {
     // This will only run on the client, after hydration
     if(showUpdateDate) {
@@ -32,14 +44,31 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
 
   const chapterCount = story.chapters.length;
 
-  const handleActionClick = (e: React.MouseEvent, message: string) => {
+  const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     toast({
-      title: message,
+      title: "Ajouté aux favoris!",
     });
   };
 
+  const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toast({
+        title: `Ajouté à la playlist "${playlistName}" !`,
+        description: `"${story.title}" a bien été ajouté.`
+    });
+  };
+
+  const handleCreatePlaylist = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      toast({
+          title: "Fonctionnalité à venir",
+          description: "La création de nouvelles playlists sera bientôt disponible."
+      });
+  };
 
   return (
     <div className={cn("group", className)}>
@@ -64,15 +93,33 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-end text-center bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex w-full items-center justify-center gap-x-6">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-white hover:bg-white/20 hover:text-white"
-                  onClick={(e) => handleActionClick(e, "Bientôt disponible: Playlists")}
-                  aria-label="Ajouter à une playlist"
-                >
-                    <ListPlus className="h-6 w-6" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-white hover:bg-white/20 hover:text-white"
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                            aria-label="Ajouter à une playlist"
+                        >
+                            <ListPlus className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="end">
+                        <DropdownMenuLabel>Ajouter à la playlist</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {userPlaylists.map(playlist => (
+                            <DropdownMenuItem key={playlist.id} onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
+                                {playlist.name}
+                            </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleCreatePlaylist}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Créer une playlist
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <Link href={`/read/${story.id}`} onClick={(e) => e.stopPropagation()} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30" aria-label="Commencer la lecture">
                     <Play className="ml-1 h-8 w-8 fill-white" />
@@ -82,7 +129,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                   variant="ghost" 
                   size="icon" 
                   className="text-white hover:bg-white/20 hover:text-white"
-                  onClick={(e) => handleActionClick(e, "Ajouté aux favoris!")}
+                  onClick={handleHeartClick}
                   aria-label="Ajouter aux favoris"
                 >
                     <Heart className="h-6 w-6" />
