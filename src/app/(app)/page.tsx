@@ -81,12 +81,12 @@ export default function HomePage() {
                     ))}
                     {/* Slide for pub */}
                      <CarouselItem>
-                        <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                            <div className="p-8 sm:p-12 md:p-24 flex flex-col justify-center items-center text-center">
-                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-4 max-w-3xl leading-tight">
+                        <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary to-accent">
+                            <div className="absolute inset-0 bg-black/60 p-8 sm:p-12 md:p-24 flex flex-col justify-center items-center text-center">
+                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-3xl leading-tight drop-shadow-lg">
                                     Partagez Votre Vision
                                 </h1>
-                                <p className="text-base md:text-lg text-foreground/80 font-light max-w-xl mb-8">
+                                <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
                                     Rejoignez notre communauté d'artistes et partagez votre talent avec un public mondial.
                                 </p>
                                 <Button asChild size="lg" variant="default">
