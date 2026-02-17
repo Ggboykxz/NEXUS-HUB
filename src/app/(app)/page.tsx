@@ -69,11 +69,11 @@ export default function HomePage() {
                                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
                                         {story.title}
                                     </h1>
-                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 line-clamp-2 md:line-clamp-3 drop-shadow-sm">
+                                    <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 line-clamp-2 drop-shadow-sm">
                                         {story.description}
                                     </p>
                                     <Button asChild size="lg">
-                                        <Link href={`/stories/${story.id}`}>Découvrir l'œuvre</Link>
+                                        <Link href={`/stories/${story.id}`}>En savoir plus</Link>
                                     </Button>
                                 </div>
                             </div>
