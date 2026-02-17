@@ -139,10 +139,10 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
                 <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
                 <div className="mt-3">
-                    <Button variant="outline" size="sm" className="h-auto px-4 py-1.5 text-xs text-white border-white/40 bg-white/10 backdrop-blur-sm hover:bg-white/20 hover:border-white/60 transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
+                    <div className="inline-flex items-center justify-center rounded-md border border-white/40 bg-white/10 px-4 py-1.5 text-xs text-white backdrop-blur-sm transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
                         Plus de détails
                         <ArrowRight className="ml-1.5 h-3 w-3" />
-                    </Button>
+                    </div>
                 </div>
             </Link>
         </div>
@@ -150,7 +150,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       <Link href={`/stories/${story.id}`}>
         <h3 className="font-display font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
       </Link>
-      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">
+      <div className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">
         par{' '}
         <Link href={`/artists/${story.artistId}`} className="hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
           <span>{story.artistName}</span>
@@ -160,17 +160,17 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             <PenSquare className="h-3.5 w-3.5 text-muted-foreground/80" title="Artiste Draft" />
           )}
         </Link>
-      </p>
+      </div>
       <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
       {showUpdateDate ? (
         <div className="flex items-center justify-between text-xs">
-            <Link href={`/stories?genre=${story.genre}`}>
+            <Link href={`/genres/${story.genre}`}>
                 <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
             </Link>
             {date ? <p className="text-muted-foreground">{date}</p> : <Skeleton className="w-16 h-4" />}
         </div>
       ) : (
-          <Link href={`/stories?genre=${story.genre}`}>
+          <Link href={`/genres/${story.genre}`}>
               <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
           </Link>
       )}

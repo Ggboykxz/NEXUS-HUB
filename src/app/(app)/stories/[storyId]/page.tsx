@@ -32,7 +32,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
   };
   
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '');
     toast({ title: "Lien copié dans le presse-papiers" });
   };
   
@@ -58,12 +58,12 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
         <div className="hero-content">
             <div className="hero-eyebrow">
-                <Link href="/webtoons">
-                    <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
+                <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'}>
+                    <Badge variant="outline" className="hero-type-badge">{story.format}</Badge>
                 </Link>
-                <Link href="/ongoing">
-                    <Badge variant="secondary" className="hero-status-badge">
-                        <span className="status-dot"></span> En cours
+                <Link href={story.status === 'En cours' ? '/ongoing' : '/completed'}>
+                    <Badge variant="secondary" className={cn("hero-status-badge", story.status === 'Terminé' && "border-blue-500/40 bg-blue-500/20 text-blue-400")}>
+                        <span className={cn("status-dot", story.status === 'Terminé' && "bg-blue-400")}></span> {story.status}
                     </Badge>
                 </Link>
                 {story.isPremium && <Badge className="hero-pro-badge">NexusHub Pro</Badge>}
@@ -209,7 +209,6 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
 }
 
 const ChaptersSection = ({ story }: { story: Story }) => {
-    const { toast } = useToast();
     const [activeFilter, setActiveFilter] = useState('Tous');
     const filters = ['Tous', 'Gratuits', 'Premium'];
 
@@ -315,9 +314,9 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                                 <AvatarFallback>{comment.authorName.slice(0,1)}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="reviewer-name">
-                                    <span>{comment.authorName}</span> <Badge variant="secondary">Supporter</Badge>
-                                </p>
+                                <div className="reviewer-name flex items-center gap-2">
+                                    <span>{comment.authorName}</span> <Badge variant="secondary" className="h-4 py-0 px-1.5 text-[10px]">Supporter</Badge>
+                                </div>
                                 <p className="reviewer-meta">
                                     <span>Lagos, Nigeria</span>·<span>284 avis</span>
                                 </p>
@@ -477,13 +476,13 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                             <div className="info-row">
                                 <span className="info-key">Type</span>
                                 <span className="info-val">
-                                    <Link href="/webtoons" className="hover:text-primary transition-colors">{story.format} · BD Numérique</Link>
+                                    <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'} className="hover:text-primary transition-colors">{story.format} · BD Numérique</Link>
                                 </span>
                             </div>
                             <div className="info-row">
                                 <span className="info-key">Statut</span>
-                                <span className="info-val text-green-400">
-                                    <Link href="/ongoing" className="hover:text-primary transition-colors">● {story.status}</Link>
+                                <span className={cn("info-val", story.status === 'En cours' ? 'text-green-400' : 'text-blue-400')}>
+                                    <Link href={story.status === 'En cours' ? '/ongoing' : '/completed'} className="hover:text-primary transition-colors">● {story.status}</Link>
                                 </span>
                             </div>
                             <div className="info-row"><span className="info-key">Sortie</span><span className="info-val">1er Janvier 2026</span></div>
@@ -518,7 +517,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                                         </Avatar>
                                     </Link>
                                     <div className="activity-text">
-                                        <p>
+                                        <div className="text-sm text-muted-foreground leading-snug">
                                             <Link href={activity.userLink} className="font-semibold text-foreground hover:text-primary">
                                                 {activity.user.name}
                                             </Link>
@@ -528,7 +527,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                                                     {activity.target}
                                                 </Link>
                                             )}
-                                        </p>
+                                        </div>
                                         <div className="activity-time">{activity.time}</div>
                                     </div>
                                 </div>
