@@ -58,7 +58,9 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
         <div className="hero-content">
             <div className="hero-eyebrow">
-                <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
+                <Link href="/stories?format=webtoon" className="no-underline">
+                    <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
+                </Link>
                 <Badge variant="secondary" className="hero-status-badge">
                     <span className="status-dot"></span> En cours
                 </Badge>
