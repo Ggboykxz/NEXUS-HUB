@@ -28,8 +28,15 @@ export const navLinks: NavLink[] = [
       { href: "/rankings?tab=newest", label: "Nouveautés" },
     ]
   },
-  { href: "/artists", label: "Artistes", icon: Users },
-  { href: "/mentorship", label: "Mentorat", icon: School },
+  { 
+    href: "/artists", 
+    label: "Artistes", 
+    icon: Users,
+    subLinks: [
+        { href: "/artists", label: "Tous les artistes" },
+        { href: "/mentorship", label: "Programme de Mentorat" },
+    ]
+  },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
   { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { variant: 'green' } },
