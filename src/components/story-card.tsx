@@ -141,9 +141,11 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             <Link href={`/stories/${story.id}`} className="w-full">
                 <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
                 <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
-                <div className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-white transition-colors group-hover:text-primary">
-                    Voir plus
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <div className="mt-3">
+                    <Button variant="outline" size="sm" className="h-auto px-4 py-1.5 text-xs text-white border-white/40 bg-white/10 backdrop-blur-sm hover:bg-white/20 hover:border-white/60 transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
+                        Plus de détails
+                        <ArrowRight className="ml-1.5 h-3 w-3" />
+                    </Button>
                 </div>
             </Link>
         </div>
