@@ -338,7 +338,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
             </TabsContent>
           
             {/* Floating View Switcher */}
-            <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-10">
+            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
               <TabsList>
                 <TabsTrigger value="scroll" className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
                 <TabsTrigger value="pages" className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
@@ -348,25 +348,39 @@ export default function ReadPage(props: { params: { storyId: string } }) {
         </main>
 
         {/* FOOTER */}
-        <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
-          {viewMode === 'pages' && (
-            <div className="flex items-center justify-between h-12 px-4">
-              <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>Précédent</Button>
-              <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
-              <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>Suivant</Button>
-            </div>
-          )}
-          <SheetTrigger asChild>
-            <div className="h-12 border-t flex items-center justify-center gap-2 cursor-pointer hover:bg-muted font-medium">
-              <ChevronUp className="h-4 w-4" />
-              <span>{chapterComments.length} commentaires</span>
-              <MessageSquare className="h-4 w-4" />
-            </div>
-          </SheetTrigger>
-        </footer>
+        {viewMode === 'pages' && (
+            <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
+                <div className="flex items-center justify-between h-12 px-4">
+                    <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Précédent
+                    </Button>
+                    <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
+                    <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>
+                        Suivant
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            </footer>
+        )}
+        
+        {/* COMMENT BUBBLE TRIGGER */}
+        <SheetTrigger asChild>
+            <Button
+                variant="default"
+                size="lg"
+                className="fixed bottom-6 right-6 z-30 rounded-full shadow-lg h-16 w-16"
+                aria-label="Ouvrir les commentaires"
+            >
+                <MessageSquare className="h-7 w-7" />
+                <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
+                    {chapterComments.length}
+                </span>
+            </Button>
+        </SheetTrigger>
 
         {/* COMMENTS SHEET */}
-        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg flex flex-col p-0 bg-background text-foreground">
+        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg flex flex-col p-0 bg-background text-foreground md:bg-transparent">
           <SheetHeader className="p-4 border-b">
             <SheetTitle>Commentaires (Chapitre 1)</SheetTitle>
           </SheetHeader>
