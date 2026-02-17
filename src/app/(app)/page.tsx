@@ -65,10 +65,17 @@ export default function HomePage() {
                                     sizes="(max-width: 768px) 100vw, 70vw"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent p-8 sm:p-12 md:p-24 flex flex-col justify-center items-start text-left">
-                                    <Badge variant="secondary" className="mb-4 backdrop-blur-sm">{story.genre}</Badge>
-                                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
-                                        {story.title}
-                                    </h1>
+                                    <Link href={`/stories?genre=${story.genre}`}>
+                                        <Badge variant="secondary" className="mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
+                                    </Link>
+                                    <Link href={`/stories/${story.id}`}>
+                                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-2 max-w-2xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
+                                            {story.title}
+                                        </h1>
+                                    </Link>
+                                     <Link href={`/artists/${story.artistId}`}>
+                                        <p className="text-lg text-white/90 font-semibold mb-4 drop-shadow-sm hover:text-primary/90 transition-colors">par {story.artistName}</p>
+                                    </Link>
                                     <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
                                         {story.description}
                                     </p>
