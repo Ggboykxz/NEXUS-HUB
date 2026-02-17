@@ -16,7 +16,7 @@ export default function PrivacyPage() {
 
             <h2>1. Introduction</h2>
             <p>
-                AfriStory ("nous", "notre") s'engage à protéger la vie privée de ses utilisateurs. Cette Politique de Confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme (le "Service").
+                NexusHub ("nous", "notre") s'engage à protéger la vie privée de ses utilisateurs. Cette Politique de Confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme (le "Service").
             </p>
 
             <h2>2. Informations que nous collectons</h2>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
 
             <h2>7. Contactez-nous</h2>
             <p>
-                Si vous avez des questions ou des commentaires sur cette Politique de Confidentialité, veuillez nous contacter à <a href="mailto:privacy@afristory.com">privacy@afristory.com</a>.
+                Si vous avez des questions ou des commentaires sur cette Politique de Confidentialité, veuillez nous contacter à <a href="mailto:privacy@nexushub.com">privacy@nexushub.com</a>.
             </p>
         </div>
     );

@@ -29,7 +29,7 @@ export default function AboutPage() {
             <section className="relative py-24 bg-primary/5">
                 <div className="container mx-auto max-w-7xl px-4 text-center">
                     <h1 className="text-5xl md:text-6xl font-bold font-display text-foreground mb-6">
-                        À Propos d'AfriStory
+                        À Propos de NexusHub
                     </h1>
                     <p className="text-xl text-foreground/80 max-w-3xl mx-auto">
                         La plateforme de la narration visuelle africaine. Un pont entre les créateurs et leur public mondial.
@@ -44,7 +44,7 @@ export default function AboutPage() {
                              <h2 className="text-4xl font-bold font-display mb-6">Notre Mission</h2>
                              <div className="space-y-4 text-lg text-foreground/80 leading-relaxed">
                                 <p>
-                                    AfriStory est né d'une ambition simple mais puissante : créer une scène mondiale pour les créateurs de bandes dessinées, webtoons et romans graphiques du continent africain et de sa diaspora. Nous voulons briser les barrières géographiques et économiques qui limitent trop souvent la portée des talents exceptionnels.
+                                    NexusHub est né d'une ambition simple mais puissante : créer une scène mondiale pour les créateurs de bandes dessinées, webtoons et romans graphiques du continent africain et de sa diaspora. Nous voulons briser les barrières géographiques et économiques qui limitent trop souvent la portée des talents exceptionnels.
                                 </p>
                                 <p>
                                     Notre mission est de devenir le carrefour où les histoires africaines rencontrent le monde. Nous offrons aux artistes les outils pour publier, monétiser et développer leur audience, tout en proposant aux lecteurs une bibliothèque riche et diversifiée d'œuvres qui célèbrent la créativité, la culture et l'imagination africaines.
@@ -71,7 +71,7 @@ export default function AboutPage() {
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold font-display mb-4">Nos Valeurs</h2>
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                            Ce qui nous guide chaque jour dans la construction d'AfriStory.
+                            Ce qui nous guide chaque jour dans la construction de NexusHub.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

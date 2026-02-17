@@ -39,6 +39,6 @@ export const navLinks: NavLink[] = [
   },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
-  { href: "/submit", label: "AfriStory Pro", icon: Award, badge: { variant: 'green' } },
-  { href: "/submit", label: "AfriStory Draft", icon: PenSquare, badge: { variant: 'orange' } },
+  { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { variant: 'green' } },
+  { href: "/submit", label: "NexusHub Draft", icon: PenSquare, badge: { variant: 'orange' } },
 ];

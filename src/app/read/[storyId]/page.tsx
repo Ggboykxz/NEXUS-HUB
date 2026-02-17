@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, use, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import { stories, comicPages, comments as allComments, artists, type Artist, type Chapter, type Story } from '@/lib/data';
 import type { Comment } from '@/lib/data';
 import { notFound, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, Award, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye
+  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,23 +19,23 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import Link from 'next/link';
 
 const LOGGED_IN_ARTIST_ID = '1';
 
 // #region Page Components
 
-function ReaderHeader({ story, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-black/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
       {/* Left section */}
       <div className="flex items-center gap-4 flex-1">
-        <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">AfriStory</Link>
+        <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">NexusHub</Link>
         <div className="w-px h-5 bg-border hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Link href="/stories" className="hover:text-primary transition-colors hidden sm:block">{story.title}</Link>
           <ChevronRight className="h-4 w-4 hidden sm:block" />
-          <span className="text-primary font-semibold whitespace-nowrap">Chap. 1 – {story.chapters[0].title}</span>
+          <span className="text-primary font-semibold whitespace-nowrap">Chap. {chapter.id.split('-')[1]} – {chapter.title}</span>
         </div>
       </div>
 
@@ -49,7 +48,7 @@ function ReaderHeader({ story, onModeChange, activeMode, onSettingsToggle, onBoo
           </SelectTrigger>
           <SelectContent>
             {story.chapters.map((chap: Chapter) => (
-              <SelectItem key={chap.id} value={chap.id} className="text-xs">
+              <SelectItem key={chap.id} value={chap.id.split('-')[1]} className="text-xs">
                 Chap {chap.id.split('-')[1]} – {chap.title}
               </SelectItem>
             ))}
@@ -293,6 +292,11 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   if (!story) {
     notFound();
   }
+  
+  const chapter = story.chapters[0];
+  if (!chapter) {
+    notFound();
+  }
 
   const artist = artists.find(a => a.id === story.artistId);
   if (!artist) {
@@ -322,6 +326,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
       <ProgressBar progress={progress} />
       <ReaderHeader 
         story={story} 
+        chapter={chapter}
         activeMode={activeMode}
         onModeChange={setActiveMode}
         onSettingsToggle={() => setShowSettings(!showSettings)}

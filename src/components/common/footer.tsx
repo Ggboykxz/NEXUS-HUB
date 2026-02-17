@@ -11,7 +11,7 @@ export default function Footer() {
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-yellow-300 flex items-center justify-center">
                     <BookOpen className="text-white h-4 w-4" />
                 </div>
-                <span className="font-display font-bold text-xl tracking-tight text-foreground">AfriStory</span>
+                <span className="font-display font-bold text-xl tracking-tight text-foreground">NexusHub</span>
             </Link>
             <p className="text-foreground/60 dark:text-stone-400 text-sm leading-relaxed max-w-sm font-light">
               Célébrer et promouvoir la narration visuelle africaine. Une plateforme pour les artistes, par des passionnés.
@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-center border-t border-border/50 pt-8 gap-4">
            <div className="flex items-center text-xs text-foreground/60 font-light gap-4 flex-wrap justify-center">
-             <p>&copy; {new Date().getFullYear()} AfriStory. Tous droits réservés.</p>
+             <p>&copy; {new Date().getFullYear()} NexusHub. Tous droits réservés.</p>
              <div className="flex gap-4">
                 <Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales</Link>
                 <Link href="/legal/privacy" className="hover:text-primary transition-colors">Confidentialité</Link>
