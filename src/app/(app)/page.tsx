@@ -6,7 +6,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, comments } from '@/lib/data';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import {
@@ -72,9 +72,17 @@ export default function HomePage() {
                                     <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 drop-shadow-sm">
                                         {story.description}
                                     </p>
-                                    <Button asChild size="lg">
-                                        <Link href={`/stories/${story.id}`}>En savoir plus</Link>
-                                    </Button>
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <Button asChild size="lg">
+                                            <Link href={`/read/${story.id}`}>
+                                                <Play className="mr-2 h-5 w-5 fill-current" />
+                                                Commencer la lecture
+                                            </Link>
+                                        </Button>
+                                        <Button asChild size="lg" variant="outline" className="border-white/50 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white">
+                                            <Link href={`/stories/${story.id}`}>En savoir plus</Link>
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </CarouselItem>
