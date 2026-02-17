@@ -28,7 +28,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-    // toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
+    toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
   };
   
   const handleShare = () => {
@@ -58,12 +58,14 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
         <div className="hero-content">
             <div className="hero-eyebrow">
-                <Link href="/stories" className="no-underline">
+                <Link href="/stories">
                     <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
                 </Link>
-                <Badge variant="secondary" className="hero-status-badge">
-                    <span className="status-dot"></span> En cours
-                </Badge>
+                <Link href="/stories">
+                    <Badge variant="secondary" className="hero-status-badge">
+                        <span className="status-dot"></span> En cours
+                    </Badge>
+                </Link>
                 {story.isPremium && <Badge className="hero-pro-badge">NexusHub Pro</Badge>}
             </div>
 
