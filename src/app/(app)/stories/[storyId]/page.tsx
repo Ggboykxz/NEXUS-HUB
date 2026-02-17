@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { StoryCard } from '@/components/story-card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
@@ -32,6 +31,11 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
     toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
   };
   
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({ title: "Lien copié dans le presse-papiers" });
+  };
+  
   return (
     <section className="hero">
         <div className="hero-bg"></div>
@@ -46,7 +50,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
         <div className="cover-art-hero">
             <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" data-ai-hint={story.coverImage.imageHint} priority />
              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-            <Badge className="cover-badge" variant="outline">NexusHub Pro ✦ Original</Badge>
+            {story.isPremium && <Badge className="cover-badge" variant="outline">NexusHub Pro ✦ Original</Badge>}
         </div>
 
         <div className="hero-fade"></div>
@@ -91,7 +95,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
             <div className="hero-genre-tags">
                 {story.tags.map(tag => (
-                    <Link key={tag} href="#" className="genre-tag">{tag}</Link>
+                    <Link key={tag} href={`/stories?genre=${tag}`} className="genre-tag">{tag}</Link>
                 ))}
             </div>
             
@@ -146,7 +150,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                 <Button className="cta-icon-btn" onClick={handleBookmark} title="Sauvegarder">
                     <Bookmark className={cn(isBookmarked && "fill-current")} />
                 </Button>
-                <Button className="cta-icon-btn" onClick={() => toast({title: "Lien copié dans le presse-papiers"})} title="Partager">
+                <Button className="cta-icon-btn" onClick={handleShare} title="Partager">
                     <Share2 />
                 </Button>
             </div>
@@ -205,6 +209,9 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
 
 const ChaptersSection = ({ story }: { story: Story }) => {
     const { toast } = useToast();
+    const [activeFilter, setActiveFilter] = useState('Tous');
+    const filters = ['Tous', 'Gratuits', 'Premium'];
+
     return (
          <div className="chapters-block fade-in">
             <div className="section-heading">
@@ -216,11 +223,18 @@ const ChaptersSection = ({ story }: { story: Story }) => {
 
             <div className="chapters-toolbar">
                 <div className="chapters-filter">
-                    <Button variant="ghost" className="filter-btn active">Tous</Button>
-                    <Button variant="ghost" className="filter-btn">Gratuits</Button>
-                    <Button variant="ghost" className="filter-btn">Premium</Button>
+                    {filters.map(filter => (
+                        <Button
+                            key={filter}
+                            variant="ghost"
+                            className={cn("filter-btn", activeFilter === filter && "active")}
+                            onClick={() => setActiveFilter(filter)}
+                        >
+                            {filter}
+                        </Button>
+                    ))}
                 </div>
-                 <Button variant="ghost" className="filter-btn">↕ Ordre</Button>
+                 <Button variant="ghost" className="filter-btn" onClick={() => toast({title: "Ordre inversé"})}>↕ Ordre</Button>
             </div>
             
              <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
@@ -316,8 +330,8 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                         <Button variant="ghost" className="review-action" onClick={() => toast({title: "Utile (143)!"})}>
                             <ThumbsUp /> Utile ({comment.likes})
                         </Button>
-                        <Button variant="ghost" className="review-action">Répondre</Button>
-                        <Button variant="ghost" className="review-action" style={{marginLeft:'auto', opacity: 0.5}}>
+                        <Button variant="ghost" className="review-action" onClick={() => toast({title: "Fonctionnalité à venir"})}>Répondre</Button>
+                        <Button variant="ghost" className="review-action" style={{marginLeft:'auto', opacity: 0.5}} onClick={() => toast({title: "Commentaire signalé", variant: "destructive"})}>
                             <AlertTriangle /> Signaler
                         </Button>
                     </div>
@@ -364,6 +378,11 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
     const { toast } = useToast();
     const [isFollowing, setIsFollowing] = useState(false);
     
+    const handleFollow = () => {
+        setIsFollowing(!isFollowing);
+        toast({ title: isFollowing ? `Vous ne suivez plus ${artist.name}` : `Vous suivez maintenant ${artist.name}` });
+    };
+
     return (
         <div className="right-col">
             <div className="sticky-col">
@@ -384,7 +403,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                         </div>
                         <p className="artist-bio-sm">"{artist.bio.slice(0,100)}..."</p>
                          <div className="artist-btns">
-                            <Button className={cn("artist-follow-btn", isFollowing && "following")} onClick={() => setIsFollowing(!isFollowing)}>
+                            <Button className={cn("artist-follow-btn", isFollowing && "following")} onClick={handleFollow}>
                                 {isFollowing ? '✓ Abonné' : '+ Suivre l\'artiste'}
                             </Button>
                             <Button variant="ghost" className="artist-more-btn" onClick={() => toast({title: "Artiste ajouté aux favoris"})}>
@@ -402,7 +421,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                         <p className="afri-sub">Envoyez des AfriCoins directement à {artist.name} pour ce chapitre ou la série entière.</p>
                         <div className="coin-row">
                             {[10, 50, 100, 500].map(amount => (
-                                <Button key={amount} variant="outline" className="coin-opt">{amount} 🪙</Button>
+                                <Button key={amount} variant="outline" className="coin-opt" onClick={() => toast({title: `${amount} AfriCoins sélectionnés`})}>{amount} 🪙</Button>
                             ))}
                         </div>
                         <Button className="coin-send" onClick={() => toast({title: "50 AfriCoins envoyés !"})}>Envoyer des AfriCoins</Button>
