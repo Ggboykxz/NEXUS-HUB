@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award, Eye, Star } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award, Eye, Star, PenSquare } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -82,10 +82,15 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
           <div className="flex flex-col items-center md:items-start mt-4 gap-y-4">
             <div className="flex items-center gap-x-3">
               <h1 className="text-4xl font-bold">{artist.name}</h1>
-              {artist.isMentor && (
+              {artist.isMentor ? (
                 <Badge variant="secondary" className="flex items-center gap-1.5 whitespace-nowrap text-sm h-fit py-1 px-2.5">
                     <Award className="h-4 w-4" />
-                    Mentor
+                    Pro
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="flex items-center gap-1.5 whitespace-nowrap text-sm h-fit py-1 px-2.5">
+                    <PenSquare className="h-4 w-4" />
+                    Draft
                 </Badge>
               )}
             </div>

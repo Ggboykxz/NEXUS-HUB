@@ -2,7 +2,7 @@ import { artists } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { Users, Award } from 'lucide-react';
+import { Users, Award, PenSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function ArtistsPage() {
@@ -20,10 +20,15 @@ export default function ArtistsPage() {
         {artists.map((artist) => (
           <Link key={artist.id} href={`/artists/${artist.id}`}>
             <Card className="relative text-center p-4 transition-all hover:shadow-lg hover:-translate-y-1">
-              {artist.isMentor && (
+              {artist.isMentor ? (
                 <Badge variant="secondary" className="absolute top-2 right-2 gap-1 text-xs z-10">
                   <Award className="h-3 w-3" />
-                  Mentor
+                  Pro
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="absolute top-2 right-2 gap-1 text-xs z-10">
+                  <PenSquare className="h-3 w-3" />
+                  Draft
                 </Badge>
               )}
               <CardContent className="p-0 flex flex-col items-center">
