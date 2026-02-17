@@ -4,7 +4,7 @@ export default function ReaderLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dark bg-black min-h-screen">
+    <div className="bg-background min-h-screen">
       {children}
     </div>
   );

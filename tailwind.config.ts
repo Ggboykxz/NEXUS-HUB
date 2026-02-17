@@ -17,8 +17,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-        display: ['"Yeseva One"', 'serif'],
+        sans: ['"Syne"', 'sans-serif'],
+        display: ['"Cinzel Decorative"', 'serif'],
+        serif: ['"Crimson Pro"', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

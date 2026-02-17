@@ -56,8 +56,8 @@ export default function ContactPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">Pour les demandes générales et le support :</p>
-                        <a href="mailto:contact@nexushub.com" className="text-lg text-primary font-semibold hover:underline">
-                            contact@nexushub.com
+                        <a href="mailto:contact@afristory.com" className="text-lg text-primary font-semibold hover:underline">
+                            contact@afristory.com
                         </a>
                     </CardContent>
                 </Card>

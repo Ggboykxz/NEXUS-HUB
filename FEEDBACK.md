@@ -1,6 +1,6 @@
-# Bilan d'Avancement du Projet NexusHub
+# Bilan d'Avancement du Projet AfriStory
 
-Ce document offre une analyse de l'état d'avancement du projet NexusHub par rapport à la feuille de route définie.
+Ce document offre une analyse de l'état d'avancement du projet AfriStory par rapport à la feuille de route définie.
 
 ## Phase 1 – MVP (Objectifs Atteints)
 
@@ -71,10 +71,11 @@ Pour guider le développement futur, voici la planification détaillée des proc
 *   **Actions Clés :**
     *   **Prospection :**
         *   Identifier et contacter des maisons d'édition africaines et internationales.
-        *   Préparer un dossier de présentation du projet NexusHub.
+        *   Préparer un dossier de présentation du projet AfriStory.
     *   **Définition des Modèles de Partenariat :**
         *   Explorer des collaborations : publication d'œuvres existantes, détection de talents pour l'édition papier.
         *   Définir les aspects juridiques et financiers de ces partenariats.
     *   **Fonctionnalités Associées (si nécessaire) :**
         *   Développer des outils pour que les éditeurs puissent gérer leur catalogue sur la plateforme.
         *   Créer une section "Éditeurs Partenaires" sur le site.
+

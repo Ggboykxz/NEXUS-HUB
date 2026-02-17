@@ -36,7 +36,7 @@ export default function MentorshipPage() {
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <div className="text-center mb-16">
         <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">Programme de Mentorat NexusHub</h1>
+        <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">Programme de Mentorat AfriStory</h1>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
           Un pont entre les talents confirmés et la nouvelle génération. Nos artistes Pro partagent leur expérience pour aider les créateurs Draft à atteindre leur plein potentiel.
         </p>

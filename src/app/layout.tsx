@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
+  title: 'AfriStory | Plongez au Cœur des Histoires Africaines',
   description: 'La plateforme de la narration visuelle africaine',
 };
 
@@ -12,31 +12,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const themeScript = `
-    (function() {
-      try {
-        const theme = localStorage.getItem('theme');
-        if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      } catch (_) {}
-    })();
-  `;
-
   return (
-    <html lang="fr" suppressHydrationWarning className="scroll-smooth">
+    <html lang="fr" className="dark scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Yeseva+One&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Syne:wght@400;500;600;700;800&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap"
           rel="stylesheet"
         />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="font-sans antialiased">
+      <body className="font-sans">
         {children}
         <Toaster />
       </body>

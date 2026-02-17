@@ -16,12 +16,12 @@ export default function TermsPage() {
 
             <h2>1. Acceptation des conditions</h2>
             <p>
-                En accédant ou en utilisant la plateforme NexusHub (le "Service"), vous acceptez d'être lié par ces Conditions d'Utilisation ("Conditions"). Si vous n'êtes pas d'accord avec une partie des conditions, vous ne pouvez pas accéder au Service.
+                En accédant ou en utilisant la plateforme AfriStory (le "Service"), vous acceptez d'être lié par ces Conditions d'Utilisation ("Conditions"). Si vous n'êtes pas d'accord avec une partie des conditions, vous ne pouvez pas accéder au Service.
             </p>
 
             <h2>2. Description du Service</h2>
             <p>
-                NexusHub est une plateforme panafricaine de lecture en ligne et de mise en valeur des artistes graphiques et narratifs. Elle permet aux créateurs ("Artistes") de publier leurs œuvres et aux utilisateurs ("Lecteurs") de les lire.
+                AfriStory est une plateforme panafricaine de lecture en ligne et de mise en valeur des artistes graphiques et narratifs. Elle permet aux créateurs ("Artistes") de publier leurs œuvres et aux utilisateurs ("Lecteurs") de les lire.
             </p>
 
             <h2>3. Comptes Utilisateurs</h2>
@@ -31,7 +31,7 @@ export default function TermsPage() {
 
             <h2>4. Contenu Utilisateur</h2>
             <p>
-                En tant qu'Artiste, vous conservez tous les droits sur le contenu que vous publiez. Cependant, en publiant sur NexusHub, vous nous accordez une licence mondiale, non exclusive, et libre de droits pour héberger, afficher, et distribuer votre contenu sur la plateforme.
+                En tant qu'Artiste, vous conservez tous les droits sur le contenu que vous publiez. Cependant, en publiant sur AfriStory, vous nous accordez une licence mondiale, non exclusive, et libre de droits pour héberger, afficher, et distribuer votre contenu sur la plateforme.
             </p>
             <p>
                 Vous êtes seul responsable du contenu que vous publiez. Il ne doit pas enfreindre les droits d'auteur, les marques de commerce ou tout autre droit de propriété intellectuelle.
@@ -39,7 +39,7 @@ export default function TermsPage() {
 
             <h2>5. Monnaie Virtuelle (AfriCoins)</h2>
             <p>
-                Les AfriCoins sont une monnaie virtuelle qui peut être achetée et utilisée sur la plateforme pour débloquer du contenu 'Premium'. Les AfriCoins n'ont aucune valeur monétaire en dehors de NexusHub et ne sont pas remboursables.
+                Les AfriCoins sont une monnaie virtuelle qui peut être achetée et utilisée sur la plateforme pour débloquer du contenu 'Premium'. Les AfriCoins n'ont aucune valeur monétaire en dehors d'AfriStory et ne sont pas remboursables.
             </p>
 
             <h2>6. Résiliation</h2>
@@ -54,7 +54,7 @@ export default function TermsPage() {
 
             <h2>8. Contactez-nous</h2>
             <p>
-                Si vous avez des questions sur ces Conditions, veuillez nous contacter à <a href="mailto:legal@nexushub.com">legal@nexushub.com</a>.
+                Si vous avez des questions sur ces Conditions, veuillez nous contacter à <a href="mailto:legal@afristory.com">legal@afristory.com</a>.
             </p>
         </div>
     );

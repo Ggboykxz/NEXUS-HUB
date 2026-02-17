@@ -25,7 +25,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ThemeToggle } from './theme-toggle';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
@@ -374,7 +373,7 @@ export default function Header() {
         <div className={cn("w-full items-center justify-between", isSearchOpen ? 'hidden' : 'flex')}>
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+              <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
             </Link>
           </div>
 
@@ -409,7 +408,6 @@ export default function Header() {
                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                   </Button>
-                  <ThemeToggle />
                  
                 <div className={cn('flex items-center gap-2', (hasMounted && isLoggedIn) ? 'hidden' : 'flex')}>
                     {LoggedOutNav}
@@ -423,7 +421,6 @@ export default function Header() {
                     <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                     </Button>
-                    <ThemeToggle />
                     <Button variant="ghost" size="icon" className={cn('relative text-foreground/90', !(hasMounted && isLoggedIn) && 'hidden')}>
                       <Bell className="h-5 w-5" />
                     </Button>
@@ -437,7 +434,7 @@ export default function Header() {
                       <SheetContent side="left" className="pr-0 bg-background flex flex-col">
                         <div>
                             <Link href="/" className="flex items-center space-x-2 px-4 pt-4 mb-6">
-                                <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+                                <span className="font-display font-bold text-2xl tracking-tight text-foreground">AfriStory<span className="text-primary">.</span></span>
                             </Link>
                             <nav className="flex flex-col space-y-2 px-4">
                                 {navLinks.map((link) => {

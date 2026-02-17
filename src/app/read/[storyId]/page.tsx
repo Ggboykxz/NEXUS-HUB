@@ -1,431 +1,361 @@
 'use client';
 
-import { useState, useEffect, use, useCallback } from 'react';
-import { stories, comicPages, comments as allComments } from '@/lib/data';
+import { useState, useEffect, use, useCallback, useRef } from 'react';
+import { stories, comicPages, comments as allComments, artists, type Artist, type Chapter, type Story } from '@/lib/data';
 import type { Comment } from '@/lib/data';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft,
-  Book,
-  Layers,
-  Heart,
-  MessageSquare,
-  Lock,
-  CircleDollarSign,
-  MoreHorizontal,
-  Trash2,
-  Ban,
-  X,
-  Share2,
-  ChevronLeft,
-  ChevronRight,
+  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from "@/components/ui/toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
-// Simulate logged-in user being artist '1'
 const LOGGED_IN_ARTIST_ID = '1';
 
-function CommentItem({ comment, storyAuthorId }: { comment: Comment, storyAuthorId: string }) {
-    const { toast } = useToast();
-    const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(comment.likes);
+// #region Page Components
 
-    const isArtistAuthor = LOGGED_IN_ARTIST_ID === storyAuthorId;
-    // Artists can't moderate their own comments
-    const isCommentFromArtistAuthor = storyAuthorId === comment.authorId;
-
-    const handleLike = () => {
-        setLikeCount(liked ? likeCount - 1 : likeCount + 1);
-        setLiked(!liked);
-    }
-    
-    const handleReply = () => {
-        toast({
-            title: "Fonctionnalité à venir",
-            description: "La possibilité de répondre aux commentaires sera bientôt disponible.",
-        });
-    }
-
-    const handleDelete = () => {
-        toast({
-            title: "Commentaire supprimé",
-            description: "Le commentaire a été supprimé (simulation)."
-        });
-    };
-
-    const handleBlock = () => {
-        toast({
-            title: "Lecteur bloqué",
-            description: `${comment.authorName} a été bloqué et ne pourra plus commenter vos œuvres (simulation).`,
-            variant: "destructive"
-        });
-    };
-
-    return (
-        <div className="flex gap-4">
-            <Avatar className="h-10 w-10 border-2 border-border">
-                <AvatarImage src={comment.authorAvatar.imageUrl} alt={comment.authorName} data-ai-hint={comment.authorAvatar.imageHint} />
-                <AvatarFallback>{comment.authorName.slice(0,2)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-2">
-                        <p className="font-semibold text-foreground">{comment.authorName}</p>
-                        <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
-                    </div>
-                    {isArtistAuthor && !isCommentFromArtistAuthor && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Supprimer le commentaire
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleBlock} className="text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
-                                    <Ban className="mr-2 h-4 w-4" />
-                                    Bloquer {comment.authorName}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-                </div>
-                <p className="mt-1 text-foreground/80 leading-relaxed">{comment.content}</p>
-                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <Button variant="ghost" size="sm" onClick={handleLike} className="flex items-center gap-1.5 px-2 text-muted-foreground hover:text-foreground">
-                        <Heart className={cn('h-4 w-4', liked && 'text-red-500 fill-current')} />
-                        <span>{likeCount}</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleReply} className="flex items-center gap-1.5 px-2 text-muted-foreground hover:text-foreground">
-                        <MessageSquare className="h-4 w-4" />
-                        <span>Répondre</span>
-                    </Button>
-                </div>
-
-                {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-6 space-y-6 pl-6 border-l-2 border-border/50">
-                        {comment.replies.map(reply => (
-                            <CommentItem key={reply.id} comment={reply} storyAuthorId={storyAuthorId} />
-                        ))}
-                    </div>
-                )}
-            </div>
+function ReaderHeader({ story, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
+  return (
+    <nav className="fixed top-0 left-0 right-0 h-14 bg-black/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
+      {/* Left section */}
+      <div className="flex items-center gap-4 flex-1">
+        <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">AfriStory</Link>
+        <div className="w-px h-5 bg-border hidden md:block" />
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link href="/stories" className="hover:text-primary transition-colors hidden sm:block">{story.title}</Link>
+          <ChevronRight className="h-4 w-4 hidden sm:block" />
+          <span className="text-primary font-semibold whitespace-nowrap">Chap. 1 – {story.chapters[0].title}</span>
         </div>
-    )
+      </div>
+
+      {/* Center section */}
+      <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+        <Button size="icon" variant="outline" className="w-8 h-8"><ChevronLeft className="h-4 w-4" /></Button>
+        <Select defaultValue="1">
+          <SelectTrigger className="w-[200px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {story.chapters.map((chap: Chapter) => (
+              <SelectItem key={chap.id} value={chap.id} className="text-xs">
+                Chap {chap.id.split('-')[1]} – {chap.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button size="icon" variant="outline" className="w-8 h-8"><ChevronRight className="h-4 w-4" /></Button>
+      </div>
+
+      {/* Right section */}
+      <div className="flex items-center gap-2 flex-1 justify-end">
+        <div className="hidden sm:flex bg-card border border-border rounded-lg p-0.5">
+          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-xs gap-1.5">
+            <Layers className="h-3.5 w-3.5" /> Webtoon
+          </Button>
+          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-xs gap-1.5">
+            <Book className="h-3.5 w-3.5" /> BD
+          </Button>
+        </div>
+        <Button onClick={onBookmark} size="sm" variant="outline" className={cn("h-8 gap-1.5", isBookmarked && "bg-primary/10 border-primary text-primary")}>
+          <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-current")} />
+          <span className="hidden md:inline">{isBookmarked ? 'Sauvegardé' : 'Sauvegarder'}</span>
+        </Button>
+        <Button onClick={onSettingsToggle} size="icon" variant="outline" className="h-8 w-8">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </div>
+    </nav>
+  );
 }
+
+function ProgressBar({ progress }: { progress: number }) {
+  return (
+    <div className="fixed top-14 left-0 right-0 h-0.5 bg-white/5 z-50">
+      <div
+        className="h-full bg-gradient-to-r from-primary/50 via-primary to-yellow-300 transition-all duration-75 ease-linear"
+        style={{ width: `${progress}%` }}
+      >
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_8px_theme(colors.yellow.300)]" />
+      </div>
+    </div>
+  )
+}
+
+function ReaderSidebar({ story, artist }: { story: Story, artist: Artist }) {
+  const [activeTab, setActiveTab] = useState('chapters');
+
+  const TabButton = ({ id, label }: { id: string, label: string }) => (
+    <Button
+      variant="ghost"
+      onClick={() => setActiveTab(id)}
+      className={cn(
+        "flex-1 rounded-none border-b-2 h-11 text-xs font-semibold uppercase tracking-wider",
+        activeTab === id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
+      )}
+    >
+      {label}
+    </Button>
+  );
+
+  return (
+    <aside className="w-[320px] bg-[#121212] border-l border-border h-[calc(100vh-56px)] sticky top-14 flex-shrink-0 hidden lg:flex flex-col">
+      <div className="flex border-b border-border sticky top-0 bg-[#121212] z-10">
+        <TabButton id="chapters" label="Chapitres" />
+        <TabButton id="artist" label="Artiste" />
+        <TabButton id="explore" label="Explorer" />
+      </div>
+      <ScrollArea className="flex-1">
+        {activeTab === 'chapters' && <ChaptersTab story={story} />}
+        {activeTab === 'artist' && <ArtistTab artist={artist} />}
+        {activeTab === 'explore' && <ExploreTab />}
+      </ScrollArea>
+    </aside>
+  );
+}
+
+function ChaptersTab({ story }: { story: Story }) {
+  const { toast } = useToast();
+  return (
+    <div className="p-4">
+      {/* Mini series info */}
+      <div className="flex gap-3 mb-4 pb-4 border-b border-border">
+        <Image src={story.coverImage.imageUrl} alt={story.title} width={56} height={80} className="rounded-md object-cover flex-shrink-0" />
+        <div>
+          <h3 className="font-display text-sm text-foreground mb-1">{story.title}</h3>
+          <Link href={`/artists/${story.artistId}`} className="text-xs text-primary hover:underline flex items-center gap-1.5 mb-2">
+            <Award className="h-3 w-3" /> {story.artistName}
+          </Link>
+          <div className="flex gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><Eye className="h-3 w-3"/> {(story.views/1000).toFixed(0)}k</span>
+            <span className="flex items-center gap-1"><Heart className="h-3 w-3"/> {(story.likes/1000).toFixed(0)}k</span>
+            <span className="flex items-center gap-1"><Book className="h-3 w-3"/> {story.chapters.length} chap.</span>
+          </div>
+        </div>
+      </div>
+      {/* AfriCoin support */}
+      <div className="bg-card border border-primary/20 rounded-lg p-3 mb-4">
+        <h4 className="text-xs font-bold text-primary flex items-center gap-2 mb-2"><Coins className="h-4 w-4"/> Soutenir l'artiste</h4>
+        <div className="flex gap-1.5 mb-2.5">
+          {[10, 50, 100, 500].map(amount => (
+            <Button key={amount} size="sm" variant="outline" className="h-7 text-xs flex-1 hover:bg-primary hover:text-primary-foreground">{amount} 🪙</Button>
+          ))}
+        </div>
+        <Button size="sm" className="w-full h-8" onClick={() => toast({ title: '🪙 50 AfriCoins envoyés !' })}>Envoyer des AfriCoins</Button>
+      </div>
+      {/* Chapter list */}
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Liste des chapitres</label>
+        <span className="text-xs text-primary font-semibold">{story.chapters.length}/{story.chapters.length}</span>
+      </div>
+      <Input type="search" placeholder="🔍 Rechercher un chapitre…" className="h-8 mb-3 text-xs" />
+      <div className="flex flex-col gap-1">
+        {story.chapters.map((chap, index) => (
+          <Link key={chap.id} href="#" className={cn(
+            "flex items-center gap-2.5 p-2.5 rounded-lg transition-colors hover:bg-card",
+            index + 1 === 1 && "bg-primary/10 border border-primary/20"
+          )}>
+            <div className={cn(
+              "w-7 h-7 flex items-center justify-center rounded-md bg-card border border-border text-xs font-bold text-muted-foreground flex-shrink-0",
+              index + 1 === 1 && "bg-primary border-primary text-primary-foreground"
+            )}>{index + 1}</div>
+            <div className="flex-1 overflow-hidden">
+              <p className={cn("text-sm font-semibold truncate", index + 1 === 1 && "text-primary")}>{chap.title}</p>
+              <p className="text-xs text-muted-foreground">Lu · {chap.releaseDate}</p>
+            </div>
+            {index + 1 === 1 && <div className="text-xs font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">NEW</div>}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArtistTab({ artist }: { artist: Artist }) {
+  const { toast } = useToast();
+  const [isFollowing, setIsFollowing] = useState(false);
+  return (
+    <div className="p-4">
+      <div className="bg-card border border-border rounded-xl p-4 text-center">
+        <div className="relative inline-block">
+          <Avatar className="w-16 h-16 mx-auto mb-3 border-2 border-primary shadow-lg">
+            <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
+            <AvatarFallback>{artist.name.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
+            <Check className="w-3 h-3 text-black" />
+          </div>
+        </div>
+        <h3 className="font-display text-base text-foreground mb-1">{artist.name}</h3>
+        <p className="text-xs text-muted-foreground mb-3">Auteur · Dessinateur · Coloriste</p>
+        <div className="flex justify-around py-3 border-y border-border mb-3">
+          <div>
+            <p className="font-bold text-lg text-primary">14.8k</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Abonnés</p>
+          </div>
+          <div>
+            <p className="font-bold text-lg text-primary">1.2M</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Vues</p>
+          </div>
+        </div>
+        <p className="text-sm italic text-muted-foreground mb-4">"{artist.bio.slice(0, 100)}..."</p>
+        <div className="flex gap-2">
+          <Button size="sm" className="flex-1 h-9" onClick={() => setIsFollowing(!isFollowing)}>
+            <Star className={cn("h-4 w-4", isFollowing && "fill-current")} /> {isFollowing ? 'Suivi' : 'Suivre'}
+          </Button>
+          <Button size="sm" variant="destructive" className="h-9" onClick={() => toast({ title: '❤️ Merci pour votre soutien !' })}>
+            <Heart className="h-4 w-4"/> Soutenir
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExploreTab() {
+  const otherStories = stories.filter(s => s.id !== '1').slice(0, 4);
+  return (
+    <div className="p-4">
+      <h4 className="text-xs uppercase font-bold tracking-wider text-muted-foreground mb-2">Tendances du moment</h4>
+      <div className="flex flex-col gap-2">
+        {otherStories.map(story => (
+          <Link key={story.id} href={`/stories/${story.id}`} className="flex gap-3 items-center p-2 rounded-lg hover:bg-card">
+            <Image src={story.coverImage.imageUrl} alt={story.title} width={40} height={56} className="rounded-md object-cover" />
+            <div>
+              <p className="text-sm font-semibold leading-tight">{story.title}</p>
+              <p className="text-xs text-muted-foreground">{story.artistName}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount }: any) {
+  return (
+    <div className="fixed top-1/2 -translate-y-1/2 right-5 lg:right-[calc(320px+20px)] z-40 flex flex-col gap-2">
+      <Button onClick={onLike} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm", isLiked && "text-primary border-primary bg-primary/10")}>
+        <Heart className={cn(isLiked && "fill-current")} />
+      </Button>
+      <Button onClick={onComment} variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm relative">
+        <MessageSquare />
+        <Badge variant="destructive" className="absolute -top-2 -right-2">{commentsCount}</Badge>
+      </Button>
+      <Button onClick={onBookmark} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm", isBookmarked && "text-primary border-primary bg-primary/10")}>
+        <Bookmark className={cn(isBookmarked && "fill-current")} />
+      </Button>
+      <Button onClick={onShare} variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm">
+        <Share2 />
+      </Button>
+    </div>
+  )
+}
+
+// #endregion
 
 export default function ReadPage(props: { params: { storyId: string } }) {
   const params = use(props.params);
   const story = stories.find((s) => s.id === params.storyId);
-  const router = useRouter();
   const { toast } = useToast();
-  
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-  const [count, setCount] = useState(0);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-  
-  const [viewMode, setViewMode] = useState('scroll');
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
-  const [userCoins, setUserCoins] = useState(150);
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  
-  const onSelect = useCallback((api: CarouselApi) => {
-    if (!api) {
-      return;
-    }
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap() + 1);
-    setCanScrollPrev(api.canScrollPrev());
-    setCanScrollNext(api.canScrollNext());
-  }, []);
+
+  const [activeMode, setActiveMode] = useState('scroll');
+  const [progress, setProgress] = useState(0);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Scroll progress calculation
+  const handleScroll = () => {
+    const doc = document.documentElement;
+    const scrollPosition = doc.scrollTop;
+    const totalHeight = doc.scrollHeight - doc.clientHeight;
+    const scrollPercentage = totalHeight > 0 ? (scrollPosition / totalHeight) * 100 : 0;
+    setProgress(scrollPercentage);
+  };
 
   useEffect(() => {
-    if (!api) {
-      return;
-    }
-    onSelect(api);
-    api.on("reInit", onSelect);
-    api.on("select", onSelect);
-    return () => {
-      api?.off("select", onSelect);
-      api?.off("reInit", onSelect);
-    };
-  }, [api, onSelect]);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (!story) {
+    notFound();
+  }
+
+  const artist = artists.find(a => a.id === story.artistId);
+  if (!artist) {
     notFound();
   }
   
   const chapterComments = allComments.filter(c => c.storyId === story!.id && c.chapter === 1);
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsFavorite(!isFavorite);
-    toast({ title: isFavorite ? "Retiré des favoris" : "Ajouté aux favoris !" });
-  };
-
-  const handleShare = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({ title: "Lien copié dans le presse-papiers" });
   };
-
-  const handlePostComment = () => {
-      toast({
-          title: "Commentaire posté !",
-          description: "Votre commentaire a été ajouté (simulation).",
-      });
-  }
-
-  const handleUnlock = () => {
-    if (userCoins >= (story.price || 0)) {
-      setUserCoins(userCoins - (story.price || 0)); // Simulate deduction
-      setIsUnlocked(true);
-      toast({
-        title: "Chapitre débloqué !",
-        description: `Vous pouvez maintenant lire ce chapitre. Bonnen lecture !`,
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Solde insuffisant",
-        description: `Vous n'avez pas assez d'AfriCoins pour débloquer ce chapitre.`,
-        action: <ToastAction altText="Acheter" onClick={() => router.push('/settings?tab=africoins')}>Acheter des coins</ToastAction>,
-      });
-    }
+  
+  const handleBookmark = () => {
+    setIsBookmarked(!isBookmarked);
+    toast({ title: isBookmarked ? 'Sauvegarde retirée' : 'Chapitre sauvegardé !'});
   };
 
-  const headerElement = (
-    <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour
-          </Button>
-          <div className="text-center">
-            <h1 className="font-display text-lg truncate text-foreground">{story.title}</h1>
-            <p className="text-sm text-muted-foreground">Chapitre 1</p>
-          </div>
-          <div className="w-16 shrink-0 md:w-24"></div> {/* Spacer */}
-        </div>
-    </header>
-  );
-
-  if (!isUnlocked) {
-    return (
-      <div className="relative">
-        {headerElement}
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-background text-foreground px-4">
-          <Card className="bg-card border-border text-center max-w-md p-8">
-            <CardHeader>
-              <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4 border-2 border-primary/20">
-                <Lock className="h-10 w-10 text-primary" />
-              </div>
-              <CardTitle className="text-3xl text-card-foreground">Chapitre Premium</CardTitle>
-              <CardDescription className="text-base">
-                Ce chapitre est un contenu exclusif. Débloquez-le pour continuer votre lecture.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button size="lg" className="w-full text-lg" onClick={handleUnlock}>
-                <CircleDollarSign className="mr-2 h-6 w-6"/>
-                Débloquer pour {story.price} coins
-              </Button>
-            </CardContent>
-            <CardFooter className="flex-col gap-2 pt-6">
-              <p className="text-sm text-muted-foreground">Votre solde : {userCoins} coins</p>
-              <Button variant="link" onClick={() => router.push('/settings?tab=africoins')}>
-                Acheter plus de coins
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    if(!isLiked) toast({ title: '💛 Chapitre aimé !'});
+  };
 
   return (
-    <div className="bg-black text-foreground">
-      <div className="flex h-screen">
-        {/* Main Reader Content */}
-        <div className={cn(
-          "flex-1 flex flex-col min-w-0 transition-[width] duration-300 ease-in-out",
-          isCommentsOpen ? "md:w-[calc(100%-420px)]" : "md:w-full"
-        )}>
-          <header className="flex-shrink-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
-            <div className="container mx-auto px-2 sm:px-4 h-14 flex items-center">
-              <div className="flex-1 flex justify-start">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </div>
-              <div className="flex-grow text-center overflow-hidden px-2">
-                <h1 className="font-display text-base sm:text-lg truncate text-foreground" title={story.title}>{story.title}</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">Chapitre 1</p>
-              </div>
-              <div className="flex-1 flex justify-end items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={handleFavoriteClick}>
-                  <Heart className={cn("h-5 w-5", isFavorite && "fill-red-500 text-red-500")} />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleShare}>
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 relative overflow-hidden">
-            <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full">
-              <TabsContent value="scroll" className="m-0 h-full">
-                <ScrollArea className="h-full">
-                  <div className="flex flex-col items-center">
-                    {comicPages.map((page, index) => (
-                      <Image
-                        key={page.id}
-                        src={page.imageUrl}
-                        alt={page.description}
-                        width={800}
-                        height={1200}
-                        className="max-w-full h-auto"
-                        data-ai-hint={page.imageHint}
-                        priority={index < 2}
-                        sizes="(max-width: 800px) 100vw, 800px"
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="pages" className="m-0 h-full flex items-center justify-center">
-                  <Carousel setApi={setApi} className="w-full h-full">
-                    <CarouselContent className="h-full">
-                      {comicPages.map((page) => (
-                        <CarouselItem key={page.id} className="h-full">
-                          <div className="w-full h-full flex items-center justify-center p-2">
-                            <Image
-                              src={page.imageUrl}
-                              alt={page.description}
-                              width={800}
-                              height={1200}
-                              className="max-w-full max-h-full object-contain"
-                              data-ai-hint={page.imageHint}
-                              priority
-                              sizes="(max-width: 768px) 100vw, 80vw"
-                            />
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
-              </TabsContent>
-            
-              <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
-                <TabsList>
-                  <TabsTrigger value="scroll" className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
-                  <TabsTrigger value="pages" className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
-                </TabsList>
-              </div>
-            </Tabs>
-          </main>
-
-          {viewMode === 'pages' && (
-              <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
-                  <div className="flex items-center justify-between h-12 px-4">
-                      <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>
-                          <ChevronLeft className="mr-2 h-4 w-4" />
-                          Précédent
-                      </Button>
-                      <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
-                      <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>
-                          Suivant
-                          <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                  </div>
-              </footer>
-          )}
-        </div>
-
-        {/* Comments Panel */}
-        <aside
-          className={cn(
-            'fixed top-0 right-0 h-full w-full sm:max-w-md flex-col bg-background text-foreground border-l z-40 transition-transform duration-300 ease-in-out',
-            'md:relative md:h-auto md:w-[420px] md:z-auto md:border-l md:transform-none md:transition-none md:flex',
-            isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
-          )}
-        >
-          <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
-            <h2 className="text-lg font-semibold">Commentaires (Chapitre 1)</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsCommentsOpen(false)}
-              className="md:hidden"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+    <div style={{'--reader-bg': '#0D0D0D'} as React.CSSProperties} className="font-serif">
+      <div className="adinkra-bg fixed inset-0 pointer-events-none opacity-[0.02] z-0" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4A843' stroke-width='1'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3Cline x1='10' y1='30' x2='50' y2='30'/%3E%3Cline x1='30' y1='10' x2='30' y2='50'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px'}} />
+      <ProgressBar progress={progress} />
+      <ReaderHeader 
+        story={story} 
+        activeMode={activeMode}
+        onModeChange={setActiveMode}
+        onSettingsToggle={() => setShowSettings(!showSettings)}
+        onBookmark={handleBookmark}
+        isBookmarked={isBookmarked}
+      />
+      
+      <div className="flex mt-14 min-h-[calc(100vh-56px)]">
+        <main className="flex-1 bg-[var(--reader-bg)] min-w-0">
+          <div className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-0">
+            {comicPages.map((page, index) => (
+              <Image
+                key={page.id}
+                src={page.imageUrl}
+                alt={page.description}
+                width={800}
+                height={1200}
+                className="max-w-full h-auto"
+                data-ai-hint={page.imageHint}
+                priority={index < 2}
+              />
+            ))}
           </div>
-          <ScrollArea className="flex-1">
-            <div className="p-4 sm:p-6 space-y-8">
-              {chapterComments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  storyAuthorId={story.artistId}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-          <div className="p-4 bg-background border-t flex-shrink-0">
-            <div className="flex gap-4">
-              <Avatar className="border-2 border-primary">
-                <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
-                <AvatarFallback>LD</AvatarFallback>
-              </Avatar>
-              <div className="w-full">
-                <Textarea placeholder="Écrivez votre commentaire..." />
-                <Button onClick={handlePostComment} className="mt-2">Poster</Button>
-              </div>
-            </div>
-          </div>
-        </aside>
+        </main>
+        <ReaderSidebar story={story} artist={artist} />
       </div>
 
-      {/* Floating Trigger */}
-      <Button
-        onClick={() => setIsCommentsOpen(!isCommentsOpen)}
-        variant="default"
-        size="lg"
-        className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg h-16 w-16"
-        aria-label={isCommentsOpen ? "Fermer les commentaires" : "Ouvrir les commentaires"}
-      >
-        {isCommentsOpen ? (
-          <X className="h-7 w-7" />
-        ) : (
-          <>
-            <MessageSquare className="h-7 w-7" />
-            <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
-              {chapterComments.length}
-            </span>
-          </>
-        )}
-      </Button>
+      <FloatingTools 
+        onLike={handleLike}
+        isLiked={isLiked}
+        onBookmark={handleBookmark}
+        isBookmarked={isBookmarked}
+        onShare={handleShare}
+        onComment={() => { /* Scroll to comments */ }}
+        commentsCount={chapterComments.length}
+      />
     </div>
   );
 }

@@ -7,19 +7,19 @@ export default function SubmitPage() {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-12">
       <div className="text-center mb-16">
-        <h1 className="text-4xl font-bold font-display mb-4">De Draft à Pro : Votre Parcours sur NexusHub</h1>
+        <h1 className="text-4xl font-bold font-display mb-4">De Draft à Pro : Votre Parcours sur AfriStory</h1>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          Découvrez les deux voies pour partager votre talent sur NexusHub. Commencez en tant qu'artiste Draft pour bâtir votre audience, et visez le statut Pro pour monétiser votre art.
+          Découvrez les deux voies pour partager votre talent sur AfriStory. Commencez en tant qu'artiste Draft pour bâtir votre audience, et visez le statut Pro pour monétiser votre art.
         </p>
       </div>
 
       <div className="relative">
         <div className="flex flex-col md:flex-row items-stretch justify-center gap-8">
-            {/* NexusHub Draft Card */}
+            {/* AfriStory Draft Card */}
             <Card className="flex flex-col md:w-1/2">
               <CardHeader className="text-center">
                 <PenSquare className="w-12 h-12 text-accent mx-auto mb-4" />
-                <CardTitle className="text-2xl">NexusHub Draft</CardTitle>
+                <CardTitle className="text-2xl">AfriStory Draft</CardTitle>
                 <CardDescription>Le point de départ pour chaque créateur</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -48,11 +48,11 @@ export default function SubmitPage() {
                 <ArrowRight className="w-10 h-10 text-primary animate-pulse" />
             </div>
 
-             {/* NexusHub Pro Card */}
+             {/* AfriStory Pro Card */}
             <Card className="flex flex-col md:w-1/2 border-primary/50 border-2 shadow-lg">
               <CardHeader className="text-center">
                 <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-                <CardTitle className="text-2xl">NexusHub Pro</CardTitle>
+                <CardTitle className="text-2xl">AfriStory Pro</CardTitle>
                 <CardDescription>L'élite des créateurs certifiés</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
