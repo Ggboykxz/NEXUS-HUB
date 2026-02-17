@@ -58,10 +58,10 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
         <div className="hero-content">
             <div className="hero-eyebrow">
-                <Link href="/stories">
+                <Link href="/webtoons">
                     <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
                 </Link>
-                <Link href="/stories">
+                <Link href="/ongoing">
                     <Badge variant="secondary" className="hero-status-badge">
                         <span className="status-dot"></span> En cours
                     </Badge>
@@ -99,7 +99,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
             <div className="hero-genre-tags">
                 {story.tags.map(tag => (
-                    <Link key={tag} href={`/stories?genre=${tag}`} className="genre-tag">{tag}</Link>
+                    <Link key={tag} href={`/genres/${tag}`} className="genre-tag">{tag}</Link>
                 ))}
             </div>
             
@@ -148,7 +148,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                         <Play className="fill-current"/> Commencer la lecture
                     </Link>
                 </Button>
-                 <Button className="cta-secondary" onClick={() => toast({title: "Fonctionnalité à venir"})}>
+                 <Button className="cta-secondary" onClick={() => {}}>
                     <Eye /> Reprendre (Chap. 7)
                 </Button>
                 <Button className="cta-icon-btn" onClick={handleBookmark} title="Sauvegarder">
@@ -181,11 +181,11 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
     const isNew = chapter.status === 'Programmé'; // Simplified logic
     const isPremium = chapter.id.includes('premium'); // Mock logic
     const isRead = chapter.status === 'Publié'; // Mock logic
-    const [viewCount, setViewCount] = useState<number | null>(null);
+    const [viewCount, setViewCount] = useState<string | null>(null);
 
     useEffect(() => {
-        // This runs only on the client, after the initial render, preventing hydration mismatch.
-        setViewCount(Math.floor(Math.random() * 50));
+        // Hydration safe random number
+        setViewCount(`${Math.floor(Math.random() * 50)}k vues`);
     }, []);
 
     return (
@@ -199,9 +199,7 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
                 </div>
             </div>
             <div className="ch-right">
-                <span className="ch-views">
-                    {viewCount !== null ? `${viewCount}k vues` : `...`}
-                </span>
+                <span className="ch-views">{viewCount || '...'}</span>
                 {isNew && <Badge className="ch-tag tag-new">Nouveau</Badge>}
                 {isPremium && <Badge className="ch-tag tag-premium">Premium</Badge>}
                 {isRead && !isPremium && !isNew && <Badge className="ch-tag tag-read">Lu</Badge>}
@@ -231,16 +229,13 @@ const ChaptersSection = ({ story }: { story: Story }) => {
                             key={filter}
                             variant="ghost"
                             className={cn("filter-btn", activeFilter === filter && "active")}
-                            onClick={() => {
-                                setActiveFilter(filter);
-                                // toast({ title: `Filtre "${filter}" appliqué` });
-                            }}
+                            onClick={() => setActiveFilter(filter)}
                         >
                             {filter}
                         </Button>
                     ))}
                 </div>
-                 <Button variant="ghost" className="filter-btn" onClick={() => toast({title: "Fonctionnalité à venir"})}>↕ Ordre</Button>
+                 <Button variant="ghost" className="filter-btn">↕ Ordre</Button>
             </div>
             
              <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
@@ -261,7 +256,7 @@ const ChaptersSection = ({ story }: { story: Story }) => {
             </Accordion>
 
 
-            <Button variant="outline" className="load-more-chapters" onClick={() => toast({title: "Fonctionnalité à venir"})}>
+            <Button variant="outline" className="load-more-chapters">
                 <ChevronsDown />
                 Voir la liste complète ({story.chapters.length} chapitres)
             </Button>
@@ -321,7 +316,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                             </Avatar>
                             <div>
                                 <p className="reviewer-name">
-                                    {comment.authorName} <Badge variant="secondary">Supporter</Badge>
+                                    <span>{comment.authorName}</span> <Badge variant="secondary">Supporter</Badge>
                                 </p>
                                 <p className="reviewer-meta">
                                     <span>Lagos, Nigeria</span>·<span>284 avis</span>
@@ -338,14 +333,14 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                         <Button variant="ghost" className="review-action" onClick={() => toast({title: "Action enregistrée"})}>
                             <ThumbsUp /> Utile ({comment.likes})
                         </Button>
-                        <Button variant="ghost" className="review-action" onClick={() => toast({title: "Fonctionnalité à venir"})}>Répondre</Button>
+                        <Button variant="ghost" className="review-action">Répondre</Button>
                         <Button variant="ghost" className="review-action" style={{marginLeft:'auto', opacity: 0.5}} onClick={() => toast({title: "Commentaire signalé", variant: "destructive"})}>
                             <AlertTriangle /> Signaler
                         </Button>
                     </div>
                 </div>
             ))}
-             <Button variant="outline" className="write-review-btn" onClick={() => toast({title: "Fonctionnalité à venir"})}>
+             <Button variant="outline" className="write-review-btn">
                 ✦ Écrire un avis · Donner une note
             </Button>
         </div>
@@ -479,14 +474,24 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                     <CardHeader className="side-card-header">Informations</CardHeader>
                     <CardContent className="side-card-body">
                          <div className="info-table">
-                            <div className="info-row"><span className="info-key">Type</span><span className="info-val">Webtoon · BD Numérique</span></div>
-                            <div className="info-row"><span className="info-key">Statut</span><span className="info-val text-green-400">● En cours</span></div>
+                            <div className="info-row">
+                                <span className="info-key">Type</span>
+                                <span className="info-val">
+                                    <Link href="/webtoons" className="hover:text-primary transition-colors">{story.format} · BD Numérique</Link>
+                                </span>
+                            </div>
+                            <div className="info-row">
+                                <span className="info-key">Statut</span>
+                                <span className="info-val text-green-400">
+                                    <Link href="/ongoing" className="hover:text-primary transition-colors">● {story.status}</Link>
+                                </span>
+                            </div>
                             <div className="info-row"><span className="info-key">Sortie</span><span className="info-val">1er Janvier 2026</span></div>
                             <div className="info-row"><span className="info-key">Mise à jour</span><span className="info-val">Bimensuelle · Vendredi</span></div>
                             <div className="info-row"><span className="info-key">Tags</span>
                                 <div className="info-val">
                                     {story.tags.map(tag => (
-                                        <Link key={tag} href={`/stories?genre=${tag}`}>
+                                        <Link key={tag} href={`/genres/${tag}`}>
                                             <Badge variant="outline" className="tag-pill cursor-pointer">{tag}</Badge>
                                         </Link>
                                     ))}

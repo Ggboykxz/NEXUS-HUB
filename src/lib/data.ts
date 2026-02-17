@@ -51,6 +51,8 @@ export interface Story {
   isPremium?: boolean;
   price?: number; // Price in AfriCoins
   collaborators?: Collaborator[];
+  format: 'Webtoon' | 'BD';
+  status: 'En cours' | 'Terminé';
 }
 
 export interface Product {
@@ -186,6 +188,8 @@ export const stories: Story[] = [
         avatar: getImage('artist-2')!,
       }
     ],
+    format: 'Webtoon',
+    status: 'En cours',
   },
   {
     id: '2',
@@ -203,6 +207,8 @@ export const stories: Story[] = [
         { id: '2-2', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28 },
     ],
     updatedAt: '2024-07-13T10:00:00Z',
+    format: 'Webtoon',
+    status: 'En cours',
   },
   {
     id: '3',
@@ -236,6 +242,8 @@ export const stories: Story[] = [
             avatar: getImage('artist-3')!,
         }
     ],
+    format: 'BD',
+    status: 'Terminé',
   },
   {
     id: '4',
@@ -254,6 +262,8 @@ export const stories: Story[] = [
     updatedAt: '2024-07-15T10:00:00Z',
     isPremium: true,
     price: 50,
+    format: 'Webtoon',
+    status: 'En cours',
   },
    {
     id: '5',
@@ -270,6 +280,8 @@ export const stories: Story[] = [
         { id: '5-1', title: 'L\'Entretien d\'embauche', releaseDate: '2024-05-20', status: 'Publié', pageCount: 20 },
     ],
     updatedAt: '2024-07-17T10:00:00Z',
+    format: 'Webtoon',
+    status: 'En cours',
   },
   {
     id: '6',
@@ -286,6 +298,8 @@ export const stories: Story[] = [
     updatedAt: '2024-06-18T10:00:00Z',
     isPremium: true,
     price: 75,
+    format: 'BD',
+    status: 'En cours',
   },
 ].map(story => ({
   ...story,
