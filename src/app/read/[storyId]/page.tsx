@@ -8,7 +8,7 @@ import { notFound, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart
+  ArrowLeft, Award, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
