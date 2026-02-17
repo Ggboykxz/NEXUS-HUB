@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { stories, artists, comments as allComments, type Story, type Artist, type Chapter } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -55,7 +55,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
         <div className="hero-content">
             <div className="hero-eyebrow">
                 <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
-                <Badge variant="secondary" className="hero-status-badge text-green-400 border-green-400/50">
+                <Badge variant="secondary" className="hero-status-badge">
                     <span className="status-dot"></span> En cours
                 </Badge>
                 {story.isPremium && <Badge className="hero-pro-badge">NexusHub Pro</Badge>}
@@ -94,15 +94,16 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                     <Link key={tag} href="#" className="genre-tag">{tag}</Link>
                 ))}
             </div>
-
+            
             <div className="hero-rating">
                 <div className="stars-display">
                     {[...Array(4)].map((_, i) => <Star key={i} className="star-icon fill-current" />)}
-                    <Star className="star-icon half fill-current" />
+                    <Star className="star-icon half" />
                 </div>
                 <span className="rating-val">4.8</span>
                 <span className="rating-count">· 3,842 évaluations</span>
             </div>
+
 
             <p className="hero-synopsis">{story.description}</p>
             
@@ -173,6 +174,12 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
     const isNew = chapter.status === 'Programmé'; // Simplified logic
     const isPremium = chapter.id.includes('premium'); // Mock logic
     const isRead = chapter.status === 'Publié'; // Mock logic
+    const [viewCount, setViewCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        // This runs only on the client, after the initial render, preventing hydration mismatch.
+        setViewCount(Math.floor(Math.random() * 50));
+    }, []);
 
     return (
         <Link href={`/read/${storyId}`} className={cn("chapter-row", isNew && "new", isPremium && "premium")} onClick={() => toast({title: `Ouverture du chapitre ${chapter.title}`})}>
@@ -185,7 +192,9 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
                 </div>
             </div>
             <div className="ch-right">
-                <span className="ch-views">{Math.floor(Math.random() * 50)}k vues</span>
+                <span className="ch-views">
+                    {viewCount !== null ? `${viewCount}k vues` : `...`}
+                </span>
                 {isNew && <Badge className="ch-tag tag-new">Nouveau</Badge>}
                 {isPremium && <Badge className="ch-tag tag-premium">Premium</Badge>}
                 {isRead && !isPremium && !isNew && <Badge className="ch-tag tag-read">Lu</Badge>}
@@ -267,7 +276,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                     <div className="big-rating-val">4.8</div>
                     <div className="big-stars">
                         {[...Array(4)].map((_, i) => <Star key={i} className="big-star fill-current" />)}
-                        <Star className="big-star fill-current opacity-40" />
+                        <Star className="big-star empty" />
                     </div>
                     <div className="big-rating-count">sur 3,842 évaluations</div>
                 </div>
