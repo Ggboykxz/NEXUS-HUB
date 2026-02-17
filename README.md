@@ -47,24 +47,19 @@ Pour un suivi détaillé de toutes les modifications apportées au projet, veuil
 
 ## Feuille de Route (Roadmap)
 
-Le développement de la plateforme suivra les phases suivantes, conformément au cahier des charges :
+Le développement initial de la plateforme est terminé. La plupart des fonctionnalités des phases 1, 2 et 3 ont été implémentées avec succès. Pour un bilan détaillé, consultez le [FEEDBACK.md](./FEEDBACK.md).
 
-### Phase 1 – MVP (6 mois)
-*   Inscription des utilisateurs et création des profils artistes.
-*   Publication des œuvres et module de lecture en ligne.
-*   Système de commentaires et statistiques de base.
+Le projet entre maintenant dans une nouvelle phase axée sur l'optimisation, la croissance et la pérennisation.
 
-### Phase 2 – Communauté (6 à 8 mois)
-*   Développement des forums communautaires.
-*   Mise en place du suivi d'artistes et des notifications.
-*   Création des classements (likes, vues).
-*   Intégration du système de dons et des publicités.
+### Prochaines Étapes
 
-### Phase 3 – Monétisation (12 mois)
-*   Lancement de la monnaie virtuelle (AfriCoins).
-*   Mise en place des abonnements premium.
-*   Création de la boutique de produits dérivés (goodies).
-*   Développement de partenariats avec des éditeurs.
+*   **Étape 4 : Optimisation et Lancement Bêta**
+    *   Tests approfondis et collecte des retours utilisateurs.
+    *   Optimisation des performances et de l'accessibilité.
+*   **Étape 5 : Intégration Publicitaire**
+    *   Définition de la stratégie et implémentation d'une solution publicitaire.
+*   **Étape 6 : Développement Commercial**
+    *   Prospection et création de partenariats avec des maisons d'édition.
 
 ## En savoir plus
 
