@@ -249,7 +249,7 @@ export default function Header() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-10 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
+          <nav className="hidden md:flex items-center space-x-8 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
               if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
