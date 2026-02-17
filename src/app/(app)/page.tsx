@@ -36,7 +36,6 @@ export default function HomePage() {
   const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
   const featuredArtists = artists.slice(0, 5);
   const popularGenres = [...new Set(stories.map(s => s.genre))].slice(0, 4);
-  const topLevelComments = comments.slice(0, 3);
   const featuredStoriesForCarousel = stories.filter(s => ['1', '2', '4'].includes(s.id));
 
   return (
@@ -163,34 +162,36 @@ export default function HomePage() {
               <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {topLevelComments.map((comment) => {
-                const story = stories.find(s => s.id === comment.storyId);
-                if (!story) return null;
+          <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]">
+              <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
+                {[...comments, ...comments].map((comment, index) => {
+                    const story = stories.find(s => s.id === comment.storyId);
+                    if (!story) return null;
 
-                return (
-                    <Link key={comment.id} href={`/stories/${story.id}`} className="block h-full">
-                      <Card className="flex flex-col p-6 transition-all hover:shadow-lg hover:-translate-y-1 h-full">
-                          <div className="flex items-start gap-4 mb-4">
-                              <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-primary">
-                                  <AvatarImage src={comment.authorAvatar.imageUrl} alt={comment.authorName} data-ai-hint={comment.authorAvatar.imageHint} />
-                                  <AvatarFallback>{comment.authorName.slice(0, 2)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                  <p className="font-semibold">{comment.authorName}</p>
-                                  <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                    return (
+                        <Link key={`${comment.id}-${index}`} href={`/stories/${story.id}`} className="block">
+                          <Card className="w-80 mx-4 flex flex-col p-6 transition-all hover:shadow-lg hover:-translate-y-1 h-full">
+                              <div className="flex items-start gap-4 mb-4">
+                                  <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-primary">
+                                      <AvatarImage src={comment.authorAvatar.imageUrl} alt={comment.authorName} data-ai-hint={comment.authorAvatar.imageHint} />
+                                      <AvatarFallback>{comment.authorName.slice(0, 2)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                      <p className="font-semibold">{comment.authorName}</p>
+                                      <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+                                  </div>
                               </div>
-                          </div>
-                          <blockquote className="italic border-l-2 border-primary/50 pl-4 text-foreground/80 flex-grow mb-4 text-base">
-                            "{comment.content}"
-                          </blockquote>
-                          <p className="text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
-                              sur <span className="font-semibold text-primary">{story.title}</span>
-                          </p>
-                      </Card>
-                    </Link>
-                )
-            })}
+                              <blockquote className="italic border-l-2 border-primary/50 pl-4 text-foreground/80 flex-grow mb-4 text-base line-clamp-3">
+                                "{comment.content}"
+                              </blockquote>
+                              <p className="text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
+                                  sur <span className="font-semibold text-primary">{story.title}</span>
+                              </p>
+                          </Card>
+                        </Link>
+                    )
+                })}
+              </div>
           </div>
         </section>
 
