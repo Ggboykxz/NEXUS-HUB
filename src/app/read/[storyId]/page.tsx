@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { stories, comicPages, comments as allComments, artists, type Artist, type Chapter, type Story } from '@/lib/data';
 import type { Comment } from '@/lib/data';
 import { notFound, useRouter, usePathname } from 'next/navigation';
@@ -18,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const LOGGED_IN_ARTIST_ID = '1';
