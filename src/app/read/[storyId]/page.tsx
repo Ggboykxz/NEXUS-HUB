@@ -19,7 +19,6 @@ import {
   Ban,
   X,
   Share2,
-  ChevronUp,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -32,7 +31,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 
@@ -148,6 +146,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
   const [userCoins, setUserCoins] = useState(150);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
   const onSelect = useCallback((api: CarouselApi) => {
     if (!api) {
@@ -265,133 +264,144 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   }
 
   return (
-    <Sheet>
-      <div className="flex flex-col h-screen bg-black text-foreground">
-        {/* HEADER */}
-        <header className="flex-shrink-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="container mx-auto px-2 sm:px-4 h-14 flex items-center">
-            <div className="flex-1 flex justify-start">
-              <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+    <div className="bg-black text-foreground">
+      {/* Mobile Overlay */}
+      {isCommentsOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/80 md:hidden"
+          onClick={() => setIsCommentsOpen(false)}
+        />
+      )}
+      
+      <div className="flex h-screen">
+        {/* Main Reader Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="flex-shrink-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
+            <div className="container mx-auto px-2 sm:px-4 h-14 flex items-center">
+              <div className="flex-1 flex justify-start">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="flex-grow text-center overflow-hidden px-2">
+                <h1 className="font-display text-base sm:text-lg truncate text-foreground" title={story.title}>{story.title}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Chapitre 1</p>
+              </div>
+              <div className="flex-1 flex justify-end items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={handleFavoriteClick}>
+                  <Heart className={cn("h-5 w-5", isFavorite && "fill-red-500 text-red-500")} />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleShare}>
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
-            <div className="flex-grow text-center overflow-hidden px-2">
-              <h1 className="font-display text-base sm:text-lg truncate text-foreground" title={story.title}>{story.title}</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">Chapitre 1</p>
-            </div>
-            <div className="flex-1 flex justify-end items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={handleFavoriteClick}>
-                <Heart className={cn("h-5 w-5", isFavorite && "fill-red-500 text-red-500")} />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleShare}>
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </header>
+          </header>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 relative overflow-hidden">
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full">
-            <TabsContent value="scroll" className="m-0 h-full">
-              <ScrollArea className="h-full">
-                <div className="flex flex-col items-center">
-                  {comicPages.map((page, index) => (
-                    <Image
-                      key={page.id}
-                      src={page.imageUrl}
-                      alt={page.description}
-                      width={800}
-                      height={1200}
-                      className="max-w-full h-auto cursor-zoom-in"
-                      data-ai-hint={page.imageHint}
-                      priority={index < 2}
-                      sizes="(max-width: 800px) 100vw, 800px"
-                      onClick={() => setZoomedImage(page.imageUrl)}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="pages" className="m-0 h-full flex items-center justify-center">
-                <Carousel setApi={setApi} className="w-full h-full">
-                  <CarouselContent className="h-full">
-                    {comicPages.map((page) => (
-                      <CarouselItem key={page.id} className="h-full">
-                        <div className="w-full h-full flex items-center justify-center p-2">
-                          <Image
-                            src={page.imageUrl}
-                            alt={page.description}
-                            width={800}
-                            height={1200}
-                            className="max-w-full max-h-full object-contain cursor-zoom-in"
-                            data-ai-hint={page.imageHint}
-                            priority
-                            sizes="(max-width: 768px) 100vw, 80vw"
-                            onClick={() => setZoomedImage(page.imageUrl)}
-                          />
-                        </div>
-                      </CarouselItem>
+          <main className="flex-1 relative overflow-hidden">
+            <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full">
+              <TabsContent value="scroll" className="m-0 h-full">
+                <ScrollArea className="h-full">
+                  <div className="flex flex-col items-center">
+                    {comicPages.map((page, index) => (
+                      <Image
+                        key={page.id}
+                        src={page.imageUrl}
+                        alt={page.description}
+                        width={800}
+                        height={1200}
+                        className="max-w-full h-auto cursor-zoom-in"
+                        data-ai-hint={page.imageHint}
+                        priority={index < 2}
+                        sizes="(max-width: 800px) 100vw, 800px"
+                        onClick={() => setZoomedImage(page.imageUrl)}
+                      />
                     ))}
-                  </CarouselContent>
-                </Carousel>
-            </TabsContent>
-          
-            {/* Floating View Switcher */}
-            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
-              <TabsList>
-                <TabsTrigger value="scroll" className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
-                <TabsTrigger value="pages" className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
-              </TabsList>
-            </div>
-          </Tabs>
-        </main>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="pages" className="m-0 h-full flex items-center justify-center">
+                  <Carousel setApi={setApi} className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {comicPages.map((page) => (
+                        <CarouselItem key={page.id} className="h-full">
+                          <div className="w-full h-full flex items-center justify-center p-2">
+                            <Image
+                              src={page.imageUrl}
+                              alt={page.description}
+                              width={800}
+                              height={1200}
+                              className="max-w-full max-h-full object-contain cursor-zoom-in"
+                              data-ai-hint={page.imageHint}
+                              priority
+                              sizes="(max-width: 768px) 100vw, 80vw"
+                              onClick={() => setZoomedImage(page.imageUrl)}
+                            />
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+              </TabsContent>
+            
+              <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-10">
+                <TabsList>
+                  <TabsTrigger value="scroll" className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
+                  <TabsTrigger value="pages" className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
+                </TabsList>
+              </div>
+            </Tabs>
+          </main>
 
-        {/* FOOTER */}
-        {viewMode === 'pages' && (
-            <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
-                <div className="flex items-center justify-between h-12 px-4">
-                    <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Précédent
-                    </Button>
-                    <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
-                    <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>
-                        Suivant
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </div>
-            </footer>
-        )}
-        
-        {/* COMMENT BUBBLE TRIGGER */}
-        <SheetTrigger asChild>
+          {viewMode === 'pages' && (
+              <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
+                  <div className="flex items-center justify-between h-12 px-4">
+                      <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>
+                          <ChevronLeft className="mr-2 h-4 w-4" />
+                          Précédent
+                      </Button>
+                      <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
+                      <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>
+                          Suivant
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                  </div>
+              </footer>
+          )}
+        </div>
+
+        {/* Comments Panel */}
+        <aside
+          className={cn(
+            'fixed top-0 right-0 h-full w-full sm:max-w-md flex-col bg-background text-foreground border-l z-50 transition-transform duration-300 ease-in-out',
+            'md:static md:h-auto md:w-[420px] md:z-auto md:border-l md:transform-none md:transition-none',
+            isCommentsOpen
+              ? 'translate-x-0 md:flex'
+              : 'translate-x-full md:hidden'
+          )}
+        >
+          <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
+            <h2 className="text-lg font-semibold">Commentaires (Chapitre 1)</h2>
             <Button
-                variant="default"
-                size="lg"
-                className="fixed bottom-6 right-6 z-30 rounded-full shadow-lg h-16 w-16"
-                aria-label="Ouvrir les commentaires"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCommentsOpen(false)}
             >
-                <MessageSquare className="h-7 w-7" />
-                <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
-                    {chapterComments.length}
-                </span>
+              <X className="h-4 w-4" />
             </Button>
-        </SheetTrigger>
-
-        {/* COMMENTS SHEET */}
-        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg flex flex-col p-0 bg-background text-foreground md:bg-transparent">
-          <SheetHeader className="p-4 border-b">
-            <SheetTitle>Commentaires (Chapitre 1)</SheetTitle>
-          </SheetHeader>
+          </div>
           <ScrollArea className="flex-1">
             <div className="p-4 sm:p-6 space-y-8">
-              {chapterComments.map(comment => (
-                <CommentItem key={comment.id} comment={comment} storyAuthorId={story.artistId} />
+              {chapterComments.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  storyAuthorId={story.artistId}
+                />
               ))}
             </div>
           </ScrollArea>
-          <div className="p-4 bg-background border-t">
+          <div className="p-4 bg-background border-t flex-shrink-0">
             <div className="flex gap-4">
               <Avatar className="border-2 border-primary">
                 <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
@@ -403,34 +413,50 @@ export default function ReadPage(props: { params: { storyId: string } }) {
               </div>
             </div>
           </div>
-        </SheetContent>
+        </aside>
+      </div>
 
-        {/* ZOOMED IMAGE */}
-        {zoomedImage && (
-          <div
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
+      {/* Floating Trigger */}
+      {!isCommentsOpen && (
+        <Button
+          onClick={() => setIsCommentsOpen(true)}
+          variant="default"
+          size="lg"
+          className="fixed bottom-6 right-6 z-30 rounded-full shadow-lg h-16 w-16"
+          aria-label="Ouvrir les commentaires"
+        >
+          <MessageSquare className="h-7 w-7" />
+          <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
+            {chapterComments.length}
+          </span>
+        </Button>
+      )}
+
+      {/* ZOOMED IMAGE */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
+          onClick={() => setZoomedImage(null)}
+        >
+          <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={zoomedImage}
+              alt="Image agrandie"
+              width={1600}
+              height={2400}
+              className="max-w-none w-auto h-auto inline-block p-4"
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
             onClick={() => setZoomedImage(null)}
           >
-            <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
-              <Image
-                src={zoomedImage}
-                alt="Image agrandie"
-                width={1600}
-                height={2400}
-                className="max-w-none w-auto h-auto inline-block p-4"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
-              onClick={() => setZoomedImage(null)}
-            >
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </Sheet>
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
