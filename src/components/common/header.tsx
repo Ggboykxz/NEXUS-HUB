@@ -312,27 +312,28 @@ export default function Header() {
   );
 
     const MobileLoggedInNav = (
-    <>
-      {isArtist ? (
-          <>
-              <Button asChild variant="secondary">
-                  <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
-                      <Brush /> Mon Atelier
-                  </Link>
-              </Button>
-              <Button asChild variant="ghost">
-                  <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
-                      <TrendingUp /> Statistiques
-                  </Link>
-              </Button>
-          </>
-      ) : (
-          <Button asChild variant="secondary">
-              {userId && <Link href={`/profile/${userId}`} className="flex items-center gap-2 justify-center">
-                  <UserCircle /> Mon Profil
-              </Link>}
-          </Button>
-      )}
+      <>
+        {userId && (
+            <Button asChild variant="secondary">
+                <Link href={isArtist ? `/artists/${userId}` : `/profile/${userId}`} className="flex items-center gap-2 justify-center">
+                    <UserCircle /> Mon Profil
+                </Link>
+            </Button>
+        )}
+        {isArtist && (
+            <>
+                <Button asChild variant="ghost">
+                    <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
+                        <Brush /> Mon Atelier
+                    </Link>
+                </Button>
+                <Button asChild variant="ghost">
+                    <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
+                        <TrendingUp /> Statistiques
+                    </Link>
+                </Button>
+            </>
+        )}
        <Button asChild variant="ghost">
             <Link href="/playlists" className="flex items-center gap-2 justify-center">
                 <ListMusic /> Mes Playlists

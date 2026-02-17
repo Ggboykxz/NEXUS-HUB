@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, CircleDollarSign } from 'lucide-react';
@@ -8,10 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function SettingsPage() {
+  const [accountType, setAccountType] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This logic runs only on the client, after hydration
+    const type = localStorage.getItem('accountType');
+    setAccountType(type);
+  }, []);
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <div className="flex items-center gap-4 mb-8">
@@ -28,68 +36,104 @@ export default function SettingsPage() {
         </TabsList>
         
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profil d'Artiste</CardTitle>
-              <CardDescription>
-                Ces informations seront affichées sur votre profil public. Soignez votre image !
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24">
-                  {/* In a real app, this would be dynamic and allow upload */}
-                  <AvatarImage src="" alt="Avatar d'artiste" />
-                  <AvatarFallback>ART</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="avatar-url">URL de l'avatar</Label>
-                  <Input id="avatar-url" placeholder="https://..." />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom d'artiste</Label>
-                <Input id="name" defaultValue="" placeholder="Votre nom ou pseudonyme" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Biographie</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Parlez-nous de vous, de votre art, de votre parcours..."
-                  className="min-h-[120px]"
-                />
-              </div>
-
-              <div>
-                <h3 className="text-base font-medium mb-4">Réseaux sociaux et liens</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="personal-site">Site Personnel</Label>
-                    <Input id="personal-site" placeholder="https://votresite.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amazon-link">Lien Auteur Amazon</Label>
-                    <Input id="amazon-link" placeholder="https://amazon.com/author/..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter">Twitter</Label>
-                    <Input id="twitter" placeholder="https://twitter.com/..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <Input id="instagram" placeholder="https://instagram.com/..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="facebook">Facebook</Label>
-                    <Input id="facebook" placeholder="https://facebook.com/..." />
+          {accountType === 'artist' ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profil d'Artiste</CardTitle>
+                <CardDescription>
+                  Ces informations seront affichées sur votre profil public. Soignez votre image !
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-6">
+                  <Avatar className="h-24 w-24">
+                    {/* In a real app, this would be dynamic and allow upload */}
+                    <AvatarImage src="" alt="Avatar d'artiste" />
+                    <AvatarFallback>ART</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="avatar-url">URL de l'avatar</Label>
+                    <Input id="avatar-url" placeholder="https://..." />
                   </div>
                 </div>
-              </div>
-              <Button>Enregistrer les modifications</Button>
-            </CardContent>
-          </Card>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom d'artiste</Label>
+                  <Input id="name" defaultValue="" placeholder="Votre nom ou pseudonyme" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Biographie</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="Parlez-nous de vous, de votre art, de votre parcours..."
+                    className="min-h-[120px]"
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-base font-medium mb-4">Réseaux sociaux et liens</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="personal-site">Site Personnel</Label>
+                      <Input id="personal-site" placeholder="https://votresite.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="amazon-link">Lien Auteur Amazon</Label>
+                      <Input id="amazon-link" placeholder="https://amazon.com/author/..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter">Twitter</Label>
+                      <Input id="twitter" placeholder="https://twitter.com/..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram">Instagram</Label>
+                      <Input id="instagram" placeholder="https://instagram.com/..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook">Facebook</Label>
+                      <Input id="facebook" placeholder="https://facebook.com/..." />
+                    </div>
+                  </div>
+                </div>
+                <Button>Enregistrer les modifications</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profil Lecteur</CardTitle>
+                <CardDescription>Gérez vos informations publiques.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src="" alt="Avatar de lecteur" />
+                    <AvatarFallback>VOUS</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="reader-avatar-url">URL de l'avatar</Label>
+                    <Input id="reader-avatar-url" placeholder="https://..." />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reader-name">Votre nom</Label>
+                  <Input id="reader-name" defaultValue="" placeholder="Votre nom" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reader-bio">Biographie</Label>
+                  <Textarea
+                    id="reader-bio"
+                    placeholder="Parlez un peu de vous, de vos lectures préférées..."
+                    className="min-h-[120px]"
+                  />
+                </div>
+                <Button>Enregistrer les modifications</Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="notifications">

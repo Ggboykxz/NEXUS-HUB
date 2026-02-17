@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { artists, stories as allStories } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award, Eye, Star, PenSquare } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, DollarSign, Award, Eye, Star, PenSquare, Edit } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -26,11 +26,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 export default function ArtistProfilePage(props: { params: { artistId: string } }) {
   const params = use(props.params);
   const { toast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // This logic runs only on the client, after hydration
+    const loggedInUserId = localStorage.getItem('userId');
+    setIsOwnProfile(loggedInUserId === params.artistId);
+  }, [params.artistId]);
 
   const artist = artists.find((a) => a.id === params.artistId);
 
@@ -95,73 +104,84 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={handleSubscribeClick}
-                variant={isSubscribed ? 'secondary' : 'default'}
-                size="sm"
-              >
-                <Bell className={cn("mr-2 h-4 w-4", isSubscribed && "fill-current")} />
-                {isSubscribed ? 'Abonné' : 'S\'abonner'}
-              </Button>
-               <Dialog>
-                  <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                          <Heart className="mr-2 h-4 w-4 text-red-500 fill-current" />
-                          Faire un don
-                      </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                          <DialogTitle>Soutenir {artist.name}</DialogTitle>
-                          <DialogDescription>
-                              Votre don aide directement l'artiste à continuer de créer des œuvres incroyables. Choisissez un montant ou entrez une valeur personnalisée.
-                          </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                          <RadioGroup defaultValue="5" className="grid grid-cols-3 gap-4">
-                              <div>
-                                  <RadioGroupItem value="5" id="r1" className="peer sr-only" />
-                                  <Label htmlFor="r1" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                      5€
-                                  </Label>
+              {isOwnProfile ? (
+                <Button asChild size="sm">
+                  <Link href="/settings">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Éditer le profil
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleSubscribeClick}
+                    variant={isSubscribed ? 'secondary' : 'default'}
+                    size="sm"
+                  >
+                    <Bell className={cn("mr-2 h-4 w-4", isSubscribed && "fill-current")} />
+                    {isSubscribed ? 'Abonné' : 'S\'abonner'}
+                  </Button>
+                  <Dialog>
+                      <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                              <Heart className="mr-2 h-4 w-4 text-red-500 fill-current" />
+                              Faire un don
+                          </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                              <DialogTitle>Soutenir {artist.name}</DialogTitle>
+                              <DialogDescription>
+                                  Votre don aide directement l'artiste à continuer de créer des œuvres incroyables. Choisissez un montant ou entrez une valeur personnalisée.
+                              </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                              <RadioGroup defaultValue="5" className="grid grid-cols-3 gap-4">
+                                  <div>
+                                      <RadioGroupItem value="5" id="r1" className="peer sr-only" />
+                                      <Label htmlFor="r1" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                          5€
+                                      </Label>
+                                  </div>
+                                  <div>
+                                      <RadioGroupItem value="10" id="r2" className="peer sr-only" />
+                                      <Label htmlFor="r2" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                          10€
+                                      </Label>
+                                  </div>
+                                  <div>
+                                      <RadioGroupItem value="20" id="r3" className="peer sr-only" />
+                                      <Label htmlFor="r3" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                          20€
+                                      </Label>
+                                  </div>
+                              </RadioGroup>
+                              <div className="relative mt-2">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                                  <Input id="custom-amount" placeholder="Montant personnalisé" className="pl-7" type="number" />
                               </div>
-                              <div>
-                                  <RadioGroupItem value="10" id="r2" className="peer sr-only" />
-                                  <Label htmlFor="r2" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                      10€
-                                  </Label>
-                              </div>
-                              <div>
-                                  <RadioGroupItem value="20" id="r3" className="peer sr-only" />
-                                  <Label htmlFor="r3" className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                      20€
-                                  </Label>
-                              </div>
-                          </RadioGroup>
-                          <div className="relative mt-2">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-                              <Input id="custom-amount" placeholder="Montant personnalisé" className="pl-7" type="number" />
+                              <RadioGroup defaultValue="one-time" className="flex items-center space-x-4 mt-2">
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="one-time" id="one-time" />
+                                  <Label htmlFor="one-time" className="font-normal cursor-pointer">Don ponctuel</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="recurring" id="recurring" />
+                                  <Label htmlFor="recurring" className="font-normal cursor-pointer">Mensuel</Label>
+                                </div>
+                              </RadioGroup>
                           </div>
-                          <RadioGroup defaultValue="one-time" className="flex items-center space-x-4 mt-2">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="one-time" id="one-time" />
-                              <Label htmlFor="one-time" className="font-normal cursor-pointer">Don ponctuel</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="recurring" id="recurring" />
-                              <Label htmlFor="recurring" className="font-normal cursor-pointer">Mensuel</Label>
-                            </div>
-                          </RadioGroup>
-                      </div>
-                      <DialogFooter>
-                          <DialogClose asChild>
-                            <Button type="submit" className="w-full" onClick={handleDonation}>
-                                Faire un don
-                            </Button>
-                          </DialogClose>
-                      </DialogFooter>
-                  </DialogContent>
-              </Dialog>
+                          <DialogFooter>
+                              <DialogClose asChild>
+                                <Button type="submit" className="w-full" onClick={handleDonation}>
+                                    Faire un don
+                                </Button>
+                              </DialogClose>
+                          </DialogFooter>
+                      </DialogContent>
+                  </Dialog>
+                </>
+              )}
             </div>
           </div>
           
