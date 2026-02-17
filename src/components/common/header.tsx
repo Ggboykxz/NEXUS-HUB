@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic, Award, PenSquare } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
                               <DropdownMenuSeparator />
                               {uniqueGenres.map((genre) => (
                                   <DropdownMenuItem key={genre} asChild>
-                                      <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                                      <Link href={`/genres/${encodeURIComponent(genre)}`}>{genre}</Link>
                                   </DropdownMenuItem>
                               ))}
                           </>
@@ -180,7 +180,7 @@ export default function Header() {
                   <DropdownMenuLabel>Genres</DropdownMenuLabel>
                   {uniqueGenres.map((genre) => (
                     <DropdownMenuItem key={genre} asChild>
-                      <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                      <Link href={`/genres/${encodeURIComponent(genre)}`}>{genre}</Link>
                     </DropdownMenuItem>
                   ))}
                 </>
@@ -465,7 +465,7 @@ export default function Header() {
                                                             Toutes les œuvres
                                                         </Link>
                                                         {uniqueGenres.map(genre => (
-                                                            <Link key={genre} href={`/stories?genre=${genre}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                            <Link key={genre} href={`/genres/${encodeURIComponent(genre)}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
                                                                 {genre}
                                                             </Link>
                                                         ))}

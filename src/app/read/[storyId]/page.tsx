@@ -31,7 +31,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
         <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">NexusHub</Link>
         <div className="w-px h-5 bg-border hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/stories" className="hover:text-primary transition-colors hidden sm:block">{story.title}</Link>
+          <Link href={`/stories/${story.id}`} className="hover:text-primary transition-colors hidden sm:block font-medium">{story.title}</Link>
           <ChevronRight className="h-4 w-4 hidden sm:block" />
           <span className="text-primary font-semibold whitespace-nowrap">Chap. {chapter.id.split('-')[1]} – {chapter.title}</span>
         </div>
@@ -128,9 +128,13 @@ function ChaptersTab({ story }: { story: Story }) {
     <div className="p-4">
       {/* Mini series info */}
       <div className="flex gap-3 mb-4 pb-4 border-b border-border">
-        <Image src={story.coverImage.imageUrl} alt={story.title} width={56} height={80} className="rounded-md object-cover flex-shrink-0" />
+        <Link href={`/stories/${story.id}`}>
+            <Image src={story.coverImage.imageUrl} alt={story.title} width={56} height={80} className="rounded-md object-cover flex-shrink-0 hover:opacity-80 transition-opacity" />
+        </Link>
         <div>
-          <h3 className="font-display text-sm text-foreground mb-1">{story.title}</h3>
+          <Link href={`/stories/${story.id}`}>
+            <h3 className="font-display text-sm text-foreground mb-1 hover:text-primary transition-colors">{story.title}</h3>
+          </Link>
           <Link href={`/artists/${story.artistId}`} className="text-xs text-primary hover:underline flex items-center gap-1.5 mb-2">
             <Award className="h-3 w-3" /> {story.artistName}
           </Link>
@@ -185,16 +189,18 @@ function ArtistTab({ artist }: { artist: Artist }) {
   return (
     <div className="p-4">
       <div className="bg-card border border-border rounded-xl p-4 text-center">
-        <div className="relative inline-block">
-          <Avatar className="w-16 h-16 mx-auto mb-3 border-2 border-primary shadow-lg">
+        <Link href={`/artists/${artist.id}`} className="relative inline-block group">
+          <Avatar className="w-16 h-16 mx-auto mb-3 border-2 border-primary shadow-lg group-hover:opacity-80 transition-opacity">
             <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
             <AvatarFallback>{artist.name.slice(0, 1)}</AvatarFallback>
           </Avatar>
           <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-card">
             <Check className="w-3 h-3 text-black" />
           </div>
-        </div>
-        <h3 className="font-display text-base text-foreground mb-1">{artist.name}</h3>
+        </Link>
+        <Link href={`/artists/${artist.id}`}>
+            <h3 className="font-display text-base text-foreground mb-1 hover:text-primary transition-colors">{artist.name}</h3>
+        </Link>
         <p className="text-xs text-muted-foreground mb-3">Auteur · Dessinateur · Coloriste</p>
         <div className="flex justify-around py-3 border-y border-border mb-3">
           <div>
@@ -227,10 +233,10 @@ function ExploreTab() {
       <h4 className="text-xs uppercase font-bold tracking-wider text-muted-foreground mb-2">Tendances du moment</h4>
       <div className="flex flex-col gap-2">
         {otherStories.map(story => (
-          <Link key={story.id} href={`/stories/${story.id}`} className="flex gap-3 items-center p-2 rounded-lg hover:bg-muted">
-            <Image src={story.coverImage.imageUrl} alt={story.title} width={40} height={56} className="rounded-md object-cover" />
+          <Link key={story.id} href={`/stories/${story.id}`} className="flex gap-3 items-center p-2 rounded-lg hover:bg-muted group">
+            <Image src={story.coverImage.imageUrl} alt={story.title} width={40} height={56} className="rounded-md object-cover group-hover:opacity-80 transition-opacity" />
             <div>
-              <p className="text-sm font-semibold leading-tight">{story.title}</p>
+              <p className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">{story.title}</p>
               <p className="text-xs text-muted-foreground">{story.artistName}</p>
             </div>
           </Link>
@@ -304,8 +310,10 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const chapterComments = allComments.filter(c => c.storyId === story!.id && c.chapter === 1);
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Lien copié dans le presse-papiers" });
+    if (typeof window !== 'undefined') {
+        navigator.clipboard.writeText(window.location.href);
+        toast({ title: "Lien copié dans le presse-papiers" });
+    }
   };
   
   const handleBookmark = () => {

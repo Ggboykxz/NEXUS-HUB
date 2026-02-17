@@ -54,45 +54,56 @@ function RankingList({ stories, metric }: RankingListProps) {
   return (
     <div className="grid gap-4 mt-6">
       {stories.map((story, index) => (
-        <Link key={story.id} href={`/stories/${story.id}`} className="block group">
+        <div key={story.id} className="block group">
           <Card className="hover:bg-card/90 transition-colors">
-            <CardContent className="p-4 flex items-start gap-4">
-              <div className="text-3xl font-bold text-primary w-12 text-center shrink-0">#{index + 1}</div>
-              <div className="shrink-0">
-                <Image
-                  src={story.coverImage.imageUrl}
-                  alt={story.title}
-                  width={80}
-                  height={120}
-                  className="rounded-md object-cover aspect-[2/3]"
-                  data-ai-hint={story.coverImage.imageHint}
-                />
-              </div>
-              <div className="flex-grow">
-                <h3 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{story.title}</h3>
-                <p className="text-sm text-muted-foreground group-hover:text-accent transition-colors">par {story.artistName}</p>
-                <p className="text-sm text-foreground/80 mt-2 line-clamp-2">{story.description}</p>
-                <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    <span>{(story.views / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-4 h-4" />
-                    <span>{(story.likes / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4" />
-                    <span>{(story.subscriptions / 1000).toFixed(0)}k</span>
-                  </div>
+            <CardContent className="p-4 flex flex-col md:flex-row items-start gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className="text-3xl font-bold text-primary w-12 text-center shrink-0">#{index + 1}</div>
+                <Link href={`/stories/${story.id}`} className="shrink-0">
+                    <Image
+                    src={story.coverImage.imageUrl}
+                    alt={story.title}
+                    width={80}
+                    height={120}
+                    className="rounded-md object-cover aspect-[2/3]"
+                    data-ai-hint={story.coverImage.imageHint}
+                    />
+                </Link>
+                <div className="flex-grow">
+                    <Link href={`/stories/${story.id}`}>
+                        <h3 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{story.title}</h3>
+                    </Link>
+                    <Link href={`/artists/${story.artistId}`}>
+                        <p className="text-sm text-muted-foreground hover:text-accent transition-colors">par {story.artistName}</p>
+                    </Link>
+                    <p className="text-sm text-foreground/80 mt-2 line-clamp-2">{story.description}</p>
+                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        <span>{(story.views / 1000).toFixed(0)}k</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Heart className="w-4 h-4" />
+                        <span>{(story.likes / 1000).toFixed(0)}k</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4" />
+                        <span>{(story.subscriptions / 1000).toFixed(0)}k</span>
+                    </div>
+                    </div>
                 </div>
               </div>
-              <div className="self-center">
-                <Badge variant="secondary">{story.genre}</Badge>
+              <div className="self-center flex flex-col items-end gap-2">
+                <Link href={`/genres/${encodeURIComponent(story.genre)}`}>
+                    <Badge variant="secondary" className="hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer">{story.genre}</Badge>
+                </Link>
+                <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'}>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{story.format}</Badge>
+                </Link>
               </div>
             </CardContent>
           </Card>
-        </Link>
+        </div>
       ))}
     </div>
   );
