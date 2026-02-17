@@ -4,59 +4,55 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 42 100% 97%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 38 62% 51%; /* gold: #C9943A */
-    --primary-foreground: 0 0% 3%; /* ink */
-    --secondary: 46 33% 72%; /* cream-dim: #A89876 */
+    --primary: 45 56% 51%;
+    --primary-foreground: 0 0% 3%;
+    --secondary: 46 33% 72%;
     --secondary-foreground: 0 0% 9%;
     --muted: 42 56% 96%;
-    --muted-foreground: 46 33% 72%; /* cream-dim */
-    --accent: 358 66% 45%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 358 72% 51%; /* red: #B5242A */
+    --muted-foreground: 46 33% 72%;
+    --accent: 45 78% 66%;
+    --accent-foreground: 0 0% 3%;
+    --destructive: 358 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 38 62% 51%;
+    --ring: 45 56% 51%;
+    --radius: 0.5rem;
 
-    --chart-1: 38 62% 51%;
+    --chart-1: 45 56% 51%;
     --chart-2: 145 56% 31%; /* green */
     --chart-3: 358 72% 51%;
-    --chart-4: 38 62% 61%;
+    --chart-4: 45 56% 61%;
     --chart-5: 145 56% 21%;
   }
 
   .dark {
-    --background: 0 0% 3%; /* ink: #080808 */
-    --foreground: 42 56% 96%; /* cream: #EDE3CC */
-    --card: 0 0% 6%; /* ink-2: #101010 */
-    --card-foreground: 42 56% 96%;
+    --background: 0 0% 3%;
+    --foreground: 42 56% 90%;
+    --card: 0 0% 6%;
+    --card-foreground: 42 56% 90%;
     --popover: 0 0% 3%;
-    --popover-foreground: 42 56% 96%;
-    --primary: 38 62% 51%; /* gold: #C9943A */
+    --popover-foreground: 42 56% 90%;
+    --primary: 45 56% 51%;
     --primary-foreground: 0 0% 3%;
-    --secondary: 46 33% 72%; /* cream-dim: #A89876 */
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 9%; /* ink-3: #181818 */
-    --muted-foreground: 46 33% 72%; /* cream-dim */
-    --accent: 38 78% 62%; /* gold-bright: #F0C96B */
+    --secondary: 46 33% 72%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 46 33% 72%;
+    --accent: 45 78% 66%;
     --accent-foreground: 0 0% 3%;
-    --destructive: 358 72% 51%; /* red: #B5242A */
-    --destructive-foreground: 42 56% 96%;
-    --border: 0 0% 100% / 0.07; /* border: rgba(255,255,255,0.07) */
-    --input: 0 0% 13%; /* ink-4: #222222 */
-    --ring: 38 62% 51%;
-
-    --chart-1: 38 62% 51%;
-    --chart-2: 145 56% 31%;
-    --chart-3: 358 72% 51%;
-    --chart-4: 38 62% 61%;
-    --chart-5: 145 56% 21%;
+    --destructive: 358 72% 51%;
+    --destructive-foreground: 42 56% 90%;
+    --border: 0 0% 100% / 0.07;
+    --input: 0 0% 13%;
+    --ring: 45 56% 51%;
+    --radius: 0.5rem;
   }
 }
 
@@ -66,11 +62,25 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
-    cursor: default;
+  }
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: hsl(var(--background)); }
-::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.5); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary)); }
+::-webkit-scrollbar { @apply w-1; }
+::-webkit-scrollbar-track { @apply bg-background; }
+::-webkit-scrollbar-thumb {
+  background-color: hsl(45 57% 29%);
+  @apply rounded;
+}
+
+
+@layer components {
+    .artist-verified-badge {
+        @apply absolute bottom-0 right-0 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-card bg-[#27763F] text-xs;
+    }
+    .review-body {
+        @apply font-serif text-sm leading-loose text-foreground/70 mb-3;
+    }
+}
