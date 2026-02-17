@@ -52,7 +52,7 @@ export default function HomePage() {
                 onMouseEnter={plugin.current.stop}
                 onMouseLeave={plugin.current.reset}
             >
-                <CarouselContent>
+                <CarouselContent className="homepage-carousel-container">
                     {featuredStoriesForCarousel.map((story) => (
                         <CarouselItem key={story.id}>
                             <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden">
