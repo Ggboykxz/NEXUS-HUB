@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -90,6 +90,10 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             <div className="w-full">
                 <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
                 <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
+                <div className="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-white transition-colors group-hover:text-primary">
+                    Voir plus
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
             </div>
         </div>
       </div>
