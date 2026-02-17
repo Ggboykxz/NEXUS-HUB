@@ -3,8 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
+import { artists } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -34,6 +35,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
 
   // Simulate user being logged in and having playlists
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
+  const artist = artists.find(a => a.id === story.artistId);
 
   useEffect(() => {
     // This will only run on the client, after hydration
@@ -149,7 +151,17 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       <Link href={`/stories/${story.id}`}>
         <h3 className="font-display font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
       </Link>
-      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">par <Link href={`/artists/${story.artistId}`} className="hover:text-primary hover:underline transition-colors">{story.artistName}</Link></p>
+      <p className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">
+        par{' '}
+        <Link href={`/artists/${story.artistId}`} className="hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
+          <span>{story.artistName}</span>
+          {artist?.isMentor ? (
+            <Award className="h-3.5 w-3.5 text-primary" title="Artiste Pro" />
+          ) : (
+            <PenSquare className="h-3.5 w-3.5 text-muted-foreground/80" title="Artiste Draft" />
+          )}
+        </Link>
+      </p>
       <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
       {showUpdateDate ? (
         <div className="flex items-center justify-between text-xs">
