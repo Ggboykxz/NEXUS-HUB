@@ -14,7 +14,7 @@ export default function CreationsDashboardPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 mb-8">
         <div>
           <div className="flex items-center gap-4 mb-2">
             <Brush className="w-10 h-10 text-primary" />
@@ -24,14 +24,14 @@ export default function CreationsDashboardPage() {
             Gérez vos œuvres, suivez leurs performances et publiez de nouveaux chapitres.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link href="/dashboard/stats">
                     <TrendingUp className="mr-2 h-4 w-4" />
                     Statistiques
                 </Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/submit">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nouvelle œuvre

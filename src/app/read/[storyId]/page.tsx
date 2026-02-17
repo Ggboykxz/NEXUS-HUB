@@ -182,7 +182,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
             <h1 className="font-display text-lg truncate text-foreground">{story.title}</h1>
             <p className="text-sm text-muted-foreground">Chapitre 1</p>
           </div>
-          <div className="w-24"></div> {/* Spacer */}
+          <div className="w-16 shrink-0 md:w-24"></div> {/* Spacer */}
         </div>
     </header>
   );

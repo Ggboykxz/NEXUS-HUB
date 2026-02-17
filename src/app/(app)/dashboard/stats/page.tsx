@@ -67,7 +67,7 @@ export default function StatsDashboardPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
         <div>
           <div className="flex items-center gap-4 mb-2">
             <TrendingUp className="w-10 h-10 text-primary" />
@@ -77,7 +77,7 @@ export default function StatsDashboardPage() {
             Suivez les performances de vos œuvres et l'engagement de votre communauté.
           </p>
         </div>
-        <Button variant="ghost" onClick={() => router.back()}>
+        <Button variant="ghost" onClick={() => router.back()} className="self-end sm:self-auto">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour à l'atelier
         </Button>

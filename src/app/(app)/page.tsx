@@ -67,7 +67,7 @@ export default function HomePage() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent p-8 sm:p-12 md:p-24 flex flex-col justify-center items-start text-left">
                                     <Badge variant="secondary" className="mb-4 backdrop-blur-sm">{story.genre}</Badge>
-                                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
+                                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 max-w-2xl leading-tight drop-shadow-lg">
                                         {story.title}
                                     </h1>
                                     <p className="text-base md:text-lg text-white/90 font-light max-w-xl mb-8 line-clamp-2 md:line-clamp-3 drop-shadow-sm">
@@ -84,7 +84,7 @@ export default function HomePage() {
                      <CarouselItem>
                         <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                             <div className="p-8 sm:p-12 md:p-24 flex flex-col justify-center items-center text-center">
-                                <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold text-foreground mb-4 max-w-3xl leading-tight">
+                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-4 max-w-3xl leading-tight">
                                     Partagez Votre Vision
                                 </h1>
                                 <p className="text-base md:text-lg text-foreground/80 font-light max-w-xl mb-8">

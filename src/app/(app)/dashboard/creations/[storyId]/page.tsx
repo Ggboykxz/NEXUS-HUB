@@ -182,11 +182,11 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
 
 
       <div className="mt-12">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
             <h2 className="text-3xl font-bold font-display">Gestion des chapitres</h2>
              <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Ajouter un chapitre
                 </Button>
