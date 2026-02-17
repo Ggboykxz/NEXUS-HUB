@@ -132,16 +132,18 @@ export default function HomePage() {
               <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-12">
-            {featuredArtists.map((artist) => (
-              <Link key={artist.id} href={`/artists/${artist.id}`} className="group flex flex-col items-center text-center">
-                  <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all duration-300 group-hover:ring-4">
-                    <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
-              </Link>
-            ))}
+          <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]">
+            <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
+              {[...featuredArtists, ...featuredArtists].map((artist, index) => (
+                <Link key={`${artist.id}-${index}`} href={`/artists/${artist.id}`} className="group flex flex-col items-center text-center mx-8 w-40 shrink-0">
+                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all duration-300 group-hover:ring-4">
+                      <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                      <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
 
