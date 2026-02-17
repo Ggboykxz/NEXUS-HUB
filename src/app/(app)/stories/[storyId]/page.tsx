@@ -28,7 +28,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-    toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
+    // toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
   };
   
   const handleShare = () => {
@@ -58,7 +58,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
         <div className="hero-content">
             <div className="hero-eyebrow">
-                <Link href="/stories?format=webtoon" className="no-underline">
+                <Link href="/stories" className="no-underline">
                     <Badge variant="outline" className="hero-type-badge">Webtoon</Badge>
                 </Link>
                 <Badge variant="secondary" className="hero-status-badge">
@@ -146,7 +146,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                         <Play className="fill-current"/> Commencer la lecture
                     </Link>
                 </Button>
-                 <Button className="cta-secondary">
+                 <Button className="cta-secondary" onClick={() => toast({title: "Fonctionnalité à venir"})}>
                     <Eye /> Reprendre (Chap. 7)
                 </Button>
                 <Button className="cta-icon-btn" onClick={handleBookmark} title="Sauvegarder">
@@ -209,6 +209,7 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
 }
 
 const ChaptersSection = ({ story }: { story: Story }) => {
+    const { toast } = useToast();
     const [activeFilter, setActiveFilter] = useState('Tous');
     const filters = ['Tous', 'Gratuits', 'Premium'];
 
@@ -228,13 +229,16 @@ const ChaptersSection = ({ story }: { story: Story }) => {
                             key={filter}
                             variant="ghost"
                             className={cn("filter-btn", activeFilter === filter && "active")}
-                            onClick={() => setActiveFilter(filter)}
+                            onClick={() => {
+                                setActiveFilter(filter);
+                                // toast({ title: `Filtre "${filter}" appliqué` });
+                            }}
                         >
                             {filter}
                         </Button>
                     ))}
                 </div>
-                 <Button variant="ghost" className="filter-btn">↕ Ordre</Button>
+                 <Button variant="ghost" className="filter-btn" onClick={() => toast({title: "Fonctionnalité à venir"})}>↕ Ordre</Button>
             </div>
             
              <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
@@ -255,7 +259,7 @@ const ChaptersSection = ({ story }: { story: Story }) => {
             </Accordion>
 
 
-            <Button variant="outline" className="load-more-chapters">
+            <Button variant="outline" className="load-more-chapters" onClick={() => toast({title: "Fonctionnalité à venir"})}>
                 <ChevronsDown />
                 Voir la liste complète ({story.chapters.length} chapitres)
             </Button>
@@ -329,7 +333,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                     <p className="review-title">Une œuvre qui redéfinit la BD africaine</p>
                     <p className="review-body">{comment.content}</p>
                      <div className="review-footer">
-                        <Button variant="ghost" className="review-action">
+                        <Button variant="ghost" className="review-action" onClick={() => toast({title: "Action enregistrée"})}>
                             <ThumbsUp /> Utile ({comment.likes})
                         </Button>
                         <Button variant="ghost" className="review-action" onClick={() => toast({title: "Fonctionnalité à venir"})}>Répondre</Button>
@@ -339,7 +343,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                     </div>
                 </div>
             ))}
-             <Button variant="outline" className="write-review-btn">
+             <Button variant="outline" className="write-review-btn" onClick={() => toast({title: "Fonctionnalité à venir"})}>
                 ✦ Écrire un avis · Donner une note
             </Button>
         </div>
@@ -447,7 +451,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                             <Button className={cn("artist-follow-btn", isFollowing && "following")} onClick={handleFollow}>
                                 {isFollowing ? '✓ Abonné' : '+ Suivre l\'artiste'}
                             </Button>
-                            <Button variant="ghost" className="artist-more-btn">
+                            <Button variant="ghost" className="artist-more-btn" onClick={() => toast({title: `Ajouté aux artistes favoris`})}>
                                 <Heart />
                             </Button>
                         </div>
@@ -462,7 +466,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                         <p className="afri-sub">Envoyez des AfriCoins directement à {artist.name} pour ce chapitre ou la série entière.</p>
                         <div className="coin-row">
                             {[10, 50, 100, 500].map(amount => (
-                                <Button key={amount} variant="outline" className="coin-opt">{amount} 🪙</Button>
+                                <Button key={amount} variant="outline" className="coin-opt" onClick={() => toast({title: `${amount} AfriCoins envoyés !`})}>{amount} 🪙</Button>
                             ))}
                         </div>
                         <Button className="coin-send" onClick={() => toast({title: "50 AfriCoins envoyés !"})}>Envoyer des AfriCoins</Button>
