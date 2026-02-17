@@ -5,7 +5,7 @@ import { stories, artists, comments as allComments, readers, type Story, type Ar
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Eye, Heart, Star, Share2, Bookmark, Play, Edit, ChevronsDown, MessageSquare, ThumbsUp, AlertTriangle, ArrowDown, ChevronRight, Check, Coins, Lock } from 'lucide-react';
+import { BookOpen, Eye, Heart, Star, Share2, Bookmark, Play, Edit, ChevronsDown, MessageSquare, ThumbsUp, AlertTriangle, ArrowDown, ChevronRight, Check, Coins, Lock, Award } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -146,7 +146,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                         <Play className="fill-current"/> Commencer la lecture
                     </Link>
                 </Button>
-                 <Button className="cta-secondary" onClick={() => toast({ title: 'Reprise de la lecture...' })}>
+                 <Button className="cta-secondary">
                     <Eye /> Reprendre (Chap. 7)
                 </Button>
                 <Button className="cta-icon-btn" onClick={handleBookmark} title="Sauvegarder">
@@ -176,7 +176,6 @@ const PremiumBanner = ({ story, artist }: { story: Story, artist: Artist }) => {
 };
 
 const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string }) => {
-    const { toast } = useToast();
     const isNew = chapter.status === 'Programmé'; // Simplified logic
     const isPremium = chapter.id.includes('premium'); // Mock logic
     const isRead = chapter.status === 'Publié'; // Mock logic
@@ -188,7 +187,7 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
     }, []);
 
     return (
-        <Link href={`/read/${storyId}`} className={cn("chapter-row", isNew && "new", isPremium && "premium")} onClick={() => toast({title: `Ouverture du chapitre ${chapter.title}`})}>
+        <Link href={`/read/${storyId}`} className={cn("chapter-row", isNew && "new", isPremium && "premium")}>
             <div className="ch-num">{isPremium ? <Lock size={14}/> : chapter.id.split('-')[1]}</div>
             <div className="ch-info">
                 <div className="ch-title">{chapter.title}</div>
@@ -210,7 +209,6 @@ const ChapterRow = ({ chapter, storyId }: { chapter: Chapter, storyId: string })
 }
 
 const ChaptersSection = ({ story }: { story: Story }) => {
-    const { toast } = useToast();
     const [activeFilter, setActiveFilter] = useState('Tous');
     const filters = ['Tous', 'Gratuits', 'Premium'];
 
@@ -230,13 +228,13 @@ const ChaptersSection = ({ story }: { story: Story }) => {
                             key={filter}
                             variant="ghost"
                             className={cn("filter-btn", activeFilter === filter && "active")}
-                            onClick={() => { setActiveFilter(filter); toast({title: `Filtre: ${filter}`})}}
+                            onClick={() => setActiveFilter(filter)}
                         >
                             {filter}
                         </Button>
                     ))}
                 </div>
-                 <Button variant="ghost" className="filter-btn" onClick={() => toast({title: "Ordre inversé"})}>↕ Ordre</Button>
+                 <Button variant="ghost" className="filter-btn">↕ Ordre</Button>
             </div>
             
              <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
@@ -257,7 +255,7 @@ const ChaptersSection = ({ story }: { story: Story }) => {
             </Accordion>
 
 
-            <Button variant="outline" className="load-more-chapters" onClick={() => toast({title: "Tous les chapitres sont chargés"})}>
+            <Button variant="outline" className="load-more-chapters">
                 <ChevronsDown />
                 Voir la liste complète ({story.chapters.length} chapitres)
             </Button>
@@ -331,7 +329,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                     <p className="review-title">Une œuvre qui redéfinit la BD africaine</p>
                     <p className="review-body">{comment.content}</p>
                      <div className="review-footer">
-                        <Button variant="ghost" className="review-action" onClick={() => toast({title: "Utile (143)!"})}>
+                        <Button variant="ghost" className="review-action">
                             <ThumbsUp /> Utile ({comment.likes})
                         </Button>
                         <Button variant="ghost" className="review-action" onClick={() => toast({title: "Fonctionnalité à venir"})}>Répondre</Button>
@@ -341,7 +339,7 @@ const ReviewsSection = ({ storyId }: { storyId: string }) => {
                     </div>
                 </div>
             ))}
-             <Button variant="outline" className="write-review-btn" onClick={() => toast({title: "Ouverture du formulaire d'évaluation"})}>
+             <Button variant="outline" className="write-review-btn">
                 ✦ Écrire un avis · Donner une note
             </Button>
         </div>
@@ -449,7 +447,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                             <Button className={cn("artist-follow-btn", isFollowing && "following")} onClick={handleFollow}>
                                 {isFollowing ? '✓ Abonné' : '+ Suivre l\'artiste'}
                             </Button>
-                            <Button variant="ghost" className="artist-more-btn" onClick={() => toast({title: "Artiste ajouté aux favoris"})}>
+                            <Button variant="ghost" className="artist-more-btn">
                                 <Heart />
                             </Button>
                         </div>
@@ -464,7 +462,7 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                         <p className="afri-sub">Envoyez des AfriCoins directement à {artist.name} pour ce chapitre ou la série entière.</p>
                         <div className="coin-row">
                             {[10, 50, 100, 500].map(amount => (
-                                <Button key={amount} variant="outline" className="coin-opt" onClick={() => toast({title: `${amount} AfriCoins sélectionnés`})}>{amount} 🪙</Button>
+                                <Button key={amount} variant="outline" className="coin-opt">{amount} 🪙</Button>
                             ))}
                         </div>
                         <Button className="coin-send" onClick={() => toast({title: "50 AfriCoins envoyés !"})}>Envoyer des AfriCoins</Button>

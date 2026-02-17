@@ -315,7 +315,6 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
   const handleLike = () => {
     setIsLiked(!isLiked);
-    if(!isLiked) toast({ title: '💛 Chapitre aimé !'});
   };
 
   return (

@@ -49,9 +49,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    toast({
-      title: "Ajouté aux favoris!",
-    });
   };
 
   const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
