@@ -25,13 +25,13 @@
     --ring: 45 56% 51%;
     --radius: 0.5rem;
 
-    --chart-1: 45 56% 51%;
-    --chart-2: 145 56% 31%; /* green */
-    --chart-3: 358 72% 51%;
-    --chart-4: 45 56% 61%;
-    --chart-5: 145 56% 21%;
+    --chart-1: 38 61% 51%;
+    --chart-2: 142 54% 20%; /* green */
+    --chart-3: 357 65% 42%; /* red */
+    --chart-4: 38 61% 61%;
+    --chart-5: 142 54% 15%;
 
-    --gold: 38 61% 58%;
+    --gold: 38 61% 51%;
     --gold-bright: 40 82% 67%;
     --gold-dim: 36 65% 30%;
     --gold-pale: 38 61% 58% / 0.12;
@@ -56,19 +56,19 @@
     --card-foreground: 40 43% 87%;
     --popover: 0 0% 3%;
     --popover-foreground: 40 43% 87%;
-    --primary: 38 61% 58%;
-    --primary-foreground: 36 65% 10%;
+    --primary: 38 61% 51%;
+    --primary-foreground: 0 0% 3%;
     --secondary: 41 24% 63%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 9%;
     --muted-foreground: 41 24% 63%;
     --accent: 40 82% 67%;
-    --accent-foreground: 36 65% 10%;
+    --accent-foreground: 0 0% 3%;
     --destructive: 357 65% 42%;
     --destructive-foreground: 40 43% 87%;
-    --border: 240 4% 16%;
+    --border: 0 0% 11%;
     --input: 0 0% 13%;
-    --ring: 38 61% 58%;
+    --ring: 38 61% 51%;
     --radius: 0.5rem;
   }
 }
@@ -95,7 +95,7 @@
 /* ─── Story Detail Page Styles ─── */
 
 .hero {
-  @apply relative flex items-center overflow-hidden py-24;
+  @apply relative flex items-end overflow-hidden py-16 md:min-h-0;
 }
 
 .hero-bg {
@@ -168,7 +168,7 @@
 }
 
 .hero-content {
-  @apply relative z-20 px-8;
+  @apply relative z-20 px-8 pb-12 pt-24 md:pt-12;
   max-width: 700px;
   animation: heroContentIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
 }
@@ -184,9 +184,9 @@
   @apply uppercase text-xs font-semibold tracking-[0.1em] px-3 py-1 rounded-sm flex items-center gap-1.5;
   background: hsl(148, 56%, 32%, 0.2);
   border: 1px solid hsl(148, 56%, 32%, 0.4);
-  color: #5CCC7A;
+  color: hsl(var(--green-l));
 }
-.status-dot { @apply w-1.5 h-1.5 rounded-full animate-pulse; background-color: #5CCC7A; }
+.status-dot { @apply w-1.5 h-1.5 rounded-full animate-pulse; background-color: hsl(var(--green-l)); }
 .hero-pro-badge { @apply uppercase text-xs font-bold tracking-[0.1em] px-2.5 py-1 rounded-sm bg-primary text-primary-foreground; }
 
 .hero-title { @apply font-display text-5xl md:text-7xl font-bold leading-tight mb-1; }
@@ -242,7 +242,7 @@
 .filter-btn.active { @apply bg-primary/10 text-primary; }
 
 .volume-label { @apply flex items-center gap-2.5 p-3 rounded-t-lg cursor-pointer transition-colors; background-color: hsl(var(--cream-faint)); border: 1px solid hsl(var(--border)); border-bottom: none;}
-.volume-label:hover { background-color: hsl(var(--primary)/0.07); }
+.volume-label:hover { @apply bg-primary/10; }
 .vol-title { @apply font-display text-xs tracking-[0.1em] flex-1; color: hsl(var(--primary)); }
 .vol-meta { @apply text-xs text-muted-foreground; }
 .vol-chevron { @apply w-4 h-4 text-muted-foreground transition-transform; }
@@ -297,10 +297,11 @@
 .review-stars { @apply flex gap-0.5; }
 .r-star { @apply w-3.5 h-3.5; color: hsl(var(--primary)); }
 .review-title { @apply font-serif font-bold text-base text-foreground mb-2; }
+.review-body { @apply font-serif text-sm text-foreground/70 leading-relaxed mb-3; }
 
 .review-footer { @apply flex items-center gap-3 mt-3; }
 .review-action { @apply flex items-center gap-1.5 text-xs text-muted-foreground rounded transition-colors p-1 -m-1; }
-.review-action:hover { background-color: hsl(var(--primary)/0.1); color: hsl(var(--primary)); }
+.review-action:hover { @apply bg-primary/10 text-primary; }
 .write-review-btn { @apply w-full h-11 mt-4 text-sm border-dashed; border-color: hsl(var(--border)); }
 .write-review-btn:hover { border-color: hsl(var(--border-gold)); color: hsl(var(--primary)); @apply border-solid; }
 
@@ -321,7 +322,7 @@
 .side-card-body { @apply p-4; }
 
 .artist-hero-card { @apply bg-card border-border rounded-xl overflow-hidden; }
-.artist-card-banner { @apply h-16 relative; background: linear-gradient(135deg, hsl(148 56% 32% / 0.6), hsl(25 56% 36% / 0.5), hsl(38 61% 58% / 0.2)); }
+.artist-card-banner { @apply h-16 relative; background: linear-gradient(135deg, hsl(var(--green-l) / 0.6), hsl(25 56% 36% / 0.5), hsl(var(--primary) / 0.2)); }
 .artist-card-banner::after { content: ''; @apply absolute inset-0; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--primary) / 0.03) 10px, hsl(var(--primary) / 0.03) 20px); }
 .artist-card-body { @apply p-4; }
 .artist-av-lg { @apply w-16 h-16 -mt-12 mb-2.5 relative border-4; border-color: hsl(var(--card)); }

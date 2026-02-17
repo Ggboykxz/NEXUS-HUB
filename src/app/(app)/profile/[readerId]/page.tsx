@@ -54,7 +54,7 @@ export default function ProfilePage({ params: propsParams }: { params: { readerI
           <AvatarImage src={reader.avatar.imageUrl} alt={reader.name} data-ai-hint={reader.avatar.imageHint} />
           <AvatarFallback>{reader.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <h1 className="text-4xl font-bold mt-4">{reader.name}</h1>
+        <h1 className="text-4xl font-bold font-display mt-4">{reader.name}</h1>
         <p className="text-lg text-muted-foreground mt-1">Lecteur / Lectrice</p>
         
         {isArtist && (

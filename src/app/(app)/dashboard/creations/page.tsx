@@ -18,7 +18,7 @@ export default function CreationsDashboardPage() {
         <div>
           <div className="flex items-center gap-4 mb-2">
             <Brush className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl font-bold">Mon Atelier</h1>
+            <h1 className="text-4xl font-bold font-display">Mon Atelier</h1>
           </div>
           <p className="text-lg text-muted-foreground">
             Gérez vos œuvres, suivez leurs performances et publiez de nouveaux chapitres.

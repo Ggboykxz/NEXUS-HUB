@@ -22,7 +22,7 @@ export default function MessagesPage() {
       {/* Sidebar with conversations */}
       <aside className="w-1/4 border-r bg-card">
         <div className="p-4 border-b">
-          <h2 className="text-2xl font-bold">Messagerie</h2>
+          <h2 className="text-2xl font-bold font-display">Messagerie</h2>
           <p className="text-sm text-muted-foreground">Discussions entre lecteurs</p>
         </div>
         <ScrollArea className="h-[calc(100%-5.5rem)]">
@@ -57,7 +57,7 @@ export default function MessagesPage() {
             <Link href={`/profile/${activeChatPartner.id}`}>
                 <h3 className="text-xl font-semibold hover:text-primary transition-colors">{activeChatPartner.name}</h3>
             </Link>
-            <p className="text-sm text-green-500">En ligne</p>
+            <p className="text-sm text-emerald-400">En ligne</p>
           </div>
         </div>
 

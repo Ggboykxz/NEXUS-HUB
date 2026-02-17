@@ -10,7 +10,7 @@ export default function ArtistsPage() {
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center gap-4 mb-8">
         <Users className="w-10 h-10 text-primary" />
-        <h1 className="text-4xl font-bold">Nos Artistes</h1>
+        <h1 className="text-4xl font-bold font-display">Nos Artistes</h1>
       </div>
       <p className="text-lg text-muted-foreground mb-8">
         Les esprits créatifs derrière vos histoires préférées. Découvrez également nos mentors qui guident la nouvelle génération de talents.

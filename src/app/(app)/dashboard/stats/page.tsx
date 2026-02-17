@@ -71,7 +71,7 @@ export default function StatsDashboardPage() {
         <div>
           <div className="flex items-center gap-4 mb-2">
             <TrendingUp className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl font-bold">Statistiques</h1>
+            <h1 className="text-4xl font-bold font-display">Statistiques</h1>
           </div>
           <p className="text-lg text-muted-foreground">
             Suivez les performances de vos œuvres et l'engagement de votre communauté.

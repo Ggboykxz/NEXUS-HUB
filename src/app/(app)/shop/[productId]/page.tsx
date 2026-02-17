@@ -25,7 +25,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
           />
         </div>
         <div className="flex flex-col justify-center">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-4">{product.name}</h1>
+          <h1 className="text-4xl lg:text-5xl font-bold font-display mb-4">{product.name}</h1>
           <p className="text-3xl font-semibold text-primary mb-6">
             ${product.price.toFixed(2)}
           </p>

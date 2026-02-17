@@ -67,7 +67,7 @@ export default function MyPlaylistsPage() {
         <div>
             <div className="flex items-center gap-4 mb-2">
                 <ListMusic className="w-10 h-10 text-primary" />
-                <h1 className="text-4xl font-bold">Mes Playlists</h1>
+                <h1 className="text-4xl font-bold font-display">Mes Playlists</h1>
             </div>
             <p className="text-lg text-muted-foreground">
                 Organisez vos œuvres préférées dans des collections personnalisées.

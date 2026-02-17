@@ -24,7 +24,7 @@ export default function SettingsPage() {
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <div className="flex items-center gap-4 mb-8">
         <Settings className="w-10 h-10 text-primary" />
-        <h1 className="text-4xl font-bold">Paramètres du Compte</h1>
+        <h1 className="text-4xl font-bold font-display">Paramètres du Compte</h1>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">

@@ -22,7 +22,7 @@ export default function PlaylistPage({ params }: { params: { playlistId: string 
       <div className="flex items-start gap-4 mb-8">
         <ListMusic className="w-10 h-10 text-primary mt-1" />
         <div>
-            <h1 className="text-4xl font-bold">{playlist.name}</h1>
+            <h1 className="text-4xl font-bold font-display">{playlist.name}</h1>
             <div className="flex items-center gap-2 mt-2">
                 {playlist.isPublic ? (
                     <Badge variant="secondary"><Globe className="h-3 w-3 mr-1.5" />Publique</Badge>

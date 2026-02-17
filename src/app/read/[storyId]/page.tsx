@@ -25,7 +25,7 @@ import Link from 'next/link';
 
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
   return (
-    <nav className="fixed top-0 left-0 right-0 h-14 bg-black/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
       {/* Left section */}
       <div className="flex items-center gap-4 flex-1">
         <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">NexusHub</Link>
@@ -79,12 +79,12 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
 
 function ProgressBar({ progress }: { progress: number }) {
   return (
-    <div className="fixed top-14 left-0 right-0 h-0.5 bg-white/5 z-50">
+    <div className="fixed top-14 left-0 right-0 h-0.5 bg-foreground/5 z-50">
       <div
-        className="h-full bg-gradient-to-r from-primary/50 via-primary to-yellow-300 transition-all duration-75 ease-linear"
+        className="h-full bg-gradient-to-r from-primary/50 via-primary to-accent transition-all duration-75 ease-linear"
         style={{ width: `${progress}%` }}
       >
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_8px_theme(colors.yellow.300)]" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_theme(colors.accent)]" />
       </div>
     </div>
   )
@@ -107,8 +107,8 @@ function ReaderSidebar({ story, artist }: { story: Story, artist: Artist }) {
   );
 
   return (
-    <aside className="w-[320px] bg-[#121212] border-l border-border h-[calc(100vh-56px)] sticky top-14 flex-shrink-0 hidden lg:flex flex-col">
-      <div className="flex border-b border-border sticky top-0 bg-[#121212] z-10">
+    <aside className="w-[320px] bg-card border-l border-border h-[calc(100vh-56px)] sticky top-14 flex-shrink-0 hidden lg:flex flex-col">
+      <div className="flex border-b border-border sticky top-0 bg-card z-10">
         <TabButton id="chapters" label="Chapitres" />
         <TabButton id="artist" label="Artiste" />
         <TabButton id="explore" label="Explorer" />
@@ -160,11 +160,11 @@ function ChaptersTab({ story }: { story: Story }) {
       <div className="flex flex-col gap-1">
         {story.chapters.map((chap, index) => (
           <Link key={chap.id} href="#" className={cn(
-            "flex items-center gap-2.5 p-2.5 rounded-lg transition-colors hover:bg-card",
+            "flex items-center gap-2.5 p-2.5 rounded-lg transition-colors hover:bg-muted",
             index + 1 === 1 && "bg-primary/10 border border-primary/20"
           )}>
             <div className={cn(
-              "w-7 h-7 flex items-center justify-center rounded-md bg-card border border-border text-xs font-bold text-muted-foreground flex-shrink-0",
+              "w-7 h-7 flex items-center justify-center rounded-md bg-muted border border-border text-xs font-bold text-muted-foreground flex-shrink-0",
               index + 1 === 1 && "bg-primary border-primary text-primary-foreground"
             )}>{index + 1}</div>
             <div className="flex-1 overflow-hidden">
@@ -190,7 +190,7 @@ function ArtistTab({ artist }: { artist: Artist }) {
             <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
             <AvatarFallback>{artist.name.slice(0, 1)}</AvatarFallback>
           </Avatar>
-          <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-card">
+          <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-card">
             <Check className="w-3 h-3 text-black" />
           </div>
         </div>
@@ -227,7 +227,7 @@ function ExploreTab() {
       <h4 className="text-xs uppercase font-bold tracking-wider text-muted-foreground mb-2">Tendances du moment</h4>
       <div className="flex flex-col gap-2">
         {otherStories.map(story => (
-          <Link key={story.id} href={`/stories/${story.id}`} className="flex gap-3 items-center p-2 rounded-lg hover:bg-card">
+          <Link key={story.id} href={`/stories/${story.id}`} className="flex gap-3 items-center p-2 rounded-lg hover:bg-muted">
             <Image src={story.coverImage.imageUrl} alt={story.title} width={40} height={56} className="rounded-md object-cover" />
             <div>
               <p className="text-sm font-semibold leading-tight">{story.title}</p>
@@ -319,7 +319,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   };
 
   return (
-    <div style={{'--reader-bg': '#0D0D0D'} as React.CSSProperties} className="font-serif">
+    <div className="font-serif">
       <div className="adinkra-bg fixed inset-0 pointer-events-none opacity-[0.02] z-0" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4A843' stroke-width='1'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3Cline x1='10' y1='30' x2='50' y2='30'/%3E%3Cline x1='30' y1='10' x2='30' y2='50'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px'}} />
       <ProgressBar progress={progress} />
       <ReaderHeader 
@@ -333,7 +333,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
       />
       
       <div className="flex mt-14 min-h-[calc(100vh-56px)]">
-        <main className="flex-1 bg-[var(--reader-bg)] min-w-0">
+        <main className="flex-1 bg-background min-w-0">
           <div className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-0">
             {comicPages.map((page, index) => (
               <Image

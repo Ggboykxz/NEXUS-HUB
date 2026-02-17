@@ -90,7 +90,7 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
           
           <div className="flex flex-col items-center md:items-start mt-4 gap-y-4">
             <div className="flex items-center gap-x-3">
-              <h1 className="text-4xl font-bold">{artist.name}</h1>
+              <h1 className="text-4xl font-bold font-display">{artist.name}</h1>
               {artist.isMentor ? (
                 <Badge variant="secondary" className="flex items-center gap-1.5 whitespace-nowrap text-sm h-fit py-1 px-2.5">
                     <Award className="h-4 w-4" />
@@ -124,7 +124,7 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
                   <Dialog>
                       <DialogTrigger asChild>
                           <Button size="sm" variant="outline">
-                              <Heart className="mr-2 h-4 w-4 text-red-500 fill-current" />
+                              <Heart className="mr-2 h-4 w-4 text-destructive fill-destructive" />
                               Faire un don
                           </Button>
                       </DialogTrigger>

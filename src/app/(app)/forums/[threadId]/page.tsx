@@ -64,7 +64,7 @@ export default function ThreadPage({ params }: { params: { threadId: string } })
         <Link href="/forums" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 mb-2">
             <CornerUpLeft className="h-4 w-4" /> Retour aux forums
         </Link>
-        <h1 className="text-4xl font-bold">{thread.title}</h1>
+        <h1 className="text-4xl font-bold font-display">{thread.title}</h1>
         <p className="text-muted-foreground">Discussion dans la catégorie <span className="text-primary">{thread.category}</span></p>
       </div>
 
