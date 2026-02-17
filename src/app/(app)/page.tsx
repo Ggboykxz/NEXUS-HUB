@@ -6,7 +6,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, comments } from '@/lib/data';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Play, Award, PenSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import {
@@ -135,7 +135,18 @@ export default function HomePage() {
           <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]">
             <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
               {[...featuredArtists, ...featuredArtists].map((artist, index) => (
-                <Link key={`${artist.id}-${index}`} href={`/artists/${artist.id}`} className="group flex flex-col items-center text-center mx-8 w-40 shrink-0">
+                <Link key={`${artist.id}-${index}`} href={`/artists/${artist.id}`} className="group relative flex flex-col items-center text-center mx-8 w-40 shrink-0">
+                    {artist.isMentor ? (
+                      <Badge variant="secondary" className="absolute top-2 right-2 gap-1 text-xs z-10">
+                        <Award className="h-3 w-3" />
+                        Pro
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="absolute top-2 right-2 gap-1 text-xs z-10">
+                        <PenSquare className="h-3 w-3" />
+                        Draft
+                      </Badge>
+                    )}
                     <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all duration-300 group-hover:ring-4">
                       <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
                       <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
