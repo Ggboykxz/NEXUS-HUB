@@ -64,12 +64,12 @@ export default function HomePage() {
                                     data-ai-hint={story.coverImage.imageHint}
                                     sizes="(max-width: 768px) 100vw, 70vw"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-6 sm:p-8 md:p-12 flex flex-col justify-end items-start text-left">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 sm:p-8 md:p-12 flex flex-col justify-end items-start text-left">
                                     <Link href={`/stories?genre=${story.genre}`}>
                                         <Badge variant="secondary" className="mb-2 md:mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
                                     </Link>
                                     <Link href={`/stories/${story.id}`}>
-                                        <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2 max-w-xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
+                                        <h1 className="text-xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2 max-w-xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
                                             {story.title}
                                         </h1>
                                     </Link>
@@ -80,13 +80,13 @@ export default function HomePage() {
                                         {story.description}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                                        <Button asChild size="default">
+                                        <Button asChild size="sm" className="md:h-10 md:px-4 md:py-2 md:text-sm">
                                             <Link href={`/read/${story.id}`}>
                                                 <Play className="mr-2 h-4 w-4 fill-current" />
-                                                Lire maintenant
+                                                Lire
                                             </Link>
                                         </Button>
-                                        <Button asChild size="sm" variant="outline" className="border-white/50 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white">
+                                        <Button asChild size="sm" variant="outline" className="border-white/50 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white md:h-10 md:px-4 md:py-2 md:text-sm">
                                             <Link href={`/stories/${story.id}`}>Détails</Link>
                                         </Button>
                                     </div>
@@ -135,23 +135,25 @@ export default function HomePage() {
           <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]">
             <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
               {[...featuredArtists, ...featuredArtists].map((artist, index) => (
-                <Link key={`${artist.id}-${index}`} href={`/artists/${artist.id}`} className="group relative flex flex-col items-center text-center mx-8 w-40 shrink-0">
-                    {artist.isMentor ? (
-                      <Badge variant="secondary" className="absolute top-2 right-2 gap-1 text-xs z-10">
-                        <Award className="h-3 w-3" />
-                        Pro
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="absolute top-2 right-2 gap-1 text-xs z-10">
-                        <PenSquare className="h-3 w-3" />
-                        Draft
-                      </Badge>
-                    )}
+                <Link key={`${artist.id}-${index}`} href={`/artists/${artist.id}`} className="group flex flex-col items-center text-center mx-8 w-48 shrink-0">
                     <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all duration-300 group-hover:ring-4">
                       <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
                       <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-display font-semibold text-lg group-hover:text-primary transition-colors">{artist.name}</h3>
+                        {artist.isMentor ? (
+                          <Badge variant="secondary" className="gap-1 text-xs">
+                            <Award className="h-3 w-3" />
+                            Pro
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-xs">
+                            <PenSquare className="h-3 w-3" />
+                            Draft
+                          </Badge>
+                        )}
+                    </div>
                 </Link>
               ))}
             </div>

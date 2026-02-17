@@ -18,25 +18,27 @@ export default function ArtistsPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {artists.map((artist) => (
-          <Link key={artist.id} href={`/artists/${artist.id}`}>
-            <Card className="relative text-center p-4 transition-all hover:shadow-lg hover:-translate-y-1">
-              {artist.isMentor ? (
-                <Badge variant="secondary" className="absolute top-2 right-2 gap-1 text-xs z-10">
-                  <Award className="h-3 w-3" />
-                  Pro
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="absolute top-2 right-2 gap-1 text-xs z-10">
-                  <PenSquare className="h-3 w-3" />
-                  Draft
-                </Badge>
-              )}
-              <CardContent className="p-0 flex flex-col items-center">
+          <Link key={artist.id} href={`/artists/${artist.id}`} className="block h-full">
+            <Card className="text-center p-4 transition-all hover:shadow-lg hover:-translate-y-1 h-full flex flex-col">
+              <CardContent className="p-0 flex flex-col items-center flex-grow justify-center">
                 <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4">
                   <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
                   <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <h2 className="text-lg font-display font-semibold">{artist.name}</h2>
+                <div className="flex items-center justify-center gap-2">
+                    <h2 className="text-lg font-display font-semibold">{artist.name}</h2>
+                    {artist.isMentor ? (
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                        <Award className="h-3 w-3" />
+                        Pro
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="gap-1 text-xs">
+                        <PenSquare className="h-3 w-3" />
+                        Draft
+                        </Badge>
+                    )}
+                </div>
               </CardContent>
             </Card>
           </Link>
