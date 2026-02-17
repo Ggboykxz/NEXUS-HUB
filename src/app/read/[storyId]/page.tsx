@@ -292,7 +292,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
 
         {/* MAIN CONTENT */}
         <main className="flex-1 relative overflow-hidden">
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full relative">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full h-full">
             <TabsContent value="scroll" className="m-0 h-full">
               <ScrollArea className="h-full">
                 <div className="flex flex-col items-center">
@@ -366,7 +366,7 @@ export default function ReadPage(props: { params: { storyId: string } }) {
         </footer>
 
         {/* COMMENTS SHEET */}
-        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0 border-t bg-background text-foreground">
+        <SheetContent side="right" className="w-full sm:max-w-md lg:max-w-lg flex flex-col p-0 bg-background text-foreground">
           <SheetHeader className="p-4 border-b">
             <SheetTitle>Commentaires (Chapitre 1)</SheetTitle>
           </SheetHeader>
