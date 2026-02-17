@@ -1,14 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award, PenSquare, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SubmitPage() {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-12">
-      <div className="text-center mb-12">
+      <div className="text-center mb-16">
         <h1 className="text-4xl font-bold font-display mb-4">De Draft à Pro : Votre Parcours sur NexusHub</h1>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          Commencez sur NexusHub Draft pour partager librement vos créations et construire votre audience. Les œuvres les plus prometteuses auront la chance de passer Pro, d'être monétisées et de toucher un public encore plus large.
+          Découvrez les deux voies pour partager votre talent sur NexusHub. Commencez en tant qu'artiste Draft pour bâtir votre audience, et visez le statut Pro pour monétiser votre art.
         </p>
       </div>
 
@@ -19,20 +20,26 @@ export default function SubmitPage() {
               <CardHeader className="text-center">
                 <PenSquare className="w-12 h-12 text-accent mx-auto mb-4" />
                 <CardTitle className="text-2xl">NexusHub Draft</CardTitle>
-                <CardDescription>Le laboratoire de la créativité</CardDescription>
+                <CardDescription>Le point de départ pour chaque créateur</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-center text-muted-foreground mb-6">
-                    Un espace d'apprentissage gratuit où vous pouvez recevoir des feedbacks bienveillants et voir votre progression.
+                    Que vous soyez un artiste émergent ou confirmé, Draft est votre espace pour expérimenter, publier sans contrainte et bâtir une communauté.
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-sm text-foreground/80">
-                    <li><strong>Espace d'apprentissage :</strong> Partagez vos projets en cours et idées nouvelles.</li>
-                    <li><strong>Feedback bienveillant :</strong> Échangez avec vos lecteurs et construisez votre audience.</li>
-                    <li><strong>Progression visible :</strong> Les œuvres populaires peuvent être repérées pour évoluer vers NexusHub Pro.</li>
+                <ul className="list-disc list-inside space-y-3 text-sm text-foreground/80">
+                    <li><strong>Publication ouverte à tous :</strong> Aucune sélection à l'entrée. Partagez vos œuvres et idées dès aujourd'hui.</li>
+                    <li><strong>Laboratoire créatif :</strong> Idéal pour les projets en cours, les formats courts et les expérimentations.</li>
+                    <li><strong>Accès à la communauté :</strong> Recevez des retours, des commentaires et commencez à construire votre base de fans.</li>
+                    <li><strong>Le tremplin vers Pro :</strong> Les œuvres qui se distinguent par leur qualité et leur engagement peuvent être invitées à passer Pro.</li>
                 </ul>
               </CardContent>
                <div className="p-6 pt-0">
-                <Button className="w-full" size="lg" variant="secondary">Artiste amateur ? Publiez gratuitement !</Button>
+                <Button asChild className="w-full" size="lg" variant="secondary">
+                  <Link href="/dashboard/creations">
+                    <PenSquare className="mr-2"/>
+                    Publier sur Draft
+                  </Link>
+                </Button>
               </div>
             </Card>
 
@@ -46,22 +53,21 @@ export default function SubmitPage() {
               <CardHeader className="text-center">
                 <Award className="w-12 h-12 text-primary mx-auto mb-4" />
                 <CardTitle className="text-2xl">NexusHub Pro</CardTitle>
-                <CardDescription>Pour les artistes et œuvres aboutis</CardDescription>
+                <CardDescription>L'élite des créateurs certifiés</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-center text-muted-foreground mb-6">
-                  Rejoignez notre sélection d'artistes certifiés pour une visibilité internationale et des opportunités de monétisation.
+                  Un programme sur invitation pour les œuvres qui ont démontré une qualité exceptionnelle, un engagement fort et un potentiel professionnel.
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-sm text-foreground/80">
-                    <li><strong>Validation qualité :</strong> Notre équipe vous accompagne pour peaufiner vos œuvres.</li>
-                    <li><strong>Monétisation :</strong> Accès aux abonnements, dons, et partage de revenus.</li>
-                    <li><strong>Visibilité internationale :</strong> Mise en avant sur la page d'accueil et dans nos collections.</li>
-                    <li><strong>Badge certifié :</strong> Un badge de certification pour asseoir votre crédibilité.</li>
-                    <li><strong>Devenez Mentor :</strong> Partagez votre expertise et guidez la nouvelle génération d'artistes.</li>
+                <ul className="list-disc list-inside space-y-3 text-sm text-foreground/80">
+                    <li><strong>Monétisation avancée :</strong> Gagnez des revenus via les chapitres Premium (AfriCoins), les dons directs et le futur partage des revenus publicitaires.</li>
+                    <li><strong>Visibilité maximale :</strong> Soyez mis en avant sur la page d'accueil, dans les classements et nos sélections éditoriales.</li>
+                    <li><strong>Badge Pro & Crédibilité :</strong> Obtenez le badge "Pro" sur votre profil, un gage de qualité et de confiance pour les lecteurs et les éditeurs.</li>
+                    <li><strong>Accès au Mentorat :</strong> Partagez votre savoir-faire et guidez la nouvelle génération en devenant un mentor officiel.</li>
                 </ul>
               </CardContent>
               <div className="p-6 pt-0">
-                <Button className="w-full" size="lg" disabled>Candidater à NexusHub Pro (bientôt)</Button>
+                <Button className="w-full" size="lg" disabled>Sur Invitation Uniquement</Button>
               </div>
             </Card>
         </div>
