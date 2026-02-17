@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ThemeToggle } from './theme-toggle';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
   const uniqueGenres = [...new Set(stories.map(s => s.genre))];
@@ -401,6 +402,7 @@ export default function Header() {
                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                   </Button>
+                  <ThemeToggle />
                  
                 <div className={cn('flex items-center gap-2', (hasMounted && isLoggedIn) ? 'hidden' : 'flex')}>
                     {LoggedOutNav}
@@ -414,6 +416,7 @@ export default function Header() {
                     <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                     </Button>
+                    <ThemeToggle />
                     <Button variant="ghost" size="icon" className={cn('relative text-foreground/90', !(hasMounted && isLoggedIn) && 'hidden')}>
                       <Bell className="h-5 w-5" />
                     </Button>
