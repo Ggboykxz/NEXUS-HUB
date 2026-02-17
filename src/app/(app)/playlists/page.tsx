@@ -6,10 +6,26 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ListMusic, PlusCircle, Globe, Lock } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { useToast } from '@/hooks/use-toast';
 
 export default function MyPlaylistsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setHasMounted(true);
@@ -18,6 +34,13 @@ export default function MyPlaylistsPage() {
   }, []);
 
   const myPlaylists = allPlaylists.filter(p => p.authorId === currentUserId);
+
+  const handleCreatePlaylist = () => {
+    toast({
+      title: "Playlist créée !",
+      description: "Votre nouvelle playlist a été créée avec succès (simulation).",
+    });
+  };
 
   if (!hasMounted) {
       return (
@@ -50,10 +73,43 @@ export default function MyPlaylistsPage() {
                 Organisez vos œuvres préférées dans des collections personnalisées.
             </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nouvelle playlist
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nouvelle playlist
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Créer une nouvelle playlist</DialogTitle>
+              <DialogDescription>
+                Donnez un nom et une description à votre nouvelle collection d'œuvres.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="playlist-name">Nom de la playlist</Label>
+                <Input id="playlist-name" placeholder="Ex: Mes lectures du soir" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="playlist-description">Description</Label>
+                <Textarea id="playlist-description" placeholder="Une courte description de votre playlist (optionnel)" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="playlist-public" />
+                <Label htmlFor="playlist-public">Rendre la playlist publique</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={handleCreatePlaylist}>
+                  Créer la playlist
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
       
       {myPlaylists.length > 0 ? (
@@ -82,10 +138,43 @@ export default function MyPlaylistsPage() {
             <p className="mt-1 text-sm text-muted-foreground">
                 Commencez à créer votre première collection d'œuvres.
             </p>
-            <Button className="mt-6">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Créer une playlist
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="mt-6">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Créer une playlist
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Créer une nouvelle playlist</DialogTitle>
+                  <DialogDescription>
+                    Donnez un nom et une description à votre nouvelle collection d'œuvres.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="playlist-name-empty">Nom de la playlist</Label>
+                    <Input id="playlist-name-empty" placeholder="Ex: Mes lectures du soir" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playlist-description-empty">Description</Label>
+                    <Textarea id="playlist-description-empty" placeholder="Une courte description de votre playlist (optionnel)" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="playlist-public-empty" />
+                    <Label htmlFor="playlist-public-empty">Rendre la playlist publique</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" onClick={handleCreatePlaylist}>
+                      Créer la playlist
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
     </div>
