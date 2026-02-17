@@ -6,11 +6,25 @@ import type { Comment } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Book, ChevronLeft, ChevronRight, Layers, Heart, MessageSquare, Lock, CircleDollarSign, MoreHorizontal, Trash2, Ban, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Book,
+  Layers,
+  Heart,
+  MessageSquare,
+  Lock,
+  CircleDollarSign,
+  MoreHorizontal,
+  Trash2,
+  Ban,
+  X,
+  Share2,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import type { CarouselApi } from '@/components/ui/carousel';
-import { Separator } from '@/components/ui/separator';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -18,6 +32,9 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 // Simulate logged-in user being artist '1'
 const LOGGED_IN_ARTIST_ID = '1';
@@ -118,23 +135,22 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   const params = use(props.params);
   const story = stories.find((s) => s.id === params.storyId);
   const router = useRouter();
+  const { toast } = useToast();
+  
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
-  const { toast } = useToast();
-
+  
+  const [viewMode, setViewMode] = useState('scroll');
+  const [isFavorite, setIsFavorite] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!story?.isPremium);
-  const [userCoins, setUserCoins] = useState(150); // Simulated user balance
+  const [userCoins, setUserCoins] = useState(150);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-
+  
   useEffect(() => {
-    if (!api) {
-      return;
-    }
-
+    if (!api) return;
     setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
-
     api.on("select", () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
@@ -145,6 +161,18 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   }
   
   const chapterComments = allComments.filter(c => c.storyId === story!.id && c.chapter === 1);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsFavorite(!isFavorite);
+    toast({ title: isFavorite ? "Retiré des favoris" : "Ajouté aux favoris !" });
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(window.location.href);
+    toast({ title: "Lien copié dans le presse-papiers" });
+  };
 
   const handlePostComment = () => {
       toast({
@@ -221,114 +249,158 @@ export default function ReadPage(props: { params: { storyId: string } }) {
   }
 
   return (
-    <div className="relative">
-      {headerElement}
-      <Tabs defaultValue="scroll" className="w-full">
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-          <TabsList>
-            <TabsTrigger value="scroll" className="gap-2">
-              <Layers className="h-4 w-4" /> Webtoon
-            </TabsTrigger>
-            <TabsTrigger value="pages" className="gap-2">
-              <Book className="h-4 w-4" /> BD
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="scroll">
-          <div className="flex flex-col items-center pt-4 bg-black">
-            {comicPages.map((page, index) => (
-              <Image
-                key={page.id}
-                src={page.imageUrl}
-                alt={page.description}
-                width={800}
-                height={1200}
-                className="max-w-full h-auto cursor-zoom-in"
-                data-ai-hint={page.imageHint}
-                priority={index === 0}
-                sizes="(max-width: 800px) 100vw, 800px"
-                onClick={() => setZoomedImage(page.imageUrl)}
-              />
-            ))}
+    <Sheet>
+      <div className="flex flex-col h-screen bg-black text-foreground">
+        {/* HEADER */}
+        <header className="flex-shrink-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="container mx-auto px-2 sm:px-4 h-14 flex items-center">
+            <div className="flex-1 flex justify-start">
+              <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-grow text-center overflow-hidden px-2">
+              <h1 className="font-display text-base sm:text-lg truncate text-foreground" title={story.title}>{story.title}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Chapitre 1</p>
+            </div>
+            <div className="flex-1 flex justify-end items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={handleFavoriteClick}>
+                <Heart className={cn("h-5 w-5", isFavorite && "fill-red-500 text-red-500")} />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleShare}>
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-        </TabsContent>
-        <TabsContent value="pages">
-          <div className="flex items-center justify-center h-[calc(100vh-4rem)] pt-4 bg-black">
-            <Carousel setApi={setApi} className="w-full max-w-2xl">
-              <CarouselContent>
-                {comicPages.map((page, index) => (
-                  <CarouselItem key={page.id}>
+        </header>
+
+        {/* MAIN CONTENT */}
+        <main className="flex-1 relative overflow-hidden">
+          <Tabs value={viewMode} className="w-full h-full">
+            <TabsContent value="scroll" className="m-0 h-full">
+              <ScrollArea className="h-full">
+                <div className="flex flex-col items-center">
+                  {comicPages.map((page, index) => (
                     <Image
+                      key={page.id}
                       src={page.imageUrl}
                       alt={page.description}
                       width={800}
                       height={1200}
-                      className="max-w-full h-auto mx-auto object-contain max-h-[calc(100vh-8rem)] cursor-zoom-in"
+                      className="max-w-full h-auto cursor-zoom-in"
                       data-ai-hint={page.imageHint}
-                      priority={index === 0}
-                      sizes="(max-width: 768px) 100vw, 42rem"
+                      priority={index < 2}
+                      sizes="(max-width: 800px) 100vw, 800px"
                       onClick={() => setZoomedImage(page.imageUrl)}
                     />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="text-foreground hover:text-foreground bg-accent/50 hover:bg-accent/80 border-border" />
-              <CarouselNext className="text-foreground hover:text-foreground bg-accent/50 hover:bg-accent/80 border-border" />
-            </Carousel>
-          </div>
-           <div className="py-2 text-center text-sm text-muted-foreground fixed bottom-20 left-1/2 -translate-x-1/2 z-20">
-            Page {current} sur {count}
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      {zoomedImage && (
-        <div 
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
-            onClick={() => setZoomedImage(null)}
-        >
-            <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
-                <Image 
-                    src={zoomedImage} 
-                    alt="Image agrandie"
-                    width={1600}
-                    height={2400}
-                    className="max-w-none w-auto h-auto inline-block p-4"
-                />
-            </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
-                onClick={() => setZoomedImage(null)}
-            >
-                <X className="h-6 w-6" />
-            </Button>
-        </div>
-      )}
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="pages" className="m-0 h-full flex items-center justify-center">
+                <Carousel setApi={setApi} className="w-full h-full">
+                  <CarouselContent className="h-full">
+                    {comicPages.map((page) => (
+                      <CarouselItem key={page.id} className="h-full">
+                        <div className="w-full h-full flex items-center justify-center p-2">
+                          <Image
+                            src={page.imageUrl}
+                            alt={page.description}
+                            width={800}
+                            height={1200}
+                            className="max-w-full max-h-full object-contain cursor-zoom-in"
+                            data-ai-hint={page.imageHint}
+                            priority
+                            sizes="(max-width: 768px) 100vw, 80vw"
+                            onClick={() => setZoomedImage(page.imageUrl)}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+            </TabsContent>
+          </Tabs>
 
-      <div className="container mx-auto max-w-3xl px-4 py-12 text-foreground">
-        <Separator className="my-8 bg-border" />
-        <h2 className="text-3xl font-bold font-display mb-8 text-foreground">Commentaires (Chapitre 1)</h2>
-        
-        <div className="flex gap-4 mb-12">
-            <Avatar className="border-2 border-primary">
+          {/* Floating View Switcher */}
+          <div className="absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-10">
+            <TabsList>
+              <TabsTrigger value="scroll" onClick={() => setViewMode('scroll')} className="gap-2"><Layers className="h-4 w-4" /> Scroll</TabsTrigger>
+              <TabsTrigger value="pages" onClick={() => setViewMode('pages')} className="gap-2"><Book className="h-4 w-4" /> Pages</TabsTrigger>
+            </TabsList>
+          </div>
+        </main>
+
+        {/* FOOTER */}
+        <footer className="flex-shrink-0 z-20 bg-background text-foreground border-t">
+          {viewMode === 'pages' && (
+            <div className="flex items-center justify-between h-12 px-4">
+              <Button variant="ghost" onClick={() => api?.scrollPrev()} disabled={!canScrollPrev}>Précédent</Button>
+              <p className="text-sm text-muted-foreground tabular-nums">{current} / {count}</p>
+              <Button variant="ghost" onClick={() => api?.scrollNext()} disabled={!canScrollNext}>Suivant</Button>
+            </div>
+          )}
+          <SheetTrigger asChild>
+            <div className="h-12 border-t flex items-center justify-center gap-2 cursor-pointer hover:bg-muted font-medium">
+              <ChevronUp className="h-4 w-4" />
+              <span>{chapterComments.length} commentaires</span>
+              <MessageSquare className="h-4 w-4" />
+            </div>
+          </SheetTrigger>
+        </footer>
+
+        {/* COMMENTS SHEET */}
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0 border-t bg-background text-foreground">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle>Commentaires (Chapitre 1)</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="flex-1">
+            <div className="p-4 sm:p-6 space-y-8">
+              {chapterComments.map(comment => (
+                <CommentItem key={comment.id} comment={comment} storyAuthorId={story.artistId} />
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="p-4 bg-background border-t">
+            <div className="flex gap-4">
+              <Avatar className="border-2 border-primary">
                 <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
                 <AvatarFallback>LD</AvatarFallback>
-            </Avatar>
-            <div className="w-full">
-                <Textarea placeholder="Écrivez votre commentaire..."/>
-                <Button onClick={handlePostComment} className="mt-2">Poster le commentaire</Button>
+              </Avatar>
+              <div className="w-full">
+                <Textarea placeholder="Écrivez votre commentaire..." />
+                <Button onClick={handlePostComment} className="mt-2">Poster</Button>
+              </div>
             </div>
-        </div>
+          </div>
+        </SheetContent>
 
-        <div className="space-y-8">
-          {chapterComments.map(comment => (
-            <CommentItem key={comment.id} comment={comment} storyAuthorId={story.artistId} />
-          ))}
-        </div>
+        {/* ZOOMED IMAGE */}
+        {zoomedImage && (
+          <div
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-0"
+            onClick={() => setZoomedImage(null)}
+          >
+            <div className="w-full h-full overflow-auto text-center" onClick={(e) => e.stopPropagation()}>
+              <Image
+                src={zoomedImage}
+                alt="Image agrandie"
+                width={1600}
+                height={2400}
+                className="max-w-none w-auto h-auto inline-block p-4"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 text-white hover:text-white bg-black/20 hover:bg-black/50"
+              onClick={() => setZoomedImage(null)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+        )}
       </div>
-    </div>
+    </Sheet>
   );
 }
