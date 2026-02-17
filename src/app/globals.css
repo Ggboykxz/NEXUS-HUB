@@ -23,7 +23,7 @@
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 45 56% 51%;
-    --radius: 0.5rem;
+    --radius: 1rem;
 
     --chart-1: 38 61% 51%;
     --chart-2: 142 54% 20%; /* green */
@@ -69,7 +69,7 @@
     --border: 0 0% 11%;
     --input: 0 0% 13%;
     --ring: 38 61% 51%;
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 }
 
@@ -95,7 +95,7 @@
 /* ─── Story Detail Page Styles ─── */
 
 .hero {
-  @apply relative flex items-end overflow-hidden pt-16 md:min-h-0;
+  @apply relative flex items-end overflow-hidden pt-16 md:min-h-[450px];
 }
 
 .hero-bg {
@@ -104,7 +104,7 @@
     radial-gradient(ellipse 120% 80% at 70% 30%, hsl(var(--chart-2) / 0.25) 0%, transparent 60%),
     radial-gradient(ellipse 80% 60% at 20% 70%, hsl(var(--primary) / 0.1) 0%, transparent 55%),
     radial-gradient(ellipse 60% 80% at 50% 10%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
-    linear-gradient(160deg, #0a0f0b 0%, hsl(var(--background)) 40%, #0c0809 100%);
+    linear-gradient(160deg, hsl(var(--ink-2)) 0%, hsl(var(--background)) 40%, hsl(var(--ink)) 100%);
 }
 
 .hero-pattern {
@@ -133,14 +133,15 @@
 .particle {
   @apply absolute w-0.5 h-0.5 rounded-full pointer-events-none opacity-0;
   background-color: hsl(var(--gold-bright));
-  animation: particleDrift var(--dur, 8s) ease-in-out infinite;
+  animation: particle-drift var(--dur, 8s) ease-in-out infinite;
   animation-delay: var(--del, 0s);
 }
 
 .cover-art-hero {
-  @apply absolute right-[5%] top-1/2 -translate-y-1/2 w-[clamp(260px,30vw,420px)] aspect-[2/3] rounded border overflow-hidden shadow-2xl animate-cover-reveal;
+  @apply absolute right-[5%] top-1/2 -translate-y-1/2 w-[clamp(260px,30vw,420px)] aspect-[2/3] rounded-lg border overflow-hidden shadow-2xl;
   border-color: hsl(var(--border-gold));
   box-shadow: -40px 0 120px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6);
+  animation: cover-reveal 1s cubic-bezier(0.16,1,0.3,1) 0.3s both;
 }
 .cover-art-hero::before {
   content: '';
@@ -170,7 +171,7 @@
 .hero-content {
   @apply relative z-20 px-8 pb-12 pt-24 md:pt-12;
   max-width: 700px;
-  animation: heroContentIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+  animation: hero-content-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
 }
 
 .hero-eyebrow { @apply flex items-center gap-2.5 mb-4; }
@@ -182,24 +183,24 @@
 }
 .hero-status-badge {
   @apply uppercase text-xs font-semibold tracking-[0.1em] px-3 py-1 rounded-sm flex items-center gap-1.5;
-  background: hsl(148 56% 32% / 0.2);
-  border: 1px solid hsl(148 56% 32% / 0.4);
-  color: hsl(var(--green-l));
+  background: hsl(var(--chart-2) / 0.2);
+  border: 1px solid hsl(var(--chart-2) / 0.4);
+  color: hsl(var(--green));
 }
-.status-dot { @apply w-1.5 h-1.5 rounded-full animate-pulse; background-color: hsl(var(--green-l)); }
+.status-dot { @apply w-1.5 h-1.5 rounded-full animate-pulse; background-color: hsl(var(--green)); }
 .hero-pro-badge { @apply uppercase text-xs font-bold tracking-[0.1em] px-2.5 py-1 rounded-sm bg-primary text-primary-foreground; }
 
 .hero-title { @apply font-display text-5xl md:text-7xl font-bold leading-tight mb-1; }
 .hero-subtitle { @apply font-serif italic text-lg md:text-xl text-primary mb-6; }
 .hero-meta-row { @apply flex items-center gap-1.5 flex-wrap mb-5; }
-.author-chip { @apply flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-md no-underline cursor-pointer transition-colors; background-color: hsl(var(--cream-faint)); border: 1px solid hsl(var(--border)); }
+.author-chip { @apply flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-md no-underline cursor-pointer transition-colors; background-color: var(--cream-faint); border: 1px solid hsl(var(--border)); }
 .author-chip:hover { border-color: hsl(var(--border-gold)); }
 .author-chip-av { @apply w-6 h-6 text-xs font-bold border; border-color: hsl(var(--border-gold)); }
 .author-chip-name { @apply text-sm font-semibold; color: hsl(var(--cream)); }
 .author-chip-role { @apply text-xs; color: hsl(var(--cream-dim)); }
 
 .hero-genre-tags { @apply flex items-center gap-2 flex-wrap mb-5; }
-.genre-tag { @apply px-3 py-1 rounded-full text-xs no-underline transition-colors; background-color: hsl(var(--cream-faint)); border: 1px solid hsl(var(--border)); color: hsl(var(--cream-dim));}
+.genre-tag { @apply px-3 py-1 rounded-full text-xs no-underline transition-colors; background-color: var(--cream-faint); border: 1px solid hsl(var(--border)); color: hsl(var(--cream-dim));}
 .genre-tag:hover { border-color: hsl(var(--border-gold)); color: hsl(var(--primary)); }
 .hero-rating { @apply flex items-center gap-2 mb-7; }
 .stars-display { @apply flex gap-0.5; }
@@ -208,7 +209,7 @@
 .rating-count { @apply text-sm; color: hsl(var(--cream-dim)); }
 
 .hero-synopsis { @apply font-serif text-base md:text-lg leading-relaxed text-foreground/75 mb-7 max-w-xl; }
-.hero-stats { @apply flex items-center gap-6 mb-7 px-5 py-4 rounded-lg w-fit; background-color: hsl(var(--cream-faint)); border: 1px solid hsl(var(--border)); }
+.hero-stats { @apply flex items-center gap-6 mb-7 px-5 py-4 rounded-lg w-fit; background-color: var(--cream-faint); border: 1px solid hsl(var(--border)); }
 .hero-stat .val { @apply font-display text-xl block leading-none mb-1; color: hsl(var(--primary)); }
 .hero-stat .lbl { @apply text-[10px] tracking-[0.12em] uppercase; color: hsl(var(--cream-dim)); }
 .stat-sep { @apply w-px h-8; background-color: hsl(var(--border)); }
@@ -218,7 +219,7 @@
 .cta-primary:hover { @apply -translate-y-0.5; }
 .cta-secondary { @apply h-12 px-6 text-sm bg-transparent; color: hsl(var(--cream-dim)); }
 .cta-secondary:hover { border-color: hsl(var(--border-gold)); color: hsl(var(--cream)); }
-.cta-icon-btn { @apply w-12 h-12; background-color: hsl(var(--cream-faint)); border-color: hsl(var(--border)); color: hsl(var(--cream-dim)); }
+.cta-icon-btn { @apply w-12 h-12; background-color: var(--cream-faint); border-color: hsl(var(--border)); color: hsl(var(--cream-dim)); }
 .cta-icon-btn:hover { border-color: hsl(var(--border-gold)); color: hsl(var(--primary)); }
 
 .main-body { @apply grid grid-cols-1 md:grid-cols-[1fr,340px] gap-8 max-w-7xl mx-auto px-4 sm:px-8 py-12; }
@@ -323,11 +324,11 @@
 .side-card-body { @apply p-4; }
 
 .artist-hero-card { @apply bg-card border-border rounded-xl overflow-hidden; }
-.artist-card-banner { @apply h-16 relative; background: linear-gradient(135deg, hsl(var(--green-l) / 0.6), hsl(25 56% 36% / 0.5), hsl(var(--primary) / 0.2)); }
+.artist-card-banner { @apply h-16 relative; background: linear-gradient(135deg, hsl(var(--chart-2) / 0.6), hsl(var(--gold) / 0.5), hsl(var(--primary) / 0.2)); }
 .artist-card-banner::after { content: ''; @apply absolute inset-0; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--primary) / 0.03) 10px, hsl(var(--primary) / 0.03) 20px); }
 .artist-card-body { @apply p-4; }
 .artist-av-lg { @apply w-16 h-16 -mt-12 mb-2.5 relative border-4; border-color: hsl(var(--card)); }
-.artist-verified-badge { @apply absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2; background-color: hsl(var(--green-l)); border-color: hsl(var(--card)); }
+.artist-verified-badge { @apply absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2; background-color: hsl(var(--chart-2)); border-color: hsl(var(--card)); }
 .artist-name { @apply font-display text-base text-foreground text-center; }
 .artist-role { @apply text-xs text-muted-foreground text-center mb-3; }
 .artist-stats-row { @apply flex gap-px mb-3; }
