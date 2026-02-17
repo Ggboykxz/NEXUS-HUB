@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp } from 'lucide-react';
-import { navLinks } from '@/lib/navigation';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical } from 'lucide-react';
+import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
@@ -16,11 +16,56 @@ import {
   DropdownMenuItem, 
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
+  const uniqueGenres = [...new Set(stories.map(s => s.genre))];
+
+  if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+      return (
+          <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span>{link.label}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                      {link.isGenreDropdown && (
+                          <>
+                              <DropdownMenuItem asChild>
+                                  <Link href="/stories">Toutes les œuvres</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {uniqueGenres.map((genre) => (
+                                  <DropdownMenuItem key={genre} asChild>
+                                      <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                                  </DropdownMenuItem>
+                              ))}
+                          </>
+                      )}
+                      {link.subLinks && link.subLinks.map((subLink) => (
+                          <DropdownMenuItem key={subLink.href} asChild>
+                              <Link href={subLink.href}>{subLink.label}</Link>
+                          </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+          </DropdownMenuSub>
+      );
+  }
+  return (
+      <DropdownMenuItem asChild>
+          <Link href={link.href}>{link.label}</Link>
+      </DropdownMenuItem>
+  );
+};
 
 export default function Header() {
   const pathname = usePathname();
@@ -97,6 +142,78 @@ export default function Header() {
     router.push('/');
     router.refresh();
   };
+
+  const NavLinkRenderer = ({ link, className } : { link: NavLink, className?: string }) => {
+    const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
+  
+    if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+      return (
+        <DropdownMenu open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
+          <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className={cn("flex items-center", className)}>
+            <DropdownMenuTrigger
+              className={cn(
+                'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
+                '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
+                isActive ? 'text-foreground dark:text-white font-semibold' : ''
+              )}
+            >
+              <span className="flex items-center gap-2">
+                {link.label}
+                {link.badge && (
+                  <span className={cn(
+                    'h-2 w-2 rounded-full',
+                    link.badge.variant === 'green' && 'bg-green-500',
+                    link.badge.variant === 'orange' && 'bg-orange-500',
+                  )}></span>
+                )}
+              </span>
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {link.isGenreDropdown && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/stories">Toutes les œuvres</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Genres</DropdownMenuLabel>
+                  {uniqueGenres.map((genre) => (
+                    <DropdownMenuItem key={genre} asChild>
+                      <Link href={`/stories?genre=${genre}`}>{genre}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+              {link.subLinks && link.subLinks.map((subLink) => (
+                  <DropdownMenuItem key={subLink.href} asChild>
+                    <Link href={subLink.href}>{subLink.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </div>
+        </DropdownMenu>
+      );
+    }
+    return (
+      <Link
+        href={link.href}
+        className={cn(
+          'flex items-center gap-2 hover:text-primary transition-colors duration-300',
+          isActive ? 'text-foreground dark:text-white font-semibold' : '',
+          className
+        )}
+      >
+        <span>{link.label}</span>
+        {link.badge && (
+          <span className={cn(
+              'h-2 w-2 rounded-full',
+              link.badge.variant === 'green' && 'bg-green-500',
+              link.badge.variant === 'orange' && 'bg-orange-500',
+          )}></span>
+        )}
+      </Link>
+    );
+  }
 
   const LoggedInNav = (
     <>
@@ -238,6 +355,10 @@ export default function Header() {
        </Button>
     </>
   );
+  
+  const visibleLinks = navLinks.slice(0, 3);
+  const hiddenLinks = navLinks.slice(3);
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
@@ -249,77 +370,30 @@ export default function Header() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-              if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
-                return (
-                  <DropdownMenu key={link.label} open={openDropdown === link.label} onOpenChange={(isOpen) => setOpenDropdown(isOpen ? link.label : null)}>
-                    <div onMouseEnter={() => handleDropdownEnter(link.label)} onMouseLeave={() => handleDropdownLeave(link.label)} className="flex items-center">
-                      <DropdownMenuTrigger
-                        className={cn(
-                          'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors duration-300',
-                          '[&>svg]:transition-transform [&>svg]:duration-200 [&[data-state=open]>svg]:rotate-180',
-                          isActive ? 'text-foreground dark:text-white font-semibold' : ''
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          {link.label}
-                          {link.badge && (
-                            <span className={cn(
-                              'h-2 w-2 rounded-full',
-                              link.badge.variant === 'green' && 'bg-green-500',
-                              link.badge.variant === 'orange' && 'bg-orange-500',
-                            )}></span>
-                          )}
-                        </span>
-                        <ChevronDown className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        {link.isGenreDropdown && (
-                          <>
-                            <DropdownMenuItem asChild>
-                              <Link href="/stories">Toutes les œuvres</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Genres</DropdownMenuLabel>
-                            {uniqueGenres.map((genre) => (
-                              <DropdownMenuItem key={genre} asChild>
-                                <Link href={`/stories?genre=${genre}`}>{genre}</Link>
-                              </DropdownMenuItem>
-                            ))}
-                          </>
-                        )}
-                        {link.subLinks && link.subLinks.map((subLink) => (
-                            <DropdownMenuItem key={subLink.href} asChild>
-                              <Link href={subLink.href}>{subLink.label}</Link>
-                            </DropdownMenuItem>
-                          ))}
-                      </DropdownMenuContent>
-                    </div>
-                  </DropdownMenu>
-                );
-              }
-              return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={cn(
-                    'flex items-center gap-2 hover:text-primary transition-colors duration-300',
-                    isActive ? 'text-foreground dark:text-white font-semibold' : ''
-                  )}
-                >
-                  <span>{link.label}</span>
-                  {link.badge && (
-                    <span className={cn(
-                        'h-2 w-2 rounded-full',
-                        link.badge.variant === 'green' && 'bg-green-500',
-                        link.badge.variant === 'orange' && 'bg-orange-500',
-                    )}></span>
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden md:flex items-center gap-x-4 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
+            {visibleLinks.map((link) => (
+              <NavLinkRenderer key={link.label} link={link} />
+            ))}
+            <div className="hidden lg:flex items-center gap-x-4">
+              {hiddenLinks.map((link) => (
+                <NavLinkRenderer key={link.label} link={link} />
+              ))}
+            </div>
+            <div className="flex lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-5 w-5" />
+                    <span className="sr-only">Plus</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {hiddenLinks.map((link) => (
+                    <DropdownItemRenderer key={link.label} link={link} />
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </nav>
 
           <div className="flex items-center gap-2">
