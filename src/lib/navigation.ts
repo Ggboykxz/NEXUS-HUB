@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, School } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -17,7 +17,18 @@ export type NavLink = {
 };
 
 export const navLinks: NavLink[] = [
-  { href: "/stories", label: "Parcourir", icon: BookOpen, isGenreDropdown: true },
+  { 
+    href: "/stories", 
+    label: "Parcourir", 
+    icon: BookOpen, 
+    isGenreDropdown: true,
+    subLinks: [
+        { href: "/webtoons", label: "Webtoons" },
+        { href: "/comics", label: "Bandes Dessinées" },
+        { href: "/ongoing", label: "Séries en Cours" },
+        { href: "/completed", label: "Séries Terminées" },
+    ]
+  },
   { 
     href: "/rankings", 
     label: "Classements", 

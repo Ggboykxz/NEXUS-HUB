@@ -65,7 +65,7 @@ export default function HomePage() {
                                     sizes="(max-width: 768px) 100vw, 70vw"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 sm:p-8 md:p-12 flex flex-col justify-end items-start text-left">
-                                    <Link href={`/stories?genre=${story.genre}`}>
+                                    <Link href={`/genres/${encodeURIComponent(story.genre)}`}>
                                         <Badge variant="secondary" className="mb-2 md:mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
                                     </Link>
                                     <Link href={`/stories/${story.id}`}>
@@ -118,9 +118,9 @@ export default function HomePage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
-        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5" link="/stories" />
-        <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5" link="/stories?type=premium" />
-        <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} link="/stories?sort=newest" />
+        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5" link="/popular" />
+        <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5" link="/premium" />
+        <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} link="/new-releases" />
 
         <section>
           <div className="flex justify-between items-baseline mb-12 border-b border-border pb-4">
@@ -172,7 +172,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {popularGenres.map((genre) => (
-              <Link key={genre} href={`/stories?genre=${genre}`}>
+              <Link key={genre} href={`/genres/${encodeURIComponent(genre)}`}>
                 <Card className="group relative overflow-hidden rounded-lg transition-all hover:shadow-lg hover:-translate-y-1 h-32 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-50 group-hover:opacity-80 transition-opacity duration-300"></div>
                      <h3 className="relative text-2xl font-display font-bold text-center text-foreground z-10">{genre}</h3>
