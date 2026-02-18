@@ -28,6 +28,8 @@ export interface Chapter {
   releaseDate: string;
   status: 'Publié' | 'Programmé' | 'Brouillon';
   pageCount: number;
+  version?: string;
+  revisionNote?: string;
 }
 
 export interface Collaborator {
@@ -194,13 +196,17 @@ export const stories: Story[] = [
     likes: 89000,
     subscriptions: 50000,
     chapters: [
-        { id: '1-1', slug: 'chapitre-1-le-reveil', title: 'Le Réveil', releaseDate: '2024-05-01', status: 'Publié', pageCount: 22 },
-        { id: '1-2', slug: 'chapitre-2-l-epreuve', title: 'L\'Épreuve', releaseDate: '2024-05-15', status: 'Publié', pageCount: 25 },
-        { id: '1-3', slug: 'chapitre-3-l-ombre-grandit', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23 },
+        { id: '1-1', slug: 'chapitre-1-le-reveil', title: 'Le Réveil', releaseDate: '2024-05-01', status: 'Publié', pageCount: 22, version: 'v1.2', revisionNote: 'Amélioration de la colorimétrie du panneau 4.' },
+        { id: '1-2', slug: 'chapitre-2-l-epreuve', title: 'L\'Épreuve', releaseDate: '2024-05-15', status: 'Publié', pageCount: 25, version: 'v1.0' },
+        { id: '1-3', slug: 'chapitre-3-l-ombre-grandit', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23, version: 'v1.0' },
     ],
     updatedAt: '2024-07-16T10:00:00Z',
     format: 'Webtoon',
     status: 'En cours',
+    collaborators: [
+      { id: 'collab-1', name: 'Moussa Traoré', role: 'Coloriste', avatar: getImage('reader-4')! },
+      { id: 'collab-2', name: 'Zainab Bello', role: 'Scénariste', avatar: getImage('reader-3')! },
+    ]
   },
   {
     id: '2',
@@ -216,8 +222,8 @@ export const stories: Story[] = [
     likes: 75000,
     subscriptions: 42000,
     chapters: [
-        { id: '2-1', slug: 'chapitre-1-neons-et-brouillard', title: 'Néons et Brouillard', releaseDate: '2024-04-20', status: 'Publié', pageCount: 30 },
-        { id: '2-2', slug: 'chapitre-2-le-contact', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28 },
+        { id: '2-1', slug: 'chapitre-1-neons-et-brouillard', title: 'Néons et Brouillard', releaseDate: '2024-04-20', status: 'Publié', pageCount: 30, version: 'v1.5', revisionNote: 'Texte révisé pour plus de clarté.' },
+        { id: '2-2', slug: 'chapitre-2-le-contact', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28, version: 'v1.0' },
     ],
     updatedAt: '2024-07-13T10:00:00Z',
     format: 'Webtoon',
@@ -237,8 +243,8 @@ export const stories: Story[] = [
     likes: 62000,
     subscriptions: 35000,
     chapters: [
-        { id: '3-1', slug: 'chapitre-1-la-relique', title: 'La Relique', releaseDate: '2024-03-01', status: 'Publié', pageCount: 18 },
-        { id: '3-2', slug: 'chapitre-2-le-passage', title: 'Le Passage', releaseDate: '2024-03-15', status: 'Publié', pageCount: 20 },
+        { id: '3-1', slug: 'chapitre-1-la-relique', title: 'La Relique', releaseDate: '2024-03-01', status: 'Publié', pageCount: 18, version: 'v1.0' },
+        { id: '3-2', slug: 'chapitre-2-le-passage', title: 'Le Passage', releaseDate: '2024-03-15', status: 'Publié', pageCount: 20, version: 'v1.0' },
     ],
     updatedAt: '2024-07-11T10:00:00Z',
     format: 'BD',
@@ -258,7 +264,7 @@ export const stories: Story[] = [
     likes: 15000,
     subscriptions: 5000,
     chapters: [
-        { id: '7-1', slug: 'one-shot-complet', title: 'Histoire Complète', releaseDate: '2024-06-20', status: 'Publié', pageCount: 48 },
+        { id: '7-1', slug: 'one-shot-complet', title: 'Histoire Complète', releaseDate: '2024-06-20', status: 'Publié', pageCount: 48, version: 'v1.0' },
     ],
     updatedAt: '2024-06-20T10:00:00Z',
     format: 'One-shot',
@@ -278,7 +284,7 @@ export const stories: Story[] = [
     likes: 12000,
     subscriptions: 8000,
     chapters: [
-        { id: '8-1', slug: 'partie-1-les-racines', title: 'Partie 1 : Les Racines', releaseDate: '2024-07-01', status: 'Publié', pageCount: 60 },
+        { id: '8-1', slug: 'partie-1-les-racines', title: 'Partie 1 : Les Racines', releaseDate: '2024-07-01', status: 'Publié', pageCount: 60, version: 'v1.0' },
     ],
     updatedAt: '2024-07-01T10:00:00Z',
     format: 'Roman Illustré',
