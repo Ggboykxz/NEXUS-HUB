@@ -1,3 +1,4 @@
+
 import type { ImagePlaceholder } from './placeholder-images';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -71,6 +72,9 @@ export interface Product {
   price: number;
   image: ImagePlaceholder;
   description: string;
+  category: 'Vêtements' | 'Accessoires' | 'Art' | 'Divers';
+  universe?: string;
+  printfulUrl?: string;
 }
 
 export interface ForumThread {
@@ -359,10 +363,43 @@ export const blogPosts: BlogPost[] = [
 export const products: Product[] = [
   {
     id: 'prod-1',
-    name: 'T-shirt Les Chroniques d\'Orisha',
-    price: 29.99,
+    name: 'T-shirt Orisha Warrior',
+    price: 24.99,
+    category: 'Vêtements',
+    universe: 'Les Chroniques d\'Orisha',
     image: getImage('product-1')!,
-    description: 'T-shirt en coton de haute qualité.'
+    description: 'T-shirt premium 100% coton arborant le sceau sacré du dieu Shango. Design exclusif par Jelani Adebayo.',
+    printfulUrl: 'https://www.printful.com/custom/mens/t-shirts/heavyweight-unisex-crewneck-t-shirt'
+  },
+  {
+    id: 'prod-2',
+    name: 'Hoodie Néo-Dakar 2088',
+    price: 49.99,
+    category: 'Vêtements',
+    universe: 'Néo-Dakar 2088',
+    image: getImage('product-2')!,
+    description: 'Hoodie streetwear au style afrofuturiste avec motifs néons. Confortable et résistant.',
+    printfulUrl: 'https://www.printful.com/custom/unisex/hoodies/unisex-premium-hoodie'
+  },
+  {
+    id: 'prod-3',
+    name: 'Mug Totem Sankofa',
+    price: 14.99,
+    category: 'Accessoires',
+    universe: 'Le Sentier de Sankofa',
+    image: getImage('product-3')!,
+    description: 'Commencez votre journée avec la sagesse ancestrale. Mug en céramique noir brillant.',
+    printfulUrl: 'https://www.printful.com/custom/mugs/ceramic/white-glossy-mug'
+  },
+  {
+    id: 'prod-4',
+    name: 'Poster Premium Cyber-Reines',
+    price: 19.99,
+    category: 'Art',
+    universe: 'Blog & Ressources',
+    image: getImage('product-4')!,
+    description: 'Affiche de collection sur papier mat haute qualité. Idéal pour votre studio créatif.',
+    printfulUrl: 'https://www.printful.com/custom/posters/premium-luster-photo-paper-poster'
   },
 ];
 

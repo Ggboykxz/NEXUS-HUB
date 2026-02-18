@@ -15,7 +15,7 @@
     {
       "id": "story-2",
       "description": "Couverture pour l'histoire 2, une bande dessinée de science-fiction",
-      "imageUrl": "https://images.unsplash.com/photo-1679979391038-a128dce502b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhZnJvZnV0dXJpc20lMjBjaXR5fGVufDB8fHx8fDE3NzEyNTc0MDl8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1679979391038-a128dce502b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhZnJvZnV0dXJpc20lMjBjaXR5fGVufDB8fHx8MTc3MTI1NzQwOXww&ixlib=rb-4.0.3&q=80&w=1080",
       "imageHint": "afrofuturism city"
     },
     {
@@ -62,21 +62,27 @@
     },
     {
       "id": "product-1",
-      "description": "Image pour le produit 1",
-      "imageUrl": "https://images.unsplash.com/photo-1759572095317-3a96f9a98e2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0LXNoaXJ0JTIwZGVzaWdufGVufDB8fHx8MTc3MTI1MjY4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "t-shirt design"
+      "description": "T-shirt Orisha Warrior",
+      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "black t-shirt"
     },
     {
       "id": "product-2",
-      "description": "Image pour le produit 2",
-      "imageUrl": "https://images.unsplash.com/photo-1711655371225-8f10046a7990?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwb3N0ZXIlMjBhcnR8ZW58MHx8fHwxNzcxMTc1ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "poster art"
+      "description": "Hoodie Néo-Dakar 2088",
+      "imageUrl": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "hoodie streetwear"
     },
     {
       "id": "product-3",
-      "description": "Image pour le produit 3",
-      "imageUrl": "https://images.unsplash.com/photo-1522012188892-24beb302783d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjb2ZmZWUlMjBtdWd8ZW58MHx8fHwxNzcxMjM3NTUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "coffee mug"
+      "description": "Mug Totem Sankofa",
+      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fbed50?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "ceramic mug"
+    },
+    {
+      "id": "product-4",
+      "description": "Poster Premium Cyber-Reines",
+      "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageHint": "art poster"
     },
     {
       "id": "page-1",
