@@ -97,11 +97,13 @@ export interface Comment {
   authorId: string;
   authorName: string;
   authorAvatar: ImagePlaceholder;
+  authorBadge?: 'Supporter' | 'Top Fan' | 'Artiste' | 'Mentor';
   storyId: string;
   chapter: number;
   content: string;
   timestamp: string;
   likes: number;
+  tag?: 'Visuel' | 'Scénario' | 'Théorie' | 'Général';
   replies?: Comment[];
 }
 
@@ -379,9 +381,37 @@ export const comments: Comment[] = [
         authorId: 'reader-1',
         authorName: 'Léa Dubois',
         authorAvatar: getImage('reader-1')!,
-        content: "Ce premier chapitre est incroyable !",
+        authorBadge: 'Supporter',
+        content: "Ce premier chapitre est incroyable ! Les designs des Orishas sont d'une finesse rare.",
         timestamp: 'Il y a 2 heures',
         likes: 15,
+        tag: 'Visuel',
+    },
+    {
+        id: 'comment-2',
+        storyId: '1',
+        chapter: 1,
+        authorId: 'reader-2',
+        authorName: 'Yannick Beauchamp',
+        authorAvatar: getImage('reader-2')!,
+        authorBadge: 'Top Fan',
+        content: "Je parie que le protagoniste est en fait le fils caché de Shango. Les indices dans les dialogues du début sont frappants.",
+        timestamp: 'Il y a 1 heure',
+        likes: 24,
+        tag: 'Théorie',
+    },
+    {
+        id: 'comment-3',
+        storyId: '1',
+        chapter: 1,
+        authorId: '1',
+        authorName: 'Jelani Adebayo',
+        authorAvatar: getImage('artist-1')!,
+        authorBadge: 'Artiste',
+        content: "Merci pour vos retours ! Yannick, tu es sur une piste intéressante... Restez branchés pour le chapitre 3 !",
+        timestamp: 'Il y a 30 minutes',
+        likes: 150,
+        tag: 'Général',
     },
 ];
 

@@ -7,7 +7,7 @@ import { notFound, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye, Award
+  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye, Award, MessageCircle, Send
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -163,22 +163,11 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
         <span className="text-xs font-bold font-mono">1.4k</span>
       </div>
 
-      {/* AfriCoin support */}
-      <div className="bg-card border border-primary/20 rounded-lg p-3 mb-4">
-        <h4 className="text-xs font-bold text-primary flex items-center gap-2 mb-2"><Coins className="h-4 w-4"/> Soutenir l'artiste</h4>
-        <div className="flex gap-1.5 mb-2.5">
-          {[10, 50, 100, 500].map(amount => (
-            <Button key={amount} size="sm" variant="outline" className="h-7 text-xs flex-1 hover:bg-primary hover:text-primary-foreground">{amount} 🪙</Button>
-          ))}
-        </div>
-        <Button size="sm" className="w-full h-8" onClick={() => toast({ title: '🪙 50 AfriCoins envoyés !' })}>Envoyer des AfriCoins</Button>
-      </div>
       {/* Chapter list */}
       <div className="flex items-center justify-between mb-2">
         <label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Liste des chapitres</label>
         <span className="text-xs text-primary font-semibold">{story.chapters.length}/{story.chapters.length}</span>
       </div>
-      <Input type="search" placeholder="🔍 Rechercher un chapitre…" className="h-8 mb-3 text-xs" />
       <div className="flex flex-col gap-1">
         {story.chapters.map((chap, index) => {
           const isCurrent = chap.slug === currentChapterSlug;
@@ -195,7 +184,6 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
                 <p className={cn("text-sm font-semibold truncate", isCurrent && "text-primary")}>{chap.title}</p>
                 <p className="text-xs text-muted-foreground">Lu · {chap.releaseDate}</p>
               </div>
-              {index === story.chapters.length - 1 && <div className="text-xs font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">NEW</div>}
             </Link>
           );
         })}
@@ -207,6 +195,12 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
 function ArtistTab({ artist }: { artist: Artist }) {
   const { toast } = useToast();
   const [isFollowing, setIsFollowing] = useState(false);
+  const formatStat = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+    return num.toString();
+  };
+
   return (
     <div className="p-4">
       <div className="bg-card border border-border rounded-xl p-4 text-center">
@@ -225,7 +219,7 @@ function ArtistTab({ artist }: { artist: Artist }) {
         <p className="text-xs text-muted-foreground mb-3">Auteur · Dessinateur · Coloriste</p>
         <div className="flex justify-around py-3 border-y border-border mb-3">
           <div>
-            <p className="font-bold text-lg text-primary">14.8k</p>
+            <p className="font-bold text-lg text-primary">{formatStat(artist.subscribers)}</p>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Abonnés</p>
           </div>
           <div>
@@ -233,7 +227,6 @@ function ArtistTab({ artist }: { artist: Artist }) {
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Vues</p>
           </div>
         </div>
-        <p className="text-sm italic text-muted-foreground mb-4">"{artist.bio.slice(0, 100)}..."</p>
         <div className="flex gap-2">
           <Button size="sm" className="flex-1 h-9" onClick={() => setIsFollowing(!isFollowing)}>
             <Star className={cn("h-4 w-4", isFollowing && "fill-current")} /> {isFollowing ? 'Suivi' : 'Suivre'}
@@ -286,6 +279,149 @@ function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, i
       </Button>
     </div>
   )
+}
+
+function CommentsSection({ storyId, chapterIndex }: { storyId: string, chapterIndex: number }) {
+  const [newComment, setNewComment] = useState('');
+  const [selectedTag, setSelectedTag] = useState<'Visuel' | 'Scénario' | 'Théorie' | 'Général'>('Général');
+  const { toast } = useToast();
+  
+  const chapterComments = allComments.filter(c => c.storyId === storyId && c.chapter === chapterIndex);
+
+  const handlePostComment = () => {
+    if (!newComment.trim()) return;
+    toast({
+      title: "Commentaire posté !",
+      description: "Votre feedback a été envoyé à l'artiste."
+    });
+    setNewComment('');
+  };
+
+  const getBadgeColor = (badge: string) => {
+    switch (badge) {
+      case 'Supporter': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'Top Fan': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+      case 'Artiste': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      case 'Mentor': return 'bg-primary/10 text-primary border-primary/20';
+      default: return '';
+    }
+  };
+
+  const getTagColor = (tag: string) => {
+    switch (tag) {
+      case 'Visuel': return 'text-cyan-500 bg-cyan-500/10';
+      case 'Scénario': return 'text-amber-500 bg-orange-500/10';
+      case 'Théorie': return 'text-purple-500 bg-purple-500/10';
+      default: return 'text-muted-foreground bg-muted';
+    }
+  };
+
+  return (
+    <section className="max-w-[720px] mx-auto px-6 py-20 border-t border-border mt-12">
+      <div className="flex items-center justify-between mb-12">
+        <h2 className="text-3xl font-display font-bold flex items-center gap-3">
+          <MessageCircle className="h-8 w-8 text-primary" /> 
+          Communauté <span className="text-primary/50 text-xl font-sans">({chapterComments.length})</span>
+        </h2>
+        <div className="flex gap-2">
+          {['Général', 'Visuel', 'Scénario', 'Théorie'].map((t) => (
+            <Badge 
+              key={t} 
+              variant="outline" 
+              className={cn(
+                "cursor-pointer hover:bg-primary/10 transition-colors",
+                selectedTag === t && "bg-primary text-primary-foreground hover:bg-primary border-primary"
+              )}
+              onClick={() => setSelectedTag(t as any)}
+            >
+              {t}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* Comment Form */}
+      <div className="bg-card border border-border rounded-2xl p-6 mb-16 shadow-xl relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-focus-within:w-2" />
+        <div className="flex gap-4 mb-4">
+          <Avatar className="h-10 w-10 border-2 border-primary/20">
+            <AvatarFallback>VOUS</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Partagez votre avis sur ce chapitre</p>
+            <Textarea 
+              placeholder={`L'artiste attend votre feedback sur le ${selectedTag.toLowerCase()}...`}
+              className="min-h-[100px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/30 resize-none text-lg"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><Info className="h-3 w-3"/> Soyez constructif</span>
+            <span className="flex items-center gap-1"><Sparkles className="h-3 w-3"/> Les feedbacks visuels sont précieux !</span>
+          </div>
+          <Button onClick={handlePostComment} className="rounded-full px-8 gap-2 shadow-lg shadow-primary/20">
+            Poster <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Comments List */}
+      <div className="space-y-10">
+        {chapterComments.map((comment) => (
+          <div key={comment.id} className="flex gap-5 group">
+            <div className="flex flex-col items-center gap-2">
+              <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-border group-hover:ring-primary transition-all shadow-md">
+                <AvatarImage src={comment.authorAvatar.imageUrl} />
+                <AvatarFallback>{comment.authorName[0]}</AvatarFallback>
+              </Avatar>
+              <div className="w-0.5 flex-1 bg-gradient-to-b from-border to-transparent" />
+            </div>
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-lg">{comment.authorName}</span>
+                  {comment.authorBadge && (
+                    <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-widest h-5", getBadgeColor(comment.authorBadge))}>
+                      {comment.authorBadge}
+                    </Badge>
+                  )}
+                  {comment.tag && (
+                    <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter", getTagColor(comment.tag))}>
+                      {comment.tag}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">{comment.timestamp}</span>
+              </div>
+              <p className="text-foreground/90 leading-relaxed text-lg italic bg-primary/5 p-4 rounded-xl border-l-2 border-primary/20">
+                "{comment.content}"
+              </p>
+              <div className="flex items-center gap-6">
+                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
+                  <ThumbsUp className="h-4 w-4" /> {comment.likes}
+                </button>
+                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
+                  <MessageSquare className="h-4 w-4" /> Répondre
+                </button>
+                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">
+                  <AlertTriangle className="h-4 w-4" /> Signaler
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-20 text-center">
+        <Button variant="outline" className="rounded-full px-10 border-primary text-primary hover:bg-primary/10">
+          Charger plus de commentaires
+        </Button>
+      </div>
+    </section>
+  );
 }
 
 // #endregion
@@ -354,6 +490,8 @@ export default function BdReadPage(props: { params: Promise<{ slug: string, chap
     return num.toString();
   };
 
+  const chapterIndex = story.chapters.findIndex(c => c.slug === chapterSlug) + 1;
+
   return (
     <div className="font-serif">
       <div className="adinkra-bg fixed inset-0 pointer-events-none opacity-[0.02] z-0" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4A843' stroke-width='1'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3Cline x1='10' y1='30' x2='50' y2='30'/%3E%3Cline x1='30' y1='10' x2='30' y2='50'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px'}} />
@@ -384,6 +522,8 @@ export default function BdReadPage(props: { params: Promise<{ slug: string, chap
               />
             ))}
           </div>
+          
+          <CommentsSection storyId={story.id} chapterIndex={chapterIndex} />
         </main>
         <ReaderSidebar story={story} artist={artist} currentChapterSlug={chapterSlug} />
       </div>
@@ -394,7 +534,10 @@ export default function BdReadPage(props: { params: Promise<{ slug: string, chap
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
         onShare={handleShare}
-        onComment={() => { /* Scroll to comments */ }}
+        onComment={() => {
+          const commentsElement = document.querySelector('section');
+          commentsElement?.scrollIntoView({ behavior: 'smooth' });
+        }}
         commentsCount={chapterComments.length}
         likesCount={formatStat(story.likes + (isLiked ? 1 : 0))}
       />
