@@ -144,8 +144,8 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
             <Award className="h-3 w-3" /> {story.artistName}
           </Link>
           <div className="flex gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Eye className="h-3 w-3"/> {(story.views/1000).toFixed(0)}k</span>
-            <span className="flex items-center gap-1"><Heart className="h-3 w-3"/> {(story.likes/1000).toFixed(0)}k</span>
+            <span className="flex items-center gap-1"><Eye className="h-3 w-3 text-primary"/> {(story.views/1000).toFixed(0)}k</span>
+            <span className="flex items-center gap-1"><Heart className="h-3 w-3 text-destructive"/> {(story.likes/1000).toFixed(0)}k</span>
             <span className="flex items-center gap-1"><Book className="h-3 w-3"/> {story.chapters.length} chap.</span>
           </div>
         </div>
@@ -267,15 +267,16 @@ function ExploreTab() {
   )
 }
 
-function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount }: any) {
+function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount, likesCount }: any) {
   return (
     <div className="fixed top-1/2 -translate-y-1/2 right-5 lg:right-[calc(320px+20px)] z-40 flex flex-col gap-2">
-      <Button onClick={onLike} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm", isLiked && "text-primary border-primary bg-primary/10")}>
+      <Button onClick={onLike} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm relative", isLiked && "text-primary border-primary bg-primary/10")}>
         <Heart className={cn(isLiked && "fill-current")} />
+        <Badge variant="secondary" className="absolute -top-2 -right-2 text-[10px] px-1 h-4 min-w-4 flex items-center justify-center font-bold">{likesCount}</Badge>
       </Button>
       <Button onClick={onComment} variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm relative">
         <MessageSquare />
-        <Badge variant="destructive" className="absolute -top-2 -right-2">{commentsCount}</Badge>
+        <Badge variant="destructive" className="absolute -top-2 -right-2 text-[10px] px-1 h-4 min-w-4 flex items-center justify-center font-bold">{commentsCount}</Badge>
       </Button>
       <Button onClick={onBookmark} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm", isBookmarked && "text-primary border-primary bg-primary/10")}>
         <Bookmark className={cn(isBookmarked && "fill-current")} />
@@ -344,6 +345,13 @@ export default function WebtoonReadPage(props: { params: Promise<{ slug: string,
 
   const handleLike = () => {
     setIsLiked(!isLiked);
+    toast({ title: !isLiked ? 'Ajouté à vos favoris' : 'Retiré de vos favoris' });
+  };
+
+  const formatStat = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+    return num.toString();
   };
 
   return (
@@ -388,6 +396,7 @@ export default function WebtoonReadPage(props: { params: Promise<{ slug: string,
         onShare={handleShare}
         onComment={() => { /* Scroll to comments */ }}
         commentsCount={chapterComments.length}
+        likesCount={formatStat(story.likes + (isLiked ? 1 : 0))}
       />
     </div>
   );
