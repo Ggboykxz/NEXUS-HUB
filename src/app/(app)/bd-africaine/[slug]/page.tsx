@@ -41,7 +41,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
   const firstChapterUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : '#';
   
   return (
-    <section className="hero relative overflow-hidden bg-background">
+    <section className="hero relative overflow-hidden bg-background py-12 md:py-24">
         <div className="hero-bg" />
         <div className="hero-pattern" />
         <div className="hero-deco" />
@@ -50,115 +50,119 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
         <div className="particle" style={{top:'40%',left:'55%', animationDuration:'7s', '--tx': '20px', '--ty': '-40px', '--tx2': '50px', '--ty2': '-120px'} as any} />
         <div className="particle" style={{top:'60%',left:'48%', animationDuration:'9s', animationDelay:'1.5s', '--tx': '-15px', '--ty': '-30px', '--tx2': '-40px', '--ty2': '-100px'} as any} />
 
-        <div className="cover-art-hero hidden md:block">
-            <Image 
-                src={story.coverImage.imageUrl} 
-                alt={story.title} 
-                fill 
-                className="object-cover" 
-                data-ai-hint={story.coverImage.imageHint} 
-                priority 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            {story.isPremium && <Badge className="cover-badge absolute bottom-4 right-4" variant="default">NexusHub Pro ✦ Original</Badge>}
-        </div>
-
-        <div className="hero-content container max-w-7xl mx-auto px-6 lg:px-12">
-            <div className="hero-eyebrow flex items-center gap-2 mb-4">
-                <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'}>
-                    <Badge variant="outline" className="hero-type-badge border-primary/50 text-primary">{story.format}</Badge>
-                </Link>
-                <Link href={story.status === 'En cours' ? '/ongoing' : '/completed'}>
-                    <Badge variant="secondary" className={cn("hero-status-badge", story.status === 'Terminé' && "bg-blue-500/20 text-blue-400 border-blue-500/30")}>
-                        <span className={cn("status-dot mr-1.5 h-1.5 w-1.5 rounded-full", story.status === 'Terminé' ? "bg-blue-400" : "bg-emerald-400")}></span> {story.status}
-                    </Badge>
-                </Link>
-            </div>
-
-            <h1 className="hero-title text-4xl md:text-6xl font-display font-bold text-foreground mb-2">{story.title}</h1>
-            <p className="hero-subtitle text-xl text-primary font-medium mb-6 italic opacity-90">
-                {story.genre} — Un récit épique par {artist.name}
-            </p>
-
-            <div className="hero-meta-row flex flex-wrap gap-4 mb-8">
-                 <Link href={`/artiste/${artist.slug}`} className="author-chip flex items-center gap-3 bg-card/50 backdrop-blur-sm border border-border p-1.5 pr-4 rounded-full transition-all hover:border-primary/50">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
-                        <AvatarFallback>{artist.name.slice(0,1)}</AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                        <div className="text-xs font-bold leading-tight">{artist.name}</div>
-                        <div className="text-[10px] text-muted-foreground leading-tight">Auteur Principal</div>
+        <div className="container max-w-7xl mx-auto px-6 lg:px-12 relative z-20">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-12 items-center">
+                <div className="hero-content-wrapper fade-in-up">
+                    <div className="hero-eyebrow flex items-center gap-2 mb-6">
+                        <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'}>
+                            <Badge variant="outline" className="border-primary/50 text-primary font-bold uppercase tracking-wider">{story.format}</Badge>
+                        </Link>
+                        <Link href={story.status === 'En cours' ? '/ongoing' : '/completed'}>
+                            <Badge variant="secondary" className={cn("bg-stone-800/50 backdrop-blur-sm border-white/10", story.status === 'Terminé' && "bg-blue-500/20 text-blue-400 border-blue-500/30")}>
+                                <span className={cn("mr-1.5 h-1.5 w-1.5 rounded-full", story.status === 'Terminé' ? "bg-blue-400" : "bg-emerald-400")}></span> {story.status}
+                            </Badge>
+                        </Link>
                     </div>
-                </Link>
-                {collaborators.map(c => (
-                     <Link key={c.id} href={`/artiste/${c.slug || c.id}`} className="author-chip flex items-center gap-3 bg-card/50 backdrop-blur-sm border border-border p-1.5 pr-4 rounded-full transition-all hover:border-primary/50">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={c.avatar.imageUrl} alt={c.name} />
-                            <AvatarFallback>{c.name.slice(0,1)}</AvatarFallback>
-                        </Avatar>
-                         <div className="text-left">
-                            <div className="text-xs font-bold leading-tight">{c.name}</div>
-                            <div className="text-[10px] text-muted-foreground leading-tight">{c.role}</div>
+
+                    <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground mb-4 leading-tight drop-shadow-sm">{story.title}</h1>
+                    <p className="text-xl text-primary font-medium mb-8 italic opacity-90">
+                        {story.genre} — Un récit épique par {artist.name}
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <Link href={`/artiste/${artist.slug}`} className="flex items-center gap-3 bg-card/40 backdrop-blur-md border border-border/50 p-1.5 pr-5 rounded-full transition-all hover:border-primary/50 hover:bg-card/60">
+                            <Avatar className="h-9 w-9 border-2 border-primary/20">
+                                <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
+                                <AvatarFallback>{artist.name.slice(0,1)}</AvatarFallback>
+                            </Avatar>
+                            <div className="text-left">
+                                <div className="text-xs font-bold leading-tight">{artist.name}</div>
+                                <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Auteur Principal</div>
+                            </div>
+                        </Link>
+                        {collaborators.map(c => (
+                            <Link key={c.id} href={`/artiste/${c.slug || c.id}`} className="flex items-center gap-3 bg-card/40 backdrop-blur-md border border-border/50 p-1.5 pr-5 rounded-full transition-all hover:border-primary/50 hover:bg-card/60">
+                                <Avatar className="h-9 w-9 border-2 border-white/10">
+                                    <AvatarImage src={c.avatar.imageUrl} alt={c.name} />
+                                    <AvatarFallback>{c.name.slice(0,1)}</AvatarFallback>
+                                </Avatar>
+                                <div className="text-left">
+                                    <div className="text-xs font-bold leading-tight">{c.name}</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{c.role}</div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-8">
+                        {story.tags.map(tag => (
+                            <Link key={tag} href={`/genre/${story.genreSlug}`} className="px-4 py-1.5 bg-primary/5 border border-primary/20 rounded-full text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white uppercase tracking-wider">
+                                #{tag}
+                            </Link>
+                        ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="flex text-primary">
+                            {[...Array(5)].map((_, i) => <Star key={i} className={cn("h-5 w-5", i < 4 ? "fill-current" : "opacity-30")} />)}
                         </div>
-                    </Link>
-                ))}
-            </div>
+                        <span className="font-display font-bold text-2xl">4.8</span>
+                        <Separator orientation="vertical" className="h-6 bg-border/50" />
+                        <span className="text-sm text-muted-foreground font-medium italic">3,842 lecteurs captivés</span>
+                    </div>
 
-            <div className="hero-genre-tags flex flex-wrap gap-2 mb-8">
-                {story.tags.map(tag => (
-                    <Link key={tag} href={`/genre/${story.genreSlug}`} className="genre-tag px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-white">
-                        #{tag}
-                    </Link>
-                ))}
-            </div>
-            
-            <div className="hero-rating flex items-center gap-3 mb-8">
-                <div className="stars-display flex text-primary">
-                    {[...Array(5)].map((_, i) => <Star key={i} className={cn("h-4 w-4", i < 4 ? "fill-current" : "opacity-30")} />)}
-                </div>
-                <span className="rating-val font-bold text-lg">4.8</span>
-                <span className="rating-count text-sm text-muted-foreground">· 3,842 lecteurs captivés</span>
-            </div>
+                    <p className="text-lg text-foreground/80 leading-relaxed mb-12 max-w-2xl line-clamp-4">
+                        {story.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center gap-10 mb-12">
+                        <div className="flex flex-col">
+                            <span className="text-3xl font-display font-bold text-primary">{formatStat(story.views)}</span>
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-1">Lectures</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-3xl font-display font-bold text-primary">{formatStat(story.likes)}</span>
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-1">Favoris</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-3xl font-display font-bold text-primary">{story.chapters.length}</span>
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-1">Chapitres</span>
+                        </div>
+                    </div>
 
-            <p className="hero-synopsis text-lg text-foreground/80 leading-relaxed mb-10 max-w-2xl line-clamp-3">
-                {story.description}
-            </p>
-            
-            <div className="hero-stats flex flex-wrap items-center gap-6 mb-10 text-center md:text-left">
-                <div className="hero-stat flex flex-col">
-                    <span className="val text-2xl font-display font-bold">{formatStat(story.views)}</span>
-                    <span className="lbl text-[10px] uppercase tracking-widest text-muted-foreground">Lectures</span>
+                    <div className="flex flex-wrap gap-4">
+                        <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-10 rounded-full h-14 text-base font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
+                            <Link href={firstChapterUrl} className="flex items-center gap-3">
+                                <Play className="h-5 w-5 fill-current"/> Commencer la lecture
+                            </Link>
+                        </Button>
+                        <Button variant="outline" size="lg" className="rounded-full h-14 w-14 border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:bg-primary/10 hover:border-primary/50" onClick={handleBookmark} title="Sauvegarder">
+                            <Bookmark className={cn("h-6 w-6", isBookmarked && "fill-primary text-primary")} />
+                        </Button>
+                        <Button variant="outline" size="lg" className="rounded-full h-14 w-14 border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:bg-primary/10 hover:border-primary/50" onClick={handleShare} title="Partager">
+                            <Share2 className="h-6 w-6" />
+                        </Button>
+                    </div>
                 </div>
-                <Separator orientation="vertical" className="stat-sep h-8 bg-border/50" />
-                <div className="hero-stat flex flex-col">
-                    <span className="val text-2xl font-display font-bold">{formatStat(story.likes)}</span>
-                    <span className="lbl text-[10px] uppercase tracking-widest text-muted-foreground">Favoris</span>
-                </div>
-                <Separator orientation="vertical" className="stat-sep h-8 bg-border/50" />
-                <div className="hero-stat flex flex-col">
-                    <span className="val text-2xl font-display font-bold">{story.chapters.length}</span>
-                    <span className="lbl text-[10px] uppercase tracking-widest text-muted-foreground">Chapitres</span>
-                </div>
-                <Separator orientation="vertical" className="stat-sep h-8 bg-border/50" />
-                <div className="hero-stat flex flex-col">
-                    <span className="val text-2xl font-display font-bold">#2</span>
-                    <span className="lbl text-[10px] uppercase tracking-widest text-muted-foreground">Top Tendance</span>
-                </div>
-            </div>
 
-            <div className="hero-ctas flex flex-wrap gap-4">
-                <Button asChild size="lg" className="cta-primary btn-primary-anim bg-primary hover:bg-primary/90 text-primary-foreground px-8 rounded-full h-14">
-                    <Link href={firstChapterUrl} className="flex items-center gap-2">
-                        <Play className="h-5 w-5 fill-current"/> Commencer
-                    </Link>
-                </Button>
-                <Button variant="outline" size="lg" className="cta-icon-btn rounded-full h-14 w-14" onClick={handleBookmark} title="Sauvegarder">
-                    <Bookmark className={cn("h-5 w-5", isBookmarked && "fill-primary text-primary")} />
-                </Button>
-                <Button variant="outline" size="lg" className="cta-icon-btn rounded-full h-14 w-14" onClick={handleShare} title="Partager">
-                    <Share2 className="h-5 w-5" />
-                </Button>
+                <div className="hero-visual-side hidden lg:block fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] border-2 border-white/10 group">
+                        <Image 
+                            src={story.coverImage.imageUrl} 
+                            alt={story.title} 
+                            fill 
+                            className="object-cover transition-transform duration-1000 group-hover:scale-105" 
+                            data-ai-hint={story.coverImage.imageHint} 
+                            priority 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                        {story.isPremium && (
+                            <Badge className="absolute top-6 right-6 bg-primary text-white border-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-xl" variant="default">
+                                NexusHub Pro
+                            </Badge>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -313,7 +317,7 @@ export default function BdDetailPage(props: { params: Promise<{ slug: string }> 
                 <section className="fade-in-up">
                     <div className="section-heading flex items-center gap-4 mb-8">
                         <div className="h-2 w-2 rounded-full bg-primary" />
-                        <h2 className="text-xl font-display tracking-widest">CHAPITRES</h2>
+                        <h2 className="text-xl font-display tracking-widest uppercase">CHAPITRES</h2>
                         <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
                         <span className="text-xs font-bold text-muted-foreground">{story.chapters.length} disponibles</span>
                     </div>
@@ -329,7 +333,7 @@ export default function BdDetailPage(props: { params: Promise<{ slug: string }> 
                 <section id="reviews-section" className="fade-in-up">
                     <div className="section-heading flex items-center gap-4 mb-8">
                         <div className="h-2 w-2 rounded-full bg-primary" />
-                        <h2 className="text-xl font-display tracking-widest">ÉVALUATIONS</h2>
+                        <h2 className="text-xl font-display tracking-widest uppercase">ÉVALUATIONS</h2>
                         <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
                     </div>
 
@@ -368,7 +372,7 @@ export default function BdDetailPage(props: { params: Promise<{ slug: string }> 
                 <section className="fade-in-up">
                     <div className="section-heading flex items-center gap-4 mb-8">
                         <div className="h-2 w-2 rounded-full bg-primary" />
-                        <h2 className="text-xl font-display tracking-widest">DANS LE MÊME UNIVERS</h2>
+                        <h2 className="text-xl font-display tracking-widest uppercase">DANS LE MÊME UNIVERS</h2>
                         <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
