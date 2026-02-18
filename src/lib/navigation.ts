@@ -12,6 +12,7 @@ export type NavLink = {
   subLinks?: NavSubLink[];
   isGenreDropdown?: boolean;
   badge?: {
+    label: string;
     variant: 'green' | 'orange';
   };
 };
@@ -50,6 +51,6 @@ export const navLinks: NavLink[] = [
   },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
-  { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { variant: 'green' } },
-  { href: "/submit", label: "NexusHub Draft", icon: PenSquare, badge: { variant: 'orange' } },
+  { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { label: 'Pro', variant: 'green' } },
+  { href: "/submit", label: "NexusHub Draft", icon: PenSquare, badge: { label: 'Draft', variant: 'orange' } },
 ];

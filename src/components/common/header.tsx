@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories, artists } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ThemeToggle } from './theme-toggle';
+import { Badge } from '@/components/ui/badge';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
   const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
@@ -62,8 +63,18 @@ const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
       );
   }
   return (
-      <DropdownMenuItem asChild>
-          <Link href={link.href}>{link.label}</Link>
+      <DropdownMenuItem asChild className="flex justify-between items-center">
+          <Link href={link.href} className="w-full flex justify-between items-center">
+            <span>{link.label}</span>
+            {link.badge && (
+                <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
+                    "text-[10px] px-1.5 py-0 h-4",
+                    link.badge.variant === 'green' ? "bg-emerald-500 hover:bg-emerald-600 border-none" : "border-orange-500/50 text-orange-500"
+                )}>
+                    {link.badge.label}
+                </Badge>
+            )}
+          </Link>
       </DropdownMenuItem>
   );
 };
@@ -169,13 +180,6 @@ export default function Header() {
             >
               <span className="flex items-center gap-2">
                 {link.label}
-                {link.badge && (
-                  <span className={cn(
-                    'h-2 w-2 rounded-full',
-                    link.badge.variant === 'green' && 'bg-green-500',
-                    link.badge.variant === 'orange' && 'bg-orange-500',
-                  )}></span>
-                )}
               </span>
               <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
@@ -215,11 +219,12 @@ export default function Header() {
       >
         <span>{link.label}</span>
         {link.badge && (
-          <span className={cn(
-              'h-2 w-2 rounded-full',
-              link.badge.variant === 'green' && 'bg-green-500',
-              link.badge.variant === 'orange' && 'bg-orange-500',
-          )}></span>
+          <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
+              "text-[10px] px-1.5 py-0 h-4 ml-1",
+              link.badge.variant === 'green' ? "bg-emerald-500 hover:bg-emerald-600 border-none" : "border-orange-500/50 text-orange-500"
+          )}>
+              {link.badge.label}
+          </Badge>
         )}
       </Link>
     );
@@ -457,13 +462,6 @@ export default function Header() {
                                           <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
                                             <span className="flex items-center gap-2">
                                               {link.label}
-                                              {link.badge && (
-                                                <span className={cn(
-                                                  'h-2 w-2 rounded-full',
-                                                  link.badge.variant === 'green' && 'bg-green-500',
-                                                  link.badge.variant === 'orange' && 'bg-orange-500',
-                                                )}></span>
-                                              )}
                                             </span>
                                           </AccordionTrigger>
                                           <AccordionContent className="pt-2 pl-4">
@@ -495,11 +493,12 @@ export default function Header() {
                                     <Link key={link.label} href={link.href} className="text-lg font-medium flex items-center gap-2">
                                       <span>{link.label}</span>
                                       {link.badge && (
-                                        <span className={cn(
-                                          'h-2 w-2 rounded-full',
-                                          link.badge.variant === 'green' && 'bg-green-500',
-                                          link.badge.variant === 'orange' && 'bg-orange-500',
-                                        )}></span>
+                                        <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
+                                            "text-[10px] px-1.5 py-0 h-4 ml-1",
+                                            link.badge.variant === 'green' ? "bg-emerald-500 hover:bg-emerald-600 border-none" : "border-orange-500/50 text-orange-500"
+                                        )}>
+                                            {link.badge.label}
+                                        </Badge>
                                       )}
                                     </Link>
                                   );

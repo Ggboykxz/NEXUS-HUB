@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -11,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -86,10 +84,26 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
             />
         </Link>
+        
+        {/* Status Badge */}
+        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5">
+            {artist?.isMentor ? (
+                <Badge variant="default" className="gap-1 pl-1.5 pr-2 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider">
+                    <Award className="h-3 w-3" />
+                    Pro
+                </Badge>
+            ) : (
+                <Badge variant="outline" className="gap-1 pl-1.5 pr-2 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[10px] uppercase font-bold tracking-wider">
+                    <PenSquare className="h-3 w-3" />
+                    Draft
+                </Badge>
+            )}
+        </div>
+
         {story.isPremium && (
-          <Badge variant="default" className="absolute top-3 right-3 z-20 gap-1 pl-2 pr-3 py-1 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg">
+          <Badge variant="default" className="absolute top-3 right-3 z-20 gap-1 pl-2 pr-3 py-1 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[10px]">
             <Crown className="h-3.5 w-3.5" />
-            NexusHub Pro
+            PREMIUM
           </Badge>
         )}
         
@@ -161,7 +175,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         <div className="flex items-center gap-2 text-sm text-muted-foreground font-light">
             <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary transition-colors flex items-center gap-1.5">
                 <span className="font-medium">{story.artistName}</span>
-                {artist?.isMentor ? <Award className="h-3.5 w-3.5 text-primary" /> : <PenSquare className="h-3.5 w-3.5" />}
+                {artist?.isMentor ? <Award className="h-3.5 w-3.5 text-emerald-500" /> : <PenSquare className="h-3.5 w-3.5 text-orange-400" />}
             </Link>
         </div>
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
