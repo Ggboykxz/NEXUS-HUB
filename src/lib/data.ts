@@ -114,6 +114,19 @@ export interface Playlist {
   authorId: string;
 }
 
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImage: ImagePlaceholder;
+  category: string;
+  author: string;
+  date: string;
+  tags: string[];
+}
+
 export const artists: Artist[] = [
   {
     id: '1',
@@ -295,6 +308,45 @@ export const stories: Story[] = [
     artistSlug: artist?.slug || 'artiste-inconnu',
   }
 });
+
+export const blogPosts: BlogPost[] = [
+  {
+    id: 'blog-1',
+    slug: 'world-building-afrofuturiste-black-panther',
+    title: 'Construire un univers Afrofuturiste : De Black Panther aux réalités du Gabon',
+    excerpt: 'Découvrez comment s\'inspirer du cinéma moderne pour créer des cités technologiques ancrées dans les traditions locales.',
+    content: 'Le world building dans les histoires africaines au Gabon et ailleurs demande une attention particulière aux détails culturels...',
+    coverImage: getImage('hero')!,
+    category: 'World Building',
+    author: 'Equipe NexusHub',
+    date: '2024-07-15',
+    tags: ['Afrofuturisme', 'Cinéma', 'Design']
+  },
+  {
+    id: 'blog-2',
+    slug: 'mythologie-yoruba-bd-africaine',
+    title: 'L\'Art du World Building : Intégrer la Mythologie Yoruba dans vos BD',
+    excerpt: 'Pourquoi les Orishas sont une source inépuisable de conflits dramatiques et de visuels saisissants.',
+    content: 'La mythologie Yoruba offre une structure narrative complexe idéale pour les récits épiques...',
+    coverImage: getImage('story-1')!,
+    category: 'Scénario',
+    author: 'Jelani Adebayo',
+    date: '2024-07-10',
+    tags: ['Mythologie', 'Yoruba', 'Narration']
+  },
+  {
+    id: 'blog-3',
+    slug: 'inspiration-mati-diop-atlantique',
+    title: 'Cinéma et BD : Comment Mati Diop inspire la narration visuelle moderne',
+    excerpt: 'Analyse du film "Atlantique" et de son utilisation du mysticisme pour enrichir vos arrière-plans.',
+    content: 'L\'ambiance onirique de Mati Diop est un modèle pour tout artiste webtoon cherchant à exprimer l\'invisible...',
+    coverImage: getImage('story-2')!,
+    category: 'Analyse Ciné',
+    author: 'Amina Diallo',
+    date: '2024-07-05',
+    tags: ['Mati Diop', 'Mysticisme', 'Visuel']
+  }
+];
 
 export const products: Product[] = [
   {

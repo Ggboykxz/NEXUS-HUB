@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Map, Sparkles, Film, Palette, BookOpen, Layers, Zap, Landmark, ScrollText, Mic, Accessibility, MessageSquareQuote } from 'lucide-react';
+import { Globe, Map, Sparkles, Film, Palette, BookOpen, Layers, Zap, Landmark, ScrollText, Mic, Accessibility, MessageSquareQuote, Newspaper, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { blogPosts } from '@/lib/data';
 
 export default function WorldBuildingPage() {
   const { toast } = useToast();
@@ -75,9 +76,14 @@ export default function WorldBuildingPage() {
             Bâtissez des univers cohérents et immersifs. Utilisez nos modèles et nos nouveaux outils d'accessibilité vocale pour libérer votre créativité.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/dashboard/creations">Retour à l'Atelier</Link>
-        </Button>
+        <div className="flex gap-2">
+            <Button asChild variant="outline">
+                <Link href="/blog"><Newspaper className="mr-2 h-4 w-4" /> Voir le Blog</Link>
+            </Button>
+            <Button asChild variant="default">
+                <Link href="/dashboard/creations">Retour à l'Atelier</Link>
+            </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
@@ -125,7 +131,7 @@ export default function WorldBuildingPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="inspiration" className="space-y-8 animate-in fade-in-50 duration-500">
+        <TabsContent value="inspiration" className="space-y-12 animate-in fade-in-50 duration-500">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {cinemaInspirations.map((item, index) => (
               <Card key={index} className="overflow-hidden border-none shadow-xl bg-muted/30">
@@ -156,6 +162,30 @@ export default function WorldBuildingPage() {
               </Card>
             ))}
           </div>
+
+          <Card className="bg-primary/5 border-primary/20">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Newspaper className="h-5 w-5 text-primary" /> Lectures conseillées pour votre World Building
+                </CardTitle>
+                <CardDescription>Approfondissez vos connaissances avec nos articles de blog spécialisés.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {blogPosts.slice(0, 2).map(post => (
+                        <Link key={post.id} href={`/blog/${post.slug}`} className="flex items-center gap-4 p-4 bg-background rounded-xl border border-border/50 hover:border-primary/50 transition-all group">
+                            <div className="relative h-16 w-16 rounded-lg overflow-hidden shrink-0">
+                                <Image src={post.coverImage.imageUrl} alt={post.title} fill className="object-cover" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{post.title}</p>
+                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">Lire l'article <ArrowRight className="h-3 w-3" /></p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="accessibility" className="space-y-8 animate-in fade-in-50 duration-500">

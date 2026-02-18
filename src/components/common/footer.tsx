@@ -23,6 +23,7 @@ export default function Footer() {
               <li><Link href="/stories" className="hover:text-primary transition-colors">Parcourir</Link></li>
               <li><Link href="/rankings" className="hover:text-primary transition-colors">Classements</Link></li>
               <li><Link href="/artists" className="hover:text-primary transition-colors">Artistes</Link></li>
+              <li><Link href="/blog" className="hover:text-primary transition-colors">Blog & Ressources</Link></li>
             </ul>
           </div>
           <div>
