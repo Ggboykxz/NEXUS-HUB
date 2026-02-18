@@ -6,7 +6,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, comments, getStoryUrl, getChapterUrl } from '@/lib/data';
-import { ArrowRight, Play, Award, PenSquare } from 'lucide-react';
+import { ArrowRight, Play, Award, PenSquare, Sparkles, Zap, Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import {
@@ -18,22 +18,31 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const plugin = React.useRef(
     Autoplay({ delay: 5000, stopOnInteraction: true })
   );
   
-  // Separate stories into public and premium
+  // Separate stories based on artist status (Pro/Draft)
+  const proStories = stories.filter(s => {
+    const artist = artists.find(a => a.id === s.artistId);
+    return artist?.isMentor;
+  }).slice(0, 5);
+
+  const draftStories = stories.filter(s => {
+    const artist = artists.find(a => a.id === s.artistId);
+    return !artist?.isMentor;
+  }).slice(0, 5);
+
   const publicStories = stories.filter(s => !s.isPremium);
   const premiumStories = stories.filter(s => s.isPremium);
 
-  // Get popular public stories
   const popularPublicStories = [...publicStories].sort((a, b) => b.views - a.views).slice(0, 5);
-  // Get featured premium stories (e.g., by likes)
   const featuredPremiumStories = [...premiumStories].sort((a, b) => b.likes - a.likes).slice(0, 5);
-
   const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
+  
   const featuredArtists = artists.slice(0, 5);
   const popularGenres = Array.from(new Map(stories.map(s => [s.genreSlug, { name: s.genre, slug: s.genreSlug }])).values()).slice(0, 4);
   const featuredStoriesForCarousel = stories.filter(s => ['1', '2', '4'].includes(s.id));
@@ -99,7 +108,6 @@ export default function HomePage() {
                             </CarouselItem>
                         );
                     })}
-                    {/* Slide for pub */}
                      <CarouselItem>
                         <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary to-accent">
                             <div className="absolute inset-0 bg-black/60 p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
@@ -123,8 +131,49 @@ export default function HomePage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
-        <StoryCarousel title="Populaires et Gratuites" stories={popularPublicStories} columns="5" link="/popular" />
+        
+        {/* Section Pro */}
+        <section className="relative">
+            <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-8 bg-emerald-500/[0.03] -z-10 rounded-3xl" />
+            <div className="flex justify-between items-baseline mb-12 border-b border-emerald-500/20 pb-4">
+                <div className="flex items-center gap-3">
+                    <Award className="h-8 w-8 text-emerald-500" />
+                    <h2 className="text-3xl font-display font-bold text-foreground">Sélection NexusHub Pro</h2>
+                </div>
+                <Link href="/stories?type=pro" className="group flex items-center gap-2 text-sm font-medium text-emerald-500/80 hover:text-emerald-500 transition-colors">
+                    Voir l'élite
+                    <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
+                </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+                {proStories.map((story) => (
+                    <StoryCard key={story.id} story={story} />
+                ))}
+            </div>
+        </section>
+
+        {/* Section Draft */}
+        <section className="relative">
+            <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-8 bg-orange-500/[0.03] -z-10 rounded-3xl" />
+            <div className="flex justify-between items-baseline mb-12 border-b border-orange-500/20 pb-4">
+                <div className="flex items-center gap-3">
+                    <PenSquare className="h-8 w-8 text-orange-400" />
+                    <h2 className="text-3xl font-display font-bold text-foreground">Exploration NexusHub Draft</h2>
+                </div>
+                <Link href="/stories?type=draft" className="group flex items-center gap-2 text-sm font-medium text-orange-400/80 hover:text-orange-400 transition-colors">
+                    Découvrir les talents
+                    <ArrowRight className="text-sm transition-transform group-hover:translate-x-1" />
+                </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+                {draftStories.map((story) => (
+                    <StoryCard key={story.id} story={story} />
+                ))}
+            </div>
+        </section>
+
         <StoryCarousel title="Exclusivités Premium" stories={featuredPremiumStories} columns="5" link="/premium" />
+        <StoryCarousel title="Populaires" stories={popularPublicStories} columns="5" link="/popular" />
         <StoryCarousel title="Nouveautés" stories={newStories} columns="5" showUpdateDate={true} link="/new-releases" />
 
         <section>

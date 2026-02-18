@@ -21,60 +21,60 @@ export default function ArtistsPage() {
       </p>
 
       {/* Pro Section */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-8">
-            <Award className="text-emerald-500 h-6 w-6" />
-            <h2 className="text-2xl font-bold font-display tracking-tight">NexusHub Pro</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent" />
+      <section className="mb-24 relative p-8 rounded-3xl bg-emerald-500/[0.02] border border-emerald-500/10">
+        <div className="flex items-center gap-3 mb-12">
+            <div className="bg-emerald-500/10 p-2 rounded-lg">
+                <Award className="text-emerald-500 h-8 w-8" />
+            </div>
+            <div>
+                <h2 className="text-3xl font-bold font-display tracking-tight text-emerald-500">NexusHub Pro</h2>
+                <p className="text-sm text-muted-foreground">L'excellence de la narration visuelle africaine.</p>
+            </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {proArtists.map((artist) => (
             <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
-                <Card className="text-center p-4 transition-all hover:shadow-lg hover:-translate-y-1 h-full flex flex-col border-emerald-500/20 bg-emerald-500/[0.02]">
-                <CardContent className="p-0 flex flex-col items-center flex-grow justify-center">
-                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-emerald-500/50 mb-4 transition-all group-hover:ring-emerald-500">
-                    <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                <div className="text-center transition-all h-full flex flex-col items-center">
+                    <Avatar className="h-40 w-40 border-4 border-background ring-4 ring-emerald-500/20 mb-6 transition-all group-hover:ring-emerald-500 shadow-xl">
+                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                        <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col items-center gap-2">
-                        <h3 className="text-lg font-display font-semibold group-hover:text-emerald-500 transition-colors">{artist.name}</h3>
-                        <Badge variant="default" className="gap-1 text-[10px] bg-emerald-500 hover:bg-emerald-600 border-none uppercase tracking-widest px-2 py-0.5">
-                            <Award className="h-3 w-3" />
-                            Pro
-                        </Badge>
-                    </div>
-                </CardContent>
-                </Card>
+                    <h3 className="text-xl font-display font-bold group-hover:text-emerald-500 transition-colors mb-2">{artist.name}</h3>
+                    <Badge variant="default" className="gap-1 text-[10px] bg-emerald-500 hover:bg-emerald-600 border-none uppercase tracking-widest px-3 py-1">
+                        <Award className="h-3 w-3" />
+                        Certifié Pro
+                    </Badge>
+                </div>
             </Link>
             ))}
         </div>
       </section>
 
       {/* Draft Section */}
-      <section>
-        <div className="flex items-center gap-3 mb-8">
-            <PenSquare className="text-orange-400 h-6 w-6" />
-            <h2 className="text-2xl font-bold font-display tracking-tight">NexusHub Draft</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-orange-400/20 to-transparent" />
+      <section className="p-8 rounded-3xl bg-muted/30 border border-dashed border-orange-400/20">
+        <div className="flex items-center gap-3 mb-12">
+            <div className="bg-orange-400/10 p-2 rounded-lg">
+                <PenSquare className="text-orange-400 h-8 w-8" />
+            </div>
+            <div>
+                <h2 className="text-3xl font-bold font-display tracking-tight text-orange-400">NexusHub Draft</h2>
+                <p className="text-sm text-muted-foreground">Les nouveaux visages du 9ème art africain.</p>
+            </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {draftArtists.map((artist) => (
             <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
-                <Card className="text-center p-4 transition-all hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-muted/30 border-dashed">
-                <CardContent className="p-0 flex flex-col items-center flex-grow justify-center">
-                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-orange-400/30 mb-4 transition-all group-hover:ring-orange-400/60">
-                    <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                <div className="text-center transition-all h-full flex flex-col items-center">
+                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-orange-400/30 mb-4 transition-all group-hover:ring-orange-400/60 grayscale-[0.5] group-hover:grayscale-0">
+                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
+                        <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col items-center gap-2">
-                        <h3 className="text-lg font-display font-semibold group-hover:text-orange-400 transition-colors">{artist.name}</h3>
-                        <Badge variant="outline" className="gap-1 text-[10px] border-orange-400/50 text-orange-400 uppercase tracking-widest px-2 py-0.5">
-                            <PenSquare className="h-3 w-3" />
-                            Draft
-                        </Badge>
-                    </div>
-                </CardContent>
-                </Card>
+                    <h3 className="text-lg font-display font-semibold group-hover:text-orange-400 transition-colors mb-2">{artist.name}</h3>
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-400/50 text-orange-400 uppercase tracking-widest px-2 py-0.5">
+                        <PenSquare className="h-3 w-3" />
+                        Talent Draft
+                    </Badge>
+                </div>
             </Link>
             ))}
         </div>
