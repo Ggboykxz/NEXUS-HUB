@@ -27,9 +27,12 @@ import { stories, artists } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ThemeToggle } from './theme-toggle';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '../providers/language-provider';
+import { LanguageSwitcher } from './language-switcher';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
   const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
+  const { t } = useTranslation();
 
   if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
@@ -80,6 +83,7 @@ const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
 };
 
 export default function Header() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -174,8 +178,21 @@ export default function Header() {
     }
   };
 
+  const getTranslatedLabel = (link: NavLink) => {
+    switch(link.href) {
+      case '/stories': return t('nav.browse');
+      case '/rankings': return t('nav.rankings');
+      case '/artists': return t('nav.artists');
+      case '/forums': return t('nav.forums');
+      case '/shop': return t('nav.shop');
+      case '/submit': return link.badge?.variant === 'green' ? t('nav.pro') : t('nav.draft');
+      default: return link.label;
+    }
+  };
+
   const NavLinkRenderer = ({ link, className } : { link: NavLink, className?: string }) => {
     const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
+    const label = getTranslatedLabel(link);
   
     if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
@@ -189,7 +206,7 @@ export default function Header() {
               )}
             >
               <span className="flex items-center gap-2">
-                {link.label}
+                {label}
               </span>
               <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
@@ -197,7 +214,7 @@ export default function Header() {
               {link.isGenreDropdown && (
                 <>
                   <DropdownMenuItem asChild>
-                    <Link href="/stories">Toutes les œuvres</Link>
+                    <Link href="/stories">{t('nav.browse')} All</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Genres</DropdownMenuLabel>
@@ -227,7 +244,7 @@ export default function Header() {
           className
         )}
       >
-        <span>{link.label}</span>
+        <span>{label}</span>
         {link.badge && (
           <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
               "text-[10px] px-1.5 py-0 h-4 ml-1",
@@ -272,16 +289,6 @@ export default function Header() {
                      <p className="text-xs text-muted-foreground">par Jelani Adebayo - il y a 5 minutes</p>
                  </div>
                </Link>
-               <Link href="/artiste/amina-diallo" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
-                 <Avatar className="h-10 w-10 border">
-                   <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8" alt="Amina Diallo" />
-                   <AvatarFallback>AD</AvatarFallback>
-                 </Avatar>
-                 <div>
-                     <p className="text-sm"><span className="font-semibold">Amina Diallo</span> a commencé un nouveau projet : <span className="font-semibold">Cyber-Reines</span>.</p>
-                     <p className="text-xs text-muted-foreground">il y a 2 heures</p>
-                 </div>
-               </Link>
              </div>
          </PopoverContent>
        </Popover>
@@ -305,22 +312,22 @@ export default function Header() {
              </div>
            </DropdownMenuLabel>
            <DropdownMenuSeparator />
-           {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
+           {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`}><UserCircle className="mr-2"/>{t('nav.profile')}</Link></DropdownMenuItem>}
            {isLoggedIn && (
              <>
-               <DropdownMenuItem asChild><Link href="/library"><Library className="mr-2"/>Ma Bibliothèque</Link></DropdownMenuItem>
-               <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>Mes Playlists</Link></DropdownMenuItem>
+               <DropdownMenuItem asChild><Link href="/library"><Library className="mr-2"/>{t('nav.library')}</Link></DropdownMenuItem>
+               <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>{t('nav.playlists')}</Link></DropdownMenuItem>
              </>
            )}
            {isArtist && (
                <>
-                   <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
-                   <DropdownMenuItem asChild><Link href="/dashboard/stats"><TrendingUp className="mr-2"/>Statistiques</Link></DropdownMenuItem>
+                   <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>{t('nav.workshop')}</Link></DropdownMenuItem>
+                   <DropdownMenuItem asChild><Link href="/dashboard/stats"><TrendingUp className="mr-2"/>{t('nav.stats')}</Link></DropdownMenuItem>
                </>
            )}
-           <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>Paramètres</Link></DropdownMenuItem>
+           <DropdownMenuItem asChild><Link href="/settings"><Settings className="mr-2"/>{t('nav.settings')}</Link></DropdownMenuItem>
            <DropdownMenuSeparator />
-           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>Se déconnecter</DropdownMenuItem>
+           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer"><LogOut className="mr-2"/>{t('nav.logout')}</DropdownMenuItem>
          </DropdownMenuContent>
        </DropdownMenu>
     </>
@@ -329,78 +336,16 @@ export default function Header() {
   const LoggedOutNav = (
     <>
       <Button asChild variant="ghost">
-        <Link href="/login">Se connecter</Link>
+        <Link href="/login">{t('nav.login')}</Link>
       </Button>
       <Button asChild variant="outline">
-        <Link href="/signup">S'inscrire</Link>
+        <Link href="/signup">{t('nav.signup')}</Link>
       </Button>
       <Button asChild>
-        <Link href="/submit">Publier</Link>
+        <Link href="/submit">{t('nav.submit')}</Link>
       </Button>
     </>
   );
-
-    const MobileLoggedInNav = (
-      <>
-        {userId && (
-            <Button asChild variant="secondary">
-                <Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`} className="flex items-center gap-2 justify-center">
-                    <UserCircle /> Mon Profil
-                </Link>
-            </Button>
-        )}
-        <Button asChild variant="ghost">
-            <Link href="/library" className="flex items-center gap-2 justify-center">
-                <Library /> Ma Bibliothèque
-            </Link>
-        </Button>
-        {isArtist && (
-            <>
-                <Button asChild variant="ghost">
-                    <Link href="/dashboard/creations" className="flex items-center gap-2 justify-center">
-                        <Brush /> Mon Atelier
-                    </Link>
-                </Button>
-                <Button asChild variant="ghost">
-                    <Link href="/dashboard/stats" className="flex items-center gap-2 justify-center">
-                        <TrendingUp /> Statistiques
-                    </Link>
-                </Button>
-            </>
-        )}
-       <Button asChild variant="ghost">
-            <Link href="/playlists" className="flex items-center gap-2 justify-center">
-                <ListMusic /> Mes Playlists
-            </Link>
-        </Button>
-       <Button asChild variant="ghost">
-          <Link href="/settings" className="flex items-center gap-2 justify-center">
-              <Settings /> Paramètres
-          </Link>
-       </Button>
-       <Button variant="outline" onClick={handleLogout} className="w-full">
-          <LogOut className="mr-2"/> Se déconnecter
-      </Button>
-    </>
-  );
-
-  const MobileLoggedOutNav = (
-    <>
-       <Button asChild>
-         <Link href="/submit">Publier</Link>
-       </Button>
-       <Button asChild variant="outline">
-         <Link href="/signup">S'inscrire</Link>
-       </Button>
-       <Button asChild variant="ghost">
-         <Link href="/login">Se connecter</Link>
-       </Button>
-    </>
-  );
-  
-  const visibleLinks = navLinks.slice(0, 3);
-  const hiddenLinks = navLinks.slice(3);
-
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
@@ -413,33 +358,14 @@ export default function Header() {
           </div>
 
           <nav className="hidden md:flex items-center gap-x-4 text-sm font-medium tracking-wide text-foreground/80 dark:text-stone-300">
-            {visibleLinks.map((link) => (
+            {navLinks.slice(0, 5).map((link) => (
               <NavLinkRenderer key={link.label} link={link} />
             ))}
-            <div className="hidden lg:flex items-center gap-x-4">
-              {hiddenLinks.map((link) => (
-                <NavLinkRenderer key={link.label} link={link} />
-              ))}
-            </div>
-            <div className="flex lg:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-5 w-5" />
-                    <span className="sr-only">Plus</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {hiddenLinks.map((link) => (
-                    <DropdownItemRenderer key={link.label} link={link} />
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </nav>
 
           <div className="flex items-center gap-2">
               <div className="hidden items-center gap-2 md:flex">
+                 <LanguageSwitcher />
                  <ThemeToggle />
                  <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
@@ -454,23 +380,15 @@ export default function Header() {
               </div>
               
               <div className="md:hidden flex items-center">
+                    <LanguageSwitcher />
                     <ThemeToggle />
                     <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                     </Button>
-                    {isLoggedIn && (
-                      <Button asChild variant="ghost" size="icon" className="relative text-foreground/90">
-                        <Link href="/notifications">
-                          <Bell className="h-5 w-5" />
-                          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-                        </Link>
-                      </Button>
-                    )}
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <Menu className="h-5 w-5" />
-                          <span className="sr-only">Toggle Menu</span>
                         </Button>
                       </SheetTrigger>
                       <SheetContent side="left" className="pr-0 bg-background flex flex-col">
@@ -479,64 +397,12 @@ export default function Header() {
                                 <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
                             </Link>
                             <nav className="flex flex-col space-y-2 px-4">
-                                {navLinks.map((link) => {
-                                  if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
-                                    return (
-                                      <Accordion type="single" collapsible key={link.label} className="w-full">
-                                        <AccordionItem value={link.label} className="border-b-0">
-                                          <AccordionTrigger className="p-0 text-lg font-medium hover:no-underline flex justify-between w-full">
-                                            <span className="flex items-center gap-2">
-                                              {link.label}
-                                            </span>
-                                          </AccordionTrigger>
-                                          <AccordionContent className="pt-2 pl-4">
-                                            <div className="flex flex-col space-y-2">
-                                                {link.isGenreDropdown && (
-                                                    <>
-                                                        <Link href="/stories" className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                            Toutes les œuvres
-                                                        </Link>
-                                                        {uniqueGenres.map(genre => (
-                                                            <Link key={genre.slug} href={`/genre/${genre.slug}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                                {genre.name}
-                                                            </Link>
-                                                        ))}
-                                                    </>
-                                                )}
-                                                {link.subLinks && link.subLinks.map((subLink) => (
-                                                    <Link key={subLink.href} href={subLink.href} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                        {subLink.label}
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                          </AccordionContent>
-                                        </AccordionItem>
-                                      </Accordion>
-                                    );
-                                  }
-                                  return (
-                                    <Link key={link.label} href={link.href} className="text-lg font-medium flex items-center gap-2">
-                                      <span>{link.label}</span>
-                                      {link.badge && (
-                                        <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
-                                            "text-[10px] px-1.5 py-0 h-4 ml-1",
-                                            link.badge.variant === 'green' ? "bg-emerald-500 hover:bg-emerald-600 border-none" : "border-orange-500/50 text-orange-500"
-                                        )}>
-                                            {link.badge.label}
-                                        </Badge>
-                                      )}
-                                    </Link>
-                                  );
-                                })}
+                                {navLinks.map((link) => (
+                                  <Link key={link.label} href={link.href} className="text-lg font-medium">
+                                    {getTranslatedLabel(link)}
+                                  </Link>
+                                ))}
                             </nav>
-                        </div>
-                        <div className="mt-auto flex flex-col gap-2 border-t p-4">
-                            <div className={cn("flex flex-col gap-2", hasMounted && isLoggedIn ? "hidden" : "flex")}>
-                                {MobileLoggedOutNav}
-                            </div>
-                            <div className={cn("flex flex-col gap-2", hasMounted && isLoggedIn ? "flex" : "hidden")}>
-                                {MobileLoggedInNav}
-                            </div>
                         </div>
                       </SheetContent>
                     </Sheet>
@@ -553,7 +419,7 @@ export default function Header() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               type="search"
-              placeholder="Rechercher une œuvre, un auteur..."
+              placeholder={t('nav.search')}
               className="h-10 w-full pr-10 rounded-full"
               autoFocus
             />

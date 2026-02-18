@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { LanguageProvider } from '@/components/providers/language-provider';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -23,8 +24,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        {children}
-        <Toaster />
+        <LanguageProvider>
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );
