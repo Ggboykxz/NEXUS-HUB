@@ -4,11 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Map, Sparkles, Film, Palette, BookOpen, Layers, Zap, Landmark, ScrollText } from 'lucide-react';
+import { Globe, Map, Sparkles, Film, Palette, BookOpen, Layers, Zap, Landmark, ScrollText, Mic, Accessibility, MessageSquareQuote } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WorldBuildingPage() {
+  const { toast } = useToast();
+
   const templates = [
     {
       title: "Géographie & Topographie",
@@ -69,7 +72,7 @@ export default function WorldBuildingPage() {
             <h1 className="text-4xl font-bold font-display">Atelier de World Building</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-3xl">
-            Bâtissez des univers cohérents et immersifs. Utilisez nos modèles de structure et puisez votre inspiration dans les chefs-d'œuvre du patrimoine visuel africain.
+            Bâtissez des univers cohérents et immersifs. Utilisez nos modèles et nos nouveaux outils d'accessibilité vocale pour libérer votre créativité.
           </p>
         </div>
         <Button asChild variant="outline">
@@ -78,12 +81,15 @@ export default function WorldBuildingPage() {
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full md:w-[600px] grid-cols-3 mb-8">
+        <TabsList className="grid w-full md:w-[800px] grid-cols-4 mb-8">
           <TabsTrigger value="templates" className="gap-2">
             <Layers className="h-4 w-4" /> Modèles
           </TabsTrigger>
           <TabsTrigger value="inspiration" className="gap-2">
             <Film className="h-4 w-4" /> Inspiration Ciné
+          </TabsTrigger>
+          <TabsTrigger value="accessibility" className="gap-2 text-emerald-500">
+            <Accessibility className="h-4 w-4" /> Accessibilité
           </TabsTrigger>
           <TabsTrigger value="assets" className="gap-2">
             <Palette className="h-4 w-4" /> Bibliothèque
@@ -93,7 +99,7 @@ export default function WorldBuildingPage() {
         <TabsContent value="templates" className="space-y-8 animate-in fade-in-50 duration-500">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {templates.map((template, index) => (
-              <Card key={index} className="group hover:border-primary/50 transition-all duration-300">
+              <Card key={index} className="group hover:border-primary/50 transition-all duration-300 border-2">
                 <CardHeader className="flex flex-row items-center gap-4">
                   <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary/20 transition-colors">
                     <template.icon className="h-6 w-6 text-primary" />
@@ -152,6 +158,36 @@ export default function WorldBuildingPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="accessibility" className="space-y-8 animate-in fade-in-50 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="p-8 border-emerald-500/20 bg-emerald-500/[0.02]">
+                    <div className="bg-emerald-500/10 p-4 rounded-full w-fit mb-6">
+                        <Mic className="h-10 w-10 text-emerald-500" />
+                    </div>
+                    <CardTitle className="text-2xl mb-4 text-emerald-500">Voice-to-Text pour Scénaristes</CardTitle>
+                    <p className="text-muted-foreground leading-relaxed mb-8">
+                        Un outil révolutionnaire permettant aux créateurs en situation de handicap (moteur ou visuel) de rédiger leurs scénarios, dialogues et descriptions d'univers par la voix. Support multilingue inclus.
+                    </p>
+                    <Button onClick={() => toast({title: "Microphone activé", description: "Prêt pour la dictée vocale..."})} className="w-full bg-emerald-500 hover:bg-emerald-600">
+                        Lancer l'Assistant Vocal
+                    </Button>
+                </Card>
+
+                <Card className="p-8 border-primary/20 bg-primary/[0.02]">
+                    <div className="bg-primary/10 p-4 rounded-full w-fit mb-6">
+                        <MessageSquareQuote className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl mb-4 text-primary">Traduction Culturelle Assistée</CardTitle>
+                    <p className="text-muted-foreground leading-relaxed mb-8">
+                        Traduisez vos œuvres en Swahili, Wolof ou Yoruba tout en préservant les nuances culturelles et les expressions idiomatiques. Un pont entre les régions du continent.
+                    </p>
+                    <Button variant="outline" className="w-full border-primary text-primary">
+                        Accéder au Traducteur
+                    </Button>
+                </Card>
+            </div>
+        </TabsContent>
+
         <TabsContent value="assets" className="animate-in fade-in-50 duration-500">
           <Card className="p-12 text-center border-dashed">
             <div className="mx-auto bg-primary/10 rounded-full p-6 w-fit mb-6">
@@ -159,7 +195,7 @@ export default function WorldBuildingPage() {
             </div>
             <CardTitle className="mb-2">Bibliothèque d'Assets Visuels</CardTitle>
             <CardDescription className="max-w-md mx-auto">
-              Retrouvez bientôt une collection de palettes de couleurs inspirées du Sahel, des savanes et des métropoles africaines, ainsi qu'une banque de motifs géométriques.
+              Retrouvez bientôt une collection de palettes de couleurs inspirées du Sahel et des savanes, ainsi qu'une banque de motifs géométriques.
             </CardDescription>
             <Button className="mt-8" disabled>En cours de développement</Button>
           </Card>
