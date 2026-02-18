@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic, Award, PenSquare } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic, Award, PenSquare, Library } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,7 @@ export default function Header() {
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isArtist, setIsArtist] = useState(false);
@@ -162,6 +163,15 @@ export default function Header() {
     window.dispatchEvent(new Event('loginStateChange')); 
     router.push('/');
     router.refresh();
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
   };
 
   const NavLinkRenderer = ({ link, className } : { link: NavLink, className?: string }) => {
@@ -249,12 +259,12 @@ export default function Header() {
          <PopoverContent align="end" className="w-96">
              <div className="flex justify-between items-center mb-4">
                <h4 className="font-medium leading-none">Notifications</h4>
-               <p className="text-sm text-muted-foreground">Vous avez 2 notifications</p>
+               <Link href="/notifications" className="text-xs text-primary hover:underline">Voir tout</Link>
              </div>
              <div className="grid gap-4">
                <Link href="/webtoon/les-chroniques-d-orisha" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
                  <Avatar className="h-10 w-10 border">
-                     <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="The Orisha Chronicles" />
+                     <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b" alt="The Orisha Chronicles" />
                      <AvatarFallback>OC</AvatarFallback>
                  </Avatar>
                  <div>
@@ -264,7 +274,7 @@ export default function Header() {
                </Link>
                <Link href="/artiste/amina-diallo" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
                  <Avatar className="h-10 w-10 border">
-                   <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="Amina Diallo" />
+                   <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8" alt="Amina Diallo" />
                    <AvatarFallback>AD</AvatarFallback>
                  </Avatar>
                  <div>
@@ -280,7 +290,7 @@ export default function Header() {
          <DropdownMenuTrigger asChild>
            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
              <Avatar className="h-10 w-10">
-               <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080" alt="Léa Dubois" />
+               <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58" alt="Léa Dubois" />
                <AvatarFallback>LD</AvatarFallback>
              </Avatar>
            </Button>
@@ -296,7 +306,12 @@ export default function Header() {
            </DropdownMenuLabel>
            <DropdownMenuSeparator />
            {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
-           {isLoggedIn && <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>Mes Playlists</Link></DropdownMenuItem>}
+           {isLoggedIn && (
+             <>
+               <DropdownMenuItem asChild><Link href="/library"><Library className="mr-2"/>Ma Bibliothèque</Link></DropdownMenuItem>
+               <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>Mes Playlists</Link></DropdownMenuItem>
+             </>
+           )}
            {isArtist && (
                <>
                    <DropdownMenuItem asChild><Link href="/dashboard/creations"><Brush className="mr-2"/>Mon Atelier</Link></DropdownMenuItem>
@@ -334,6 +349,11 @@ export default function Header() {
                 </Link>
             </Button>
         )}
+        <Button asChild variant="ghost">
+            <Link href="/library" className="flex items-center gap-2 justify-center">
+                <Library /> Ma Bibliothèque
+            </Link>
+        </Button>
         {isArtist && (
             <>
                 <Button asChild variant="ghost">
@@ -438,9 +458,14 @@ export default function Header() {
                     <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="text-foreground/90">
                       <Search className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className={cn('relative text-foreground/90', !(hasMounted && isLoggedIn) && 'hidden')}>
-                      <Bell className="h-5 w-5" />
-                    </Button>
+                    {isLoggedIn && (
+                      <Button asChild variant="ghost" size="icon" className="relative text-foreground/90">
+                        <Link href="/notifications">
+                          <Bell className="h-5 w-5" />
+                          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+                        </Link>
+                      </Button>
+                    )}
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -523,12 +548,19 @@ export default function Header() {
           <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Input
-            type="search"
-            placeholder="Rechercher..."
-            className="h-10 w-full pr-10"
-            autoFocus
-          />
+          <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              type="search"
+              placeholder="Rechercher une œuvre, un auteur..."
+              className="h-10 w-full pr-10 rounded-full"
+              autoFocus
+            />
+            <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8">
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
         </div>
       </div>
     </header>
