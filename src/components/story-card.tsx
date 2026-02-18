@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -5,7 +6,7 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare, Eye } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare, Eye, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -98,47 +99,56 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 {story.description}
             </p>
             
-            <div className="flex items-center justify-center gap-4 scale-90 group-hover:scale-100 transition-transform duration-300">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md"
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                        >
-                            <ListPlus className="h-6 w-6" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-56">
-                        <DropdownMenuLabel>Playlist rapide</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {userPlaylists.map(playlist => (
-                            <DropdownMenuItem key={playlist.id} onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
-                                {playlist.name}
+            <div className="flex flex-col items-center gap-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ease-out">
+                <div className="flex items-center justify-center gap-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md transition-all active:scale-95"
+                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                            >
+                                <ListPlus className="h-6 w-6" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-56">
+                            <DropdownMenuLabel>Playlist rapide</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {userPlaylists.map(playlist => (
+                                <DropdownMenuItem key={playlist.id} onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
+                                    {playlist.name}
+                                </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleCreatePlaylist}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Nouvelle playlist
                             </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleCreatePlaylist}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nouvelle playlist
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform">
-                    <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
-                        <Play className="ml-1 h-8 w-8 fill-current" />
-                    </Link>
-                </Button>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95">
+                        <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
+                            <Play className="ml-1 h-8 w-8 fill-current" />
+                        </Link>
+                    </Button>
 
-                <Button 
-                  variant="secondary" 
-                  size="icon" 
-                  className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md"
-                  onClick={handleHeartClick}
-                >
-                    <Heart className="h-6 w-6" />
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md transition-all active:scale-95"
+                      onClick={handleHeartClick}
+                    >
+                        <Heart className="h-6 w-6" />
+                    </Button>
+                </div>
+                
+                <Button asChild variant="outline" className="w-full border-white/40 text-white hover:bg-white/20 hover:text-white backdrop-blur-md rounded-full h-10 text-xs font-bold transition-all active:scale-95">
+                    <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
+                        <Info className="mr-2 h-4 w-4" />
+                        Voir plus de détails
+                    </Link>
                 </Button>
             </div>
         </div>
