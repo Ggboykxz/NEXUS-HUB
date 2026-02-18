@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { stories } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { Crown, Eye, Heart, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSearchParams } from 'next/navigation';
 
-export default function RankingsPage() {
+function RankingsContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'popular';
   
@@ -18,6 +19,27 @@ export default function RankingsPage() {
   const newest = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return (
+    <Tabs defaultValue={defaultTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+        <TabsTrigger value="popular">Populaires</TabsTrigger>
+        <TabsTrigger value="trending">Tendance</TabsTrigger>
+        <TabsTrigger value="newest">Nouveautés</TabsTrigger>
+      </TabsList>
+      <TabsContent value="popular">
+        <RankingList stories={popular} metric="views" />
+      </TabsContent>
+      <TabsContent value="trending">
+        <RankingList stories={trending} metric="likes" />
+      </TabsContent>
+      <TabsContent value="newest">
+        <RankingList stories={newest} metric="updatedAt" />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+export default function RankingsPage() {
+  return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <div className="flex items-center gap-4 mb-8">
         <Crown className="w-10 h-10 text-primary" />
@@ -25,22 +47,9 @@ export default function RankingsPage() {
       </div>
       <p className="text-lg text-muted-foreground mb-8">Découvrez les œuvres qui captivent notre communauté.</p>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
-          <TabsTrigger value="popular">Populaires</TabsTrigger>
-          <TabsTrigger value="trending">Tendance</TabsTrigger>
-          <TabsTrigger value="newest">Nouveautés</TabsTrigger>
-        </TabsList>
-        <TabsContent value="popular">
-          <RankingList stories={popular} metric="views" />
-        </TabsContent>
-        <TabsContent value="trending">
-          <RankingList stories={trending} metric="likes" />
-        </TabsContent>
-        <TabsContent value="newest">
-          <RankingList stories={newest} metric="updatedAt" />
-        </TabsContent>
-      </Tabs>
+      <Suspense fallback={<div className="h-96 flex items-center justify-center">Chargement des classements...</div>}>
+        <RankingsContent />
+      </Suspense>
     </div>
   );
 }

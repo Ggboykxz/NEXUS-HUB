@@ -84,7 +84,7 @@ function ProgressBar({ progress }: { progress: number }) {
         className="h-full bg-gradient-to-r from-primary/50 via-primary to-accent transition-all duration-75 ease-linear"
         style={{ width: `${progress}%` }}
       >
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_theme(colors.accent)]" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_hsl(var(--accent))] shadow-accent/50" />
       </div>
     </div>
   )
