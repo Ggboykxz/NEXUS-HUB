@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
-import { artists } from '@/lib/data';
+import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -69,10 +69,13 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       });
   };
 
+  const storyUrl = getStoryUrl(story);
+  const firstChapterUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
+
   return (
     <div className={cn("group", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-5 shadow-sm transition-all duration-300 group-hover:shadow-xl">
-        <Link href={`/stories/${story.id}`}>
+        <Link href={storyUrl}>
             <Image
               src={story.coverImage.imageUrl}
               alt={`Couverture de ${story.title}`}
@@ -120,7 +123,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                     </DropdownMenuContent>
                 </DropdownMenu>
                 
-                <Link href={`/read/${story.id}`} onClick={(e) => e.stopPropagation()} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30" aria-label="Commencer la lecture">
+                <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30" aria-label="Commencer la lecture">
                     <Play className="ml-1 h-8 w-8 fill-white" />
                 </Link>
 
@@ -135,7 +138,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 </Button>
             </div>
 
-            <Link href={`/stories/${story.id}`} className="w-full">
+            <Link href={storyUrl} className="w-full">
                 <h3 className="font-display font-bold text-xl text-white drop-shadow-md">{story.title}</h3>
                 <p className="text-white/80 text-xs line-clamp-2 mt-1">{story.description}</p>
                 <div className="mt-3">
@@ -147,12 +150,12 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             </Link>
         </div>
       </div>
-      <Link href={`/stories/${story.id}`}>
+      <Link href={storyUrl}>
         <h3 className="font-display font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors truncate fade-in">{story.title}</h3>
       </Link>
       <div className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light transition-colors fade-in">
         par{' '}
-        <Link href={`/artists/${story.artistId}`} className="hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
+        <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
           <span>{story.artistName}</span>
           {artist?.isMentor ? (
             <Award className="h-3.5 w-3.5 text-primary" title="Artiste Pro" />
@@ -164,13 +167,13 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
       {showUpdateDate ? (
         <div className="flex items-center justify-between text-xs">
-            <Link href={`/genres/${story.genre}`}>
+            <Link href={`/genre/${story.genreSlug}`}>
                 <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
             </Link>
             {date ? <p className="text-muted-foreground">{date}</p> : <Skeleton className="w-16 h-4" />}
         </div>
       ) : (
-          <Link href={`/genres/${story.genre}`}>
+          <Link href={`/genre/${story.genreSlug}`}>
               <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-colors">{story.genre}</Badge>
           </Link>
       )}

@@ -23,12 +23,12 @@ import {
   DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { stories } from '@/lib/data';
+import { stories, artists } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ThemeToggle } from './theme-toggle';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
-  const uniqueGenres = [...new Set(stories.map(s => s.genre))];
+  const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
 
   if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
@@ -45,8 +45,8 @@ const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {uniqueGenres.map((genre) => (
-                                  <DropdownMenuItem key={genre} asChild>
-                                      <Link href={`/genres/${encodeURIComponent(genre)}`}>{genre}</Link>
+                                  <DropdownMenuItem key={genre.slug} asChild>
+                                      <Link href={`/genre/${genre.slug}`}>{genre.name}</Link>
                                   </DropdownMenuItem>
                               ))}
                           </>
@@ -77,6 +77,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isArtist, setIsArtist] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userSlug, setUserSlug] = useState<string | null>(null);
 
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -96,7 +97,7 @@ export default function Header() {
       }, 200);
   };
 
-  const uniqueGenres = [...new Set(stories.map(s => s.genre))];
+  const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
 
   useEffect(() => {
     setHasMounted(true);
@@ -109,9 +110,17 @@ export default function Header() {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       const accountType = localStorage.getItem('accountType');
       const storedUserId = localStorage.getItem('userId');
+      
       setIsLoggedIn(loggedInStatus);
       setIsArtist(loggedInStatus && accountType === 'artist');
       setUserId(loggedInStatus ? storedUserId : null);
+
+      if (loggedInStatus && accountType === 'artist') {
+          const artist = artists.find(a => a.id === storedUserId);
+          setUserSlug(artist?.slug || null);
+      } else {
+          setUserSlug(null);
+      }
     };
 
     handleStorageChange();
@@ -179,8 +188,8 @@ export default function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Genres</DropdownMenuLabel>
                   {uniqueGenres.map((genre) => (
-                    <DropdownMenuItem key={genre} asChild>
-                      <Link href={`/genres/${encodeURIComponent(genre)}`}>{genre}</Link>
+                    <DropdownMenuItem key={genre.slug} asChild>
+                      <Link href={`/genre/${genre.slug}`}>{genre.name}</Link>
                     </DropdownMenuItem>
                   ))}
                 </>
@@ -238,7 +247,7 @@ export default function Header() {
                <p className="text-sm text-muted-foreground">Vous avez 2 notifications</p>
              </div>
              <div className="grid gap-4">
-               <Link href="/stories/1" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+               <Link href="/webtoon/les-chroniques-d-orisha" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
                  <Avatar className="h-10 w-10 border">
                      <AvatarImage src="https://images.unsplash.com/photo-1739513261598-d1025613319b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYW50YXN5JTIwY29taWN8ZW58MHx8fHwxNzcxMjA4MjY5fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="The Orisha Chronicles" />
                      <AvatarFallback>OC</AvatarFallback>
@@ -248,7 +257,7 @@ export default function Header() {
                      <p className="text-xs text-muted-foreground">par Jelani Adebayo - il y a 5 minutes</p>
                  </div>
                </Link>
-               <Link href="/artists/2" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
+               <Link href="/artiste/amina-diallo" className="group flex items-start gap-3 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors">
                  <Avatar className="h-10 w-10 border">
                    <AvatarImage src="https://images.unsplash.com/photo-1575264821278-fd76711cd1b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG9ydHJhaXQlMjBwZXJzb258ZW58MHx8fHwxNzcxMTg5ODE0fDA&ixlib=rb-4.1.0&q=80&w=1080" alt="Amina Diallo" />
                    <AvatarFallback>AD</AvatarFallback>
@@ -281,7 +290,7 @@ export default function Header() {
              </div>
            </DropdownMenuLabel>
            <DropdownMenuSeparator />
-           {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artists/${userId}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
+           {userId && <DropdownMenuItem asChild><Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`}><UserCircle className="mr-2"/>Profil</Link></DropdownMenuItem>}
            {isLoggedIn && <DropdownMenuItem asChild><Link href="/playlists"><ListMusic className="mr-2"/>Mes Playlists</Link></DropdownMenuItem>}
            {isArtist && (
                <>
@@ -315,7 +324,7 @@ export default function Header() {
       <>
         {userId && (
             <Button asChild variant="secondary">
-                <Link href={isArtist ? `/artists/${userId}` : `/profile/${userId}`} className="flex items-center gap-2 justify-center">
+                <Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`} className="flex items-center gap-2 justify-center">
                     <UserCircle /> Mon Profil
                 </Link>
             </Button>
@@ -465,8 +474,8 @@ export default function Header() {
                                                             Toutes les œuvres
                                                         </Link>
                                                         {uniqueGenres.map(genre => (
-                                                            <Link key={genre} href={`/genres/${encodeURIComponent(genre)}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
-                                                                {genre}
+                                                            <Link key={genre.slug} href={`/genre/${genre.slug}`} className="text-base font-medium text-muted-foreground hover:text-foreground">
+                                                                {genre.name}
                                                             </Link>
                                                         ))}
                                                     </>
