@@ -5,7 +5,7 @@ import { stories, artists, comments as allComments, readers, type Story, type Ar
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Eye, Heart, Star, Share2, Bookmark, Play, Edit, ChevronsDown, MessageSquare, ThumbsUp, AlertTriangle, ChevronRight, Check, Coins, Lock, Award } from 'lucide-react';
+import { Eye, Heart, Star, Share2, Bookmark, Play, Edit, ChevronsDown, MessageSquare, ThumbsUp, AlertTriangle, ChevronRight, Check, Coins, Lock, Award, PenSquare, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StoryCard } from '@/components/story-card';
+import { differenceInDays } from 'date-fns';
 
 const formatStat = (num: number): string => {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
@@ -40,6 +41,10 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
 
   const firstChapterUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : '#';
   
+  // Badge logic
+  const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 7;
+  const isTrending = story.likes > 50000;
+
   return (
     <section className="hero relative overflow-hidden bg-background py-12 md:py-24">
         <div className="hero-bg" />
@@ -53,7 +58,7 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
         <div className="container max-w-7xl mx-auto px-6 lg:px-12 relative z-20">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-12 items-center">
                 <div className="hero-content-wrapper fade-in-up">
-                    <div className="hero-eyebrow flex items-center gap-2 mb-6">
+                    <div className="hero-eyebrow flex flex-wrap items-center gap-2 mb-6">
                         <Link href={story.format === 'Webtoon' ? '/webtoons' : '/comics'}>
                             <Badge variant="outline" className="border-primary/50 text-primary font-bold uppercase tracking-wider">{story.format}</Badge>
                         </Link>
@@ -62,6 +67,16 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                                 <span className={cn("mr-1.5 h-1.5 w-1.5 rounded-full", story.status === 'Terminé' ? "bg-blue-400" : "bg-emerald-400")}></span> {story.status}
                             </Badge>
                         </Link>
+                        {isNew && (
+                          <Badge className="bg-cyan-500 text-white border-none shadow-lg px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
+                            <Sparkles className="h-3 w-3 mr-1" /> Nouveau
+                          </Badge>
+                        )}
+                        {isTrending && (
+                          <Badge className="bg-rose-500 text-white border-none shadow-lg px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
+                            <Zap className="h-3 w-3 mr-1" /> Tendance
+                          </Badge>
+                        )}
                     </div>
 
                     <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground mb-4 leading-tight drop-shadow-sm">{story.title}</h1>
@@ -156,9 +171,23 @@ function HeroSection({ story, artist, collaborators }: { story: Story, artist: A
                             priority 
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                        
+                        {/* Collection Badge */}
+                        <div className="absolute top-6 left-6 z-30">
+                          {artist?.isMentor ? (
+                            <Badge className="bg-emerald-500 text-white border-none px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-xl flex items-center gap-2">
+                                <Award className="h-4 w-4" /> NexusHub Pro
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-500 text-white border-none px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-xl flex items-center gap-2">
+                                <PenSquare className="h-4 w-4" /> NexusHub Draft
+                            </Badge>
+                          )}
+                        </div>
+
                         {story.isPremium && (
                             <Badge className="absolute top-6 right-6 bg-primary text-white border-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-xl" variant="default">
-                                NexusHub Pro
+                                PREMIUM
                             </Badge>
                         )}
                     </div>

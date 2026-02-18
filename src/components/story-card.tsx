@@ -5,10 +5,10 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare, Eye, Info } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, PlusCircle, Award, PenSquare, Eye, Info, Sparkles, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,10 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
 
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
   const artist = artists.find(a => a.id === story.artistId);
+
+  // Check if story is "New" (less than 7 days) or "Trending" (mock logic based on likes)
+  const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 7;
+  const isTrending = story.likes > 50000;
 
   useEffect(() => {
     if(showUpdateDate) {
@@ -97,6 +101,20 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                     <PenSquare className="h-3 w-3" />
                     Draft
                 </Badge>
+            )}
+            
+            {isNew && (
+              <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider animate-pulse">
+                <Sparkles className="h-3 w-3" />
+                Nouveau
+              </Badge>
+            )}
+
+            {isTrending && !isNew && (
+              <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-rose-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider">
+                <Zap className="h-3 w-3" />
+                Tendance
+              </Badge>
             )}
         </div>
 
