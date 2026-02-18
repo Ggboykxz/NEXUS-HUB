@@ -67,7 +67,6 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
 
   const totalViews = artistStories.reduce((acc, story) => acc + story.views, 0);
   const totalLikes = artistStories.reduce((acc, story) => acc + story.likes, 0);
-  const totalSubscriptions = artistStories.reduce((acc, story) => acc + story.subscriptions, 0);
   const totalWorks = artistStories.length;
 
   const formatStat = (num: number): string => {
@@ -258,7 +257,7 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatStat(totalSubscriptions)}</div>
+            <div className="text-2xl font-bold">{formatStat(artist.subscribers)}</div>
           </CardContent>
         </Card>
         <Card>

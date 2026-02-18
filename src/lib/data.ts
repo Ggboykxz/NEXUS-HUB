@@ -18,6 +18,7 @@ export interface Artist {
     facebook?: string;
   };
   isMentor?: boolean;
+  subscribers: number;
 }
 
 export interface Chapter {
@@ -121,6 +122,7 @@ export const artists: Artist[] = [
     portfolio: ['1', '3'],
     links: { personal: '#', amazon: '#', twitter: '#', instagram: '#' },
     isMentor: true,
+    subscribers: 14800,
   },
   {
     id: '2',
@@ -130,6 +132,7 @@ export const artists: Artist[] = [
     avatar: getImage('artist-2')!,
     portfolio: ['2', '4'],
     links: { personal: '#', amazon: '#', facebook: '#' },
+    subscribers: 12500,
   },
    {
     id: '3',
@@ -140,6 +143,7 @@ export const artists: Artist[] = [
     portfolio: ['5', '6'],
     links: { personal: '#', twitter: '#', instagram: '#' },
     isMentor: true,
+    subscribers: 8900,
   },
 ];
 
@@ -288,8 +292,8 @@ export const stories: Story[] = [
     artistId: '3',
     coverImage: getImage('story-5')!,
     description: 'Un filou des temps modernes navigue dans le monde de l\'entreprise en utilisant la ruse du dieu araignée Anansé.',
-    genre: 'Urbain africain contemporain',
-    genreSlug: 'urbain-africain-contemporain',
+    genre: 'Urbain africaine contemporain',
+    genreSlug: 'urbain-africaine-contemporain',
     tags: ['Mythologie', 'Comédie', 'Moderne'],
     views: 500000,
     likes: 48000,

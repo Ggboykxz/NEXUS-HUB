@@ -207,6 +207,12 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
 function ArtistTab({ artist }: { artist: Artist }) {
   const { toast } = useToast();
   const [isFollowing, setIsFollowing] = useState(false);
+  const formatStat = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+    return num.toString();
+  };
+
   return (
     <div className="p-4">
       <div className="bg-card border border-border rounded-xl p-4 text-center">
@@ -225,7 +231,7 @@ function ArtistTab({ artist }: { artist: Artist }) {
         <p className="text-xs text-muted-foreground mb-3">Auteur · Dessinateur · Coloriste</p>
         <div className="flex justify-around py-3 border-y border-border mb-3">
           <div>
-            <p className="font-bold text-lg text-primary">14.8k</p>
+            <p className="font-bold text-lg text-primary">{formatStat(artist.subscribers)}</p>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Abonnés</p>
           </div>
           <div>

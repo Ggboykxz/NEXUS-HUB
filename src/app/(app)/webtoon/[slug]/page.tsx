@@ -223,11 +223,13 @@ const RightSidebar = ({ story, artist }: { story: Story, artist: Artist }) => {
                         <AvatarFallback>{artist.name.slice(0,1)}</AvatarFallback>
                         <div className="artist-verified-badge absolute bottom-0 right-0 bg-emerald-500 text-white rounded-full p-1 border-2 border-background"><Check size={12} /></div>
                     </Avatar>
-                    <p className="artist-name mt-4 font-display font-bold text-xl group-hover:text-primary transition-colors">{artist.name}</p>
+                    <Link href={`/artiste/${artist.slug}`}>
+                        <p className="artist-name mt-4 font-display font-bold text-xl group-hover:text-primary transition-colors">{artist.name}</p>
+                    </Link>
                     <p className="artist-role text-xs text-primary font-bold uppercase tracking-widest mb-6">Artiste Certifié</p>
                     
                     <div className="artist-stats-row grid grid-cols-3 gap-2 py-4 border-y border-border/50 mb-6">
-                         <div className="art-stat flex flex-col"><span className="v text-lg font-bold">14k</span><span className="l text-[9px] uppercase text-muted-foreground tracking-tighter">Fans</span></div>
+                         <div className="art-stat flex flex-col"><span className="v text-lg font-bold">{formatStat(artist.subscribers)}</span><span className="l text-[9px] uppercase text-muted-foreground tracking-tighter">Fans</span></div>
                          <div className="art-stat flex flex-col"><span className="v text-lg font-bold">{(story.views/1000).toFixed(0)}k</span><span className="l text-[9px] uppercase text-muted-foreground tracking-tighter">Vues</span></div>
                          <div className="art-stat flex flex-col"><span className="v text-lg font-bold">{artist.portfolio.length}</span><span className="l text-[9px] uppercase text-muted-foreground tracking-tighter">Séries</span></div>
                     </div>
