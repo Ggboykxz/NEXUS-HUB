@@ -82,7 +82,7 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
             />
             <div className="flex-1">
               <Link href={`/stories/${story.id}`} target="_blank" rel="noopener noreferrer">
-                <CardTitle className="text-4xl font-display mb-2 hover:text-primary transition-colors">{story.title}</CardTitle>
+                <h1 className="text-4xl font-display font-bold mb-2 hover:text-primary transition-colors">{story.title}</h1>
               </Link>
               {artist && <p className="text-lg text-muted-foreground">par <Link className="hover:text-primary transition-colors" href={`/artists/${artist.id}`}>{artist.name}</Link></p>}
               <CardDescription className="mt-4 text-base leading-relaxed">{story.description}</CardDescription>
@@ -96,7 +96,7 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
           <CardHeader>
               <div className="flex items-center gap-4">
                     <Users className="h-6 w-6 text-primary" />
-                    <CardTitle>Équipe créative</CardTitle>
+                    <h2 className="text-2xl font-bold font-display">Équipe créative</h2>
               </div>
               <CardDescription>Gérez les collaborateurs qui travaillent sur cette œuvre.</CardDescription>
           </CardHeader>
@@ -130,7 +130,7 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
                               </div>
                           </div>
                           <Button variant="ghost" size="icon" onClick={() => toast({ title: "Collaborateur retiré (Simulation)" })}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                       </div>
                   ))}
@@ -290,7 +290,7 @@ export default function ManageStoryPage({ params }: { params: { storyId: string 
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem><FilePen className="mr-2 h-4 w-4" />Modifier</DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-500 focus:text-red-500"><Trash2 className="mr-2 h-4 w-4" />Supprimer</DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Supprimer</DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

@@ -40,6 +40,7 @@ export default function HomePage() {
 
   return (
     <>
+      <h1 className="sr-only">NexusHub - La plateforme de la narration visuelle africaine</h1>
       <header className="relative pt-12 pb-12 md:pb-24">
         <div className="container max-w-7xl mx-auto px-6 lg:px-12">
             <Carousel
@@ -72,9 +73,9 @@ export default function HomePage() {
                                             <Badge variant="secondary" className="mb-2 md:mb-4 backdrop-blur-sm hover:bg-primary/20 transition-colors">{story.genre}</Badge>
                                         </Link>
                                         <Link href={storyUrl}>
-                                            <h1 className="text-xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2 max-w-xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
+                                            <h2 className="text-xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2 max-w-xl leading-tight drop-shadow-lg hover:text-primary/90 transition-colors">
                                                 {story.title}
-                                            </h1>
+                                            </h2>
                                         </Link>
                                          <Link href={`/artiste/${story.artistSlug}`}>
                                             <p className="text-sm md:text-base text-white/90 font-semibold mb-3 md:mb-4 drop-shadow-sm hover:text-primary/90 transition-colors">par {story.artistName}</p>
@@ -102,9 +103,9 @@ export default function HomePage() {
                      <CarouselItem>
                         <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary to-accent">
                             <div className="absolute inset-0 bg-black/60 p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
-                                <h1 className="text-2xl md:text-4xl font-display font-bold text-white mb-2 md:mb-4 max-w-2xl leading-tight drop-shadow-lg">
+                                <h2 className="text-2xl md:text-4xl font-display font-bold text-white mb-2 md:mb-4 max-w-2xl leading-tight drop-shadow-lg">
                                     Partagez Votre Vision
-                                </h1>
+                                </h2>
                                 <p className="text-sm md:text-base text-white/90 font-light max-w-lg mb-6 drop-shadow-sm">
                                     Rejoignez notre communauté d'artistes et partagez votre talent avec un public mondial.
                                 </p>

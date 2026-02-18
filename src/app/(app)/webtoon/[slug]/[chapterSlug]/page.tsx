@@ -34,9 +34,11 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
         <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">NexusHub</Link>
         <div className="w-px h-5 bg-border hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium">{story.title}</Link>
-          <ChevronRight className="h-4 w-4 hidden sm:block" />
-          <span className="text-primary font-semibold whitespace-nowrap">Chap. {chapter.id.split('-')[1]} – {chapter.title}</span>
+          <h1 className="flex items-center gap-2">
+            <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium">{story.title}</Link>
+            <ChevronRight className="h-4 w-4 hidden sm:block" />
+            <span className="text-primary font-semibold whitespace-nowrap">Chap. {chapter.id.split('-')[1]} – {chapter.title}</span>
+          </h1>
         </div>
       </div>
 
