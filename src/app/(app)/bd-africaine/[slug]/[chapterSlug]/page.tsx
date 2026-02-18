@@ -150,6 +150,19 @@ function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapt
           </div>
         </div>
       </div>
+
+      {/* Live View Simulation */}
+      <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Lecteurs en direct</span>
+        </div>
+        <span className="text-xs font-bold font-mono">1.4k</span>
+      </div>
+
       {/* AfriCoin support */}
       <div className="bg-card border border-primary/20 rounded-lg p-3 mb-4">
         <h4 className="text-xs font-bold text-primary flex items-center gap-2 mb-2"><Coins className="h-4 w-4"/> Soutenir l'artiste</h4>

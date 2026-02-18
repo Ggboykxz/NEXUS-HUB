@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, ArrowRight, PlusCircle, Award, PenSquare, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -29,6 +29,12 @@ interface StoryCardProps {
   showUpdateDate?: boolean;
 }
 
+const formatStat = (num: number): string => {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+  return num.toString();
+};
+
 export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
   const [date, setDate] = useState('');
   const { toast } = useToast();
@@ -47,6 +53,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    toast({ title: "Ajouté aux favoris !" });
   };
 
   const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
@@ -61,48 +68,47 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const handleCreatePlaylist = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
+      toast({ title: "Fonctionnalité bientôt disponible" });
   };
 
   const storyUrl = getStoryUrl(story);
   const firstChapterUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
   return (
-    <div className={cn("group transition-all duration-300 will-change-transform", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-5 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-xl group-hover:-translate-y-1">
+    <div className={cn("group transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
+      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-4 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-2xl group-hover:-translate-y-2">
         <Link href={storyUrl}>
             <Image
               src={story.coverImage.imageUrl}
               alt={`Couverture de ${story.title}`}
               fill
-              className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
+              className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[3px]"
               data-ai-hint={story.coverImage.imageHint}
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
             />
         </Link>
         {story.isPremium && (
-          <Badge variant="default" className="absolute top-2 right-2 z-20 gap-1 pl-2 pr-2.5 bg-primary/90 text-white backdrop-blur-sm border-white/20">
-            <Crown className="h-3 w-3" />
-            Premium
+          <Badge variant="default" className="absolute top-3 right-3 z-20 gap-1 pl-2 pr-3 py-1 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg">
+            <Crown className="h-3.5 w-3.5" />
+            NexusHub Pro
           </Badge>
         )}
-        {/* Overlay with high performance transitions */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end text-center bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1)">
-            
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex w-full items-center justify-center gap-x-6 scale-90 group-hover:scale-100 transition-transform duration-300 delay-75">
+        {/* Overlay Action Buttons */}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="flex items-center justify-center gap-4 scale-90 group-hover:scale-100 transition-transform duration-300">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
-                            className="text-white hover:bg-white/20 hover:text-white transition-colors"
+                            className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md"
                             onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                            aria-label="Ajouter à une playlist"
                         >
                             <ListPlus className="h-6 w-6" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="end">
-                        <DropdownMenuLabel>Ajouter à la playlist</DropdownMenuLabel>
+                    <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-56">
+                        <DropdownMenuLabel>Playlist rapide</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {userPlaylists.map(playlist => (
                             <DropdownMenuItem key={playlist.id} onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
@@ -112,60 +118,56 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleCreatePlaylist}>
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Créer une playlist
+                            Nouvelle playlist
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
                 
-                <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-white/20 text-white backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white/30" aria-label="Commencer la lecture">
-                    <Play className="ml-1 h-8 w-8 fill-white" />
-                </Link>
+                <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform">
+                    <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
+                        <Play className="ml-1 h-8 w-8 fill-current" />
+                    </Link>
+                </Button>
 
                 <Button 
-                  variant="ghost" 
+                  variant="secondary" 
                   size="icon" 
-                  className="text-white hover:bg-white/20 hover:text-white transition-colors"
+                  className="rounded-full h-12 w-12 bg-white/20 text-white border-white/20 hover:bg-white/40 backdrop-blur-md"
                   onClick={handleHeartClick}
-                  aria-label="Ajouter aux favoris"
                 >
                     <Heart className="h-6 w-6" />
                 </Button>
             </div>
-
-            <Link href={storyUrl} className="w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-100">
-                <h3 className="font-display font-bold text-xl text-white drop-shadow-md mb-1">{story.title}</h3>
-                <p className="text-white/80 text-xs line-clamp-2 mb-3">{story.description}</p>
-                <div className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-4 py-1.5 text-[10px] uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:border-primary">
-                    Découvrir
-                    <ArrowRight className="ml-1.5 h-3 w-3" />
-                </div>
-            </Link>
         </div>
       </div>
-      <Link href={storyUrl}>
-        <h3 className="font-display font-bold text-lg text-foreground mb-1 hover:text-primary transition-colors truncate">{story.title}</h3>
-      </Link>
-      <div className="text-sm text-foreground/60 dark:text-stone-400 mb-1 font-light flex items-center gap-1.5">
-        par{' '}
-        <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
-          <span className="font-medium">{story.artistName}</span>
-          {artist?.isMentor ? (
-            <Award className="h-3.5 w-3.5 text-primary" title="Artiste Pro" />
-          ) : (
-            <PenSquare className="h-3.5 w-3.5 text-muted-foreground/80" title="Artiste Draft" />
-          )}
+
+      <div className="space-y-1.5">
+        <Link href={storyUrl}>
+            <h3 className="font-display font-bold text-lg text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
         </Link>
-      </div>
-      <p className="text-xs text-muted-foreground mb-3">{chapterCount} {chapterCount > 1 ? 'chapitres' : 'chapitre'}</p>
-      <div className="flex items-center justify-between text-xs">
-          <Link href={`/genre/${story.genreSlug}`}>
-              <Badge variant="outline" className="rounded-full px-3 py-0.5 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all duration-300">
-                {story.genre}
-              </Badge>
-          </Link>
-          {showUpdateDate && (
-            date ? <p className="text-muted-foreground font-light">{date}</p> : <Skeleton className="w-16 h-4" />
-          )}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground font-light">
+            <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <span className="font-medium">{story.artistName}</span>
+                {artist?.isMentor ? <Award className="h-3.5 w-3.5 text-primary" /> : <PenSquare className="h-3.5 w-3.5" />}
+            </Link>
+        </div>
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                    <Eye className="h-3 w-3 text-primary" />
+                    {formatStat(story.views)}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                    <Heart className="h-3 w-3 text-destructive" />
+                    {formatStat(story.likes)}
+                </div>
+            </div>
+            <Link href={`/genre/${story.genreSlug}`}>
+                <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-tighter px-2 py-0 h-5 border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors">
+                    {story.genre}
+                </Badge>
+            </Link>
+        </div>
       </div>
     </div>
   );
