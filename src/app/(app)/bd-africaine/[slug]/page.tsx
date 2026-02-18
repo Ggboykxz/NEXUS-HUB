@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { StoryCard } from '@/components/story-card';
 
 const formatStat = (num: number): string => {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
@@ -372,15 +373,7 @@ export default function BdDetailPage(props: { params: Promise<{ slug: string }> 
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                         {stories.filter(s => s.id !== story.id).slice(0, 5).map(s => (
-                            <Link key={s.id} href={getStoryUrl(s)} className="group space-y-3">
-                                <div className="aspect-[2/3] relative rounded-xl overflow-hidden border border-border/50 transition-all group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-primary/30">
-                                    <Image src={s.coverImage.imageUrl} alt={s.title} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-bold text-xs truncate group-hover:text-primary transition-colors">{s.title}</div>
-                                    <div className="text-[10px] text-muted-foreground">{s.genre}</div>
-                                </div>
-                            </Link>
+                            <StoryCard key={s.id} story={s} />
                         ))}
                     </div>
                 </section>
