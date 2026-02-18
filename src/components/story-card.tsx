@@ -48,8 +48,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     }
   }, [story.updatedAt, showUpdateDate]);
 
-  const chapterCount = story.chapters.length;
-
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -93,8 +91,13 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             NexusHub Pro
           </Badge>
         )}
-        {/* Overlay Action Buttons */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300">
+        
+        {/* Overlay Action Buttons & Synopsis */}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 p-4">
+            <p className="text-white/90 text-[11px] text-center mb-6 line-clamp-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 font-light leading-relaxed italic">
+                {story.description}
+            </p>
+            
             <div className="flex items-center justify-center gap-4 scale-90 group-hover:scale-100 transition-transform duration-300">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
