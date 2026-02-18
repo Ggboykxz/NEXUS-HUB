@@ -1,11 +1,32 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
-  description: 'La plateforme de la narration visuelle africaine',
+  description: 'La plateforme de la narration visuelle africaine. Découvrez des webtoons et BD inspirés des cultures du Gabon, du Nigeria, du Sénégal et de toute l\'Afrique.',
+  keywords: ['BD africaine', 'Webtoon africain', 'Afrofuturisme', 'Mythologie africaine', 'NexusHub', 'Histoires africaines Gabon'],
+  authors: [{ name: 'NexusHub Team' }],
+  openGraph: {
+    title: 'NexusHub | Hub Créatif de la BD Africaine',
+    description: 'Lisez les meilleures œuvres graphiques du continent.',
+    url: 'https://nexushub.africa',
+    siteName: 'NexusHub',
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NexusHub | BD & Webtoons Africains',
+    description: 'La plateforme de la narration visuelle africaine.',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#D4A843',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -23,7 +44,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans">
+      <body className="font-sans antialiased overflow-x-hidden">
         <LanguageProvider>
           {children}
           <Toaster />
