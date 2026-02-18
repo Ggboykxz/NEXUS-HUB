@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, PlusCircle, Award, PenSquare, Eye, Info, Sparkles, Zap } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, PlusCircle, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
@@ -41,7 +41,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
   const artist = artists.find(a => a.id === story.artistId);
 
-  // Check if story is "New" (less than 7 days) or "Trending" (mock logic based on likes)
   const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 7;
   const isTrending = story.likes > 50000;
 
@@ -66,14 +65,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     });
   };
 
-  const handleCreatePlaylist = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-      toast({ title: "Fonctionnalité bientôt disponible" });
-  };
-
   const storyUrl = getStoryUrl(story);
-  const firstChapterUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
+  const hasChapters = story.chapters.length > 0;
+  const firstChapterUrl = hasChapters ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
@@ -89,7 +83,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
             />
         </Link>
         
-        {/* Status Badges - Hidden on hover to clear space */}
+        {/* Status Badges */}
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
             {artist?.isMentor ? (
                 <Badge variant="default" className="gap-1 pl-1.5 pr-2 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider">
@@ -153,19 +147,20 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                                         {playlist.name}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={handleCreatePlaylist}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Nouvelle playlist
-                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         
-                        <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform active:scale-95 border-2 border-white/10">
-                            <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
-                                <Play className="ml-1 h-8 w-8 fill-current" />
-                            </Link>
-                        </Button>
+                        {hasChapters ? (
+                            <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform active:scale-95 border-2 border-white/10">
+                                <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
+                                    <Play className="ml-1 h-8 w-8 fill-current" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center border-2 border-white/10 opacity-50" title="Bientôt disponible">
+                                <CalendarDays className="h-8 w-8 text-white" />
+                            </div>
+                        )}
 
                         <Button 
                           variant="secondary" 
@@ -209,9 +204,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                     {formatStat(story.likes)}
                 </div>
             </div>
-            <Link href={`/genre/${story.genreSlug}`}>
+            <Link href="#">
                 <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-tighter px-2 py-0 h-5 border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors">
-                    {story.genre}
+                    {story.format === 'Webtoon' ? 'Série' : story.format}
                 </Badge>
             </Link>
         </div>

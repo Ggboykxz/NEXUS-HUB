@@ -37,6 +37,8 @@ export interface Collaborator {
   avatar: ImagePlaceholder;
 }
 
+export type StoryFormat = 'Webtoon' | 'BD' | 'One-shot' | 'Roman Illustré' | 'Hybride';
+
 export interface Story {
   id: string;
   slug: string;
@@ -57,8 +59,8 @@ export interface Story {
   isPremium?: boolean;
   price?: number; // Price in AfriCoins
   collaborators?: Collaborator[];
-  format: 'Webtoon' | 'BD';
-  status: 'En cours' | 'Terminé';
+  format: StoryFormat;
+  status: 'En cours' | 'Terminé' | 'À venir';
 }
 
 export interface Product {
@@ -119,7 +121,7 @@ export const artists: Artist[] = [
     name: 'Jelani Adebayo',
     bio: 'Jelani Adebayo est un conteur visionnaire de Lagos, au Nigeria, connu pour sa série de fantasy épique qui mêle la mythologie yoruba à des récits visuels à couper le souffle. Avec une formation en beaux-arts et une passion pour l\'afrofuturisme, son travail a captivé des publics du monde entier.',
     avatar: getImage('artist-1')!,
-    portfolio: ['1', '3'],
+    portfolio: ['1', '3', '7'],
     links: { personal: '#', amazon: '#', twitter: '#', instagram: '#' },
     isMentor: true,
     subscribers: 14800,
@@ -130,7 +132,7 @@ export const artists: Artist[] = [
     name: 'Amina Diallo',
     bio: 'Originaire de Dakar, au Sénégal, Amina Diallo est une artiste célèbre dont le travail explore les thèmes de l\'identité, de la tradition et de la modernité. Ses bandes dessinées de science-fiction sont saluées pour leur construction de monde complexe et leurs personnages forts et attachants.',
     avatar: getImage('artist-2')!,
-    portfolio: ['2', '4'],
+    portfolio: ['2', '4', '8'],
     links: { personal: '#', amazon: '#', facebook: '#' },
     subscribers: 12500,
   },
@@ -138,9 +140,9 @@ export const artists: Artist[] = [
     id: '3',
     slug: 'kwame-osei',
     name: 'Kwame Osei',
-    bio: 'Basé à Accra, au Ghana, Kwame Osei est un maître du mystère et du suspense. Ses romans graphiques sont connus pour leurs intrigues captivantes et leurs illustrations atmosphériques, often sur fond de villes animées d\'Afrique de l\'Ouest.',
+    bio: 'Master du mystère basé à Accra. Ses œuvres explorent les recoins sombres des métropoles africaines avec un style graphique unique et atmosphérique.',
     avatar: getImage('artist-3')!,
-    portfolio: ['5', '6'],
+    portfolio: ['5', '6', '9'],
     links: { personal: '#', twitter: '#', instagram: '#' },
     isMentor: true,
     subscribers: 8900,
@@ -151,27 +153,15 @@ export const readers: Reader[] = [
   {
     id: 'reader-1',
     name: 'Léa Dubois',
-    bio: 'Passionnée de lecture depuis toujours, je suis à l\'affût des nouvelles pépites de la BD africaine. Mon genre de prédilection est la fantasy, mais je suis toujours ouverte à de nouvelles découvertes !',
+    bio: 'Passionnée de lecture depuis toujours, je suis à l\'affût des nouvelles pépites de la BD africaine.',
     avatar: getImage('reader-1')!,
   },
   {
     id: 'reader-2',
     name: 'Yannick Beauchamp',
-    bio: 'Grand fan de science-fiction, je dévore tous les webtoons du genre. Toujours partant pour une bonne discussion sur les univers cyberpunk.',
+    bio: 'Grand fan de science-fiction, je dévore tous les webtoons du genre.',
     avatar: getImage('reader-2')!,
   },
-  {
-    id: 'reader-3',
-    name: 'Chloé Morin',
-    bio: 'Lectrice éclectique, j\'aime autant les mystères que les romances. Je suis ici pour découvrir de nouveaux talents et partager mes coups de cœur.',
-    avatar: getImage('reader-3')!,
-  },
-  {
-    id: 'reader-4',
-    name: 'Marc-André Lavoie',
-    bio: 'Amateur d\'aventure et d\'histoire. Je cherche des récits qui me font voyager dans le temps et l\'espace.',
-    avatar: getImage('reader-4')!,
-  }
 ];
 
 export const stories: Story[] = [
@@ -194,14 +184,6 @@ export const stories: Story[] = [
         { id: '1-3', slug: 'chapitre-3-l-ombre-grandit', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23 },
     ],
     updatedAt: '2024-07-16T10:00:00Z',
-    collaborators: [
-      {
-        id: '2',
-        name: 'Amina Diallo',
-        role: 'Scénariste',
-        avatar: getImage('artist-2')!,
-      }
-    ],
     format: 'Webtoon',
     status: 'En cours',
   },
@@ -242,88 +224,68 @@ export const stories: Story[] = [
     chapters: [
         { id: '3-1', slug: 'chapitre-1-la-relique', title: 'La Relique', releaseDate: '2024-03-01', status: 'Publié', pageCount: 18 },
         { id: '3-2', slug: 'chapitre-2-le-passage', title: 'Le Passage', releaseDate: '2024-03-15', status: 'Publié', pageCount: 20 },
-        { id: '3-3', slug: 'chapitre-3-le-royaume-oublie', title: 'Le Royaume Oublié', releaseDate: '2024-04-01', status: 'Publié', pageCount: 22 },
-        { id: '3-4', slug: 'chapitre-4-le-retour', title: 'Le Retour', releaseDate: '2024-04-15', status: 'Brouillon', pageCount: 0 },
     ],
     updatedAt: '2024-07-11T10:00:00Z',
-    collaborators: [
-        {
-            id: '2',
-            name: 'Amina Diallo',
-            role: 'Coloriste',
-            avatar: getImage('artist-2')!,
-        },
-        {
-            id: '3',
-            name: 'Kwame Osei',
-            role: 'Scénariste',
-            avatar: getImage('artist-3')!,
-        }
-    ],
     format: 'BD',
     status: 'Terminé',
   },
   {
-    id: '4',
-    slug: 'le-chant-du-griot',
-    title: 'Le Chant du Griot',
-    artistId: '2',
+    id: '7',
+    slug: 'zero-heure',
+    title: 'Zéro Heure',
+    artistId: '1',
     coverImage: getImage('story-4')!,
-    description: 'Une jeune griotte doit utiliser ses pouvoirs de conteuse pour unir une terre divisée.',
+    description: 'Un récit court et intense sur les dernières minutes avant un saut spatial vers une nouvelle colonie.',
+    genre: 'Science-Fiction',
+    genreSlug: 'science-fiction',
+    tags: ['One-shot', 'Espace', 'Drame'],
+    views: 120000,
+    likes: 15000,
+    subscriptions: 5000,
+    chapters: [
+        { id: '7-1', slug: 'one-shot-complet', title: 'Histoire Complète', releaseDate: '2024-06-20', status: 'Publié', pageCount: 48 },
+    ],
+    updatedAt: '2024-06-20T10:00:00Z',
+    format: 'One-shot',
+    status: 'Terminé',
+  },
+  {
+    id: '8',
+    slug: 'l-ombre-du-baobab',
+    title: 'L\'Ombre du Baobab',
+    artistId: '2',
+    coverImage: getImage('story-5')!,
+    description: 'Un roman illustré explorant les légendes oubliées du Sahel à travers les yeux d\'une jeune érudite.',
     genre: 'Contes revisités',
     genreSlug: 'contes-revisites',
-    tags: ['Folklore', 'Magie', 'Musique'],
-    views: 650000,
-    likes: 55000,
-    subscriptions: 30000,
+    tags: ['Roman', 'Illustré', 'Légende'],
+    views: 85000,
+    likes: 12000,
+    subscriptions: 8000,
     chapters: [
-        { id: '4-1', slug: 'chapitre-1-la-premiere-note', title: 'La Première Note', releaseDate: '2024-05-10', status: 'Publié', pageCount: 24 },
+        { id: '8-1', slug: 'partie-1-les-racines', title: 'Partie 1 : Les Racines', releaseDate: '2024-07-01', status: 'Publié', pageCount: 60 },
     ],
-    updatedAt: '2024-07-15T10:00:00Z',
-    isPremium: true,
-    price: 50,
-    format: 'Webtoon',
-    status: 'En cours',
-  },
-   {
-    id: '5',
-    slug: 'la-toile-d-ananse',
-    title: 'La Toile d\'Anansé',
-    artistId: '3',
-    coverImage: getImage('story-5')!,
-    description: 'Un filou des temps modernes navigue dans le monde de l\'entreprise en utilisant la ruse du dieu araignée Anansé.',
-    genre: 'Urbain africaine contemporain',
-    genreSlug: 'urbain-africaine-contemporain',
-    tags: ['Mythologie', 'Comédie', 'Moderne'],
-    views: 500000,
-    likes: 48000,
-    subscriptions: 28000,
-    chapters: [
-        { id: '5-1', slug: 'chapitre-1-l-entretien-d-embauche', title: 'L\'Entretien d\'embauche', releaseDate: '2024-05-20', status: 'Publié', pageCount: 20 },
-    ],
-    updatedAt: '2024-07-17T10:00:00Z',
-    format: 'Webtoon',
+    updatedAt: '2024-07-01T10:00:00Z',
+    format: 'Roman Illustré',
     status: 'En cours',
   },
   {
-    id: '6',
-    slug: 'les-echos-du-benin',
-    title: 'Les Échos du Bénin',
+    id: '9',
+    slug: 'les-masques-de-bronze',
+    title: 'Les Masques de Bronze',
     artistId: '3',
     coverImage: getImage('story-6')!,
-    description: 'Un historien de l\'art découvre que les célèbres bronzes du Bénin détiennent la clé d\'un pouvoir ancien.',
-    genre: 'Histoire africaine',
+    description: 'Bientôt sur NexusHub : Une épopée mystique au cœur du royaume d\'Ifé.',
+    genre: 'Fantaisie Historique',
     genreSlug: 'histoire-africaine',
-    tags: ['Historique', 'Surnaturel', 'Art'],
-    views: 420000,
-    likes: 41000,
-    subscriptions: 25000,
+    tags: ['Mystère', 'Art', 'Culture'],
+    views: 0,
+    likes: 0,
+    subscriptions: 1200,
     chapters: [],
-    updatedAt: '2024-06-18T10:00:00Z',
-    isPremium: true,
-    price: 75,
-    format: 'BD',
-    status: 'En cours',
+    updatedAt: '2024-07-20T10:00:00Z',
+    format: 'Hybride',
+    status: 'À venir',
   },
 ].map(story => {
   const artist = artists.find(a => a.id === story.artistId);
@@ -334,61 +296,26 @@ export const stories: Story[] = [
   }
 });
 
-
 export const products: Product[] = [
   {
     id: 'prod-1',
     name: 'T-shirt Les Chroniques d\'Orisha',
     price: 29.99,
     image: getImage('product-1')!,
-    description: 'T-shirt en coton de haute qualité avec le protagoniste principal des Chroniques d\'Orisha. Disponible dans toutes les tailles.'
-  },
-  {
-    id: 'prod-2',
-    name: 'Affiche d\'art Néo-Dakar',
-    price: 49.99,
-    image: getImage('product-2')!,
-    description: 'Une superbe affiche d\'art de 45x60 cm de l\'horizon de Néo-Dakar. Parfait pour l\'encadrement.'
-  },
-  {
-    id: 'prod-3',
-    name: 'Mug NexusHub',
-    price: 15.99,
-    image: getImage('product-3')!,
-    description: 'Commencez votre journée avec votre boisson préférée dans ce mug NexusHub au design personnalisé.'
+    description: 'T-shirt en coton de haute qualité.'
   },
 ];
 
 export const forumThreads: ForumThread[] = [
   {
     id: 'thread-1',
-    title: 'Théories sur le prochain chapitre des Chroniques d\'Orisha ?',
+    title: 'Théories sur le prochain chapitre ?',
     author: 'ComicFan23',
     authorId: 'user-1',
     replies: 42,
     views: 1200,
     lastPost: { author: 'Jelani Adebayo', time: 'Il y a 2h' },
     category: 'Discussions d\'œuvres',
-  },
-  {
-    id: 'thread-2',
-    title: 'Conseils pour les artistes de BD en herbe ?',
-    author: 'ArtStudent99',
-    authorId: 'user-2',
-    replies: 15,
-    views: 850,
-    lastPost: { author: 'Amina Diallo', time: 'Il y a 5h' },
-    category: 'Le coin des artistes',
-  },
-   {
-    id: 'thread-3',
-    title: 'Recherche scénariste pour projet de science-fiction',
-    author: 'InkMaster',
-    authorId: 'user-3',
-    replies: 8,
-    views: 300,
-    lastPost: { author: 'FutureScribe', time: 'Il y a 1j' },
-    category: 'Collaborations',
   },
 ];
 
@@ -400,86 +327,21 @@ export const comments: Comment[] = [
         authorId: 'reader-1',
         authorName: 'Léa Dubois',
         authorAvatar: getImage('reader-1')!,
-        content: "Ce premier chapitre est incroyable ! L'univers est tellement riche. J'ai hâte de voir la suite.",
+        content: "Ce premier chapitre est incroyable !",
         timestamp: 'Il y a 2 heures',
         likes: 15,
-        replies: [
-            {
-                id: 'reply-1',
-                storyId: '1',
-                chapter: 1,
-                authorId: '1',
-                authorName: 'Jelani Adebayo',
-                authorAvatar: getImage('artist-1')!,
-                content: "Merci beaucoup Léa ! Ça me fait très plaisir de lire ça. Le meilleur est à venir ! 😉",
-                timestamp: 'Il y a 1 heure',
-                likes: 8,
-            }
-        ]
     },
-    {
-        id: 'comment-2',
-        storyId: '1',
-        chapter: 1,
-        authorId: 'reader-3',
-        authorName: 'Chloé Morin',
-        authorAvatar: getImage('reader-3')!,
-        content: "La direction artistique est sublime. Chaque panneau est une œuvre d'art. Quelqu'un a une théorie sur le mystérieux personnage à la fin ?",
-        timestamp: 'Il y a 45 minutes',
-        likes: 23,
-        replies: []
-    },
-    {
-        id: 'comment-3',
-        storyId: '2',
-        chapter: 1,
-        authorId: 'reader-2',
-        authorName: 'Yannick Beauchamp',
-        authorAvatar: getImage('reader-2')!,
-        content: "L'ambiance cyberpunk est tellement bien retranscrite, c'est fou ! Le détective a la classe.",
-        timestamp: 'Il y a 8 heures',
-        likes: 19,
-        replies: []
-    },
-    {
-        id: 'comment-4',
-        storyId: '5',
-        chapter: 1,
-        authorId: 'reader-4',
-        authorName: 'Marc-André Lavoie',
-        authorAvatar: getImage('reader-4')!,
-        content: "Hilarant ! J'adore comment les mythes sont modernisés. Anansé en consultant en entreprise, il fallait y penser.",
-        timestamp: 'Il y a 1 jour',
-        likes: 31,
-        replies: []
-    }
 ];
 
 export const playlists: Playlist[] = [
   {
     id: 'playlist-1',
     name: 'Épopées Fantastiques',
-    description: 'Une collection des meilleures bandes dessinées de fantasy et de mythologie.',
-    storyIds: ['1', '3', '4'],
+    description: 'Une collection des meilleures bandes dessinées.',
+    storyIds: ['1', '3', '8'],
     isPublic: true,
     authorId: 'reader-1',
   },
-  {
-    id: 'playlist-2',
-    name: 'Aventures Cyberpunk',
-    description: 'Plongez dans des mondes futuristes et des intrigues high-tech.',
-    storyIds: ['2'],
-    isPublic: true,
-    authorId: 'reader-1',
-  },
-  {
-    id: 'playlist-3',
-    name: 'À lire plus tard',
-    description: 'Mes prochaines lectures.',
-    storyIds: ['5', '6'],
-    isPublic: false,
-    authorId: 'reader-1',
-  }
 ];
 
 export const comicPages = [
@@ -490,12 +352,12 @@ export const comicPages = [
 
 // Helper to get formatted story URL
 export const getStoryUrl = (story: Story) => {
-  const prefix = story.format === 'Webtoon' ? '/webtoon' : '/bd-africaine';
+  const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
   return `${prefix}/${story.slug}`;
 };
 
 // Helper to get formatted reading URL
 export const getChapterUrl = (story: Story, chapterSlug: string) => {
-  const prefix = story.format === 'Webtoon' ? '/webtoon' : '/bd-africaine';
+  const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
   return `${prefix}/${story.slug}/${chapterSlug}`;
 };
