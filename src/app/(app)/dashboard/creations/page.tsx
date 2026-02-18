@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { stories } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Brush, TrendingUp } from 'lucide-react';
+import { PlusCircle, Brush, TrendingUp, Globe } from 'lucide-react';
 
 export default function CreationsDashboardPage() {
   // Simulate being logged in as artist '1'
@@ -21,14 +21,20 @@ export default function CreationsDashboardPage() {
             <h1 className="text-4xl font-bold font-display">Mon Atelier</h1>
           </div>
           <p className="text-lg text-muted-foreground">
-            Gérez vos œuvres, suivez leurs performances et publiez de nouveaux chapitres.
+            Gérez vos œuvres, suivez leurs performances et bâtissez vos univers.
           </p>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button asChild variant="outline" className="w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Button asChild variant="outline" className="flex-1 sm:flex-none">
                 <Link href="/dashboard/stats">
                     <TrendingUp className="mr-2 h-4 w-4" />
                     Statistiques
+                </Link>
+            </Button>
+            <Button asChild variant="secondary" className="flex-1 sm:flex-none">
+                <Link href="/dashboard/world-building">
+                    <Globe className="mr-2 h-4 w-4" />
+                    World Building
                 </Link>
             </Button>
             <Button asChild className="w-full sm:w-auto">
