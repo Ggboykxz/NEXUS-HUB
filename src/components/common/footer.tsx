@@ -108,7 +108,7 @@ export default function Footer() {
 
              <div className="flex flex-col items-center sm:items-start justify-center font-semibold sm:border-l border-border/50 sm:pl-4">
                 <span className="leading-tight text-foreground/60">
-                  Développé par <a href="mailto:ggboykxz@gmail.com" className="text-destructive hover:opacity-80 transition-colors">All Might</a>
+                  Développé par <a href="mailto:ggboykxz@gmail.com" className="text-destructive hover:opacity-80 transition-colors">@All Might</a>
                 </span>
              </div>
 
