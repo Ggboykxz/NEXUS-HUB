@@ -5,8 +5,8 @@ import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
-import { stories, artists, getStoryUrl, getChapterUrl } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles } from 'lucide-react';
+import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -25,6 +25,8 @@ export default function HomePage() {
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const [recommendations, setRecommendations] = useState<Story[]>([]);
+  const [recTitle, setRecTitle] = useState("");
 
   const autoplay = useRef(
     Autoplay({ delay: 6500, stopOnInteraction: true })
@@ -46,6 +48,31 @@ export default function HomePage() {
       setCurrent(api.selectedScrollSnap());
     });
   }, [api]);
+
+  useEffect(() => {
+    // Recommandations logic
+    const prefs = localStorage.getItem('preferredGenres');
+    let list: Story[] = [];
+    
+    if (prefs) {
+      try {
+        const preferredGenres = JSON.parse(prefs) as string[];
+        list = stories.filter(s => preferredGenres.includes(s.genre));
+      } catch (e) {
+        console.error("Error parsing preferences", e);
+      }
+    }
+
+    if (list.length < 3) {
+      // Fallback to random/trending
+      list = [...stories].sort(() => 0.5 - Math.random()).slice(0, 5);
+      setRecTitle(t('home.trending_fallback'));
+    } else {
+      list = list.slice(0, 5);
+      setRecTitle(t('home.for_you_title'));
+    }
+    setRecommendations(list);
+  }, [t]);
   
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
@@ -192,6 +219,27 @@ export default function HomePage() {
 
       {/* Sections de contenu */}
       <main className="container max-w-7xl mx-auto px-6 lg:px-8 py-12 space-y-24">
+        
+        {/* Section Recommandations Personnalisées */}
+        {recommendations.length > 0 && (
+          <section className="animate-in fade-in-up duration-700">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="bg-primary/10 p-3 rounded-2xl">
+                <BookHeart className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{recTitle}</h2>
+                <p className="text-sm text-muted-foreground font-light">Une sélection aux petits oignons pour vos yeux.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+              {recommendations.map((story) => (
+                <StoryCard key={`rec-${story.id}`} story={story} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Section Pro */}
         <section className="relative">
             <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-8 bg-emerald-500/[0.02] -z-10 rounded-3xl" />

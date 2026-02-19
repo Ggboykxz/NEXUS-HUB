@@ -25,6 +25,8 @@ export const translations = {
     home: {
       hero_title: "Partagez Votre Vision",
       hero_desc: "Rejoignez notre communauté d'artistes et partagez votre talent avec un public mondial.",
+      for_you_title: "Pour Toi – Sélection Personnalisée",
+      trending_fallback: "Tendances du Moment",
       pro_title: "Sélection NexusHub Pro",
       draft_title: "Exploration NexusHub Draft",
       trending: "Tendances",
@@ -70,6 +72,8 @@ export const translations = {
     home: {
       hero_title: "Share Your Vision",
       hero_desc: "Join our community of artists and share your talent with a global audience.",
+      for_you_title: "For You – Personalized Selection",
+      trending_fallback: "Trending Now",
       pro_title: "NexusHub Pro Selection",
       draft_title: "NexusHub Draft Exploration",
       trending: "Trending",
@@ -115,6 +119,8 @@ export const translations = {
     home: {
       hero_title: "Shiriki Maono Yako",
       hero_desc: "Jiunge na jamii yetu ya wasanii na ushiriki vipaji vyako na hadhira ya ulimwengu.",
+      for_you_title: "Kwa Ajili Yako – Chaguo Maalum",
+      trending_fallback: "Zinazovuma Sasa",
       pro_title: "Chaguo la NexusHub Pro",
       draft_title: "Ugunduzi wa NexusHub Draft",
       trending: "Zinazovuma",
