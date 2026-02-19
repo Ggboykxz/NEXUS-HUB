@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket, Users, Heart, UploadCloud } from 'lucide-react';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket, Users, Heart, UploadCloud, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -44,6 +45,49 @@ export default function HomePage() {
     { id: 'contes-revisites', label: 'Contes' },
     { id: 'histoire-africaine', label: 'Histoire' },
     { id: 'science-fiction', label: 'Science-Fiction' },
+  ];
+
+  const topComments = [
+    {
+      id: 'c1',
+      name: "Léa Dubois",
+      avatar: "https://images.unsplash.com/photo-1557053910-d9eadeed1c58",
+      text: "Ce premier chapitre des Chroniques d'Orisha est incroyable ! Les designs sont d'une finesse rare.",
+      work: "Les Chroniques d'Orisha",
+      date: "Hier"
+    },
+    {
+      id: 'c2',
+      name: "Yannick Beauchamp",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+      text: "Le world building de Néo-Dakar me rappelle le meilleur du cyberpunk, avec une touche locale unique.",
+      work: "Néo-Dakar 2088",
+      date: "Il y a 2h"
+    },
+    {
+      id: 'c3',
+      name: "Moussa Traoré",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+      text: "Enfin une plateforme qui met en avant nos récits avec autant de professionnalisme. Merci NexusHub !",
+      work: "Le Sentier de Sankofa",
+      date: "Il y a 1j"
+    },
+    {
+      id: 'c4',
+      name: "Awa Ndiaye",
+      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
+      text: "Je suis fan du style graphique de Jelani. Chaque planche est un tableau !",
+      work: "NexusHub Pro",
+      date: "Aujourd'hui"
+    },
+    {
+      id: 'c5',
+      name: "Idriss Koné",
+      avatar: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79",
+      text: "La fluidité du lecteur Webtoon est parfaite sur mon mobile. Une expérience au top.",
+      work: "Zéro Heure",
+      date: "Il y a 5h"
+    }
   ];
 
   const autoplay = useRef(
@@ -607,6 +651,62 @@ export default function HomePage() {
                   NexusHub garantit la confidentialité de vos concepts.
                 </p>
               </form>
+            </div>
+          </div>
+        </section>
+
+        {/* Section Communauté / Témoignages */}
+        <section className="py-12 overflow-hidden bg-primary/[0.02] -mx-6 lg:-mx-8">
+          <div className="container max-w-7xl mx-auto px-6 lg:px-8 mb-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 p-3 rounded-2xl">
+                <MessageSquare className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{t('home.community_title')}</h2>
+                <p className="text-sm text-muted-foreground font-light">Le cœur battant de NexusHub.</p>
+              </div>
+            </div>
+            <Button asChild variant="outline" className="rounded-full font-bold group">
+              <Link href="/forums">
+                {t('home.community_cta')} <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="relative flex overflow-x-hidden group">
+            <div className="animate-marquee whitespace-nowrap flex gap-6 py-4 px-6 items-center">
+              {[...topComments, ...topComments].map((comment, idx) => (
+                <Card key={`${comment.id}-${idx}`} className="inline-block w-[350px] whitespace-normal bg-card shadow-xl border-primary/5 hover:border-primary/20 transition-all duration-300">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border border-primary/10">
+                          <AvatarImage src={comment.avatar} alt={comment.name} />
+                          <AvatarFallback>{comment.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-bold leading-none">{comment.name}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-widest">{comment.date}</p>
+                        </div>
+                      </div>
+                      <Star className="h-4 w-4 text-primary fill-current" />
+                    </div>
+                    <p className="text-sm text-foreground/80 leading-relaxed italic">
+                      "{comment.text}"
+                    </p>
+                    <div className="pt-2 border-t border-primary/5 flex items-center justify-between">
+                      <Badge variant="outline" className="text-[9px] uppercase tracking-tighter border-primary/20 text-primary">
+                        {comment.work}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Heart className="h-3 w-3 text-destructive fill-destructive" />
+                        <span className="text-[9px] font-bold">TOP FAN</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </section>

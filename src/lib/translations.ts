@@ -37,7 +37,9 @@ export const translations = {
       featured_artists: "Artistes à l'honneur",
       vision_title: "Rejoignez la Révolution Panafricaine",
       vision_subtitle: "Soumettez Votre BD/Webtoon",
-      vision_cta: "Soumettre Maintenant"
+      vision_cta: "Soumettre Maintenant",
+      community_title: "Ce Que Dit la Communauté",
+      community_cta: "Rejoindre la Discussion"
     },
     common: {
       read: "Lire",
@@ -88,7 +90,9 @@ export const translations = {
       featured_artists: "Featured Artists",
       vision_title: "Join the Panafrican Revolution",
       vision_subtitle: "Submit Your Comic/Webtoon",
-      vision_cta: "Submit Now"
+      vision_cta: "Submit Now",
+      community_title: "What the Community Says",
+      community_cta: "Join the Discussion"
     },
     common: {
       read: "Read",
@@ -139,7 +143,9 @@ export const translations = {
       featured_artists: "Wasanii Walioangaziwa",
       vision_title: "Jiunge na Mapinduzi ya Panafrika",
       vision_subtitle: "Wasilisha Comic/Webtoon Yako",
-      vision_cta: "Wasilisha Sasa"
+      vision_cta: "Wasilisha Sasa",
+      community_title: "Inavyosema Jamii",
+      community_cta: "Jiunge na Majadiliano"
     },
     common: {
       read: "Soma",
