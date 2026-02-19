@@ -212,7 +212,7 @@ export default function LoginPage() {
                         <FormItem className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <FormLabel className="text-stone-300 text-xs font-bold uppercase tracking-widest">Mot de passe</FormLabel>
-                            <Link href="#" className="text-[10px] text-primary hover:underline font-bold">Oublié ?</Link>
+                            <Link href="/forgot-password" size="sm" className="text-[10px] text-primary hover:underline font-bold">Oublié ?</Link>
                           </div>
                           <FormControl>
                             <div className="relative">
