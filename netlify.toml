@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build"
+  # Le plugin Next.js gère automatiquement le dossier de publication.
+  # Ne pas définir `publish = ".next"` ici pour éviter les conflits avec le plugin v5.
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
