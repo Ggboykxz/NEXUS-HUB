@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,6 @@ export default function Header() {
   const uniqueGenres = useMemo(() => {
     const genreMap = new Map();
     stories.forEach(s => {
-      // Assurer l'unicité par slug pour éviter les erreurs de clés dupliquées
       if (!genreMap.has(s.genreSlug)) {
         genreMap.set(s.genreSlug, { name: s.genre, slug: s.genreSlug });
       }
@@ -197,6 +196,14 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-3">
               <LanguageSwitcher />
               <ThemeToggle />
+              
+              <Button asChild variant="default" size="sm" className="gap-2 px-4 font-bold shadow-lg shadow-primary/20">
+                <Link href="/submit">
+                  <PenSquare className="h-4 w-4" />
+                  <span>{t('nav.submit')}</span>
+                </Link>
+              </Button>
+
               <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
                 <Search className="h-5 w-5" />
               </Button>
@@ -206,7 +213,7 @@ export default function Header() {
                   <Button asChild variant="ghost" size="sm">
                     <Link href="/login">{t('nav.login')}</Link>
                   </Button>
-                  <Button asChild size="sm">
+                  <Button asChild size="sm" variant="outline">
                     <Link href="/signup">{t('nav.signup')}</Link>
                   </Button>
                 </div>
@@ -267,6 +274,12 @@ export default function Header() {
                   <div className="flex flex-col gap-6 pt-10">
                     <Link href="/" className="font-display font-bold text-2xl">NexusHub<span className="text-primary">.</span></Link>
                     <nav className="flex flex-col gap-4">
+                      <Button asChild variant="default" className="justify-start gap-3 h-12 text-lg">
+                        <Link href="/submit">
+                          <PenSquare className="h-5 w-5" />
+                          {t('nav.submit')}
+                        </Link>
+                      </Button>
                       {navLinks.map((link, idx) => (
                         <Link key={`mobile-nav-${idx}`} href={link.href} className="text-lg font-medium">{link.label}</Link>
                       ))}
