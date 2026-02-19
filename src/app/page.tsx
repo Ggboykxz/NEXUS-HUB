@@ -315,7 +315,7 @@ export default function HomePage() {
             </div>
             <div className="flex overflow-x-auto pb-2 gap-3 hide-scrollbar snap-x snap-mandatory">
               {recommendations.map((story) => (
-                <div key={`rec-${story.id}`} className="flex-none w-[130px] sm:w-[160px] snap-start">
+                <div key={`rec-${story.id}`} className="flex-none w-[110px] sm:w-[160px] snap-start">
                   <StoryCard story={story} />
                 </div>
               ))}
@@ -340,7 +340,7 @@ export default function HomePage() {
           </div>
           <div className="flex overflow-x-auto pb-2 gap-3 hide-scrollbar snap-x snap-mandatory">
             {trendingStories.map((story) => (
-              <div key={`trending-${story.id}`} className="flex-none w-[130px] sm:w-[160px] snap-start">
+              <div key={`trending-${story.id}`} className="flex-none w-[110px] sm:w-[160px] snap-start">
                 <StoryCard story={story} />
               </div>
             ))}
@@ -383,7 +383,7 @@ export default function HomePage() {
           <div className="flex overflow-x-auto pb-2 gap-3 hide-scrollbar snap-x snap-mandatory min-h-[250px]">
             {filteredByGenre.length > 0 ? (
               filteredByGenre.map((story) => (
-                <div key={`genre-${story.id}-${selectedGenre}`} className="flex-none w-[130px] sm:w-[160px] snap-start">
+                <div key={`genre-${story.id}-${selectedGenre}`} className="flex-none w-[110px] sm:w-[160px] snap-start">
                   <StoryCard story={story} />
                 </div>
               ))
@@ -485,7 +485,7 @@ export default function HomePage() {
             {topArtists.map((artist) => {
               const artistStories = stories.filter(s => s.artistId === artist.id).slice(0, 3);
               return (
-                <Card key={artist.id} className="flex-none w-[280px] sm:w-[320px] snap-start relative group overflow-hidden border border-primary/5 hover:border-primary/20 transition-all duration-500 bg-card shadow-sm flex flex-col h-full">
+                <Card key={artist.id} className="flex-none w-[240px] sm:w-[320px] snap-start relative group overflow-hidden border border-primary/5 hover:border-primary/20 transition-all duration-500 bg-card shadow-sm flex flex-col h-full">
                   <CardContent className="p-4 space-y-2.5 flex-1">
                     <div className="flex items-start justify-between">
                       <Avatar className="h-12 w-12 border-2 border-background ring-4 ring-primary/5">
@@ -717,7 +717,7 @@ export default function HomePage() {
             </div>
             <div className="flex overflow-x-auto pb-2 gap-3 hide-scrollbar snap-x snap-mandatory">
                 {proStories.map((story) => (
-                    <div key={`pro-${story.id}`} className="flex-none w-[130px] sm:w-[160px] snap-start">
+                    <div key={`pro-${story.id}`} className="flex-none w-[110px] sm:w-[160px] snap-start">
                       <StoryCard story={story} />
                     </div>
                 ))}
@@ -742,7 +742,7 @@ export default function HomePage() {
             </div>
             <div className="flex overflow-x-auto pb-2 gap-3 hide-scrollbar snap-x snap-mandatory">
                 {draftStories.map((story) => (
-                    <div key={`draft-${story.id}`} className="flex-none w-[130px] sm:w-[160px] snap-start">
+                    <div key={`draft-${story.id}`} className="flex-none w-[110px] sm:w-[160px] snap-start">
                       <StoryCard story={story} />
                     </div>
                 ))}
