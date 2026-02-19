@@ -1,3 +1,4 @@
+
 export type Language = 'fr' | 'en' | 'sw';
 
 export const translations = {
@@ -33,7 +34,10 @@ export const translations = {
       trending: "Tendances",
       new: "Nouveautés",
       popular: "Populaires",
-      featured_artists: "Artistes à l'honneur"
+      featured_artists: "Artistes à l'honneur",
+      vision_title: "Rejoignez la Révolution Panafricaine",
+      vision_subtitle: "Soumettez Votre BD/Webtoon",
+      vision_cta: "Soumettre Maintenant"
     },
     common: {
       read: "Lire",
@@ -81,7 +85,10 @@ export const translations = {
       trending: "Trending",
       new: "New Releases",
       popular: "Popular",
-      featured_artists: "Featured Artists"
+      featured_artists: "Featured Artists",
+      vision_title: "Join the Panafrican Revolution",
+      vision_subtitle: "Submit Your Comic/Webtoon",
+      vision_cta: "Submit Now"
     },
     common: {
       read: "Read",
@@ -129,7 +136,10 @@ export const translations = {
       trending: "Zinazovuma",
       new: "Matoleo Mpya",
       popular: "Maarufu",
-      featured_artists: "Wasanii Walioangaziwa"
+      featured_artists: "Wasanii Walioangaziwa",
+      vision_title: "Jiunge na Mapinduzi ya Panafrika",
+      vision_subtitle: "Wasilisha Comic/Webtoon Yako",
+      vision_cta: "Wasilisha Sasa"
     },
     common: {
       read: "Soma",

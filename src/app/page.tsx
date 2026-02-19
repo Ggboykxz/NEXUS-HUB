@@ -6,7 +6,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket, Users, Heart } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket, Users, Heart, UploadCloud } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -19,9 +20,15 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/components/providers/language-provider';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -90,12 +97,23 @@ export default function HomePage() {
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
-  const topArtists = artists.slice(0, 3); // Featured artists for the new section
+  const topArtists = artists.slice(0, 3); 
+
+  const submissionImage = PlaceHolderImages.find(img => img.id === 'submission-cta');
 
   const filteredByGenre = useMemo(() => {
     if (selectedGenre === 'all') return stories.slice(0, 10);
     return stories.filter(s => s.genreSlug === selectedGenre).slice(0, 10);
   }, [selectedGenre]);
+
+  const handleSubmission = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Merci pour votre soumission !",
+      description: "Notre équipe éditoriale examinera votre projet dans les plus brefs délais.",
+    });
+    (e.target as HTMLFormElement).reset();
+  };
 
   return (
     <div className="flex flex-col gap-12 bg-background">
@@ -506,6 +524,89 @@ export default function HomePage() {
                   <Link href="/submit">Lancer mon projet</Link>
                 </Button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section Partagez Votre Vision - Call to Submit */}
+        <section className="relative rounded-[3rem] overflow-hidden bg-stone-900 border border-white/5 shadow-3xl">
+          <div className="grid lg:grid-cols-2">
+            <div className="relative h-[400px] lg:h-auto overflow-hidden">
+              <Image 
+                src={submissionImage?.imageUrl || "https://images.unsplash.com/photo-1544256718-3bcf237f3974"} 
+                alt="Artiste en création" 
+                fill 
+                className="object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000"
+                data-ai-hint="artist drawing"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/40 to-transparent lg:bg-gradient-to-r" />
+              <div className="absolute inset-0 flex flex-col justify-end p-10 lg:p-16">
+                <Badge className="w-fit mb-4 bg-primary text-white border-none uppercase tracking-widest px-4 py-1.5 font-bold text-xs">REJOIGNEZ LA RÉVOLUTION</Badge>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white leading-tight">
+                  {t('home.vision_title')}
+                </h2>
+                <p className="text-stone-400 text-lg mt-4 max-w-md font-light">
+                  {t('home.vision_subtitle')}
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-10 lg:p-16 bg-stone-950/50 backdrop-blur-xl">
+              <form 
+                onSubmit={handleSubmission}
+                className="space-y-6"
+                data-netlify="true"
+                name="nexus-hub-submission"
+              >
+                <input type="hidden" name="form-name" value="nexus-hub-submission" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="sub-title" className="text-stone-300 font-bold uppercase tracking-wider text-[10px]">Titre de l'œuvre</Label>
+                    <Input id="sub-title" name="title" placeholder="Ex: L'Éveil des Étoiles" className="bg-white/5 border-white/10 text-white h-12 rounded-xl focus:border-primary transition-all" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sub-genre" className="text-stone-300 font-bold uppercase tracking-wider text-[10px]">Genre</Label>
+                    <Select name="genre" required>
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 rounded-xl focus:border-primary transition-all">
+                        <SelectValue placeholder="Choisir un genre" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mythology">Mythologie</SelectItem>
+                        <SelectItem value="afrofuturism">Afrofuturisme</SelectItem>
+                        <SelectItem value="history">Histoire & Culture</SelectItem>
+                        <SelectItem value="urban">Urbain Contemporain</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sub-summary" className="text-stone-300 font-bold uppercase tracking-wider text-[10px]">Résumé (Synopsis)</Label>
+                  <Textarea id="sub-summary" name="summary" placeholder="Décrivez votre univers en quelques lignes..." className="bg-white/5 border-white/10 text-white min-h-[120px] rounded-xl focus:border-primary transition-all" required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-stone-300 font-bold uppercase tracking-wider text-[10px]">Teaser / Concept Art (.jpg, .png)</Label>
+                  <div className="relative group/upload">
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" accept="image/*" />
+                    <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center gap-3 group-hover/upload:border-primary group-hover/upload:bg-primary/5 transition-all">
+                      <UploadCloud className="h-10 w-10 text-stone-500 group-hover/upload:text-primary transition-colors" />
+                      <p className="text-stone-400 text-sm font-medium">Déposez votre visuel ou <span className="text-primary underline">parcourez</span></p>
+                      <p className="text-[10px] text-stone-600 uppercase tracking-tighter">Maximum 5Mo • Format portrait recommandé</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button type="submit" size="lg" className="w-full h-16 rounded-full font-black text-lg bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 transition-transform active:scale-95">
+                  {t('home.vision_cta')}
+                </Button>
+                
+                <p className="text-[9px] text-stone-500 text-center uppercase tracking-widest leading-relaxed">
+                  En soumettant ce formulaire, vous confirmez être l'auteur original de l'œuvre. <br/>
+                  NexusHub garantit la confidentialité de vos concepts.
+                </p>
+              </form>
             </div>
           </div>
         </section>
