@@ -108,9 +108,9 @@ export default function Footer() {
                 <span>in Gabon 🇬🇦</span>
              </div>
 
-             <div className="flex flex-col items-center sm:items-start justify-center font-semibold text-primary/60 sm:border-l border-border/50 sm:pl-4">
-                <span className="leading-tight">
-                  Développé par <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors">All Might</a>
+             <div className="flex flex-col items-center sm:items-start justify-center font-semibold sm:border-l border-border/50 sm:pl-4">
+                <span className="leading-tight text-foreground/60">
+                  Développé par <a href="mailto:ggboykxz@gmail.com" className="text-destructive hover:opacity-80 transition-colors">All Might</a>
                 </span>
                 <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors underline underline-offset-2 text-[8px] opacity-70 leading-tight">
                     ggboykxz@gmail.com
