@@ -24,10 +24,19 @@ export default function HomePage() {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
 
   const autoplay = useRef(
     Autoplay({ delay: 6500, stopOnInteraction: true })
   );
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -40,14 +49,13 @@ export default function HomePage() {
   
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
-  // Sélection des 3 piliers du moodboard : Orisha, Cyber-Dakar, Griot/Historique
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
 
   return (
     <div className="flex flex-col gap-12 bg-background">
       <h1 className="sr-only">NexusHub - Moodboard Afro-futuriste & Bandes Dessinées Africaines</h1>
       
-      {/* Featured Moodboard Carousel Section */}
+      {/* Featured Moodboard Carousel Section with Parallax */}
       <section className="relative w-full pt-4 md:pt-8 overflow-hidden">
         <div className="container max-w-7xl mx-auto px-4 lg:px-8">
             <Carousel
@@ -64,19 +72,27 @@ export default function HomePage() {
                         
                         return (
                             <CarouselItem key={story.id}>
-                                <div className="relative w-full aspect-[3/4] sm:aspect-[16/10] md:aspect-[21/9] min-h-[650px] md:min-h-[500px] rounded-[2rem] overflow-hidden group shadow-2xl border border-primary/10 bg-stone-950">
-                                    {/* Image de fond massive */}
-                                    <Image
-                                        src={story.coverImage.imageUrl}
-                                        alt={story.title}
-                                        fill
-                                        className="object-cover transition-transform duration-[12s] scale-105 group-hover:scale-110 opacity-40 md:opacity-50"
-                                        priority={index === 0}
-                                        data-ai-hint={story.coverImage.imageHint}
-                                    />
+                                <div className="relative w-full aspect-[3/4] sm:aspect-[16/10] md:aspect-[21/9] min-h-[650px] md:min-h-[550px] rounded-[2rem] overflow-hidden group shadow-2xl border border-primary/10 bg-stone-950">
                                     
-                                    {/* Overlay Gradient Progressif */}
-                                    <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/80 md:via-black/40 to-transparent flex flex-col justify-end items-start p-8 md:p-16 lg:p-20">
+                                    {/* Parallax Background Image */}
+                                    <div 
+                                      className="absolute inset-0 transition-transform duration-700 ease-out"
+                                      style={{ 
+                                        transform: `translateY(${scrollY * 0.15}px) scale(${1.05 + scrollY * 0.0001})` 
+                                      }}
+                                    >
+                                      <Image
+                                          src={story.coverImage.imageUrl}
+                                          alt={story.title}
+                                          fill
+                                          className="object-cover opacity-40 md:opacity-50"
+                                          priority={index === 0}
+                                          data-ai-hint={story.coverImage.imageHint}
+                                      />
+                                    </div>
+                                    
+                                    {/* Cinematic Overlay Gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/80 md:via-black/40 to-transparent flex flex-col justify-end items-start p-8 md:p-16 lg:p-20 z-10">
                                         <div className="carousel-content-animate flex flex-col gap-4 md:gap-6 max-w-3xl w-full">
                                             
                                             {/* Badges & Tags */}
@@ -97,13 +113,13 @@ export default function HomePage() {
                                             </div>
                                             
                                             {/* Titre Impactant */}
-                                            <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-none tracking-tighter drop-shadow-sm">
+                                            <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-none tracking-tighter drop-shadow-2xl">
                                                 {story.title}
                                             </h2>
                                             
                                             {/* Synopsis Style Moodboard */}
                                             <div className="relative pl-6 border-l-2 border-primary/40 max-w-2xl">
-                                                <p className="text-white/80 text-base md:text-xl font-light leading-relaxed italic line-clamp-3 md:line-clamp-4">
+                                                <p className="text-white/90 text-base md:text-xl font-light leading-relaxed italic line-clamp-3 md:line-clamp-4 drop-shadow-lg">
                                                     "{story.description}"
                                                 </p>
                                             </div>
@@ -137,7 +153,7 @@ export default function HomePage() {
                                                         {t('common.read')}
                                                     </Link>
                                                 </Button>
-                                                <Button asChild variant="outline" size="lg" className="h-14 md:h-16 px-10 md:px-12 rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10 backdrop-blur-xl text-base transition-all hover:border-white/40">
+                                                <Button asChild variant="outline" size="lg" className="h-14 md:h-16 px-10 md:px-12 rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10 backdrop-blur-xl text-base transition-all hover:border-white/40 shadow-xl">
                                                     <Link href={storyUrl}>
                                                         <Info className="mr-3 h-5 w-5" />
                                                         {t('common.details')}

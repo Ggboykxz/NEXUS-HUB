@@ -200,6 +200,12 @@
   }
 }
 
+/* Cinematic Vignette Overlay */
+.cinematic-vignette {
+  @apply pointer-events-none absolute inset-0 z-20;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+}
+
 @media (max-width: 900px) {
   .hero {
     @apply py-16 items-end;
