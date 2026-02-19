@@ -53,7 +53,8 @@ export default function HomePage() {
       avatar: "https://images.unsplash.com/photo-1557053910-d9eadeed1c58",
       text: "Ce premier chapitre des Chroniques d'Orisha est incroyable ! Les designs sont d'une finesse rare.",
       work: "Les Chroniques d'Orisha",
-      date: "Hier"
+      date: "Hier",
+      link: "/webtoon/les-chroniques-d-orisha"
     },
     {
       id: 'c2',
@@ -61,7 +62,8 @@ export default function HomePage() {
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
       text: "Le world building de Néo-Dakar me rappelle le meilleur du cyberpunk, avec une touche locale unique.",
       work: "Néo-Dakar 2088",
-      date: "Il y a 2h"
+      date: "Il y a 2h",
+      link: "/webtoon/neo-dakar-2088"
     },
     {
       id: 'c3',
@@ -69,7 +71,8 @@ export default function HomePage() {
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
       text: "Enfin une plateforme qui met en avant nos récits avec autant de professionnalisme. Merci NexusHub !",
       work: "Le Sentier de Sankofa",
-      date: "Il y a 1j"
+      date: "Il y a 1j",
+      link: "/bd-africaine/le-sentier-de-sankofa"
     },
     {
       id: 'c4',
@@ -77,7 +80,8 @@ export default function HomePage() {
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
       text: "Je suis fan du style graphique de Jelani. Chaque planche est un tableau !",
       work: "NexusHub Pro",
-      date: "Aujourd'hui"
+      date: "Aujourd'hui",
+      link: "/artists"
     },
     {
       id: 'c5',
@@ -85,7 +89,8 @@ export default function HomePage() {
       avatar: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79",
       text: "La fluidité du lecteur Webtoon est parfaite sur mon mobile. Une expérience au top.",
       work: "Zéro Heure",
-      date: "Il y a 5h"
+      date: "Il y a 5h",
+      link: "/bd-africaine/zero-heure"
     }
   ];
 
@@ -658,35 +663,37 @@ export default function HomePage() {
           <div className="relative flex overflow-x-hidden group">
             <div className="animate-marquee whitespace-nowrap flex gap-3 py-2 px-6 items-center">
               {[...topComments, ...topComments].map((comment, idx) => (
-                <Card key={`${comment.id}-${idx}`} className="inline-block w-[240px] whitespace-normal bg-card shadow-md border-primary/5 hover:border-primary/20 transition-all duration-300">
-                  <CardContent className="p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 border border-primary/10">
-                          <AvatarImage src={comment.avatar} alt={comment.name} />
-                          <AvatarFallback>{comment.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-[9px] font-bold leading-none">{comment.name}</p>
-                          <p className="text-[7px] text-muted-foreground mt-0.5 uppercase font-bold tracking-widest">{comment.date}</p>
+                <Link key={`${comment.id}-${idx}`} href={comment.link || "#"} className="inline-block group/comment-link">
+                  <Card className="w-[240px] whitespace-normal bg-card shadow-md border-primary/5 group-hover/comment-link:border-primary/20 transition-all duration-300">
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6 border border-primary/10">
+                            <AvatarImage src={comment.avatar} alt={comment.name} />
+                            <AvatarFallback>{comment.name[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-[9px] font-bold leading-none">{comment.name}</p>
+                            <p className="text-[7px] text-muted-foreground mt-0.5 uppercase font-bold tracking-widest">{comment.date}</p>
+                          </div>
+                        </div>
+                        <Star className="h-2 w-2 text-primary fill-current" />
+                      </div>
+                      <p className="text-[9px] text-foreground/80 leading-relaxed italic line-clamp-3">
+                        "{comment.text}"
+                      </p>
+                      <div className="pt-1.5 border-t border-primary/5 flex items-center justify-between">
+                        <Badge variant="outline" className="text-[6px] uppercase tracking-tighter border-primary/20 text-primary h-3 px-1">
+                          {comment.work}
+                        </Badge>
+                        <div className="flex gap-0.5">
+                          <Heart className="h-1.5 w-1.5 text-destructive fill-destructive" />
+                          <span className="text-[6px] font-bold">TOP FAN</span>
                         </div>
                       </div>
-                      <Star className="h-2 w-2 text-primary fill-current" />
-                    </div>
-                    <p className="text-[9px] text-foreground/80 leading-relaxed italic line-clamp-3">
-                      "{comment.text}"
-                    </p>
-                    <div className="pt-1.5 border-t border-primary/5 flex items-center justify-between">
-                      <Badge variant="outline" className="text-[6px] uppercase tracking-tighter border-primary/20 text-primary h-3 px-1">
-                        {comment.work}
-                      </Badge>
-                      <div className="flex gap-0.5">
-                        <Heart className="h-1.5 w-1.5 text-destructive fill-destructive" />
-                        <span className="text-[6px] font-bold">TOP FAN</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
