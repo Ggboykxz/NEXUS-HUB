@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { readers } from "@/lib/data";
-import { Paperclip, SendHorizonal, Smile, MoreVertical, Search, Phone, Video } from "lucide-react";
+import { Paperclip, SendHorizonal, Smile, MoreVertical, Search, Phone, Video, Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from '@/lib/utils';
 
