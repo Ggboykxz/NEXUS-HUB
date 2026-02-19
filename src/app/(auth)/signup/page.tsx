@@ -12,10 +12,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight, PenSquare } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/checkbox';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -70,7 +71,7 @@ export default function SignupPage() {
   return (
     <div className="flex flex-col bg-stone-950">
       {/* 1. HERO BANNER - ACCUEIL ENGAGEANT */}
-      <section className="relative min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center overflow-hidden px-4">
+      <section className="relative min-h-[70vh] flex flex-col items-center justify-center overflow-hidden px-4">
         {/* Background Animé Gold */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_60%)]" />
@@ -98,7 +99,7 @@ export default function SignupPage() {
 
         <div className="relative z-10 max-w-5xl w-full text-center space-y-8 animate-in fade-in slide-in-from-top-10 duration-1000">
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-7xl font-display font-black leading-[1.1] text-white tracking-tighter drop-shadow-[0_0_30px_rgba(212,168,67,0.4)] animate-pulse-subtle">
+            <h1 className="text-4xl md:text-6xl font-display font-black leading-[1.1] text-white tracking-tighter drop-shadow-[0_0_30px_rgba(212,168,67,0.4)]">
               Rejoignez NexusHub – <br/>
               <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-shimmer">
                 Créez et Découvrez
@@ -106,7 +107,7 @@ export default function SignupPage() {
               des Histoires Africaines
             </h1>
 
-            <p className="text-lg md:text-2xl text-stone-300 font-light max-w-3xl mx-auto leading-relaxed italic">
+            <p className="text-lg md:text-xl text-stone-300 font-light max-w-3xl mx-auto leading-relaxed italic">
               Devenez artiste Pro/Draft, lisez gratuitement, connectez-vous à une communauté panafricaine. 
               <span className="block font-bold text-primary mt-2 uppercase tracking-[0.2em] text-sm">Inscription gratuite et instantanée !</span>
             </p>
@@ -430,5 +431,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-import Image from 'next/image';
