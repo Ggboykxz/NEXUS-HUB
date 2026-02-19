@@ -8,8 +8,8 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col bg-stone-950 selection:bg-primary/20">
-      {/* Hero Section - Premier écran (Full Viewport) */}
-      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-4 border-b border-primary/10">
+      {/* Hero Section - Premier écran (Adapté pour commencer sous le header) */}
+      <section className="relative min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center overflow-hidden px-4 border-b border-primary/10">
         {/* Fond : Gradient gold resplendissant avec animations */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_50%)]" />
@@ -20,11 +20,7 @@ export default function AuthLayout({
         </div>
 
         <div className="relative z-10 max-w-4xl w-full text-center space-y-10">
-          <Link href="/" className="inline-block transition-transform hover:scale-105 active:scale-95 duration-300">
-            <span className="font-display font-bold text-3xl md:text-4xl tracking-widest text-white">
-              NexusHub<span className="text-primary animate-pulse">.</span>
-            </span>
-          </Link>
+          {/* Logo supprimé ici car présent dans le Header au-dessus */}
 
           <div className="space-y-6 animate-in fade-in slide-in-from-top-8 duration-1000">
             <h1 className="text-4xl md:text-7xl font-display font-black leading-[1.1] text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
@@ -49,7 +45,7 @@ export default function AuthLayout({
                 <div className="bg-primary/20 p-2.5 rounded-xl group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-500">
                   <item.icon className="h-6 w-6 text-primary" />
                 </div>
-                <span className="text-sm md:text-base font-bold text-stone-200 tracking-tight text-left leading-tight">{item.text}</span>
+                <span className="text-sm md:base font-bold text-stone-200 tracking-tight text-left leading-tight">{item.text}</span>
               </div>
             ))}
           </div>
