@@ -64,7 +64,7 @@ export default function HomePage() {
                         
                         return (
                             <CarouselItem key={story.id}>
-                                <div className="relative w-full aspect-[3/4] sm:aspect-[16/10] md:aspect-[21/9] min-h-[600px] md:min-h-[500px] rounded-[2rem] overflow-hidden group shadow-2xl border border-primary/10 bg-stone-950">
+                                <div className="relative w-full aspect-[3/4] sm:aspect-[16/10] md:aspect-[21/9] min-h-[650px] md:min-h-[500px] rounded-[2rem] overflow-hidden group shadow-2xl border border-primary/10 bg-stone-950">
                                     {/* Image de fond massive */}
                                     <Image
                                         src={story.coverImage.imageUrl}
@@ -178,15 +178,15 @@ export default function HomePage() {
         <section className="relative">
             <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-8 bg-emerald-500/[0.02] -z-10 rounded-3xl" />
             <div className="flex justify-between items-center mb-12 border-b border-emerald-500/10 pb-6">
-                <div className="flex items-center gap-4">
-                    <div className="bg-emerald-500/10 p-3 rounded-xl">
+                <Link href="/stories?type=premium" className="flex items-center gap-4 group/title">
+                    <div className="bg-emerald-500/10 p-3 rounded-xl group-hover/title:bg-emerald-500/20 transition-colors">
                         <Award className="h-8 w-8 text-emerald-500" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{t('home.pro_title')}</h2>
+                        <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/title:text-emerald-500 transition-colors">{t('home.pro_title')}</h2>
                         <p className="text-sm text-muted-foreground font-light">L'élite de la narration visuelle africaine.</p>
                     </div>
-                </div>
+                </Link>
                 <Link href="/stories?type=premium" className="text-sm font-bold text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 group">
                     Voir tout <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
@@ -202,15 +202,15 @@ export default function HomePage() {
         <section className="relative">
             <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-8 bg-orange-500/[0.02] -z-10 rounded-3xl" />
             <div className="flex justify-between items-center mb-12 border-b border-orange-500/10 pb-6">
-                <div className="flex items-center gap-4">
-                    <div className="bg-orange-500/10 p-3 rounded-xl">
+                <Link href="/stories?type=public" className="flex items-center gap-4 group/title">
+                    <div className="bg-orange-500/10 p-3 rounded-xl group-hover/title:bg-orange-500/20 transition-colors">
                         <PenSquare className="h-8 w-8 text-orange-400" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{t('home.draft_title')}</h2>
+                        <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/title:text-orange-400 transition-colors">{t('home.draft_title')}</h2>
                         <p className="text-sm text-muted-foreground font-light">Les nouveaux visages du 9ème art continental.</p>
                     </div>
-                </div>
+                </Link>
                 <Link href="/stories?type=public" className="text-sm font-bold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 group">
                     Voir tout <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
