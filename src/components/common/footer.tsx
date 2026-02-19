@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-1">
              <Link href="/" className="flex items-center gap-2 mb-5">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-yellow-300 flex items-center justify-center shadow-md shadow-primary/10">
-                    <BookOpen className="text-white h-3.5 w-3.5" />
+                    < BookOpen className="text-white h-3.5 w-3.5" />
                 </div>
                 <span className="font-display font-bold text-lg tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
@@ -109,7 +109,7 @@ export default function Footer() {
              </div>
 
              <div className="flex items-center gap-1.5 font-semibold text-primary/60 border-l border-border/50 pl-4">
-                <span>Développé par All Might</span>
+                <span>Développé par <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors underline underline-offset-2">All Might</a></span>
                 <span className="text-[8px] opacity-70">(ggboykxz@gmail.com)</span>
              </div>
            </div>
