@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Twitter, Instagram, Facebook, Youtube } from 'lucide-react';
+import { BookOpen, Twitter, Instagram, Facebook, Youtube, Heart } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -97,6 +97,11 @@ export default function Footer() {
                 <span>Dakar</span>
                 <span>Lagos</span>
                 <span>Abidjan</span>
+             </div>
+             <div className="flex items-center gap-1.5 font-medium ml-0 sm:ml-4 border-l border-border/50 pl-4">
+                <span>Made with</span>
+                <Heart className="h-3 w-3 text-destructive fill-destructive" />
+                <span>in Gabon 🇬🇦</span>
              </div>
            </div>
            <div className="flex items-center gap-5">
