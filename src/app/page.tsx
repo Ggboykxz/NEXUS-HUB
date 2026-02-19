@@ -31,12 +31,12 @@ export default function HomePage() {
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
 
   const genres = [
-    { id: 'all', label: 'Tout', icon: Compass, color: 'bg-slate-500' },
-    { id: 'mythologie-africaine', label: 'Mythologie', icon: Sparkles, color: 'bg-amber-500' },
-    { id: 'afrofuturisme', label: 'Afrofuturisme', icon: Zap, color: 'bg-purple-500' },
-    { id: 'contes-revisites', label: 'Contes', icon: ScrollText, color: 'bg-emerald-500' },
-    { id: 'histoire-africaine', label: 'Histoire', icon: Landmark, color: 'bg-orange-500' },
-    { id: 'science-fiction', label: 'Science-Fiction', icon: Rocket, color: 'bg-cyan-500' },
+    { id: 'all', label: 'Tout' },
+    { id: 'mythologie-africaine', label: 'Mythologie' },
+    { id: 'afrofuturisme', label: 'Afrofuturisme' },
+    { id: 'contes-revisites', label: 'Contes' },
+    { id: 'histoire-africaine', label: 'Histoire' },
+    { id: 'science-fiction', label: 'Science-Fiction' },
   ];
 
   const autoplay = useRef(
@@ -251,9 +251,11 @@ export default function HomePage() {
                   <p className="text-sm text-muted-foreground font-light">Une sélection aux petits oignons pour vos yeux.</p>
                 </div>
               </Link>
-              <Link href="/for-you" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group">
-                Voir Plus <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <div className="flex items-center gap-4">
+                <Button asChild variant="outline" className="rounded-full font-bold">
+                  <Link href="/for-you">Voir Plus</Link>
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
               {recommendations.map((story) => (
@@ -309,21 +311,12 @@ export default function HomePage() {
                 key={genre.id}
                 onClick={() => setSelectedGenre(genre.id)}
                 className={cn(
-                  "flex items-center gap-3 px-6 py-4 rounded-2xl border-2 transition-all duration-300 group",
+                  "px-8 py-4 rounded-2xl border-2 transition-all duration-300 group",
                   selectedGenre === genre.id 
                     ? "border-primary bg-primary text-primary-foreground shadow-lg scale-105" 
                     : "border-border bg-card hover:border-primary/50 hover:bg-primary/5"
                 )}
               >
-                <div className={cn(
-                  "p-2 rounded-lg transition-colors",
-                  selectedGenre === genre.id ? "bg-white/20" : genre.color + "/10"
-                )}>
-                  <genre.icon className={cn(
-                    "h-5 w-5",
-                    selectedGenre === genre.id ? "text-white" : "text-primary"
-                  )} />
-                </div>
                 <span className="font-bold text-sm uppercase tracking-wider">{genre.label}</span>
               </button>
             ))}
