@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare, Globe } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '../providers/language-provider';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -265,21 +267,116 @@ export default function Header() {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left">
-                  <div className="flex flex-col gap-5 pt-8">
-                    <Link href="/" className="font-display font-bold text-xl">NexusHub<span className="text-primary">.</span></Link>
-                    <nav className="flex flex-col gap-3">
-                      <Button asChild variant="default" className="justify-start gap-3 h-11 text-base">
-                        <Link href="/submit">
-                          <PenSquare className="h-4.5 w-4.5" />
-                          {t('nav.submit')}
-                        </Link>
-                      </Button>
-                      {navLinks.map((link, idx) => (
-                        <Link key={`mobile-nav-${idx}`} href={link.href} className="text-base font-medium px-2 py-1.5 hover:bg-muted rounded-lg transition-colors">{link.label}</Link>
-                      ))}
-                    </nav>
-                  </div>
+                <SheetContent side="left" className="p-0">
+                  <ScrollArea className="h-full w-full">
+                    <div className="flex flex-col gap-6 px-6 py-8">
+                      <Link href="/" className="font-display font-bold text-xl mb-2">NexusHub<span className="text-primary">.</span></Link>
+                      
+                      <div className="flex flex-col gap-4">
+                        <Button asChild variant="default" className="justify-start gap-3 h-11 text-base font-bold shadow-lg shadow-primary/20">
+                          <Link href="/submit">
+                            <PenSquare className="h-5 w-5" />
+                            {t('nav.submit')}
+                          </Link>
+                        </Button>
+
+                        {!isLoggedIn && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button asChild variant="outline" className="h-10">
+                              <Link href="/login">{t('nav.login')}</Link>
+                            </Button>
+                            <Button asChild className="h-10">
+                              <Link href="/signup">{t('nav.signup')}</Link>
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <Separator className="bg-border/50" />
+
+                      <nav className="flex flex-col gap-1">
+                        <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground mb-2 ml-2">Navigation</p>
+                        {navLinks.map((link, idx) => (
+                          <div key={`mobile-nav-group-${idx}`} className="flex flex-col gap-1">
+                            <Link 
+                              href={link.href} 
+                              className={cn(
+                                "flex items-center justify-between text-sm font-semibold px-3 py-3 hover:bg-muted rounded-xl transition-colors",
+                                pathname === link.href ? "bg-primary/10 text-primary" : "text-foreground/80"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <link.icon className={cn("h-4 w-4", pathname === link.href ? "text-primary" : "text-muted-foreground")} />
+                                {link.label}
+                              </div>
+                              {link.badge && (
+                                <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
+                                    "text-[8px] px-1 py-0 h-4",
+                                    link.badge.variant === 'green' ? "bg-emerald-500 border-none" : "border-orange-500/50 text-orange-400"
+                                )}>
+                                    {link.badge.label}
+                                </Badge>
+                              )}
+                            </Link>
+                            {link.subLinks && link.subLinks.length > 0 && (
+                              <div className="ml-9 flex flex-col gap-1 mb-2">
+                                {link.subLinks.map((sub) => (
+                                  <Link 
+                                    key={`mobile-sub-${sub.href}`} 
+                                    href={sub.href} 
+                                    className="text-xs py-2 px-2 text-muted-foreground hover:text-primary transition-colors border-l border-border/50"
+                                  >
+                                    {sub.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </nav>
+
+                      <Separator className="bg-border/50" />
+
+                      <div className="flex flex-col gap-4">
+                        <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground ml-2">Préférences</p>
+                        <div className="flex items-center justify-between px-2">
+                          <span className="text-sm font-medium text-foreground/80">Langue</span>
+                          <LanguageSwitcher />
+                        </div>
+                        <div className="flex items-center justify-between px-2">
+                          <span className="text-sm font-medium text-foreground/80">Thème</span>
+                          <ThemeToggle />
+                        </div>
+                      </div>
+
+                      {isLoggedIn && (
+                        <>
+                          <Separator className="bg-border/50" />
+                          <div className="flex flex-col gap-1">
+                            <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground mb-2 ml-2">Mon Compte</p>
+                            <Link href="/library" className="flex items-center gap-3 text-sm font-semibold px-3 py-3 hover:bg-muted rounded-xl transition-colors text-foreground/80">
+                              <Library className="h-4 w-4 text-muted-foreground" />
+                              {t('nav.library')}
+                            </Link>
+                            {isArtist && (
+                              <Link href="/dashboard/creations" className="flex items-center gap-3 text-sm font-semibold px-3 py-3 hover:bg-muted rounded-xl transition-colors text-foreground/80">
+                                <Brush className="h-4 w-4 text-muted-foreground" />
+                                {t('nav.workshop')}
+                              </Link>
+                            )}
+                            <Link href="/settings" className="flex items-center gap-3 text-sm font-semibold px-3 py-3 hover:bg-muted rounded-xl transition-colors text-foreground/80">
+                              <Settings className="h-4 w-4 text-muted-foreground" />
+                              {t('nav.settings')}
+                            </Link>
+                            <button onClick={handleLogout} className="flex items-center gap-3 text-sm font-semibold px-3 py-3 hover:bg-destructive/10 rounded-xl transition-colors text-destructive">
+                              <LogOut className="h-4 w-4" />
+                              {t('nav.logout')}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </SheetContent>
               </Sheet>
             </div>
