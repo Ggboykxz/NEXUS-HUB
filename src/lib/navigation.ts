@@ -24,8 +24,8 @@ export const navLinks: NavLink[] = [
     icon: BookOpen, 
     isGenreDropdown: true,
     subLinks: [
-        { href: "/webtoons", label: "Webtoons" },
-        { href: "/comics", label: "Bandes Dessinées" },
+        { href: "/webtoon", label: "Webtoons" },
+        { href: "/bd-africaine", label: "Bandes Dessinées" },
         { href: "/ongoing", label: "Séries en Cours" },
         { href: "/completed", label: "Séries Terminées" },
     ]

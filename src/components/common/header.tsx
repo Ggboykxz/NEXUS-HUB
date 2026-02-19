@@ -49,6 +49,7 @@ export default function Header() {
   const uniqueGenres = useMemo(() => {
     const genreMap = new Map();
     stories.forEach(s => {
+      // Assurer l'unicité par slug pour éviter les erreurs de clés dupliquées
       if (!genreMap.has(s.genreSlug)) {
         genreMap.set(s.genreSlug, { name: s.genre, slug: s.genreSlug });
       }
@@ -137,7 +138,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Genres</DropdownMenuLabel>
                   {uniqueGenres.map((genre) => (
-                    <DropdownMenuItem key={`genre-nav-${genre.slug}`} asChild>
+                    <DropdownMenuItem key={`header-genre-${genre.slug}`} asChild>
                       <Link href={`/genre/${genre.slug}`}>{genre.name}</Link>
                     </DropdownMenuItem>
                   ))}
