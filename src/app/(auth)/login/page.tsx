@@ -29,15 +29,10 @@ export default function LoginPage() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Simulate user login
     console.log(values);
-    
-    // Set login state
-    // For this simulation, we'll assume a login always defaults to a reader account.
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('accountType', 'reader');
     localStorage.setItem('userId', 'reader-1');
-    // Dispatch custom event to update header immediately
     window.dispatchEvent(new Event('loginStateChange'));
 
     toast({
@@ -45,59 +40,73 @@ export default function LoginPage() {
       description: "Bienvenue à nouveau !",
     });
 
-    // Simulate redirection after login
     router.push('/');
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Connexion</CardTitle>
-        <CardDescription>
-          Entrez votre email ci-dessous pour vous connecter à votre compte.
-        </CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="m@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mot de passe</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col">
-            <Button type="submit" className="w-full">Se connecter</Button>
-            <div className="mt-4 text-center text-sm">
-              Vous n'avez pas de compte?{" "}
-              <Link href="/signup" className="underline">
-                S'inscrire
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-stone-950">
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.05),transparent_70%)]" />
+      </div>
+      
+      <div className="relative z-10 w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center mb-8">
+          <Link href="/" className="font-display font-bold text-3xl tracking-tight text-white inline-block mb-2">
+            NexusHub<span className="text-primary">.</span>
+          </Link>
+          <p className="text-stone-400 text-sm italic">Heureux de vous revoir parmi nous.</p>
+        </div>
+
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl">Connexion</CardTitle>
+            <CardDescription>
+              Entrez votre email ci-dessous pour vous connecter à votre compte.
+            </CardDescription>
+          </CardHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CardContent className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="m@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter className="flex flex-col">
+                <Button type="submit" className="w-full">Se connecter</Button>
+                <div className="mt-4 text-center text-sm">
+                  Vous n'avez pas de compte?{" "}
+                  <Link href="/signup" className="underline text-primary hover:text-primary/80 transition-colors">
+                    S'inscrire
+                  </Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+      </div>
+    </div>
   );
 }
