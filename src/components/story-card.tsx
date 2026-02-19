@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, PlusCircle, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
@@ -72,7 +72,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-4 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-2xl group-hover:-translate-y-2">
-        <Link href={storyUrl}>
+        <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
               src={story.coverImage.imageUrl}
               alt={`Couverture de ${story.title}`}
@@ -135,6 +135,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                                     size="icon"
                                     className="rounded-full h-12 w-12 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-xl"
                                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                    aria-label="Ajouter à une playlist"
                                 >
                                     <ListPlus className="h-6 w-6" />
                                 </Button>
@@ -151,7 +152,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                         </DropdownMenu>
                         
                         {hasChapters ? (
-                            <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform active:scale-95 border-2 border-white/10">
+                            <Button asChild size="lg" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform active:scale-95 border-2 border-white/10" aria-label={`Lire ${story.title}`}>
                                 <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
                                     <Play className="ml-1 h-8 w-8 fill-current" />
                                 </Link>
@@ -167,6 +168,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                           size="icon" 
                           className="rounded-full h-12 w-12 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-xl"
                           onClick={handleHeartClick}
+                          aria-label="Ajouter aux favoris"
                         >
                             <Heart className="h-6 w-6" />
                         </Button>

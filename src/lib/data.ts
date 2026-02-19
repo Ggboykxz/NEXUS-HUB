@@ -475,13 +475,13 @@ export const comicPages = [
   getImage('page-3')!,
 ];
 
-// Helper to get formatted story URL
+// Helper to get formatted story URL (Details Page)
 export const getStoryUrl = (story: Story) => {
   const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
   return `${prefix}/${story.slug}`;
 };
 
-// Helper to get formatted reading URL
+// Helper to get formatted reading URL (Reader Page)
 export const getChapterUrl = (story: Story, chapterSlug: string) => {
   const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
   return `${prefix}/${story.slug}/${chapterSlug}`;

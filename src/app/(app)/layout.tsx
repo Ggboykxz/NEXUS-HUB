@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 'use client';
 
 import { usePathname } from 'next/navigation';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
+=======
+import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
+>>>>>>> a10acb31bbc9e4fe276a89d9bb5f86248615ed14
 
 export default function AppLayout({
   children,
@@ -19,9 +23,15 @@ export default function AppLayout({
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
+<<<<<<< HEAD
       {!isReadingPage && <Header />}
       <main className="flex-1">{children}</main>
       {!isReadingPage && <Footer />}
+=======
+      <HeaderFooterWrapper>
+        {children}
+      </HeaderFooterWrapper>
+>>>>>>> a10acb31bbc9e4fe276a89d9bb5f86248615ed14
     </div>
   );
 }
