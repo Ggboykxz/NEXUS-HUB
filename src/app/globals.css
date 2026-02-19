@@ -75,7 +75,7 @@
 
 @layer base {
   html {
-    font-size: 15px;
+    font-size: 14px;
     scroll-behavior: smooth;
   }
   * {
@@ -96,7 +96,6 @@
   }
 }
 
-/* Fluidity optimizations */
 .btn-primary-anim {
   @apply transition-all duration-300 active:scale-95;
 }
@@ -120,8 +119,6 @@
   background-color: hsl(var(--primary) / 0.3);
   @apply rounded-full transition-colors hover:bg-primary/50;
 }
-
-/* ─── Story Detail Page Styles ─── */
 
 .hero {
   @apply relative flex items-end overflow-hidden pt-16 md:min-h-[450px];
@@ -195,7 +192,6 @@
 .rating-bar-row { @apply flex items-center gap-2.5; }
 .bar-fill { @apply h-full rounded-full; background: linear-gradient(to right, hsl(var(--gold-dim)), hsl(var(--primary))); transition: width 0.8s cubic-bezier(0.16,1,0.3,1); will-change: width; }
 
-/* Animation for carousel text content */
 .carousel-content-animate {
   animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -211,7 +207,6 @@
   }
 }
 
-/* Cinematic Vignette Overlay */
 .cinematic-vignette {
   @apply pointer-events-none absolute inset-0 z-20;
   background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);

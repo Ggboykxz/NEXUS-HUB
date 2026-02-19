@@ -9,18 +9,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories, artists } from '@/lib/data';
@@ -121,12 +116,12 @@ export default function Header() {
           >
             <DropdownMenuTrigger
               className={cn(
-                'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors',
+                'flex items-center gap-1 hover:text-primary focus:text-primary focus:outline-none transition-colors text-xs',
                 isActive ? 'text-foreground font-semibold' : 'text-foreground/80'
               )}
             >
               <span>{link.label}</span>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {link.isGenreDropdown && (
@@ -158,7 +153,7 @@ export default function Header() {
       <Link
         href={link.href}
         className={cn(
-          'flex items-center gap-2 hover:text-primary transition-colors',
+          'flex items-center gap-2 hover:text-primary transition-colors text-xs',
           isActive ? 'text-foreground font-semibold' : 'text-foreground/80',
           className
         )}
@@ -166,7 +161,7 @@ export default function Header() {
         <span>{link.label}</span>
         {link.badge && (
           <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
-              "text-[9px] px-1 py-0 h-3.5",
+              "text-[8px] px-1 py-0 h-3",
               link.badge.variant === 'green' ? "bg-emerald-500 border-none" : "border-orange-500/50 text-orange-400"
           )}>
               {link.badge.label}
@@ -178,56 +173,56 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
-      <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-14" : "h-16")}>
+      <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-12" : "h-14")}>
         <div className={cn("w-full items-center justify-between", isSearchOpen ? 'hidden' : 'flex')}>
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2" aria-label="Accueil NexusHub">
-              <span className="font-display font-bold text-xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+              <span className="font-display font-bold text-lg tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-x-5 text-sm font-medium">
+          <nav className="hidden md:flex items-center gap-x-4">
             {navLinks.slice(0, 5).map((link, idx) => (
               <NavLinkRenderer key={`nav-link-${idx}`} link={link} />
             ))}
           </nav>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2.5">
+            <div className="hidden md:flex items-center gap-2">
               <LanguageSwitcher />
               <ThemeToggle />
               
-              <Button asChild variant="default" size="sm" className="h-9 gap-1.5 px-3.5 font-bold shadow-md shadow-primary/10">
+              <Button asChild variant="default" size="sm" className="h-8 gap-1 px-3 font-bold shadow-sm shadow-primary/10 text-xs">
                 <Link href="/submit">
-                  <PenSquare className="h-3.5 w-3.5" />
+                  <PenSquare className="h-3 w-3" />
                   <span>{t('nav.submit')}</span>
                 </Link>
               </Button>
 
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
-                <Search className="h-4.5 w-4.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
+                <Search className="h-4 w-4" />
               </Button>
               
               {!isLoggedIn ? (
-                <div className="flex items-center gap-1.5">
-                  <Button asChild variant="ghost" size="sm" className="h-9 px-3">
+                <div className="flex items-center gap-1">
+                  <Button asChild variant="ghost" size="sm" className="h-8 px-2.5 text-xs">
                     <Link href="/login">{t('nav.login')}</Link>
                   </Button>
-                  <Button asChild size="sm" variant="outline" className="h-9 px-3">
+                  <Button asChild size="sm" variant="outline" className="h-8 px-2.5 text-xs">
                     <Link href="/signup">{t('nav.signup')}</Link>
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <Link href="/settings?tab=africoins" className="flex items-center gap-1 hover:bg-muted p-1 rounded-full transition-colors" aria-label="Solde AfriCoins">
-                    <CircleDollarSign className="h-4.5 w-4.5 text-primary" />
+                    <CircleDollarSign className="h-4 w-4 text-primary" />
                     <span className="font-bold text-xs">150</span>
                   </Link>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-                        <Avatar className="h-8 w-8 border-2 border-primary/20">
+                      <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
+                        <Avatar className="h-7 w-7 border-2 border-primary/20">
                           <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58" alt="Profil" />
                           <AvatarFallback>LD</AvatarFallback>
                         </Avatar>
@@ -260,14 +255,14 @@ export default function Header() {
               )}
             </div>
 
-            <div className="md:hidden flex items-center gap-1.5">
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
-                <Search className="h-4.5 w-4.5" />
+            <div className="md:hidden flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
+                <Search className="h-4 w-4" />
               </Button>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Ouvrir le menu">
-                    <Menu className="h-4.5 w-4.5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ouvrir le menu">
+                    <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
@@ -293,18 +288,18 @@ export default function Header() {
 
         <div className={cn("w-full items-center gap-2 animate-in fade-in-0", isSearchOpen ? 'flex' : 'hidden')}>
           <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)} aria-label="Fermer la recherche">
-            <ArrowLeft className="h-4.5 w-4.5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <form onSubmit={handleSearchSubmit} className="flex-1 relative">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('nav.search')}
-              className="h-9 w-full pr-10 rounded-full bg-muted/50 border-none text-sm"
+              className="h-8 w-full pr-10 rounded-full bg-muted/50 border-none text-xs"
               autoFocus
             />
-            <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-7 w-7">
-              <Search className="h-3.5 w-3.5" />
+            <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-6 w-6">
+              <Search className="h-3 w-3" />
             </Button>
           </form>
         </div>
