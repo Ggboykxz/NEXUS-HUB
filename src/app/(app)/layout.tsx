@@ -1,5 +1,4 @@
-import Header from '@/components/common/header';
-import Footer from '@/components/common/footer';
+import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
 
 export default function AppLayout({
   children,
@@ -8,9 +7,9 @@ export default function AppLayout({
 }) {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
-      <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
+      <HeaderFooterWrapper>
+        {children}
+      </HeaderFooterWrapper>
     </div>
   );
 }
