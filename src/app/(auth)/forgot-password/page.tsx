@@ -4,15 +4,13 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronDown, ShieldCheck, Lock, Mail, ArrowRight, Sparkles, BookOpen, CheckCircle2, Zap, Globe, Loader2 } from "lucide-react";
-import { cn } from '@/lib/utils';
+import { ChevronDown, ShieldCheck, Lock, Mail, ArrowRight, BookOpen, CheckCircle2, Globe, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
@@ -60,7 +58,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
       {/* 1. HERO / TITRE D'ACCUEIL IMMEDIAT */}
-      <section className="relative min-h-[45vh] flex flex-col items-center justify-center overflow-hidden px-4 py-12">
+      <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.15),transparent_70%)]" />
           <div className="absolute inset-0 bg-stone-950/40 backdrop-blur-[1px]" />
@@ -83,8 +81,8 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-4xl w-full text-center space-y-6 animate-in fade-in slide-in-from-top-10 duration-1000">
-          <div className="space-y-3">
+        <div className="relative z-10 max-w-4xl w-full text-center space-y-4 animate-in fade-in slide-in-from-top-10 duration-1000">
+          <div className="space-y-2">
             <h1 className="text-3xl md:text-5xl font-display font-black text-white leading-tight gold-resplendant drop-shadow-[0_0_15px_rgba(212,168,67,0.4)]">
               Mot de Passe Oublié ?
             </h1>
@@ -93,7 +91,7 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 pt-4">
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
             {[
               { icon: Mail, text: "Lien sécurisé envoyé immédiatement" },
               { icon: BookOpen, text: "Reprenez vos lectures sans attendre" },
@@ -107,16 +105,16 @@ export default function ForgotPasswordPage() {
           </div>
 
           {!isSubmitted && (
-            <div className="pt-8 flex flex-col items-center gap-2 animate-bounce">
-              <p className="text-[9px] uppercase tracking-[0.4em] font-black text-primary/60">Entrez votre email ci-dessous</p>
-              <ChevronDown className="h-5 w-5 text-primary" />
+            <div className="pt-4 flex flex-col items-center gap-1 animate-bounce">
+              <p className="text-[8px] uppercase tracking-[0.4em] font-black text-primary/60">Entrez votre email ci-dessous</p>
+              <ChevronDown className="h-4 w-4 text-primary" />
             </div>
           )}
         </div>
       </section>
 
       {/* 2. FORMULAIRE UNIQUE */}
-      <section className="relative py-12 md:py-20 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
+      <section className="relative py-8 md:py-12 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
         <div className="max-w-md mx-auto">
           {!isSubmitted ? (
             <div className="animate-in fade-in slide-in-from-bottom-10 duration-1000">
@@ -208,7 +206,7 @@ export default function ForgotPasswordPage() {
           )}
 
           {/* SECURITY INDICATORS */}
-          <div className="mt-12 grid grid-cols-2 gap-4">
+          <div className="mt-8 grid grid-cols-2 gap-4">
             <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 text-center group hover:border-primary/30 transition-all">
               <Lock className="h-5 w-5 text-primary" />
               <span className="text-[10px] font-bold text-stone-300 uppercase tracking-wider">Lien HTTPS Sécurisé</span>
