@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart } from 'lucide-react';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -74,6 +74,7 @@ export default function HomePage() {
     setRecommendations(list);
   }, [t]);
   
+  const trendingStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 6);
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
@@ -239,6 +240,29 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {/* Section Tendances */}
+        <section className="animate-in fade-in-up duration-700 delay-150">
+          <div className="flex justify-between items-center mb-10 border-b border-rose-500/10 pb-6">
+            <Link href="/rankings" className="flex items-center gap-4 group/title">
+              <div className="bg-rose-500/10 p-3 rounded-xl group-hover/title:bg-rose-500/20 transition-colors">
+                <TrendingUp className="h-8 w-8 text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/title:text-rose-500 transition-colors">Tendances – Les Plus Lus Actuellement</h2>
+                <p className="text-sm text-muted-foreground font-light">Les œuvres qui font vibrer la communauté cette semaine.</p>
+              </div>
+            </Link>
+            <Link href="/rankings" className="text-sm font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center gap-1 group">
+              Voir Toutes les Tendances <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-x-6 gap-y-12">
+            {trendingStories.map((story) => (
+              <StoryCard key={`trending-${story.id}`} story={story} />
+            ))}
+          </div>
+        </section>
 
         {/* Section Pro */}
         <section className="relative">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
@@ -41,8 +41,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
   const artist = artists.find(a => a.id === story.artistId);
 
-  const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 7;
+  const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 14; // Un peu plus large pour le proto
   const isTrending = story.likes > 50000;
+  const isHotAfro = story.genreSlug === 'afrofuturisme' && story.views > 500000;
 
   useEffect(() => {
     if(showUpdateDate) {
@@ -97,14 +98,21 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 </Badge>
             )}
             
-            {isNew && (
-              <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider animate-pulse">
+            {isHotAfro && (
+              <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-orange-600 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider animate-pulse">
+                <Flame className="h-3 w-3" />
+                Afrofuturisme Hot
+              </Badge>
+            )}
+
+            {isNew && !isHotAfro && (
+              <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider">
                 <Sparkles className="h-3 w-3" />
                 Nouveau
               </Badge>
             )}
 
-            {isTrending && !isNew && (
+            {isTrending && !isNew && !isHotAfro && (
               <Badge className="gap-1 pl-1.5 pr-2 py-0.5 bg-rose-500 text-white backdrop-blur-md border-none shadow-lg text-[10px] uppercase font-bold tracking-wider">
                 <Zap className="h-3 w-3" />
                 Tendance
