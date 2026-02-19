@@ -166,8 +166,8 @@ export default function Header() {
         <span>{link.label}</span>
         {link.badge && (
           <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
-              "text-[10px] px-1.5 py-0 h-4",
-              link.badge.variant === 'green' ? "bg-emerald-500 border-none" : "border-orange-500/50 text-orange-500"
+              "text-[9px] px-1 py-0 h-3.5",
+              link.badge.variant === 'green' ? "bg-emerald-500 border-none" : "border-orange-500/50 text-orange-400"
           )}>
               {link.badge.label}
           </Badge>
@@ -178,56 +178,56 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
-      <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-16" : "h-20")}>
+      <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-14" : "h-16")}>
         <div className={cn("w-full items-center justify-between", isSearchOpen ? 'hidden' : 'flex')}>
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2" aria-label="Accueil NexusHub">
-              <span className="font-display font-bold text-2xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
+              <span className="font-display font-bold text-xl tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-x-6 text-sm font-medium">
+          <nav className="hidden md:flex items-center gap-x-5 text-sm font-medium">
             {navLinks.slice(0, 5).map((link, idx) => (
               <NavLinkRenderer key={`nav-link-${idx}`} link={link} />
             ))}
           </nav>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2.5">
               <LanguageSwitcher />
               <ThemeToggle />
               
-              <Button asChild variant="default" size="sm" className="gap-2 px-4 font-bold shadow-lg shadow-primary/20">
+              <Button asChild variant="default" size="sm" className="h-9 gap-1.5 px-3.5 font-bold shadow-md shadow-primary/10">
                 <Link href="/submit">
-                  <PenSquare className="h-4 w-4" />
+                  <PenSquare className="h-3.5 w-3.5" />
                   <span>{t('nav.submit')}</span>
                 </Link>
               </Button>
 
-              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
-                <Search className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
+                <Search className="h-4.5 w-4.5" />
               </Button>
               
               {!isLoggedIn ? (
-                <div className="flex items-center gap-2">
-                  <Button asChild variant="ghost" size="sm">
+                <div className="flex items-center gap-1.5">
+                  <Button asChild variant="ghost" size="sm" className="h-9 px-3">
                     <Link href="/login">{t('nav.login')}</Link>
                   </Button>
-                  <Button asChild size="sm" variant="outline">
+                  <Button asChild size="sm" variant="outline" className="h-9 px-3">
                     <Link href="/signup">{t('nav.signup')}</Link>
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <Link href="/settings?tab=africoins" className="flex items-center gap-1.5 hover:bg-muted p-1.5 rounded-full transition-colors" aria-label="Solde AfriCoins">
-                    <CircleDollarSign className="h-5 w-5 text-primary" />
-                    <span className="font-bold text-sm">150</span>
+                <div className="flex items-center gap-2.5">
+                  <Link href="/settings?tab=africoins" className="flex items-center gap-1 hover:bg-muted p-1 rounded-full transition-colors" aria-label="Solde AfriCoins">
+                    <CircleDollarSign className="h-4.5 w-4.5 text-primary" />
+                    <span className="font-bold text-xs">150</span>
                   </Link>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                        <Avatar className="h-9 w-9 border-2 border-primary/20">
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+                        <Avatar className="h-8 w-8 border-2 border-primary/20">
                           <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58" alt="Profil" />
                           <AvatarFallback>LD</AvatarFallback>
                         </Avatar>
@@ -260,28 +260,28 @@ export default function Header() {
               )}
             </div>
 
-            <div className="md:hidden flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
-                <Search className="h-5 w-5" />
+            <div className="md:hidden flex items-center gap-1.5">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
+                <Search className="h-4.5 w-4.5" />
               </Button>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Ouvrir le menu">
+                    <Menu className="h-4.5 w-4.5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
-                  <div className="flex flex-col gap-6 pt-10">
-                    <Link href="/" className="font-display font-bold text-2xl">NexusHub<span className="text-primary">.</span></Link>
-                    <nav className="flex flex-col gap-4">
-                      <Button asChild variant="default" className="justify-start gap-3 h-12 text-lg">
+                  <div className="flex flex-col gap-5 pt-8">
+                    <Link href="/" className="font-display font-bold text-xl">NexusHub<span className="text-primary">.</span></Link>
+                    <nav className="flex flex-col gap-3">
+                      <Button asChild variant="default" className="justify-start gap-3 h-11 text-base">
                         <Link href="/submit">
-                          <PenSquare className="h-5 w-5" />
+                          <PenSquare className="h-4.5 w-4.5" />
                           {t('nav.submit')}
                         </Link>
                       </Button>
                       {navLinks.map((link, idx) => (
-                        <Link key={`mobile-nav-${idx}`} href={link.href} className="text-lg font-medium">{link.label}</Link>
+                        <Link key={`mobile-nav-${idx}`} href={link.href} className="text-base font-medium px-2 py-1.5 hover:bg-muted rounded-lg transition-colors">{link.label}</Link>
                       ))}
                     </nav>
                   </div>
@@ -293,18 +293,18 @@ export default function Header() {
 
         <div className={cn("w-full items-center gap-2 animate-in fade-in-0", isSearchOpen ? 'flex' : 'hidden')}>
           <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(false)} aria-label="Fermer la recherche">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4.5 w-4.5" />
           </Button>
           <form onSubmit={handleSearchSubmit} className="flex-1 relative">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('nav.search')}
-              className="h-10 w-full pr-10 rounded-full bg-muted/50 border-none"
+              className="h-9 w-full pr-10 rounded-full bg-muted/50 border-none text-sm"
               autoFocus
             />
-            <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8">
-              <Search className="h-4 w-4" />
+            <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-7 w-7">
+              <Search className="h-3.5 w-3.5" />
             </Button>
           </form>
         </div>

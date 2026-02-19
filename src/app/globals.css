@@ -23,7 +23,7 @@
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 45 56% 51%;
-    --radius: 1.25rem;
+    --radius: 1rem;
 
     --chart-1: 38 61% 51%;
     --chart-2: 142 54% 20%;
@@ -69,19 +69,20 @@
     --border: 0 0% 11%;
     --input: 0 0% 13%;
     --ring: 38 61% 51%;
-    --radius: 1.25rem;
+    --radius: 1rem;
   }
 }
 
 @layer base {
+  html {
+    font-size: 15px;
+    scroll-behavior: smooth;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 transition-colors duration-300;
-  }
-  html {
-    scroll-behavior: smooth;
   }
 }
 
