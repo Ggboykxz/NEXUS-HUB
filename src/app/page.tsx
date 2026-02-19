@@ -442,7 +442,7 @@ export default function HomePage() {
                           </Badge>
                         </div>
                         <p className="text-[8px] text-muted-foreground mb-1 flex items-center gap-1">
-                          par <span className="font-semibold text-foreground/80">{story.artistName}</span>
+                          par <Link href={`/artiste/${artist?.slug}`} className="font-semibold text-foreground/80 hover:text-primary transition-colors">{story.artistName}</Link>
                           {artist?.isMentor ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
                         </p>
                         <p className="text-[9px] text-muted-foreground/70 italic line-clamp-2 leading-tight mb-1">
