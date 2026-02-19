@@ -116,6 +116,15 @@ export default function Footer() {
                     ggboykxz@gmail.com
                 </a>
              </div>
+
+             {/* Discrete Legal Links repeated for accessibility */}
+             <div className="flex items-center gap-3 sm:border-l border-border/50 sm:pl-4">
+                <Link href="/legal/terms" className="hover:text-primary transition-colors">Conditions</Link>
+                <span className="opacity-20">|</span>
+                <Link href="/legal/privacy" className="hover:text-primary transition-colors">Confidentialité</Link>
+                <span className="opacity-20">|</span>
+                <Link href="/legal/cookies" className="hover:text-primary transition-colors">Cookies</Link>
+             </div>
            </div>
            <div className="flex items-center gap-5">
               <p className="text-[9px] text-foreground/30 uppercase tracking-[0.2em] font-bold">Inclusion & Créativité</p>
