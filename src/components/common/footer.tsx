@@ -47,7 +47,7 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-6 text-sm text-foreground uppercase tracking-widest">Création</h4>
             <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/submit" className="hover:text-primary transition-colors">Publier une Œuvre</Link></li>
+              <li><Link href="/submit" className="hover:text-primary transition-colors">Soumettre Votre Projet</Link></li>
               <li><Link href="/artists" className="hover:text-primary transition-colors">Nos Créateurs</Link></li>
               <li><Link href="/mentorship" className="hover:text-primary transition-colors">Programme Mentorat</Link></li>
               <li><Link href="/dashboard/creations" className="hover:text-primary transition-colors">Mon Atelier</Link></li>
@@ -59,7 +59,7 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-6 text-sm text-foreground uppercase tracking-widest">Communauté</h4>
             <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/forums" className="hover:text-primary transition-colors">Forums & Discussions</Link></li>
+              <li><Link href="/forums" className="hover:text-primary transition-colors">Rejoindre la Communauté</Link></li>
               <li><Link href="/blog" className="hover:text-primary transition-colors">Blog & Ressources</Link></li>
               <li><Link href="/shop" className="hover:text-primary transition-colors">Boutique Goodies</Link></li>
               <li><Link href="/library" className="hover:text-primary transition-colors">Ma Bibliothèque</Link></li>
@@ -69,14 +69,14 @@ export default function Footer() {
           </div>
 
            <div>
-            <h4 className="font-bold mb-6 text-sm text-foreground uppercase tracking-widest">Support</h4>
+            <h4 className="font-bold mb-6 text-sm text-foreground uppercase tracking-widest">Support & Légal</h4>
             <ul className="space-y-3 text-sm text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/about" className="hover:text-primary transition-colors">À Propos de Nous</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Contactez l'Équipe</Link></li>
-              <li><Link href="/faq" className="hover:text-primary transition-colors">Foire Aux Questions</Link></li>
-              <li><Link href="/settings" className="hover:text-primary transition-colors">Paramètres du Compte</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-primary transition-colors">Conditions d'Utilisation</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact / Feedback</Link></li>
+              <li><Link href="/faq" className="hover:text-primary transition-colors">Foire Aux Questions (FAQ)</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales / CGU</Link></li>
               <li><Link href="/legal/privacy" className="hover:text-primary transition-colors">Politique de Confidentialité</Link></li>
+              <li><Link href="/legal/cookies" className="hover:text-primary transition-colors">Gestion des Cookies</Link></li>
+              <li><Link href="/settings" className="hover:text-primary transition-colors">Paramètres du Compte</Link></li>
             </ul>
           </div>
         </div>
