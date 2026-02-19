@@ -268,14 +268,19 @@ export default function HomePage() {
 
         {/* Section Nouveautés - Derniers Chapitres */}
         <section className="animate-in fade-in-up duration-700 delay-300">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="bg-cyan-500/10 p-3 rounded-xl">
-              <Clock className="h-8 w-8 text-cyan-500" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{t('home.new_releases_title')}</h2>
-              <p className="text-sm text-muted-foreground font-light">Les dernières aventures ajoutées au catalogue.</p>
-            </div>
+          <div className="flex justify-between items-center mb-10 border-b border-cyan-500/10 pb-6">
+            <Link href="/new-releases" className="flex items-center gap-4 group/title">
+              <div className="bg-cyan-500/10 p-3 rounded-xl group-hover/title:bg-cyan-500/20 transition-colors">
+                <Clock className="h-8 w-8 text-cyan-500" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/title:text-cyan-500 transition-colors">{t('home.new_releases_title')}</h2>
+                <p className="text-sm text-muted-foreground font-light">Les dernières aventures ajoutées au catalogue.</p>
+              </div>
+            </Link>
+            <Link href="/new-releases" className="text-sm font-bold text-cyan-500 hover:text-cyan-400 transition-colors flex items-center gap-1 group">
+              Voir Tout <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -309,7 +314,7 @@ export default function HomePage() {
                         </div>
                         <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
                           par <span className="font-semibold text-foreground/80">{story.artistName}</span>
-                          {artist?.isMentor ? <Award className="h-3 w-3 text-emerald-500" /> : <PenSquare className="h-3 w-3 text-orange-400" />}
+                          {artist?.isMentor ? <Award className="h-3.5 w-3.5 text-emerald-500" /> : <PenSquare className="h-3.5 w-3.5 text-orange-400" />}
                         </p>
                         <p className="text-xs text-muted-foreground/70 italic line-clamp-2 leading-relaxed mb-3">
                           "{story.description}"
