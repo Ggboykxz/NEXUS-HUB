@@ -109,8 +109,10 @@ export default function Footer() {
              </div>
 
              <div className="flex items-center gap-1.5 font-semibold text-primary/60 border-l border-border/50 pl-4">
-                <span>Développé par <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors underline underline-offset-2">All Might</a></span>
-                <span className="text-[8px] opacity-70">(ggboykxz@gmail.com)</span>
+                <span>Développé par All Might </span>
+                <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors underline underline-offset-2 text-[8px] opacity-70">
+                    (ggboykxz@gmail.com)
+                </a>
              </div>
            </div>
            <div className="flex items-center gap-5">
