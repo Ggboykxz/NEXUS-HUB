@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -51,8 +51,19 @@ export const navLinks: NavLink[] = [
         { href: "/blog", label: "Blog & Ressources" },
     ]
   },
+  { 
+    href: "/pro", 
+    label: "NexusHub Pro", 
+    icon: Award, 
+    badge: { label: 'Pro', variant: 'green' },
+    subLinks: [
+      { href: "/pro", label: "Avantages Pro" },
+      { href: "/draft", label: "Espace Draft" },
+      { href: "/africoins", label: "Économie AfriCoins" },
+      { href: "/submit", label: "Soumettre une œuvre" },
+    ]
+  },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
-  { href: "/submit", label: "NexusHub Pro", icon: Award, badge: { label: 'Pro', variant: 'green' } },
-  { href: "/submit", label: "NexusHub Draft", icon: PenSquare, badge: { label: 'Draft', variant: 'orange' } },
+  { href: "/about", label: "À Propos", icon: Info },
 ];
