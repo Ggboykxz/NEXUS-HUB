@@ -112,14 +112,11 @@ export default function Footer() {
                 <span className="leading-tight text-foreground/60">
                   Développé par <a href="mailto:ggboykxz@gmail.com" className="text-destructive hover:opacity-80 transition-colors">All Might</a>
                 </span>
-                <a href="mailto:ggboykxz@gmail.com" className="hover:text-primary transition-colors underline underline-offset-2 text-[8px] opacity-70 leading-tight">
-                    ggboykxz@gmail.com
-                </a>
              </div>
 
              {/* Discrete Legal Links repeated for accessibility */}
              <div className="flex items-center gap-3 sm:border-l border-border/50 sm:pl-4">
-                <Link href="/legal/terms" className="hover:text-primary transition-colors">Conditions</Link>
+                <Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales</Link>
                 <span className="opacity-20">|</span>
                 <Link href="/legal/privacy" className="hover:text-primary transition-colors">Confidentialité</Link>
                 <span className="opacity-20">|</span>
