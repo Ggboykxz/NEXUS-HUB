@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronDown, ShieldCheck, Lock, Eye, EyeOff, ArrowRight, Sparkles, BookOpen, CheckCircle2, Zap } from "lucide-react";
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import Footer from '@/components/common/footer';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
@@ -275,8 +274,6 @@ export default function LoginPage() {
           <span>Inclusion Créative</span>
         </p>
       </section>
-
-      <Footer />
     </div>
   );
 }

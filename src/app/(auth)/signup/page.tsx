@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import Footer from '@/components/common/footer';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -403,8 +402,6 @@ export default function SignupPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
