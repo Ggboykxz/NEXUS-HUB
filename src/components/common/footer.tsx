@@ -90,19 +90,27 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-center border-t border-border/50 pt-6 gap-4">
-           <div className="flex items-center text-[10px] text-foreground/40 font-light gap-4 flex-wrap justify-center sm:justify-start">
-             <p>&copy; 2026 NexusHub – Tous droits réservés.</p>
-             <div className="hidden sm:flex gap-3">
-                <span>Libreville</span>
-                <span>Dakar</span>
-                <span>Lagos</span>
-                <span>Abidjan</span>
+        <div className="flex flex-col lg:flex-row justify-between items-center border-t border-border/50 pt-6 gap-4">
+           <div className="flex flex-col sm:flex-row items-center text-[10px] text-foreground/40 font-light gap-4 flex-wrap justify-center sm:justify-start">
+             <div className="flex items-center gap-4">
+                <p>&copy; 2026 NexusHub – Tous droits réservés.</p>
+                <div className="hidden sm:flex gap-3">
+                    <span>Libreville</span>
+                    <span>Dakar</span>
+                    <span>Lagos</span>
+                    <span>Abidjan</span>
+                </div>
              </div>
-             <div className="flex items-center gap-1.5 font-medium ml-0 sm:ml-4 border-l border-border/50 pl-4">
+             
+             <div className="flex items-center gap-1.5 font-medium sm:border-l border-border/50 sm:pl-4">
                 <span>Made with</span>
                 <Heart className="h-3 w-3 text-destructive fill-destructive" />
                 <span>in Gabon 🇬🇦</span>
+             </div>
+
+             <div className="flex items-center gap-1.5 font-semibold text-primary/60 border-l border-border/50 pl-4">
+                <span>Développé par All Might</span>
+                <span className="text-[8px] opacity-70">(ggboykxz@gmail.com)</span>
              </div>
            </div>
            <div className="flex items-center gap-5">
