@@ -1,7 +1,7 @@
 /**
- * Ce fichier est neutralisé pour éviter les conflits avec src/app/page.tsx.
- * Next.js ne permet pas deux pages mappant sur la même route /.
+ * Fichier neutralisé pour éviter le conflit de route parallèle avec src/app/page.tsx.
+ * La page d'accueil est gérée par le fichier à la racine.
  */
-export default function HomeConflictNeutralizer() {
+export default function NeutralPage() {
   return null;
 }
