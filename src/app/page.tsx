@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket } from 'lucide-react';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket, Users, Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -90,6 +90,7 @@ export default function HomePage() {
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
+  const topArtists = artists.slice(0, 3); // Featured artists for the new section
 
   const filteredByGenre = useMemo(() => {
     if (selectedGenre === 'all') return stories.slice(0, 5);
@@ -402,6 +403,103 @@ export default function HomePage() {
                 </Card>
               );
             })}
+          </div>
+        </section>
+
+        {/* Section Artistes à l'honneur */}
+        <section className="animate-in fade-in-up duration-700">
+          <div className="flex justify-between items-center mb-12 border-b border-primary/10 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 p-3 rounded-xl">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">Découvrez Nos Créateurs</h2>
+                <p className="text-sm text-muted-foreground font-light">Les esprits derrière vos univers préférés.</p>
+              </div>
+            </div>
+            <Link href="/artists" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group">
+              Voir tous les artistes <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {topArtists.map((artist) => {
+              const artistStories = stories.filter(s => s.artistId === artist.id).slice(0, 3);
+              return (
+                <Card key={artist.id} className="relative group overflow-hidden border-2 border-primary/5 hover:border-primary/20 transition-all duration-500 bg-card shadow-lg flex flex-col h-full">
+                  <CardContent className="p-8 space-y-6 flex-1">
+                    <div className="flex items-start justify-between">
+                      <Avatar className="h-20 w-20 border-4 border-background ring-4 ring-primary/10">
+                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
+                        <AvatarFallback>{artist.name[0]}</AvatarFallback>
+                      </Avatar>
+                      {artist.isMentor ? (
+                        <Badge className="bg-emerald-500 text-white border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                          <Award className="h-3 w-3 mr-1.5" /> Certifié Pro
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-orange-500/50 text-orange-500 px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                          <PenSquare className="h-3 w-3 mr-1.5" /> Talent Draft
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div>
+                      <h3 className="text-2xl font-display font-bold mb-2 group-hover:text-primary transition-colors">{artist.name}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed italic">
+                        "{artist.bio}"
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Œuvres phares</p>
+                      <div className="flex gap-3">
+                        {artistStories.map(story => (
+                          <Link key={story.id} href={getStoryUrl(story)} className="relative w-12 aspect-[2/3] rounded-md overflow-hidden hover:scale-110 transition-transform duration-300 border border-border/50">
+                            <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                  <div className="p-6 pt-0 mt-auto">
+                    <Button asChild variant="outline" className="w-full rounded-xl font-bold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all group/btn">
+                      <Link href={`/artiste/${artist.slug}`}>
+                        Voir le Profil <ChevronRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Mentorship Tease Banner */}
+          <div className="mt-16 p-1 bg-gradient-to-r from-primary/20 via-primary/5 to-emerald-500/20 rounded-[2.5rem] shadow-2xl overflow-hidden relative group">
+            <div className="absolute inset-0 bg-background rounded-[2.4rem] m-0.5 z-0" />
+            <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+              <div className="max-w-2xl space-y-4">
+                <div className="flex items-center gap-3 justify-center md:justify-start">
+                  <Rocket className="h-6 w-6 text-primary animate-bounce" />
+                  <Badge variant="secondary" className="bg-primary/10 text-primary font-bold">PROGRAMME DE MENTORAT</Badge>
+                </div>
+                <h3 className="text-3xl md:text-4xl font-display font-black leading-tight">
+                  Devenez Mentor ou Rejoignez la <span className="text-orange-500">Communauté Draft</span>.
+                </h3>
+                <p className="text-muted-foreground text-lg font-light leading-relaxed">
+                  NexusHub est plus qu'une plateforme, c'est un tremplin. Partagez votre savoir ou faites éclore votre talent aux côtés des meilleurs artistes du continent.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <Button asChild size="lg" className="h-16 px-10 rounded-full font-bold shadow-xl shadow-primary/20 bg-primary text-primary-foreground hover:scale-105 transition-transform">
+                  <Link href="/mentorship">En savoir plus</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="h-16 px-10 rounded-full font-bold border-2 hover:bg-muted transition-all">
+                  <Link href="/submit">Lancer mon projet</Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
 
