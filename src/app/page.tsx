@@ -292,15 +292,15 @@ export default function HomePage() {
         {/* Section Genres / Explorer par Univers */}
         <section className="animate-in fade-in-up duration-700">
           <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6 border-b border-primary/10 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-xl">
+            <Link href="/stories" className="flex items-center gap-4 group/genre-title w-fit">
+              <div className="bg-primary/10 p-3 rounded-xl group-hover/genre-title:bg-primary/20 transition-colors">
                 <Compass className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">Explorez par Genre</h2>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/genre-title:text-primary transition-colors">Explorez par Genre</h2>
                 <p className="text-sm text-muted-foreground font-light">Plongez dans les univers qui vous passionnent.</p>
               </div>
-            </div>
+            </Link>
             <Link href="/stories" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group">
               Voir tout le catalogue <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
