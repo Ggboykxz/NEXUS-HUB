@@ -139,7 +139,7 @@ export default function HomePage() {
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
-  const topArtists = artists.slice(0, 3); 
+  const topArtists = artists.slice(0, 6); 
 
   const submissionImage = PlaceHolderImages.find(img => img.id === 'submission-cta');
 
@@ -476,11 +476,11 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex overflow-x-auto pb-6 gap-4 hide-scrollbar snap-x snap-mandatory">
             {topArtists.map((artist) => {
               const artistStories = stories.filter(s => s.artistId === artist.id).slice(0, 3);
               return (
-                <Card key={artist.id} className="relative group overflow-hidden border border-primary/5 hover:border-primary/20 transition-all duration-500 bg-card shadow-sm flex flex-col h-full">
+                <Card key={artist.id} className="flex-none w-[280px] sm:w-[320px] snap-start relative group overflow-hidden border border-primary/5 hover:border-primary/20 transition-all duration-500 bg-card shadow-sm flex flex-col h-full">
                   <CardContent className="p-4 space-y-2.5 flex-1">
                     <div className="flex items-start justify-between">
                       <Avatar className="h-12 w-12 border-2 border-background ring-4 ring-primary/5">
