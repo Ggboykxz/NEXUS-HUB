@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Footer from '@/components/common/footer';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -34,6 +35,21 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
+
+  useEffect(() => {
+    // Generate particles on client side to avoid hydration mismatch
+    const newParticles = [...Array(15)].map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      dur: `${5 + Math.random() * 5}s`,
+      del: `${Math.random() * 5}s`,
+      tx: `${Math.random() * 100 - 50}px`,
+      ty: `${Math.random() * -200}px`
+    }));
+    setParticles(newParticles);
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,7 +63,6 @@ export default function SignupPage() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Form values:", values);
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('accountType', values.accountType === 'reader' ? 'reader' : 'artist');
     localStorage.setItem('userId', values.accountType === 'reader' ? 'reader-1' : '1');
@@ -55,7 +70,7 @@ export default function SignupPage() {
 
     toast({
       title: "Bienvenue sur NexusHub !",
-      description: "Votre compte a été créé avec succès. Découvrez vos recommandations personnalisées.",
+      description: "Votre compte a été créé avec succès.",
     });
 
     router.push('/');
@@ -70,27 +85,25 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col bg-stone-950">
-      {/* 1. HERO BANNER - ACCUEIL ENGAGEANT (Compact) */}
+      {/* 1. HERO BANNER - ACCUEIL ENGAGEANT */}
       <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8 md:py-12">
-        {/* Background Animé Gold */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_60%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.15),transparent_60%)]" />
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
           
-          {/* Particules Shimmer */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(15)].map((_, i) => (
+            {particles.map((p) => (
               <div 
-                key={i} 
+                key={p.id} 
                 className="particle bg-primary/20" 
                 style={{
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  '--dur': `${5 + Math.random() * 5}s`,
-                  '--del': `${Math.random() * 5}s`,
-                  '--tx': `${Math.random() * 100 - 50}px`,
-                  '--ty': `${Math.random() * -200}px`
+                  top: p.top,
+                  left: p.left,
+                  '--dur': p.dur,
+                  '--del': p.del,
+                  '--tx': p.tx,
+                  '--ty': p.ty
                 } as any} 
               />
             ))}
@@ -142,7 +155,6 @@ export default function SignupPage() {
         
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-12 items-start">
           
-          {/* OPTIONS DE CONNEXION SOCIALE */}
           <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-left-10 duration-1000">
             <div className="text-center lg:text-left">
               <h2 className="text-xl md:text-2xl font-display font-bold text-white mb-1">Inscrivez-vous en un clic</h2>
@@ -199,7 +211,6 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* FORMULAIRE EMAIL MINIMAL */}
           <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl rounded-2xl animate-in fade-in slide-in-from-right-10 duration-1000">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-lg md:text-xl font-display font-bold">Créer un compte</CardTitle>
@@ -207,7 +218,7 @@ export default function SignupPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 md:space-y-4" data-netlify="true" name="inscription">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
                   <FormField
                     control={form.control}
                     name="name"
@@ -226,7 +237,7 @@ export default function SignupPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Email Professionnel</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Email</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="nom@exemple.com" {...field} className="bg-white/5 border-white/10 h-9 md:h-10 rounded-lg focus:border-primary transition-all text-xs md:text-sm" />
                         </FormControl>
@@ -342,7 +353,7 @@ export default function SignupPage() {
         </div>
       </section>
 
-      {/* 4. TEASER AVANTAGES (Plus compact) */}
+      {/* 4. TEASER AVANTAGES */}
       <section className="py-12 md:py-16 px-4 md:px-6 bg-gradient-to-b from-stone-950 to-stone-900 overflow-hidden relative">
         <div className="absolute bottom-0 right-0 w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10" />
         
@@ -390,44 +401,10 @@ export default function SignupPage() {
               </Card>
             ))}
           </div>
-
-          <div className="mt-12 md:mt-16 relative rounded-2xl overflow-hidden aspect-[21/9] md:aspect-[32/9] border border-white/10 shadow-2xl">
-            <Image 
-              src="https://images.unsplash.com/photo-1544256718-3bcf237f3974" 
-              alt="Artiste en création" 
-              fill 
-              className="object-cover opacity-40 grayscale hover:grayscale-0 transition-all duration-1000"
-              data-ai-hint="artist drawing"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent flex items-center p-4 md:p-12">
-              <div className="max-w-lg space-y-2 md:space-y-3">
-                <Badge className="bg-primary text-black font-black text-[8px] md:text-[9px]">MOODBOARD CRÉATIF</Badge>
-                <h3 className="text-xl md:text-3xl font-display font-bold text-white leading-tight">Prêt à marquer l'histoire ?</h3>
-                <p className="text-stone-300 text-[10px] md:text-xs italic line-clamp-2 md:line-clamp-none">"Chaque trait est un pont entre nos traditions et le futur de la BD mondiale."</p>
-                <Button variant="link" className="p-0 text-primary font-bold gap-2 text-[10px] md:text-xs h-auto">
-                  Découvrir notre manifeste <ArrowRight className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* 5. NOTE DE CONFIDENTIALITÉ & LIENS LÉGAUX */}
-      <section className="py-8 md:py-10 border-t border-white/5 bg-stone-950">
-        <div className="container max-w-4xl mx-auto px-4 md:px-6 text-center space-y-3 md:space-y-4">
-          <p className="text-[8px] md:text-[9px] text-stone-600 uppercase font-bold tracking-[0.2em] max-w-md mx-auto leading-relaxed">
-            En vous inscrivant, vous rejoignez le premier hub créatif panafricain. Vos données sont protégées conforme RGPD.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-[9px] md:text-[10px] text-stone-500">
-            <Link href="/legal/terms" className="hover:text-primary transition-colors">Conditions d'Utilisation</Link>
-            <span className="opacity-20">|</span>
-            <Link href="/legal/privacy" className="hover:text-primary transition-colors">Politique de Confidentialité</Link>
-            <span className="opacity-20">|</span>
-            <Link href="/login" className="text-primary font-bold">Déjà un compte ? Connexion</Link>
-          </div>
-        </div>
-      </section>
+      <Footer />
     </div>
   );
 }
