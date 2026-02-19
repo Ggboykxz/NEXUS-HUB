@@ -63,8 +63,8 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Exclusif à l'inscription */}
-      <section className="relative min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center overflow-hidden px-4 border-b border-primary/10">
+      {/* Hero Section - Plus compacte */}
+      <section className="relative py-16 md:py-24 flex flex-col items-center justify-center overflow-hidden px-4 border-b border-primary/10">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.1),transparent_50%)]" />
@@ -72,46 +72,46 @@ export default function SignupPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-pulse duration-[4000ms]" />
         </div>
 
-        <div className="relative z-10 max-w-4xl w-full text-center space-y-10">
-          <div className="space-y-6 animate-in fade-in slide-in-from-top-8 duration-1000">
-            <h1 className="text-4xl md:text-7xl font-display font-black leading-[1.1] text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
+        <div className="relative z-10 max-w-4xl w-full text-center space-y-8">
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-8 duration-1000">
+            <h1 className="text-3xl md:text-6xl font-display font-black leading-[1.1] text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
               Rejoignez NexusHub – <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">Créez</span> et Découvrez des Histoires Africaines
             </h1>
 
-            <p className="text-lg md:text-2xl text-stone-300 font-light max-w-3xl mx-auto leading-relaxed italic">
+            <p className="text-base md:text-xl text-stone-300 font-light max-w-3xl mx-auto leading-relaxed italic">
               Devenez artiste Pro/Draft, lisez gratuitement, connectez-vous à une communauté panafricaine. 
-              <span className="block font-bold text-primary mt-3 uppercase tracking-[0.1em] text-sm md:text-base">Inscription gratuite et instantanée !</span>
+              <span className="block font-bold text-primary mt-2 uppercase tracking-[0.1em] text-xs md:text-sm">Inscription gratuite et instantanée !</span>
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto pt-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto pt-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             {[
-              { icon: Zap, text: "Publiez vos BD/webtoons en un clic" },
-              { icon: Sparkles, text: "Accédez à des univers mythologiques" },
-              { icon: Users, text: "Soutenez des créateurs gabonais" },
-              { icon: Award, text: "AfriCoins et chapitres premium" },
+              { icon: Zap, text: "Publiez en un clic" },
+              { icon: Sparkles, text: "Univers mythologiques" },
+              { icon: Users, text: "Soutenez des créateurs" },
+              { icon: Award, text: "AfriCoins et Premium" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl group hover:border-primary/50 hover:bg-white/[0.08] transition-all duration-500 shadow-2xl">
-                <div className="bg-primary/20 p-2.5 rounded-xl group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-500">
-                  <item.icon className="h-6 w-6 text-primary" />
+              <div key={i} className="flex items-center gap-3 bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-xl group hover:border-primary/50 hover:bg-white/[0.08] transition-all duration-500 shadow-xl">
+                <div className="bg-primary/20 p-2 rounded-lg group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-500">
+                  <item.icon className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-sm md:base font-bold text-stone-200 tracking-tight text-left leading-tight">{item.text}</span>
+                <span className="text-xs md:text-sm font-bold text-stone-200 tracking-tight text-left leading-tight">{item.text}</span>
               </div>
             ))}
           </div>
 
-          <div className="pt-16 flex flex-col items-center gap-4 animate-in fade-in duration-1000 delay-700">
-            <p className="text-[10px] uppercase tracking-[0.4em] font-black text-primary/60">Commencez ci-dessous</p>
-            <ChevronDown className="h-8 w-8 text-primary animate-bounce" />
+          <div className="pt-8 flex flex-col items-center gap-2 animate-in fade-in duration-1000 delay-700">
+            <p className="text-[9px] uppercase tracking-[0.4em] font-black text-primary/60">Commencez ci-dessous</p>
+            <ChevronDown className="h-6 w-6 text-primary animate-bounce" />
           </div>
         </div>
       </section>
 
       {/* Form Section */}
-      <section className="relative flex flex-col items-center justify-center py-24 px-6 bg-stone-950">
+      <section className="relative flex flex-col items-center justify-center py-16 px-6 bg-stone-950">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-out">
-          <Card className="w-full max-w-sm">
+          <Card className="w-full max-w-sm shadow-2xl border-white/5">
             <CardHeader>
               <CardTitle className="text-2xl">Inscription</CardTitle>
               <CardDescription>
@@ -128,7 +128,7 @@ export default function SignupPage() {
                       <FormItem>
                         <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input placeholder="Prénom Nom" {...field} />
+                          <Input placeholder="Prénom Nom" {...field} className="bg-white/5 border-white/10" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -141,7 +141,7 @@ export default function SignupPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="m@example.com" {...field} />
+                          <Input type="email" placeholder="m@example.com" {...field} className="bg-white/5 border-white/10" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -154,7 +154,7 @@ export default function SignupPage() {
                       <FormItem>
                         <FormLabel>Mot de passe</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input type="password" {...field} className="bg-white/5 border-white/10" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -176,7 +176,7 @@ export default function SignupPage() {
                               <FormControl>
                                 <RadioGroupItem value="reader" />
                               </FormControl>
-                              <FormLabel className="font-normal">
+                              <FormLabel className="font-normal cursor-pointer">
                                 Lecteur
                               </FormLabel>
                             </FormItem>
@@ -184,7 +184,7 @@ export default function SignupPage() {
                               <FormControl>
                                 <RadioGroupItem value="artist" />
                               </FormControl>
-                              <FormLabel className="font-normal">
+                              <FormLabel className="font-normal cursor-pointer">
                                 Artiste
                               </FormLabel>
                             </FormItem>
@@ -196,10 +196,10 @@ export default function SignupPage() {
                   />
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                  <Button type="submit" className="w-full">Créer un compte</Button>
-                  <div className="mt-4 text-center text-sm">
+                  <Button type="submit" className="w-full font-bold shadow-lg shadow-primary/20">Créer un compte</Button>
+                  <div className="mt-4 text-center text-sm text-stone-400">
                     Vous avez déjà un compte?{" "}
-                    <Link href="/login" className="underline">
+                    <Link href="/login" className="underline text-primary hover:text-primary/80 transition-colors">
                       Se connecter
                     </Link>
                   </div>
