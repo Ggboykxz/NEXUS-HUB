@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { BookOpen, Twitter, Instagram, Facebook, Youtube } from 'lucide-react';
 
@@ -89,7 +91,7 @@ export default function Footer() {
 
         <div className="flex flex-col sm:flex-row justify-between items-center border-t border-border/50 pt-6 gap-4">
            <div className="flex items-center text-[10px] text-foreground/40 font-light gap-4 flex-wrap justify-center sm:justify-start">
-             <p>&copy; {new Date().getFullYear()} NexusHub. Fabriqué avec passion pour l'Afrique.</p>
+             <p>&copy; 2026 NexusHub – Tous droits réservés.</p>
              <div className="hidden sm:flex gap-3">
                 <span>Libreville</span>
                 <span>Dakar</span>
