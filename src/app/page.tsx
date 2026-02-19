@@ -224,15 +224,15 @@ export default function HomePage() {
         {/* Section Recommandations Personnalisées */}
         {recommendations.length > 0 && (
           <section className="animate-in fade-in-up duration-700">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="bg-primary/10 p-3 rounded-2xl">
+            <Link href="/for-you" className="flex items-center gap-4 mb-10 group/for-you w-fit">
+              <div className="bg-primary/10 p-3 rounded-2xl group-hover/for-you:bg-primary/20 transition-colors">
                 <BookHeart className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{recTitle}</h2>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/for-you:text-primary transition-colors">{recTitle}</h2>
                 <p className="text-sm text-muted-foreground font-light">Une sélection aux petits oignons pour vos yeux.</p>
               </div>
-            </div>
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
               {recommendations.map((story) => (
                 <StoryCard key={`rec-${story.id}`} story={story} />
