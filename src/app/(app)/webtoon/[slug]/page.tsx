@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, use, useEffect } from 'react';
-import { stories, artists, comments as allComments, type Story, type Artist, type Chapter, getChapterUrl, getStoryUrl } from '@/lib/data';
+import { useState, use } from 'react';
+import { stories, artists, type Story, type Artist, type Chapter, getChapterUrl } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Eye, Heart, Star, Share2, Bookmark, Play, MessageSquare, ChevronRight, Check, Coins, Lock, Award, PenSquare, Sparkles, Zap, CalendarDays } from 'lucide-react';
+import { Eye, Heart, Share2, Bookmark, Play, Award, PenSquare, Sparkles, Zap, CalendarDays, Lock, Check, Coins } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
@@ -22,7 +21,7 @@ const formatStat = (num: number): string => {
   return num.toString();
 };
 
-function HeroSection({ story, artist, collaborators }: { story: Story, artist: Artist, collaborators: any[] }) {
+function HeroSection({ story, artist }: { story: Story, artist: Artist }) {
   const { toast } = useToast();
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -264,12 +263,9 @@ export default function WebtoonDetailPage(props: { params: Promise<{ slug: strin
     notFound();
   }
   
-  const collaborators = story.collaborators || [];
-  const storyComments = allComments.filter(c => c.storyId === story.id);
-  
   return (
     <div className="min-h-screen bg-background">
-        <HeroSection story={story} artist={artist} collaborators={collaborators}/>
+        <HeroSection story={story} artist={artist} />
         
         <main className="main-body container max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-12 px-6 lg:px-12 py-16">
             <div className="left-col space-y-16">
@@ -293,7 +289,7 @@ export default function WebtoonDetailPage(props: { params: Promise<{ slug: strin
                             <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
                             <h3 className="text-2xl font-display font-bold text-foreground mb-2">À Venir...</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto">
-                                L'auteur prépare activement le premier chapitre. Abonnez-vous pour recevoir une notification dès la sortie !
+                                L'auteur prepare activement le premier chapitre. Abonnez-vous pour recevoir une notification dès la sortie !
                             </p>
                             <Button variant="outline" className="mt-6 rounded-full border-primary text-primary hover:bg-primary/10">
                                 Me prévenir de la sortie

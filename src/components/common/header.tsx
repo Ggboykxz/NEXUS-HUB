@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, MoreVertical, ListMusic, Award, PenSquare, Library } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -24,15 +24,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { stories, artists } from '@/lib/data';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ThemeToggle } from './theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '../providers/language-provider';
 import { LanguageSwitcher } from './language-switcher';
+import { ThemeToggle } from './theme-toggle';
 
 const DropdownItemRenderer = ({ link }: { link: NavLink }) => {
-  const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
   const { t } = useTranslation();
+  // Get unique genres by slug to avoid duplicate keys
+  const uniqueGenres = Array.from(
+    new Map(stories.map(s => [s.genreSlug, { name: s.genre, slug: s.genreSlug }])).values()
+  );
 
   if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
@@ -113,7 +115,9 @@ export default function Header() {
       }, 200);
   };
 
-  const uniqueGenres = [...new Set(stories.map(s => ({ name: s.genre, slug: s.genreSlug })))];
+  const uniqueGenres = Array.from(
+    new Map(stories.map(s => [s.genreSlug, { name: s.genre, slug: s.genreSlug }])).values()
+  );
 
   useEffect(() => {
     setHasMounted(true);
