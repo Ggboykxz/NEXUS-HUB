@@ -192,15 +192,15 @@ export default function Header() {
               <LanguageSwitcher />
               <ThemeToggle />
               
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
+                <Search className="h-4 w-4" />
+              </Button>
+
               <Button asChild variant="default" size="sm" className="h-8 gap-1 px-3 font-bold shadow-sm shadow-primary/10 text-xs">
                 <Link href="/submit">
                   <PenSquare className="h-3 w-3" />
                   <span>{t('nav.submit')}</span>
                 </Link>
-              </Button>
-
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsSearchOpen(true)} aria-label="Ouvrir la recherche">
-                <Search className="h-4 w-4" />
               </Button>
               
               {!isLoggedIn ? (
