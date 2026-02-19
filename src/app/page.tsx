@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock } from 'lucide-react';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock, Compass, Landmark, ScrollText, Buildings, Rocket } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -28,6 +28,16 @@ export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
   const [recommendations, setRecommendations] = useState<Story[]>([]);
   const [recTitle, setRecTitle] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+
+  const genres = [
+    { id: 'all', label: 'Tout', icon: Compass, color: 'bg-slate-500' },
+    { id: 'mythologie-africaine', label: 'Mythologie', icon: Sparkles, color: 'bg-amber-500' },
+    { id: 'afrofuturisme', label: 'Afrofuturisme', icon: Zap, color: 'bg-purple-500' },
+    { id: 'contes-revisites', label: 'Contes', icon: ScrollText, color: 'bg-emerald-500' },
+    { id: 'histoire-africaine', label: 'Histoire', icon: Landmark, color: 'bg-orange-500' },
+    { id: 'science-fiction', label: 'Science-Fiction', icon: Rocket, color: 'bg-cyan-500' },
+  ];
 
   const autoplay = useRef(
     Autoplay({ delay: 6500, stopOnInteraction: true })
@@ -80,6 +90,11 @@ export default function HomePage() {
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
+
+  const filteredByGenre = useMemo(() => {
+    if (selectedGenre === 'all') return stories.slice(0, 5);
+    return stories.filter(s => s.genreSlug === selectedGenre).slice(0, 5);
+  }, [selectedGenre]);
 
   return (
     <div className="flex flex-col gap-12 bg-background">
@@ -268,6 +283,62 @@ export default function HomePage() {
             {trendingStories.map((story) => (
               <StoryCard key={`trending-${story.id}`} story={story} />
             ))}
+          </div>
+        </section>
+
+        {/* Section Genres / Explorer par Univers */}
+        <section className="animate-in fade-in-up duration-700">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6 border-b border-primary/10 pb-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 p-3 rounded-xl">
+                <Compass className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">Explorez par Genre</h2>
+                <p className="text-sm text-muted-foreground font-light">Plongez dans les univers qui vous passionnent.</p>
+              </div>
+            </div>
+            <Link href="/stories" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group">
+              Voir tout le catalogue <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap gap-4 mb-12">
+            {genres.map((genre) => (
+              <button
+                key={genre.id}
+                onClick={() => setSelectedGenre(genre.id)}
+                className={cn(
+                  "flex items-center gap-3 px-6 py-4 rounded-2xl border-2 transition-all duration-300 group",
+                  selectedGenre === genre.id 
+                    ? "border-primary bg-primary text-primary-foreground shadow-lg scale-105" 
+                    : "border-border bg-card hover:border-primary/50 hover:bg-primary/5"
+                )}
+              >
+                <div className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  selectedGenre === genre.id ? "bg-white/20" : genre.color + "/10"
+                )}>
+                  <genre.icon className={cn(
+                    "h-5 w-5",
+                    selectedGenre === genre.id ? "text-white" : "text-primary"
+                  )} />
+                </div>
+                <span className="font-bold text-sm uppercase tracking-wider">{genre.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12 min-h-[400px]">
+            {filteredByGenre.map((story) => (
+              <StoryCard key={`genre-${story.id}-${selectedGenre}`} story={story} />
+            ))}
+            {filteredByGenre.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-3xl">
+                <Compass className="h-12 w-12 mb-4 opacity-20" />
+                <p className="italic">Aucune œuvre trouvée dans cet univers pour le moment.</p>
+              </div>
+            )}
           </div>
         </section>
 
