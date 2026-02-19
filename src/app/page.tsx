@@ -76,25 +76,25 @@ export default function HomePage() {
 
     if (list.length < 3) {
       // Fallback to random/trending
-      list = [...stories].sort(() => 0.5 - Math.random()).slice(0, 5);
+      list = [...stories].sort(() => 0.5 - Math.random()).slice(0, 10);
       setRecTitle(t('home.trending_fallback'));
     } else {
-      list = list.slice(0, 5);
+      list = list.slice(0, 10);
       setRecTitle(t('home.for_you_title'));
     }
     setRecommendations(list);
   }, [t]);
   
-  const trendingStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 6);
+  const trendingStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 12);
   const newestStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 6);
-  const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
-  const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
+  const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
+  const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 10);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
   const topArtists = artists.slice(0, 3); // Featured artists for the new section
 
   const filteredByGenre = useMemo(() => {
-    if (selectedGenre === 'all') return stories.slice(0, 5);
-    return stories.filter(s => s.genreSlug === selectedGenre).slice(0, 5);
+    if (selectedGenre === 'all') return stories.slice(0, 10);
+    return stories.filter(s => s.genreSlug === selectedGenre).slice(0, 10);
   }, [selectedGenre]);
 
   return (
@@ -258,9 +258,11 @@ export default function HomePage() {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+            <div className="flex overflow-x-auto pb-8 gap-6 hide-scrollbar snap-x snap-mandatory">
               {recommendations.map((story) => (
-                <StoryCard key={`rec-${story.id}`} story={story} />
+                <div key={`rec-${story.id}`} className="flex-none w-[220px] sm:w-[260px] snap-start">
+                  <StoryCard story={story} />
+                </div>
               ))}
             </div>
           </section>
@@ -282,9 +284,11 @@ export default function HomePage() {
               Voir Toutes les Tendances <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-x-6 gap-y-12">
+          <div className="flex overflow-x-auto pb-8 gap-6 hide-scrollbar snap-x snap-mandatory">
             {trendingStories.map((story) => (
-              <StoryCard key={`trending-${story.id}`} story={story} />
+              <div key={`trending-${story.id}`} className="flex-none w-[200px] sm:w-[240px] snap-start">
+                <StoryCard story={story} />
+              </div>
             ))}
           </div>
         </section>
@@ -323,12 +327,15 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12 min-h-[400px]">
-            {filteredByGenre.map((story) => (
-              <StoryCard key={`genre-${story.id}-${selectedGenre}`} story={story} />
-            ))}
-            {filteredByGenre.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-3xl">
+          <div className="flex overflow-x-auto pb-8 gap-6 hide-scrollbar snap-x snap-mandatory min-h-[400px]">
+            {filteredByGenre.length > 0 ? (
+              filteredByGenre.map((story) => (
+                <div key={`genre-${story.id}-${selectedGenre}`} className="flex-none w-[220px] sm:w-[260px] snap-start">
+                  <StoryCard story={story} />
+                </div>
+              ))
+            ) : (
+              <div className="w-full flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-3xl">
                 <Compass className="h-12 w-12 mb-4 opacity-20" />
                 <p className="italic">Aucune œuvre trouvée dans cet univers pour le moment.</p>
               </div>
@@ -520,9 +527,11 @@ export default function HomePage() {
                     Voir tout <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+            <div className="flex overflow-x-auto pb-8 gap-6 hide-scrollbar snap-x snap-mandatory">
                 {proStories.map((story) => (
-                    <StoryCard key={story.id} story={story} />
+                    <div key={`pro-${story.id}`} className="flex-none w-[200px] sm:w-[240px] snap-start">
+                      <StoryCard story={story} />
+                    </div>
                 ))}
             </div>
         </section>
@@ -544,9 +553,11 @@ export default function HomePage() {
                     Voir tout <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-12">
+            <div className="flex overflow-x-auto pb-8 gap-6 hide-scrollbar snap-x snap-mandatory">
                 {draftStories.map((story) => (
-                    <StoryCard key={story.id} story={story} />
+                    <div key={`draft-${story.id}`} className="flex-none w-[200px] sm:w-[240px] snap-start">
+                      <StoryCard story={story} />
+                    </div>
                 ))}
             </div>
         </section>

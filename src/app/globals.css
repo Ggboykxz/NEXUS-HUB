@@ -85,6 +85,16 @@
   }
 }
 
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Fluidity optimizations */
 .btn-primary-anim {
   @apply transition-all duration-300 active:scale-95;
