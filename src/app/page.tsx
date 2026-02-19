@@ -112,10 +112,12 @@ export default function HomePage() {
                                                 )}
                                             </div>
                                             
-                                            {/* Titre Impactant */}
-                                            <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-none tracking-tighter drop-shadow-2xl">
-                                                {story.title}
-                                            </h2>
+                                            {/* Titre Impactant Cliquable */}
+                                            <Link href={storyUrl} className="group/title inline-block">
+                                                <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white leading-none tracking-tighter drop-shadow-2xl group-hover/title:text-primary transition-colors duration-300">
+                                                    {story.title}
+                                                </h2>
+                                            </Link>
                                             
                                             {/* Synopsis Style Moodboard */}
                                             <div className="relative pl-6 border-l-2 border-primary/40 max-w-2xl">
