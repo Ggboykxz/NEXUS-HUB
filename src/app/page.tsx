@@ -416,15 +416,15 @@ export default function HomePage() {
         {/* Section Artistes à l'honneur */}
         <section className="animate-in fade-in-up duration-700">
           <div className="flex justify-between items-center mb-12 border-b border-primary/10 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-xl">
+            <Link href="/artists" className="flex items-center gap-4 group/artist-title">
+              <div className="bg-primary/10 p-3 rounded-xl group-hover/artist-title:bg-primary/20 transition-colors">
                 <Users className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">Découvrez Nos Créateurs</h2>
+                <h2 className="text-3xl font-display font-bold text-foreground tracking-tight group-hover/artist-title:text-primary transition-colors">Découvrez Nos Créateurs</h2>
                 <p className="text-sm text-muted-foreground font-light">Les esprits derrière vos univers préférés.</p>
               </div>
-            </div>
+            </Link>
             <Link href="/artists" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group">
               Voir tous les artistes <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
