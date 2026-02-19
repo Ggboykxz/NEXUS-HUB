@@ -154,10 +154,10 @@ export default function HomePage() {
                                                 </p>
                                             </div>
 
-                                            {/* Infos Artiste */}
-                                            <div className="flex items-center gap-4 mt-2">
+                                            {/* Infos Artiste Cliquables */}
+                                            <Link href={`/artiste/${artist?.slug}`} className="flex items-center gap-4 mt-2 group/artist-info w-fit">
                                                 <div className="relative">
-                                                    <Avatar className="h-12 w-12 border-2 border-primary/40 p-0.5 bg-background">
+                                                    <Avatar className="h-12 w-12 border-2 border-primary/40 p-0.5 bg-background group-hover/artist-info:border-primary transition-colors">
                                                         <AvatarImage src={artist?.avatar.imageUrl} alt={story.artistName} />
                                                         <AvatarFallback>{story.artistName?.[0]}</AvatarFallback>
                                                     </Avatar>
@@ -168,12 +168,12 @@ export default function HomePage() {
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-bold text-base tracking-tight">{story.artistName}</span>
+                                                    <span className="text-white font-bold text-base tracking-tight group-hover/artist-info:text-primary transition-colors">{story.artistName}</span>
                                                     <span className="text-primary/80 text-[10px] uppercase tracking-widest font-bold">
                                                         {artist?.isMentor ? 'Artiste Certifié Pro' : 'Jeune Talent NexusHub'}
                                                     </span>
                                                 </div>
-                                            </div>
+                                            </Link>
 
                                             {/* Boutons d'Action */}
                                             <div className="flex flex-wrap items-center gap-4 mt-4">
