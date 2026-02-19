@@ -4,7 +4,7 @@ import { stories } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
 import { Book } from 'lucide-react';
 
-export default function ComicsPage() {
+export default function BdAfricaineListingPage() {
   const comics = stories.filter(s => s.format === 'BD');
 
   return (
@@ -13,7 +13,7 @@ export default function ComicsPage() {
         <div className="bg-primary/10 p-3 rounded-full">
             <Book className="w-10 h-10 text-primary" />
         </div>
-        <h1 className="text-4xl font-bold font-display">Bandes Dessinées</h1>
+        <h1 className="text-4xl font-bold font-display">Bandes Dessinées Africaines</h1>
       </div>
       <p className="text-lg text-muted-foreground mb-12">
         Explorez notre catalogue de bandes dessinées traditionnelles. Des récits épiques présentés dans un format de lecture paginé classique.

@@ -1,58 +1,47 @@
 'use client';
 
-import { useState, useEffect, use, useCallback, useRef } from 'react';
-import { stories, comicPages, comments as allComments, artists, type Artist, type Chapter, type Story, getChapterUrl, getStoryUrl } from '@/lib/data';
-import type { Comment } from '@/lib/data';
-import { notFound, useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { stories, comicPages, comments as allComments, artists, type Artist, type Chapter, type Story } from '@/lib/data';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, Book, Layers, Heart, MessageSquare, MoreHorizontal, Trash2, Ban, X, Share2, ChevronLeft, ChevronRight, Bookmark, Settings, Star, Coins, Crown, Search, ThumbsUp, Smile, AlertTriangle, ChevronsRight, Check, Sparkles, BookHeart, Eye, Award, MessageCircle, Send
+  Layers, Book, ChevronLeft, ChevronRight, Bookmark, Settings, Heart, MessageSquare, Share2, Award, Eye, Coins, Check, Star
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
-// #region Page Components
+// #region Components
 
-function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
-  const router = useRouter();
-  const storyUrl = getStoryUrl(story);
-
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked }: any) {
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
-      {/* Left section */}
       <div className="flex items-center gap-4 flex-1">
         <Link href="/" className="font-display text-base tracking-widest text-primary hidden md:block">NexusHub</Link>
         <div className="w-px h-5 bg-border hidden md:block" />
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <h1 className="flex items-center gap-2">
-            <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium">{story.title}</Link>
-            <ChevronRight className="h-4 w-4 hidden sm:block" />
-            <span className="text-primary font-semibold whitespace-nowrap">Chap. {chapter.id.split('-')[1]} – {chapter.title}</span>
-          </h1>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground overflow-hidden">
+          <Link href={`/webtoon/${story.slug}`} className="hover:text-primary transition-colors hidden sm:block font-medium truncate">{story.title}</Link>
+          <ChevronRight className="h-4 w-4 hidden sm:block shrink-0" />
+          <span className="text-primary font-semibold whitespace-nowrap truncate">Chap. {chapter.title}</span>
         </div>
       </div>
 
-      {/* Center section */}
       <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
         <Button size="icon" variant="outline" className="w-8 h-8"><ChevronLeft className="h-4 w-4" /></Button>
-        <Select defaultValue={chapter.slug} onValueChange={(val) => router.push(getChapterUrl(story, val))}>
+        <Select defaultValue={chapter.slug}>
           <SelectTrigger className="w-[200px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {story.chapters.map((chap: Chapter) => (
               <SelectItem key={chap.id} value={chap.slug} className="text-xs">
-                Chap {chap.id.split('-')[1]} – {chap.title}
+                {chap.title}
               </SelectItem>
             ))}
           </SelectContent>
@@ -60,7 +49,6 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
         <Button size="icon" variant="outline" className="w-8 h-8"><ChevronRight className="h-4 w-4" /></Button>
       </div>
 
-      {/* Right section */}
       <div className="flex items-center gap-2 flex-1 justify-end">
         <div className="hidden sm:flex bg-card border border-border rounded-lg p-0.5">
           <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-xs gap-1.5">
@@ -74,473 +62,132 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
           <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-current")} />
           <span className="hidden md:inline">{isBookmarked ? 'Sauvegardé' : 'Sauvegarder'}</span>
         </Button>
-        <Button onClick={onSettingsToggle} size="icon" variant="outline" className="h-8 w-8">
-          <Settings className="h-4 w-4" />
-        </Button>
       </div>
     </nav>
   );
 }
 
-function ProgressBar({ progress }: { progress: number }) {
-  return (
-    <div className="fixed top-14 left-0 right-0 h-0.5 bg-foreground/5 z-50">
-      <div
-        className="h-full bg-gradient-to-r from-primary/50 via-primary to-accent transition-all duration-75 ease-linear"
-        style={{ width: `${progress}%` }}
-      >
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_hsl(var(--accent))] shadow-accent/50" />
-      </div>
-    </div>
-  )
-}
-
-function ReaderSidebar({ story, artist, currentChapterSlug }: { story: Story, artist: Artist, currentChapterSlug: string }) {
-  const [activeTab, setActiveTab] = useState('chapters');
-
-  const TabButton = ({ id, label }: { id: string, label: string }) => (
-    <Button
-      variant="ghost"
-      onClick={() => setActiveTab(id)}
-      className={cn(
-        "flex-1 rounded-none border-b-2 h-11 text-xs font-semibold uppercase tracking-wider",
-        activeTab === id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
-      )}
-    >
-      {label}
-    </Button>
-  );
-
+function ReaderSidebar({ story, artist }: { story: Story, artist: Artist }) {
   return (
     <aside className="w-[320px] bg-card border-l border-border h-[calc(100vh-56px)] sticky top-14 flex-shrink-0 hidden lg:flex flex-col">
-      <div className="flex border-b border-border sticky top-0 bg-card z-10">
-        <TabButton id="chapters" label="Chapitres" />
-        <TabButton id="artist" label="Artiste" />
-        <TabButton id="explore" label="Explorer" />
+      <div className="p-4 border-b border-border bg-muted/30">
+        <div className="flex gap-3 mb-4">
+          <Image src={story.coverImage.imageUrl} alt={story.title} width={56} height={80} className="rounded-md object-cover shadow-md" />
+          <div className="min-w-0">
+            <h3 className="font-display text-sm font-bold truncate">{story.title}</h3>
+            <p className="text-xs text-primary font-medium flex items-center gap-1"><Award className="h-3 w-3" /> {artist.name}</p>
+            <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
+              <span className="flex items-center gap-0.5"><Eye className="h-2.5 w-2.5" /> {(story.views/1000).toFixed(0)}k</span>
+              <span className="flex items-center gap-0.5"><Heart className="h-2.5 w-2.5" /> {(story.likes/1000).toFixed(0)}k</span>
+            </div>
+          </div>
+        </div>
+        <Button size="sm" className="w-full bg-primary/10 text-primary hover:bg-primary/20 border-none h-8 text-[10px] uppercase font-bold tracking-widest">
+          Soutenir l'artiste 🪙
+        </Button>
       </div>
       <ScrollArea className="flex-1">
-        {activeTab === 'chapters' && <ChaptersTab story={story} currentChapterSlug={currentChapterSlug} />}
-        {activeTab === 'artist' && <ArtistTab artist={artist} />}
-        {activeTab === 'explore' && <ExploreTab />}
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Chapitres</span>
+            <Badge variant="secondary" className="text-[10px]">{story.chapters.length}</Badge>
+          </div>
+          <div className="space-y-1">
+            {story.chapters.map((chap, idx) => (
+              <Link key={chap.id} href={`/webtoon/${story.slug}/${chap.slug}`} className={cn(
+                "flex items-center gap-3 p-2 rounded-lg transition-all hover:bg-muted group",
+                idx === 0 && "bg-primary/5 border border-primary/10"
+              )}>
+                <span className={cn("w-6 text-xs font-mono text-center", idx === 0 ? "text-primary font-bold" : "text-muted-foreground")}>{story.chapters.length - idx}</span>
+                <span className={cn("flex-1 text-sm truncate", idx === 0 && "text-primary font-medium")}>{chap.title}</span>
+                {idx === 0 && <span className="text-[8px] bg-primary text-white px-1 rounded-sm font-bold">LU</span>}
+              </Link>
+            ))}
+          </div>
+        </div>
       </ScrollArea>
     </aside>
   );
 }
 
-function ChaptersTab({ story, currentChapterSlug }: { story: Story, currentChapterSlug: string }) {
-  const { toast } = useToast();
-  return (
-    <div className="p-4">
-      {/* Mini series info */}
-      <div className="flex gap-3 mb-4 pb-4 border-b border-border">
-        <Link href={getStoryUrl(story)}>
-            <Image src={story.coverImage.imageUrl} alt={story.title} width={56} height={80} className="rounded-md object-cover flex-shrink-0 hover:opacity-80 transition-opacity" />
-        </Link>
-        <div>
-          <Link href={getStoryUrl(story)}>
-            <h3 className="font-display text-sm text-foreground mb-1 hover:text-primary transition-colors">{story.title}</h3>
-          </Link>
-          <Link href={`/artiste/${story.artistSlug}`} className="text-xs text-primary hover:underline flex items-center gap-1.5 mb-2">
-            <Award className="h-3 w-3" /> {story.artistName}
-          </Link>
-          <div className="flex gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Eye className="h-3 w-3 text-primary"/> {(story.views/1000).toFixed(0)}k</span>
-            <span className="flex items-center gap-1"><Heart className="h-3 w-3 text-destructive"/> {(story.likes/1000).toFixed(0)}k</span>
-            <span className="flex items-center gap-1"><Book className="h-3 w-3"/> {story.chapters.length} chap.</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Live View Simulation */}
-      <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Lecteurs en direct</span>
-        </div>
-        <span className="text-xs font-bold font-mono">1.4k</span>
-      </div>
-
-      {/* Chapter list */}
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Liste des chapitres</label>
-        <span className="text-xs text-primary font-semibold">{story.chapters.length}/{story.chapters.length}</span>
-      </div>
-      <div className="flex flex-col gap-1">
-        {story.chapters.map((chap, index) => {
-          const isCurrent = chap.slug === currentChapterSlug;
-          return (
-            <Link key={chap.id} href={getChapterUrl(story, chap.slug)} className={cn(
-              "flex items-center gap-2.5 p-2.5 rounded-lg transition-colors hover:bg-muted",
-              isCurrent && "bg-primary/10 border border-primary/20"
-            )}>
-              <div className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md bg-muted border border-border text-xs font-bold text-muted-foreground flex-shrink-0",
-                isCurrent && "bg-primary border-primary text-primary-foreground"
-              )}>{index + 1}</div>
-              <div className="flex-1 overflow-hidden">
-                <p className={cn("text-sm font-semibold truncate", isCurrent && "text-primary")}>{chap.title}</p>
-                <p className="text-xs text-muted-foreground">Lu · {chap.releaseDate}</p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ArtistTab({ artist }: { artist: Artist }) {
-  const { toast } = useToast();
-  const [isFollowing, setIsFollowing] = useState(false);
-  const formatStat = (num: number): string => {
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
-    return num.toString();
-  };
-
-  return (
-    <div className="p-4">
-      <div className="bg-card border border-border rounded-xl p-4 text-center">
-        <Link href={`/artiste/${artist.slug}`} className="relative inline-block group">
-          <Avatar className="w-16 h-16 mx-auto mb-3 border-2 border-primary shadow-lg group-hover:opacity-80 transition-opacity">
-            <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
-            <AvatarFallback>{artist.name.slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-card">
-            <Check className="w-3 h-3 text-black" />
-          </div>
-        </Link>
-        <Link href={`/artiste/${artist.slug}`}>
-            <h3 className="font-display text-base text-foreground mb-1 hover:text-primary transition-colors">{artist.name}</h3>
-        </Link>
-        <p className="text-xs text-muted-foreground mb-3">Auteur · Dessinateur · Coloriste</p>
-        <div className="flex justify-around py-3 border-y border-border mb-3">
-          <div>
-            <p className="font-bold text-lg text-primary">{formatStat(artist.subscribers)}</p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Abonnés</p>
-          </div>
-          <div>
-            <p className="font-bold text-lg text-primary">1.2M</p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Vues</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" className="flex-1 h-9" onClick={() => setIsFollowing(!isFollowing)}>
-            <Star className={cn("h-4 w-4", isFollowing && "fill-current")} /> {isFollowing ? 'Suivi' : 'Suivre'}
-          </Button>
-          <Button size="sm" variant="destructive" className="h-9" onClick={() => toast({ title: '❤️ Merci pour votre soutien !' })}>
-            <Heart className="h-4 w-4"/> Soutenir
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ExploreTab() {
-  const otherStories = stories.filter(s => s.id !== '1').slice(0, 4);
-  return (
-    <div className="p-4">
-      <h4 className="text-xs uppercase font-bold tracking-wider text-muted-foreground mb-2">Tendances du moment</h4>
-      <div className="flex flex-col gap-2">
-        {otherStories.map(story => (
-          <Link key={story.id} href={getStoryUrl(story)} className="flex gap-3 items-center p-2 rounded-lg hover:bg-muted group">
-            <Image src={story.coverImage.imageUrl} alt={story.title} width={40} height={56} className="rounded-md object-cover group-hover:opacity-80 transition-opacity" />
-            <div>
-              <p className="text-sm font-semibold leading-tight group-hover:text-primary transition-colors">{story.title}</p>
-              <p className="text-xs text-muted-foreground">{story.artistName}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount, likesCount }: any) {
-  return (
-    <div className="fixed top-1/2 -translate-y-1/2 right-5 lg:right-[calc(320px+20px)] z-40 flex flex-col gap-2">
-      <Button onClick={onLike} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm relative", isLiked && "text-primary border-primary bg-primary/10")}>
-        <Heart className={cn(isLiked && "fill-current")} />
-        <Badge variant="secondary" className="absolute -top-2 -right-2 text-[10px] px-1 h-4 min-w-4 flex items-center justify-center font-bold">{likesCount}</Badge>
-      </Button>
-      <Button onClick={onComment} variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm relative">
-        <MessageSquare />
-        <Badge variant="destructive" className="absolute -top-2 -right-2 text-[10px] px-1 h-4 min-w-4 flex items-center justify-center font-bold">{commentsCount}</Badge>
-      </Button>
-      <Button onClick={onBookmark} variant="outline" size="icon" className={cn("bg-card/80 backdrop-blur-sm", isBookmarked && "text-primary border-primary bg-primary/10")}>
-        <Bookmark className={cn(isBookmarked && "fill-current")} />
-      </Button>
-      <Button onClick={onShare} variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm">
-        <Share2 />
-      </Button>
-    </div>
-  )
-}
-
-function CommentsSection({ storyId, chapterIndex }: { storyId: string, chapterIndex: number }) {
-  const [newComment, setNewComment] = useState('');
-  const [selectedTag, setSelectedTag] = useState<'Visuel' | 'Scénario' | 'Théorie' | 'Général'>('Général');
-  const { toast } = useToast();
-  
-  const chapterComments = allComments.filter(c => c.storyId === storyId && c.chapter === chapterIndex);
-
-  const handlePostComment = () => {
-    if (!newComment.trim()) return;
-    toast({
-      title: "Commentaire posté !",
-      description: "Votre feedback a été envoyé à l'artiste."
-    });
-    setNewComment('');
-  };
-
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'Supporter': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'Top Fan': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      case 'Artiste': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'Mentor': return 'bg-primary/10 text-primary border-primary/20';
-      default: return '';
-    }
-  };
-
-  const getTagColor = (tag: string) => {
-    switch (tag) {
-      case 'Visuel': return 'text-cyan-500 bg-cyan-500/10';
-      case 'Scénario': return 'text-amber-500 bg-orange-500/10';
-      case 'Théorie': return 'text-purple-500 bg-purple-500/10';
-      default: return 'text-muted-foreground bg-muted';
-    }
-  };
-
-  return (
-    <section className="max-w-[720px] mx-auto px-6 py-20 border-t border-border mt-12">
-      <div className="flex items-center justify-between mb-12">
-        <h2 className="text-3xl font-display font-bold flex items-center gap-3">
-          <MessageCircle className="h-8 w-8 text-primary" /> 
-          Communauté <span className="text-primary/50 text-xl font-sans">({chapterComments.length})</span>
-        </h2>
-        <div className="flex gap-2">
-          {['Général', 'Visuel', 'Scénario', 'Théorie'].map((t) => (
-            <Badge 
-              key={t} 
-              variant="outline" 
-              className={cn(
-                "cursor-pointer hover:bg-primary/10 transition-colors",
-                selectedTag === t && "bg-primary text-primary-foreground hover:bg-primary border-primary"
-              )}
-              onClick={() => setSelectedTag(t as any)}
-            >
-              {t}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Comment Form */}
-      <div className="bg-card border border-border rounded-2xl p-6 mb-16 shadow-xl relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-1 h-full bg-primary transition-all group-focus-within:w-2" />
-        <div className="flex gap-4 mb-4">
-          <Avatar className="h-10 w-10 border-2 border-primary/20">
-            <AvatarFallback>VOUS</AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Partagez votre avis sur ce chapitre</p>
-            <Textarea 
-              placeholder={`L'artiste attend votre feedback sur le ${selectedTag.toLowerCase()}...`}
-              className="min-h-[100px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/30 resize-none text-lg"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Info className="h-3 w-3"/> Soyez constructif</span>
-            <span className="flex items-center gap-1"><Sparkles className="h-3 w-3"/> Les feedbacks visuels sont précieux !</span>
-          </div>
-          <Button onClick={handlePostComment} className="rounded-full px-8 gap-2 shadow-lg shadow-primary/20">
-            Poster <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Comments List */}
-      <div className="space-y-10">
-        {chapterComments.map((comment) => (
-          <div key={comment.id} className="flex gap-5 group">
-            <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-border group-hover:ring-primary transition-all shadow-md">
-                <AvatarImage src={comment.authorAvatar.imageUrl} />
-                <AvatarFallback>{comment.authorName[0]}</AvatarFallback>
-              </Avatar>
-              <div className="w-0.5 flex-1 bg-gradient-to-b from-border to-transparent" />
-            </div>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-lg">{comment.authorName}</span>
-                  {comment.authorBadge && (
-                    <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-widest h-5", getBadgeColor(comment.authorBadge))}>
-                      {comment.authorBadge}
-                    </Badge>
-                  )}
-                  {comment.tag && (
-                    <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter", getTagColor(comment.tag))}>
-                      {comment.tag}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground font-medium">{comment.timestamp}</span>
-              </div>
-              <p className="text-foreground/90 leading-relaxed text-lg italic bg-primary/5 p-4 rounded-xl border-l-2 border-primary/20">
-                "{comment.content}"
-              </p>
-              <div className="flex items-center gap-6">
-                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
-                  <ThumbsUp className="h-4 w-4" /> {comment.likes}
-                </button>
-                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
-                  <MessageSquare className="h-4 w-4" /> Répondre
-                </button>
-                <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">
-                  <AlertTriangle className="h-4 w-4" /> Signaler
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="mt-20 text-center">
-        <Button variant="outline" className="rounded-full px-10 border-primary text-primary hover:bg-primary/10">
-          Charger plus de commentaires
-        </Button>
-      </div>
-    </section>
-  );
-}
-
 // #endregion
 
-export default function WebtoonReadPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
+export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
-  const story = stories.find((s) => s.slug === slug);
   const { toast } = useToast();
+  
+  const story = stories.find(s => s.slug === slug);
+  if (!story) notFound();
+
+  const chapter = story.chapters.find(c => c.slug === chapterSlug) || story.chapters[0];
+  const artist = artists.find(a => a.id === story.artistId)!;
 
   const [activeMode, setActiveMode] = useState('scroll');
-  const [progress, setProgress] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
-  // Scroll progress calculation
-  const handleScroll = () => {
-    const doc = document.documentElement;
-    const scrollPosition = doc.scrollTop;
-    const totalHeight = doc.scrollHeight - doc.clientHeight;
-    const scrollPercentage = totalHeight > 0 ? (scrollPosition / totalHeight) * 100 : 0;
-    setProgress(scrollPercentage);
-  };
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  if (!story || story.format !== 'Webtoon') {
-    notFound();
-  }
-  
-  const chapter = story.chapters.find(c => c.slug === chapterSlug);
-  if (!chapter) {
-    notFound();
-  }
-
-  const artist = artists.find(a => a.id === story.artistId);
-  if (!artist) {
-    notFound();
-  }
-  
-  const chapterComments = allComments.filter(c => c.storyId === story!.id);
-
-  const handleShare = () => {
-    if (typeof window !== 'undefined') {
-        navigator.clipboard.writeText(window.location.href);
-        toast({ title: "Lien copié dans le presse-papiers" });
-    }
-  };
-  
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-    toast({ title: isBookmarked ? 'Sauvegarde retirée' : 'Chapitre sauvegardé !'});
+    toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
   };
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    toast({ title: !isLiked ? 'Ajouté à vos favoris' : 'Retiré de vos favoris' });
-  };
-
-  const formatStat = (num: number): string => {
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
-    return num.toString();
-  };
-
-  const chapterIndex = story.chapters.findIndex(c => c.slug === chapterSlug) + 1;
 
   return (
-    <div className="font-serif">
-      <div className="adinkra-bg fixed inset-0 pointer-events-none opacity-[0.02] z-0" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4A843' stroke-width='1'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3Cline x1='10' y1='30' x2='50' y2='30'/%3E%3Cline x1='30' y1='10' x2='30' y2='50'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px'}} />
-      <ProgressBar progress={progress} />
+    <div className="min-h-screen bg-background flex flex-col">
       <ReaderHeader 
         story={story} 
-        chapter={chapter}
-        activeMode={activeMode}
+        chapter={chapter} 
+        activeMode={activeMode} 
         onModeChange={setActiveMode}
-        onSettingsToggle={() => setShowSettings(!showSettings)}
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
       />
       
-      <div className="flex mt-14 min-h-[calc(100vh-56px)]">
-        <main className="flex-1 bg-background min-w-0">
-          <div className="w-full max-w-[720px] mx-auto flex flex-col items-center gap-0">
+      <div className="flex mt-14 flex-1">
+        <main className={cn(
+          "flex-1 flex flex-col items-center gap-0 bg-stone-950/20",
+          activeMode === 'pages' && "p-4 md:p-8"
+        )}>
+          <div className={cn(
+            "w-full mx-auto shadow-2xl",
+            activeMode === 'scroll' ? "max-w-[800px]" : "max-w-[1000px] flex flex-wrap justify-center gap-4"
+          )}>
             {comicPages.map((page, index) => (
-              <Image
-                key={index}
-                src={page.imageUrl}
-                alt={page.description}
-                width={800}
-                height={1200}
-                className="max-w-full h-auto"
-                data-ai-hint={page.imageHint}
-                priority={index < 2}
-              />
+              <div key={page.id} className={cn(
+                "relative bg-stone-900",
+                activeMode === 'scroll' ? "w-full aspect-[2/3]" : "w-[48%] md:w-[45%] aspect-[2/3] rounded-lg overflow-hidden border border-white/5"
+              )}>
+                <Image
+                  src={page.imageUrl}
+                  alt={page.description}
+                  fill
+                  className="object-contain"
+                  data-ai-hint={page.imageHint}
+                  priority={index < 2}
+                />
+              </div>
             ))}
           </div>
           
-          <CommentsSection storyId={story.id} chapterIndex={chapterIndex} />
+          {/* End of Chapter Section */}
+          <div className="w-full max-w-[800px] py-20 px-6 text-center space-y-8">
+            <Separator className="bg-primary/20" />
+            <div className="space-y-4">
+              <h3 className="text-2xl font-display font-bold">Vous avez terminé ce chapitre !</h3>
+              <p className="text-muted-foreground">Soutenez {artist.name} pour plus de contenu incroyable.</p>
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button size="lg" className="rounded-full px-8" onClick={() => setIsLiked(!isLiked)}>
+                <Heart className={cn("mr-2 h-5 w-5", isLiked && "fill-current")} /> {isLiked ? 'Aimé' : "J'aime"}
+              </Button>
+              <Button size="lg" variant="outline" className="rounded-full px-8">
+                Suivant <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </main>
-        <ReaderSidebar story={story} artist={artist} currentChapterSlug={chapterSlug} />
+        
+        <ReaderSidebar story={story} artist={artist} />
       </div>
-
-      <FloatingTools 
-        onLike={handleLike}
-        isLiked={isLiked}
-        onBookmark={handleBookmark}
-        isBookmarked={isBookmarked}
-        onShare={handleShare}
-        onComment={() => {
-          const commentsElement = document.querySelector('section');
-          commentsElement?.scrollIntoView({ behavior: 'smooth' });
-        }}
-        commentsCount={chapterComments.length}
-        likesCount={formatStat(story.likes + (isLiked ? 1 : 0))}
-      />
     </div>
   );
 }

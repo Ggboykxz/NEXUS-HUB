@@ -4,8 +4,8 @@ import { stories } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
 import { Layers } from 'lucide-react';
 
-export default function WebtoonsPage() {
-  const webtoons = stories.filter(s => s.format === 'Webtoon');
+export default function WebtoonListingPage() {
+  const webtoons = stories.filter(s => s.format === 'Webtoon' || s.format === 'Roman Illustré');
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -16,14 +16,20 @@ export default function WebtoonsPage() {
         <h1 className="text-4xl font-bold font-display">Univers Webtoons</h1>
       </div>
       <p className="text-lg text-muted-foreground mb-12">
-        Découvrez nos œuvres optimisées pour la lecture verticale. Un format moderne pour une immersion totale.
+        Découvrez nos œuvres optimisées pour la lecture verticale. Un format moderne pour une immersion totale dans les cultures africaines.
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-        {webtoons.map((story) => (
-          <StoryCard key={story.id} story={story} />
-        ))}
-      </div>
+      {webtoons.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+          {webtoons.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-24 border rounded-xl bg-card/50">
+            <p className="text-muted-foreground italic">Aucun webtoon n'est disponible pour le moment.</p>
+        </div>
+      )}
     </div>
   );
 }
