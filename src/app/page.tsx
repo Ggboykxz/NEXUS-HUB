@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { stories, artists, getStoryUrl, getChapterUrl, type Story } from '@/lib/data';
-import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp } from 'lucide-react';
+import { Play, Info, Star, Award, PenSquare, ChevronRight, Zap, Sparkles, BookHeart, TrendingUp, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Carousel,
@@ -18,6 +18,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/components/providers/language-provider';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -75,6 +76,7 @@ export default function HomePage() {
   }, [t]);
   
   const trendingStories = [...stories].sort((a, b) => b.views - a.views).slice(0, 6);
+  const newestStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 6);
   const proStories = stories.filter(s => artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const draftStories = stories.filter(s => !artists.find(a => a.id === s.artistId)?.isMentor).slice(0, 5);
   const featuredStories = stories.filter(s => ['1', '2', '3'].includes(s.id));
@@ -261,6 +263,71 @@ export default function HomePage() {
             {trendingStories.map((story) => (
               <StoryCard key={`trending-${story.id}`} story={story} />
             ))}
+          </div>
+        </section>
+
+        {/* Section Nouveautés - Derniers Chapitres */}
+        <section className="animate-in fade-in-up duration-700 delay-300">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="bg-cyan-500/10 p-3 rounded-xl">
+              <Clock className="h-8 w-8 text-cyan-500" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">{t('home.new_releases_title')}</h2>
+              <p className="text-sm text-muted-foreground font-light">Les dernières aventures ajoutées au catalogue.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {newestStories.map((story) => {
+              const latestChapter = story.chapters[story.chapters.length - 1];
+              const artist = artists.find(a => a.id === story.artistId);
+              const readingUrl = latestChapter ? getChapterUrl(story, latestChapter.slug) : getStoryUrl(story);
+              
+              return (
+                <Card key={`new-${story.id}`} className="group hover:border-cyan-500/30 transition-all duration-300 overflow-hidden bg-muted/20 border-none shadow-sm">
+                  <CardContent className="p-4 flex gap-4">
+                    <Link href={getStoryUrl(story)} className="shrink-0">
+                      <div className="relative w-24 aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-500">
+                        <Image
+                          src={story.coverImage.imageUrl}
+                          alt={story.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <Link href={getStoryUrl(story)}>
+                            <h3 className="font-bold text-base truncate group-hover:text-cyan-500 transition-colors">{story.title}</h3>
+                          </Link>
+                          <Badge variant="outline" className="text-[9px] uppercase tracking-tighter border-cyan-500/20 text-cyan-500">
+                            Chap. {story.chapters.length}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                          par <span className="font-semibold text-foreground/80">{story.artistName}</span>
+                          {artist?.isMentor ? <Award className="h-3 w-3 text-emerald-500" /> : <PenSquare className="h-3 w-3 text-orange-400" />}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 italic line-clamp-2 leading-relaxed mb-3">
+                          "{story.description}"
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between mt-auto">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Il y a 2h
+                        </span>
+                        <Button asChild size="sm" className="h-8 px-4 rounded-full bg-cyan-600 hover:bg-cyan-700 text-xs font-bold">
+                          <Link href={readingUrl}>Lire</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </section>
 
