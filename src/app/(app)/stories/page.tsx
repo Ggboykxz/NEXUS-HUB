@@ -4,11 +4,12 @@ import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { stories as allStories, type Story } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
-import { BookOpen, Filter, SlidersHorizontal, ArrowUpDown, LayoutGrid } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 
 const uniqueGenres = [...new Set(allStories.map(s => s.genre))];
 
@@ -19,6 +20,7 @@ function StoriesContent() {
   const [genreFilter, setGenreFilter] = useState(initialGenre);
   const [sortFilter, setSortFilter] = useState('popular');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredAndSortedStories = useMemo(() => {
     let filteredStories = allStories;
@@ -33,6 +35,15 @@ function StoriesContent() {
     // Filter by genre
     if (genreFilter !== 'all') {
       filteredStories = filteredStories.filter(story => story.genre === genreFilter);
+    }
+
+    // Basic search: filter titles and summaries (descriptions)
+    if (searchQuery.trim()) {
+      const lowerTerm = searchQuery.toLowerCase();
+      filteredStories = filteredStories.filter(story => 
+        story.title.toLowerCase().includes(lowerTerm) || 
+        story.description.toLowerCase().includes(lowerTerm)
+      );
     }
 
     // Sort stories
@@ -50,9 +61,9 @@ function StoriesContent() {
     }
 
     return sortedStories;
-  }, [genreFilter, sortFilter, typeFilter]);
+  }, [genreFilter, sortFilter, typeFilter, searchQuery]);
 
-  const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0);
+  const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
   return (
     <>
@@ -72,7 +83,28 @@ function StoriesContent() {
                 
                 <Separator orientation="vertical" className="hidden lg:block h-10 bg-border/50" />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Recherche</label>
+                        <div className="relative">
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Titre, résumé..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all"
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="space-y-1.5">
                         <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Catégorie</label>
                         <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -146,7 +178,7 @@ function StoriesContent() {
           <Button 
             variant="outline" 
             className="rounded-full"
-            onClick={() => {setGenreFilter('all'); setTypeFilter('all'); setSortFilter('popular');}}
+            onClick={() => {setGenreFilter('all'); setTypeFilter('all'); setSortFilter('popular'); setSearchQuery('');}}
           >
             Réinitialiser tout
           </Button>
@@ -184,3 +216,5 @@ export default function StoriesPage() {
     </div>
   );
 }
+
+import { Button } from '@/components/ui/button';

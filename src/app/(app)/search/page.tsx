@@ -5,11 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { stories, artists, type Story, type Artist } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
 import { Input } from '@/components/ui/input';
-import { Search, Users, BookOpen, X, Sparkles, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, Users, BookOpen, X, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
@@ -21,12 +20,13 @@ function SearchResultsContent() {
   const [searchTerm, setSearchState] = useState(query);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Logic for advanced filtering
+  // Logic for filtering based on title and summary (description)
   const filteredStories = useMemo(() => {
     if (!searchTerm.trim()) return stories;
     const lowerTerm = searchTerm.toLowerCase();
     return stories.filter(s => 
       s.title.toLowerCase().includes(lowerTerm) ||
+      s.description.toLowerCase().includes(lowerTerm) || // Filtering by summary
       s.genre.toLowerCase().includes(lowerTerm) ||
       s.artistName?.toLowerCase().includes(lowerTerm) ||
       s.tags.some(t => t.toLowerCase().includes(lowerTerm))
@@ -66,7 +66,7 @@ function SearchResultsContent() {
                 <Input 
                 value={searchTerm}
                 onChange={(e) => setSearchState(e.target.value)}
-                placeholder="Titre, auteur, genre ou mot-clé..."
+                placeholder="Titre, résumé, auteur, genre..."
                 className="h-16 pl-14 pr-12 text-xl rounded-full border-2 border-primary/20 focus:border-primary shadow-2xl bg-card/80 backdrop-blur-xl"
                 />
                 {searchTerm && (
