@@ -2,19 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
-import { stories, artists, comments, getStoryUrl, getChapterUrl } from '@/lib/data';
-import { ArrowRight, Play, Award, PenSquare, Sparkles, Zap, Star } from 'lucide-react';
+import { stories, artists, getStoryUrl, getChapterUrl } from '@/lib/data';
+import { ArrowRight, Play, Award, PenSquare, Info, ChevronRight, Sparkles, Zap, Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  type CarouselApi
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +21,23 @@ import { useTranslation } from '@/components/providers/language-provider';
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
   const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
+    Autoplay({ delay: 6000, stopOnInteraction: true })
   );
+
+  useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
   
   const proStories = stories.filter(s => {
     const artist = artists.find(a => a.id === s.artistId);
@@ -38,74 +50,112 @@ export default function HomePage() {
   }).slice(0, 5);
 
   const popularPublicStories = stories.filter(s => !s.isPremium).sort((a, b) => b.views - a.views).slice(0, 5);
-  const featuredPremiumStories = stories.filter(s => s.isPremium).sort((a, b) => b.likes - a.likes).slice(0, 5);
   const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
   
   const featuredArtists = artists.slice(0, 5);
-  const featuredStoriesForCarousel = stories.filter(s => ['1', '2', '4'].includes(s.id));
+  const featuredStoriesForCarousel = stories.filter(s => ['1', '2', '3'].includes(s.id));
 
   return (
     <>
       <h1 className="sr-only">NexusHub - {t('nav.browse')}</h1>
-      <header className="relative pt-12 pb-12 md:pb-24">
+      
+      {/* Featured Carousel Section */}
+      <section className="relative pt-8 pb-12">
         <div className="container max-w-7xl mx-auto px-6 lg:px-12">
             <Carousel
+                setApi={setApi}
                 opts={{ loop: true }}
                 plugins={[plugin.current]}
                 className="w-full"
             >
-                <CarouselContent className="homepage-carousel-container">
+                <CarouselContent>
                     {featuredStoriesForCarousel.map((story) => {
                         const storyUrl = getStoryUrl(story);
                         const readingUrl = story.chapters.length > 0 ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
                         return (
                             <CarouselItem key={story.id}>
-                                <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden">
+                                <div className="relative w-full aspect-[16/9] md:aspect-[2.4/1] rounded-[2rem] overflow-hidden group shadow-2xl border border-white/10">
                                     <Image
                                         src={story.coverImage.imageUrl}
                                         alt={story.title}
                                         fill
-                                        className="object-cover"
+                                        className="object-cover transition-transform duration-[10s] group-hover:scale-110"
                                         priority
                                         data-ai-hint={story.coverImage.imageHint}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 sm:p-8 md:p-12 flex flex-col justify-end items-start text-left">
-                                        <Link href={`/genre/${story.genreSlug}`}>
-                                            <Badge variant="secondary" className="mb-2 md:mb-4 backdrop-blur-sm">{story.genre}</Badge>
-                                        </Link>
-                                        <h2 className="text-xl md:text-4xl font-display font-bold text-white mb-1 md:mb-2">{story.title}</h2>
-                                        <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                                            <Button asChild size="sm">
-                                                <Link href={readingUrl}>
-                                                    <Play className="mr-2 h-4 w-4 fill-current" />
-                                                    {t('common.read')}
-                                                </Link>
-                                            </Button>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent p-8 md:p-16 flex flex-col justify-center items-start text-left">
+                                        <div className="carousel-content-animate flex flex-col gap-4 max-w-2xl">
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/20 backdrop-blur-md px-4 py-1 font-bold text-xs uppercase tracking-widest">
+                                                    {story.genre}
+                                                </Badge>
+                                                {story.isPremium && (
+                                                    <Badge className="bg-amber-500 text-black border-none px-4 py-1 font-bold text-xs uppercase tracking-widest shadow-lg">
+                                                        <Star className="h-3 w-3 mr-1 fill-current" /> Premium
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            
+                                            <h2 className="text-4xl md:text-6xl font-display font-bold text-white leading-none tracking-tight drop-shadow-xl">
+                                                {story.title}
+                                            </h2>
+                                            
+                                            <p className="text-white/80 text-sm md:text-lg font-light leading-relaxed line-clamp-3 mb-4 max-w-xl italic border-l-2 border-primary/50 pl-6">
+                                                "{story.description}"
+                                            </p>
+
+                                            <div className="flex items-center gap-4 mb-6">
+                                                <Avatar className="h-10 w-10 border-2 border-primary/30">
+                                                    <AvatarImage src={artists.find(a => a.id === story.artistId)?.avatar.imageUrl} />
+                                                    <AvatarFallback>A</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <span className="text-white font-bold text-sm">{story.artistName}</span>
+                                                    <span className="text-white/60 text-[10px] uppercase tracking-widest font-bold">Artiste Certifié</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-4">
+                                                <Button asChild size="lg" className="h-14 px-10 rounded-full font-bold text-base shadow-xl shadow-primary/20 transition-all active:scale-95">
+                                                    <Link href={readingUrl}>
+                                                        <Play className="mr-3 h-5 w-5 fill-current" />
+                                                        {t('common.read')}
+                                                    </Link>
+                                                </Button>
+                                                <Button asChild variant="outline" size="lg" className="h-14 px-10 rounded-full bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/40 backdrop-blur-md transition-all active:scale-95">
+                                                    <Link href={storyUrl}>
+                                                        <Info className="mr-3 h-5 w-5" />
+                                                        {t('common.details')}
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </CarouselItem>
                         );
                     })}
-                     <CarouselItem>
-                        <div className="relative w-full aspect-video md:aspect-[2.5/1] rounded-xl overflow-hidden bg-gradient-to-br from-primary to-accent">
-                            <div className="absolute inset-0 bg-black/60 p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
-                                <h2 className="text-2xl md:text-4xl font-display font-bold text-white mb-2 md:mb-4">
-                                    {t('home.hero_title')}
-                                </h2>
-                                <p className="text-sm md:text-base text-white/90 font-light max-w-lg mb-6">
-                                    {t('home.hero_desc')}
-                                </p>
-                                <Button asChild variant="default">
-                                    <Link href="/submit">{t('nav.submit')}</Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </CarouselItem>
                 </CarouselContent>
             </Carousel>
+
+            {/* Pagination Dots */}
+            <div className="flex justify-center gap-2.5 mt-8">
+                {Array.from({ length: count }).map((_, index) => (
+                    <button
+                        key={index}
+                        onClick={() => api?.scrollTo(index)}
+                        className={cn(
+                            "h-2 transition-all duration-500 rounded-full",
+                            current === index 
+                                ? "w-10 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" 
+                                : "w-2 bg-muted hover:bg-muted-foreground/50"
+                        )}
+                        aria-label={`Aller à la diapositive ${index + 1}`}
+                    />
+                ))}
+            </div>
         </div>
-      </header>
+      </section>
 
       <main className="container max-w-7xl mx-auto px-6 lg:px-12 py-12 space-y-24">
         
@@ -141,7 +191,7 @@ export default function HomePage() {
             </div>
         </section>
 
-        <StoryCarousel title={t('home.popular')} stories={popularPublicStories} link="/popular" />
+        <StoryCarousel title={t('home.popular')} stories={popularPublicStories} link="/stories?tab=popular" />
         <StoryCarousel title={t('home.new')} stories={newStories} link="/new-releases" />
 
         <section>
@@ -152,7 +202,7 @@ export default function HomePage() {
             <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
               {[...featuredArtists, ...featuredArtists].map((artist, index) => (
                 <Link key={`${artist.id}-${index}`} href={`/artiste/${artist.slug}`} className="group flex flex-col items-center text-center mx-8 w-48 shrink-0">
-                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4">
+                    <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-primary mb-4 transition-all group-hover:ring-4 group-hover:scale-105 duration-300">
                       <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} />
                       <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                     </Avatar>
