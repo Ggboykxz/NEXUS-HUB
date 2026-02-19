@@ -72,7 +72,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-3 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-xl group-hover:-translate-y-1.5">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-xl group-hover:-translate-y-1">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
               src={story.coverImage.imageUrl}
@@ -80,70 +80,70 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
               fill
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
               data-ai-hint={story.coverImage.imageHint}
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
             />
         </Link>
         
-        <div className="absolute top-2.5 left-2.5 z-20 flex flex-col gap-1 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
+        <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
             {artist?.isMentor ? (
-                <Badge variant="default" className="gap-1 px-1.5 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[8px] uppercase font-bold tracking-wider">
-                    <Award className="h-2.5 w-2.5" />
+                <Badge variant="default" className="gap-1 px-1 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
+                    <Award className="h-2 w-2" />
                     Pro
                 </Badge>
             ) : (
-                <Badge variant="outline" className="gap-1 px-1.5 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[8px] uppercase font-bold tracking-wider">
-                    <PenSquare className="h-2.5 w-2.5" />
+                <Badge variant="outline" className="gap-1 px-1 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[7px] uppercase font-bold tracking-wider">
+                    <PenSquare className="h-2 w-2" />
                     Draft
                 </Badge>
             )}
             
             {isHotAfro && (
-              <Badge className="gap-1 px-1.5 py-0.5 bg-orange-600 text-white backdrop-blur-md border-none shadow-lg text-[8px] uppercase font-bold tracking-wider animate-pulse">
-                <Flame className="h-2.5 w-2.5" />
+              <Badge className="gap-1 px-1 py-0.5 bg-orange-600 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider animate-pulse">
+                <Flame className="h-2 w-2" />
                 Hot
               </Badge>
             )}
 
             {isNew && !isHotAfro && (
-              <Badge className="gap-1 px-1.5 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[8px] uppercase font-bold tracking-wider">
-                <Sparkles className="h-2.5 w-2.5" />
+              <Badge className="gap-1 px-1 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
+                <Sparkles className="h-2 w-2" />
                 Nouveau
               </Badge>
             )}
         </div>
 
         {story.isPremium && (
-          <Badge variant="default" className="absolute top-2.5 right-2.5 z-20 gap-1 px-1.5 py-0.5 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[8px] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
-            <Crown className="h-2.5 w-2.5" />
+          <Badge variant="default" className="absolute top-2 right-2 z-20 gap-1 px-1 py-0.5 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[7px] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
+            <Crown className="h-2 w-2" />
             PREMIUM
           </Badge>
         )}
         
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/75 backdrop-blur-[3px] opacity-0 group-hover:opacity-100 transition-all duration-300 p-4 text-center">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/75 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 p-3 text-center">
             <div className="flex-1 flex flex-col justify-center">
-                <p className="text-white/90 text-[10px] mb-6 line-clamp-4 transform -translate-y-3 group-hover:translate-y-0 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 font-light leading-relaxed italic">
+                <p className="text-white/90 text-[9px] mb-4 line-clamp-3 transform -translate-y-2 group-hover:translate-y-0 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 font-light leading-relaxed italic">
                     {story.description}
                 </p>
                 
-                <div className="flex flex-col items-center gap-4 transform translate-y-3 group-hover:translate-y-0 transition-all duration-500 delay-75 ease-out opacity-0 group-hover:opacity-100">
-                    <div className="flex items-center justify-center gap-3">
+                <div className="flex flex-col items-center gap-3 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500 delay-75 ease-out opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center justify-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="secondary"
                                     size="icon"
-                                    className="rounded-full h-9 w-9 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                                    className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
                                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                                     aria-label="Ajouter à une playlist"
                                 >
-                                    <ListPlus className="h-5 w-5" />
+                                    <ListPlus className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-48">
-                                <DropdownMenuLabel className="text-xs">Playlist rapide</DropdownMenuLabel>
+                            <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-40">
+                                <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {userPlaylists.map(playlist => (
-                                    <DropdownMenuItem key={playlist.id} className="text-xs" onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
+                                    <DropdownMenuItem key={playlist.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
                                         {playlist.name}
                                     </DropdownMenuItem>
                                 ))}
@@ -151,31 +151,31 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                         </DropdownMenu>
                         
                         {hasChapters ? (
-                            <Button asChild size="lg" className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10" aria-label={`Lire ${story.title}`}>
+                            <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10" aria-label={`Lire ${story.title}`}>
                                 <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
-                                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                                    <Play className="ml-0.5 h-5 w-5 fill-current" />
                                 </Link>
                             </Button>
                         ) : (
-                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center border border-white/10 opacity-50" title="Bientôt disponible">
-                                <CalendarDays className="h-6 w-6 text-white" />
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-white/10 opacity-50" title="Bientôt disponible">
+                                <CalendarDays className="h-5 w-5 text-white" />
                             </div>
                         )}
 
                         <Button 
                           variant="secondary" 
                           size="icon" 
-                          className="rounded-full h-9 w-9 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                          className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
                           onClick={handleHeartClick}
                           aria-label="Ajouter aux favoris"
                         >
-                            <Heart className="h-5 w-5" />
+                            <Heart className="h-4 w-4" />
                         </Button>
                     </div>
                     
-                    <Button asChild variant="outline" className="w-full border-white/30 text-white hover:bg-primary hover:text-primary-foreground hover:border-primary backdrop-blur-md rounded-full h-9 text-[9px] uppercase tracking-[0.15em] font-bold transition-all active:scale-95 shadow-md">
+                    <Button asChild variant="outline" className="w-full border-white/30 text-white hover:bg-primary hover:text-primary-foreground hover:border-primary backdrop-blur-md rounded-full h-7 text-[8px] uppercase tracking-[0.1em] font-bold transition-all active:scale-95 shadow-md">
                         <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
-                            <Info className="mr-1.5 h-3.5 w-3.5" />
+                            <Info className="mr-1 h-3 w-3" />
                             Détails
                         </Link>
                     </Button>
@@ -184,28 +184,28 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         </div>
       </div>
 
-      <div className="space-y-1 px-1">
+      <div className="space-y-0.5 px-0.5">
         <Link href={storyUrl}>
-            <h3 className="font-display font-bold text-base text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
+            <h3 className="font-display font-bold text-xs text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
         </Link>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-light">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
             <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary transition-colors flex items-center gap-1">
-                <span className="font-medium truncate max-w-[100px]">{story.artistName}</span>
-                {artist?.isMentor ? <Award className="h-3 w-3 text-emerald-500" /> : <PenSquare className="h-3 w-3 text-orange-400" />}
+                <span className="font-medium truncate max-w-[80px]">{story.artistName}</span>
+                {artist?.isMentor ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>
         </div>
-        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/50">
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Eye className="h-2.5 w-2.5 text-primary" />
+        <div className="flex items-center justify-between mt-1 pt-1 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
+                    <Eye className="h-2 w-2 text-primary" />
                     {formatStat(story.views)}
                 </div>
-                <div className="flex items-center gap-1 text-[9px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Heart className="h-2.5 w-2.5 text-destructive" />
+                <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
+                    <Heart className="h-2 w-2 text-destructive" />
                     {formatStat(story.likes)}
                 </div>
             </div>
-            <Badge variant="outline" className="text-[8px] uppercase font-bold tracking-tighter px-1.5 py-0 h-4 border-primary/20">
+            <Badge variant="outline" className="text-[7px] uppercase font-bold tracking-tighter px-1 py-0 h-3 border-primary/20">
                 {story.format === 'Webtoon' ? 'Série' : story.format}
             </Badge>
         </div>
