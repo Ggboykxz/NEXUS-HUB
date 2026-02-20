@@ -34,52 +34,52 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
   const chapterNumber = story.chapters.findIndex((c: any) => c.slug === chapter.slug) + 1;
 
   return (
-    <nav className="fixed top-14 left-0 right-0 h-14 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl">
+    <nav className="fixed top-14 left-0 right-0 h-11 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl transition-all">
       <div 
         className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_10px_hsl(var(--primary))] transition-all duration-300 ease-out" 
         style={{ width: `${progress}%` }}
       />
 
       <div className="flex items-center gap-4 flex-1">
-        <Button asChild variant="ghost" size="icon" className="text-primary hover:text-primary/80">
-          <Link href={`/webtoon/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
+        <Button asChild variant="ghost" size="icon" className="text-primary hover:text-primary/80 h-8 w-8">
+          <Link href={`/webtoon/${story.slug}`}><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase font-black text-primary tracking-widest leading-none mb-1">{story.title}</span>
-          <span className="text-xs font-bold text-foreground truncate max-w-[120px] sm:max-w-none">Chapitre {chapterNumber} : {chapter.title}</span>
+        <div className="flex flex-col justify-center">
+          <span className="text-[9px] uppercase font-black text-primary tracking-widest leading-none mb-0.5">{story.title}</span>
+          <span className="text-[11px] font-bold text-foreground truncate max-w-[120px] sm:max-w-none">Chapitre {chapterNumber} : {chapter.title}</span>
         </div>
       </div>
 
       <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-        <Button size="icon" variant="outline" className="w-8 h-8 border-primary/20"><ChevronLeft className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" className="w-7 h-7 border-primary/20"><ChevronLeft className="h-3.5 w-3.5" /></Button>
         <Select defaultValue={chapter.slug} onValueChange={onChapterChange}>
-          <SelectTrigger className="w-[240px] h-8 text-xs font-bold border-primary/20 bg-muted/30">
+          <SelectTrigger className="w-[220px] h-7 text-[10px] font-bold border-primary/20 bg-muted/30">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {story.chapters.map((chap: Chapter, idx: number) => (
-              <SelectItem key={chap.id} value={chap.slug} className="text-xs">
+              <SelectItem key={chap.id} value={chap.slug} className="text-[10px]">
                 Chapitre {idx + 1} : {chap.title}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Button size="icon" variant="outline" className="w-8 h-8 border-primary/20"><ChevronRight className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" className="w-7 h-7 border-primary/20"><ChevronRight className="h-3.5 w-3.5" /></Button>
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end">
         <div className="hidden sm:flex bg-card border border-border rounded-lg p-0.5">
-          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-[10px] font-black gap-1.5 uppercase">
-            <Layers className="h-3.5 w-3.5" /> Webtoon
+          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-6 text-[9px] font-black gap-1 uppercase px-2">
+            <Layers className="h-3 w-3" /> Webtoon
           </Button>
-          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-[10px] font-black gap-1.5 uppercase">
-            <Book className="h-3.5 w-3.5" /> BD
+          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-6 text-[9px] font-black gap-1 uppercase px-2">
+            <Book className="h-3 w-3" /> BD
           </Button>
         </div>
-        <Button onClick={onBookmark} size="icon" variant="outline" className={cn("h-8 w-8", isBookmarked && "bg-primary/10 border-primary text-primary")}>
-          <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-current")} />
+        <Button onClick={onBookmark} size="icon" variant="outline" className={cn("h-7 w-7", isBookmarked && "bg-primary/10 border-primary text-primary")}>
+          <Bookmark className={cn("h-3.5 w-3.5", isBookmarked && "fill-current")} />
         </Button>
-        <Button size="icon" variant="outline" className="h-8 w-8 md:flex hidden"><Settings className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" className="h-7 w-7 md:flex hidden"><Settings className="h-3.5 w-3.5" /></Button>
       </div>
     </nav>
   );
@@ -325,7 +325,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         onChapterChange={handleChapterChange}
       />
       
-      <div className="flex-1 flex overflow-hidden pt-[112px] relative">
+      <div className="flex-1 flex overflow-hidden pt-[100px] relative">
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
