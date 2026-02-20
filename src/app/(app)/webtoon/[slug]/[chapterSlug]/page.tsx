@@ -23,6 +23,7 @@ import {
   CarouselItem,
   type CarouselApi
 } from "@/components/ui/carousel";
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 // #region Components
 
@@ -123,6 +124,8 @@ function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggle
 }
 
 function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, chapterIndex: number, onClose: () => void }) {
+  const { openAuthModal } = useAuthModal();
+  const isLoggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
   const storyComments = allComments.filter(c => c.storyId === storyId && c.chapter === chapterIndex);
   
   const processComment = (text: string) => {
@@ -143,6 +146,14 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
       );
     }
     return <p>{text}</p>;
+  };
+
+  const handlePostComment = () => {
+    if (!isLoggedIn) {
+      openAuthModal('poster votre commentaire');
+      return;
+    }
+    // Post comment logic
   };
 
   return (
@@ -202,7 +213,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
           />
           <div className="absolute right-3 bottom-3 flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500"><Smile className="h-5 w-5" /></Button>
-            <Button size="icon" className="h-8 w-8 rounded-xl bg-primary text-black gold-shimmer shadow-lg">
+            <Button onClick={handlePostComment} size="icon" className="h-8 w-8 rounded-xl bg-primary text-black gold-shimmer shadow-lg">
               <SendHorizonal className="h-4 w-4" />
             </Button>
           </div>
@@ -217,6 +228,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
 export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
   const router = useRouter();
   
   const story = stories.find(s => s.slug === slug);
@@ -263,8 +275,23 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   };
 
   const handleBookmark = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('sauvegarder ce chapitre');
+      return;
+    }
     setIsBookmarked(!isBookmarked);
     toast({ title: isBookmarked ? 'Retiré de votre bibliothèque' : 'Ajouté à votre bibliothèque !' });
+  };
+
+  const handleLike = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('aimer cette œuvre');
+      return;
+    }
+    setIsLiked(!isLiked);
+    if(!isLiked) toast({title: "Merci pour le like ! ❤️"});
   };
 
   const handleShare = () => {
@@ -483,7 +510,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
       <ReaderFooter 
         story={story}
         isLiked={isLiked}
-        onLike={() => {setIsLiked(!isLiked); if(!isLiked) toast({title: "Merci pour le like ! ❤️"});}}
+        onLike={handleLike}
         commentsCount={story.chapters.length * 15}
         onShare={handleShare}
         onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}

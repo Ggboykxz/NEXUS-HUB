@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
+import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
 import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
 
 export const metadata: Metadata = {
@@ -48,10 +49,12 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased overflow-x-hidden" suppressHydrationWarning>
         <LanguageProvider>
-          <HeaderFooterWrapper>
-            {children}
-          </HeaderFooterWrapper>
-          <Toaster />
+          <AuthModalProvider>
+            <HeaderFooterWrapper>
+              {children}
+            </HeaderFooterWrapper>
+            <Toaster />
+          </AuthModalProvider>
         </LanguageProvider>
       </body>
     </html>
