@@ -28,12 +28,13 @@ import {
 
 /**
  * En-tête fixe avec numéro de chapitre
+ * Ajusté avec top-14 pour se placer sous le header principal
  */
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: any) {
   const chapterNumber = story.chapters.findIndex((c: any) => c.slug === chapter.slug) + 1;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
+    <nav className="fixed top-14 left-0 right-0 h-14 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl">
       <div 
         className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_10px_hsl(var(--primary))] transition-all duration-300 ease-out" 
         style={{ width: `${progress}%` }}
@@ -324,7 +325,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         onChapterChange={handleChapterChange}
       />
       
-      <div className="flex-1 flex overflow-hidden pt-14 relative">
+      <div className="flex-1 flex overflow-hidden pt-[112px] relative">
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
