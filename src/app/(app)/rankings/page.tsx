@@ -4,6 +4,8 @@ import { Suspense, use, useMemo } from 'react';
 import { stories, getStoryUrl, artists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Crown, Eye, Heart, Star, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Zap } from 'lucide-react';
