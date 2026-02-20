@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
-import { stories, comicPages, comments as allComments, artists, type Chapter } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { stories, comicPages, comments as allComments, artists, type Chapter, getChapterUrl } from '@/lib/data';
+import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,15 +21,13 @@ import { Textarea } from '@/components/ui/textarea';
 // #region Components
 
 /**
- * En-tête fixe
+ * En-tête fixe avec numéro de chapitre
  */
-function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress }: any) {
-  // Calcul du numéro de chapitre (index + 1)
-  const chapterNumber = story.chapters.findIndex((c: any) => c.id === chapter.id) + 1;
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: any) {
+  const chapterNumber = story.chapters.findIndex((c: any) => c.slug === chapter.slug) + 1;
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
-      {/* Barre de progression dorée */}
       <div 
         className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_10px_hsl(var(--primary))] transition-all duration-300 ease-out" 
         style={{ width: `${progress}%` }}
@@ -47,14 +45,14 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
 
       <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
         <Button size="icon" variant="outline" className="w-8 h-8 border-primary/20"><ChevronLeft className="h-4 w-4" /></Button>
-        <Select defaultValue={chapter.slug}>
-          <SelectTrigger className="w-[220px] h-8 text-xs font-bold border-primary/20 bg-muted/30">
+        <Select defaultValue={chapter.slug} onValueChange={onChapterChange}>
+          <SelectTrigger className="w-[240px] h-8 text-xs font-bold border-primary/20 bg-muted/30">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {story.chapters.map((chap: Chapter, idx: number) => (
               <SelectItem key={chap.id} value={chap.slug} className="text-xs">
-                Épisode {idx + 1} : {chap.title}
+                Chapitre {idx + 1} : {chap.title}
               </SelectItem>
             ))}
           </SelectContent>
@@ -80,14 +78,11 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
   );
 }
 
-/**
- * Barre de navigation inférieure fixe
- */
 function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen }: any) {
   return (
     <div className={cn(
       "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-2xl border border-white/10 p-2 rounded-full shadow-2xl transition-all duration-500",
-      isCommentsOpen && "translate-x-[-100%] md:translate-x-[-150%]" // Décalage pour ne pas gêner les commentaires
+      isCommentsOpen && "translate-x-[-100%] md:translate-x-[-150%]"
     )}>
       <Button variant="ghost" size="icon" className="rounded-full text-stone-400 hover:text-primary"><ChevronLeft className="h-5 w-5" /></Button>
       
@@ -120,9 +115,6 @@ function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggle
   );
 }
 
-/**
- * Overlay des commentaires (utilisé en Split View)
- */
 function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, chapterIndex: number, onClose: () => void }) {
   const storyComments = allComments.filter(c => c.storyId === storyId && c.chapter === chapterIndex);
   
@@ -155,14 +147,14 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
           </h3>
           <p className="text-[10px] text-stone-400 uppercase font-bold tracking-widest mt-1">Lecture & Débat en simultané</p>
         </div>
-        <Button variant="ghost" size="icon" onClose={onClose} className="text-stone-500 hover:text-white rounded-full">
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-stone-500 hover:text-white rounded-full">
           <X className="h-5 w-5" />
         </Button>
       </div>
 
       <ScrollArea className="flex-1 p-6">
         <div className="space-y-8">
-          {storyComments.map((comment) => (
+          {storyComments.length > 0 ? storyComments.map((comment) => (
             <div key={comment.id} className="group animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-start gap-4">
                 <Avatar className="h-10 w-10 border-2 border-white/5 group-hover:border-primary/30 transition-all">
@@ -187,7 +179,11 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="text-center py-12">
+              <p className="text-stone-500 italic text-sm">Soyez le premier à commenter ce chapitre !</p>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -214,6 +210,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
 export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
+  const router = useRouter();
   
   const story = stories.find(s => s.slug === slug);
   if (!story) notFound();
@@ -228,7 +225,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const [progress, setProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Calcul de la progression basé sur le scroll du conteneur principal
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
@@ -245,6 +241,10 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     toast({ title: "Lien copié !", description: "Partagez la passion NexusHub." });
   };
 
+  const handleChapterChange = (newSlug: string) => {
+    router.push(getChapterUrl(story, newSlug));
+  };
+
   return (
     <div className="h-screen bg-[#050505] flex flex-col selection:bg-primary/30 overflow-hidden">
       <ReaderHeader 
@@ -255,10 +255,10 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
         progress={progress}
+        onChapterChange={handleChapterChange}
       />
       
       <div className="flex-1 flex overflow-hidden pt-14 relative">
-        {/* Zone de lecture (Moitié gauche ou Full) */}
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
@@ -305,7 +305,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
               ))}
             </div>
             
-            {/* FIN DU CHAPITRE */}
             <div className="w-full max-w-[800px] py-32 px-6">
               <div className="relative bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 md:p-16 text-center overflow-hidden shadow-[0_0_50px_rgba(212,168,67,0.1)]">
                 <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
@@ -352,7 +351,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           </div>
         </main>
 
-        {/* Zone des commentaires (Moitié droite) */}
         {isCommentsOpen && (
           <aside className="w-full md:w-1/2 animate-in slide-in-from-right duration-500 ease-out">
             <CommentsPanel 
