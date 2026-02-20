@@ -10,20 +10,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { 
   ShieldCheck, 
   Lock, 
   Mail, 
-  ArrowRight, 
-  BookOpen, 
-  Zap, 
   Heart, 
   Users, 
-  Sparkles,
-  ChevronDown
+  Zap, 
+  Sparkles
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Link from 'next/link';
 
 interface AuthModalProps {
@@ -36,101 +31,93 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
 
   const handleSocialLogin = (platform: string) => {
-    // Logic for social login
     console.log(`Login with ${platform}`);
   };
 
   const teaserBenefits = [
-    { icon: Zap, text: "Accédez à des chapitres exclusifs" },
-    { icon: Users, text: "Rejoignez la communauté Nexus" },
-    { icon: Heart, text: "Sauvegardez vos favoris" },
+    { icon: Zap, text: "Accès exclusif" },
+    { icon: Users, text: "Communauté" },
+    { icon: Heart, text: "Favoris" },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[92vw] sm:max-w-[440px] p-0 overflow-hidden border-none bg-stone-950 shadow-2xl rounded-2xl md:rounded-3xl">
+      <DialogContent className="max-w-[90vw] sm:max-w-[380px] p-0 overflow-hidden border-none bg-stone-950 shadow-2xl rounded-2xl">
         <div className="relative overflow-hidden">
           {/* Gold Decorative Background */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary animate-shimmer" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
 
-          <div className="relative z-10 p-5 md:p-8">
-            <DialogHeader className="text-center space-y-3">
-              <div className="mx-auto bg-primary/10 p-2 md:p-3 rounded-full w-fit mb-1">
-                <Lock className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+          <div className="relative z-10 p-4 sm:p-6">
+            <DialogHeader className="text-center space-y-2">
+              <div className="mx-auto bg-primary/10 p-2 rounded-full w-fit mb-0.5">
+                <Lock className="h-5 w-5 text-primary" />
               </div>
-              <DialogTitle className="text-xl md:text-2xl font-display font-black gold-resplendant drop-shadow-[0_0_10px_rgba(212,168,67,0.3)] leading-tight">
+              <DialogTitle className="text-lg sm:text-xl font-display font-black gold-resplendant drop-shadow-[0_0_10px_rgba(212,168,67,0.3)] leading-tight">
                 Membres Uniquement
               </DialogTitle>
-              <DialogDescription className="text-stone-300 font-light italic text-xs md:text-sm">
-                Connectez-vous pour <span className="text-primary font-bold">{action}</span>. C'est gratuit !
+              <DialogDescription className="text-stone-300 font-light italic text-[11px] sm:text-xs">
+                Connectez-vous pour <span className="text-primary font-bold">{action}</span>.
               </DialogDescription>
             </DialogHeader>
 
-            {/* Teaser Benefits - More compact on mobile */}
-            <div className="mt-6 space-y-2 bg-white/5 rounded-xl p-4 border border-white/5">
+            {/* Teaser Benefits - Grid for compactness */}
+            <div className="mt-4 grid grid-cols-3 gap-2 bg-white/5 rounded-lg p-2.5 border border-white/5">
               {teaserBenefits.map((benefit, idx) => (
-                <div key={idx} className="flex items-start gap-2.5">
-                  <div className="bg-primary/20 p-1 rounded-md mt-0.5 shrink-0">
+                <div key={idx} className="flex flex-col items-center text-center gap-1">
+                  <div className="bg-primary/20 p-1 rounded-md shrink-0">
                     <benefit.icon className="h-3 w-3 text-primary" />
                   </div>
-                  <p className="text-[10px] md:text-[11px] font-bold text-stone-200 tracking-tight leading-tight">{benefit.text}</p>
+                  <p className="text-[8px] font-bold text-stone-200 tracking-tight leading-tight uppercase">{benefit.text}</p>
                 </div>
               ))}
             </div>
 
             {/* Social Login Options */}
-            <div className="mt-6 space-y-2.5">
+            <div className="mt-4 space-y-2">
               <Button 
                 onClick={() => handleSocialLogin('Google')}
                 variant="outline" 
-                className="w-full h-10 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 transition-all active:scale-95 group overflow-hidden relative shadow-lg text-xs md:text-sm"
+                className="w-full h-9 rounded-lg border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 text-xs group overflow-hidden relative shadow-lg"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-google text-base md:text-lg text-red-500" />
+                <i className="fa-brands fa-google text-red-500" />
                 Continuer avec Google
               </Button>
               <Button 
                 onClick={() => handleSocialLogin('X')}
                 variant="outline" 
-                className="w-full h-10 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 transition-all active:scale-95 group overflow-hidden relative shadow-lg text-xs md:text-sm"
+                className="w-full h-9 rounded-lg border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 text-xs group overflow-hidden relative shadow-lg"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-x-twitter text-base md:text-lg" />
+                <i className="fa-brands fa-x-twitter" />
                 Continuer avec X
               </Button>
               
-              <div className="flex items-center gap-2 py-1">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[8px] md:text-[9px] uppercase font-black tracking-[0.3em] text-stone-500">Ou</span>
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
-
               {!showEmailForm ? (
-                <Button 
+                <button 
                   onClick={() => setShowEmailForm(true)}
-                  variant="ghost" 
-                  className="w-full h-9 text-stone-400 hover:text-primary transition-colors text-[10px] md:text-xs font-bold"
+                  className="w-full text-center py-1 text-stone-500 hover:text-primary transition-colors text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  <Mail className="mr-2 h-3.5 w-3.5" /> Utiliser mon Email
-                </Button>
+                  <Mail className="h-3 w-3" /> Utiliser mon Email
+                </button>
               ) : (
-                <div className="space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-300">
                   <Input 
                     placeholder="Email" 
-                    className="bg-white/5 border-white/10 h-10 rounded-lg text-white text-xs" 
+                    className="bg-white/5 border-white/10 h-9 rounded-lg text-white text-[11px]" 
                   />
                   <Input 
                     type="password" 
                     placeholder="Mot de passe" 
-                    className="bg-white/5 border-white/10 h-10 rounded-lg text-white text-xs" 
+                    className="bg-white/5 border-white/10 h-9 rounded-lg text-white text-[11px]" 
                   />
-                  <Button className="w-full h-10 rounded-lg font-black bg-primary text-black gold-shimmer text-xs">
+                  <Button className="w-full h-9 rounded-lg font-black bg-primary text-black gold-shimmer text-xs">
                     Se Connecter
                   </Button>
                   <button 
                     onClick={() => setShowEmailForm(false)}
-                    className="w-full text-center text-[9px] md:text-[10px] text-stone-500 hover:text-stone-300"
+                    className="w-full text-center text-[9px] text-stone-500 hover:text-stone-300"
                   >
                     Retour
                   </button>
@@ -139,21 +126,21 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
             </div>
 
             {/* Inscription Teaser */}
-            <div className="mt-6 pt-5 border-t border-white/5 text-center space-y-3">
-              <p className="text-[10px] md:text-xs text-stone-400 font-medium">
-                Pas encore membre ? <Link href="/signup" onClick={onClose} className="text-primary font-bold hover:underline">S'inscrire</Link>
+            <div className="mt-4 pt-4 border-t border-white/5 text-center space-y-2">
+              <p className="text-[10px] text-stone-400 font-medium">
+                Pas membre ? <Link href="/signup" onClick={onClose} className="text-primary font-bold hover:underline">S'inscrire</Link>
               </p>
-              <div className="flex justify-center items-center gap-3 text-[8px] md:text-[10px] font-bold text-stone-600 uppercase tracking-widest">
-                <div className="flex items-center gap-1"><ShieldCheck className="h-2.5 w-2.5 md:h-3 md:w-3" /> RGPD</div>
+              <div className="flex justify-center items-center gap-3 text-[8px] font-bold text-stone-600 uppercase tracking-widest">
+                <div className="flex items-center gap-1"><ShieldCheck className="h-2.5 w-2.5" /> RGPD</div>
                 <div className="h-1 w-1 rounded-full bg-stone-800" />
-                <div className="flex items-center gap-1"><Sparkles className="h-2.5 w-2.5 md:h-3 md:w-3" /> Gratuit</div>
+                <div className="flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> Gratuit</div>
               </div>
             </div>
 
             {/* Close Link */}
             <button 
               onClick={onClose}
-              className="mt-5 w-full text-center text-[9px] md:text-[10px] text-stone-500 hover:text-stone-300 transition-colors uppercase font-bold tracking-tighter"
+              className="mt-4 w-full text-center text-[9px] text-stone-500 hover:text-stone-300 transition-colors uppercase font-bold tracking-tighter"
             >
               Fermer
             </button>
