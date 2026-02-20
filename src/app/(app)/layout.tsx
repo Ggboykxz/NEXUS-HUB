@@ -1,8 +1,7 @@
-import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
-
 /**
- * Layout imbriqué pour le groupe (app).
- * Gère l'affichage du Header et du Footer pour toutes les pages de l'application.
+ * Layout épuré pour le groupe (app).
+ * Le Header et le Footer sont gérés par le Root Layout via HeaderFooterWrapper
+ * pour éviter les conflits de priorité et les écrans noirs.
  */
 export default function AppLayout({
   children,
@@ -10,8 +9,8 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <HeaderFooterWrapper>
+    <>
       {children}
-    </HeaderFooterWrapper>
+    </>
   );
 }

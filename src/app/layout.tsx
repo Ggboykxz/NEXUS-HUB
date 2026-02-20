@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
+import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -47,7 +48,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased overflow-x-hidden" suppressHydrationWarning>
         <LanguageProvider>
-          {children}
+          <HeaderFooterWrapper>
+            {children}
+          </HeaderFooterWrapper>
           <Toaster />
         </LanguageProvider>
       </body>
