@@ -17,6 +17,12 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi
+} from "@/components/ui/carousel";
 
 // #region Components
 
@@ -223,12 +229,36 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const [isLiked, setIsLiked] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentPage, setCurrentPage] = useState(0);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Synchronise progress with carousel in 'pages' mode
+  useEffect(() => {
+    if (!carouselApi) return;
+    
+    const onSelect = () => {
+      const current = carouselApi.selectedScrollSnap();
+      setCurrentPage(current);
+      if (activeMode === 'pages') {
+        const total = carouselApi.scrollSnapList().length;
+        setProgress(((current + 1) / total) * 100);
+      }
+    };
+
+    carouselApi.on("select", onSelect);
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi, activeMode]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
-    setProgress(currentProgress);
+    if (activeMode === 'scroll') {
+      const target = e.currentTarget;
+      const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
+      setProgress(currentProgress);
+    }
   };
 
   const handleBookmark = () => {
@@ -243,6 +273,29 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
 
   const handleChapterChange = (newSlug: string) => {
     router.push(getChapterUrl(story, newSlug));
+  };
+
+  // BD Navigation handlers
+  const handlePagePrev = () => {
+    carouselApi?.scrollPrev();
+  };
+
+  const handlePageNext = () => {
+    carouselApi?.scrollNext();
+  };
+
+  // Custom click handler for BD images
+  const handleImageClick = (e: React.MouseEvent) => {
+    if (activeMode !== 'pages') return;
+    
+    // Check if it's a context menu (right click)
+    if (e.button === 2) {
+      e.preventDefault();
+      handlePageNext();
+    } else if (e.button === 0) {
+      // Left click
+      handlePagePrev();
+    }
   };
 
   return (
@@ -267,88 +320,139 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             isCommentsOpen ? "w-1/2 border-r border-white/5" : "w-full"
           )}
         >
-          <div className={cn(
-            "mx-auto flex flex-col items-center py-8",
-            activeMode === 'scroll' ? "max-w-[800px] px-0" : "max-w-[1200px] px-4 md:px-12"
-          )}>
-            <div className={cn(
-              "w-full transition-all duration-700",
-              activeMode === 'scroll' ? "space-y-0" : "flex flex-wrap justify-center gap-6"
-            )}>
-              {comicPages.map((page, index) => (
-                <div 
-                  key={page.id} 
-                  className={cn(
-                    "relative transition-all duration-500",
-                    activeMode === 'scroll' 
-                      ? "w-full aspect-[2/3] mb-4 sm:mb-8" 
-                      : "w-[45%] md:w-[30%] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/5 hover:border-primary/30 group"
-                  )}
-                >
-                  <Image
-                    src={page.imageUrl}
-                    alt={page.description}
-                    fill
-                    className={cn(
-                      "object-contain md:object-cover transition-transform duration-700",
-                      activeMode === 'pages' && "group-hover:scale-105"
-                    )}
-                    data-ai-hint={page.imageHint}
-                    priority={index < 3}
-                  />
-                  {activeMode === 'pages' && (
-                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-mono text-white/80">
-                      Page {index + 1}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <div className="w-full max-w-[800px] py-32 px-6">
-              <div className="relative bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 md:p-16 text-center overflow-hidden shadow-[0_0_50px_rgba(212,168,67,0.1)]">
-                <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
-                <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
-                
-                <div className="relative z-10 space-y-8 animate-in zoom-in duration-1000">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="bg-primary/10 p-4 rounded-full w-fit gold-shimmer">
-                      <Zap className="h-10 w-10 text-primary" />
-                    </div>
-                    <h3 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">Chapitre Terminé !</h3>
-                    <p className="text-stone-400 font-light italic max-w-md mx-auto">
-                      "L'histoire ne fait que commencer. Votre soutien permet à {artist.name} de continuer cette légende."
-                    </p>
+          {activeMode === 'scroll' ? (
+            <div className="mx-auto flex flex-col items-center py-8 max-w-[800px] px-0">
+              <div className="w-full space-y-0">
+                {comicPages.map((page, index) => (
+                  <div 
+                    key={page.id} 
+                    className="relative w-full aspect-[2/3] mb-4 sm:mb-8"
+                  >
+                    <Image
+                      src={page.imageUrl}
+                      alt={page.description}
+                      fill
+                      className="object-contain md:object-cover"
+                      data-ai-hint={page.imageHint}
+                      priority={index < 3}
+                    />
                   </div>
+                ))}
+              </div>
+              
+              <div className="w-full max-w-[800px] py-32 px-6">
+                <div className="relative bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 md:p-16 text-center overflow-hidden shadow-[0_0_50px_rgba(212,168,67,0.1)]">
+                  <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
+                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
+                  
+                  <div className="relative z-10 space-y-8 animate-in zoom-in duration-1000">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="bg-primary/10 p-4 rounded-full w-fit gold-shimmer">
+                        <Zap className="h-10 w-10 text-primary" />
+                      </div>
+                      <h3 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">Chapitre Terminé !</h3>
+                      <p className="text-stone-400 font-light italic max-w-md mx-auto">
+                        "L'histoire ne fait que commencer. Votre soutien permet à {artist.name} de continuer cette légende."
+                      </p>
+                    </div>
 
-                  <div className="grid grid-cols-3 gap-4 py-8 border-y border-white/5">
-                    <div>
-                      <p className="text-2xl font-black text-white">12m</p>
-                      <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecture</p>
+                    <div className="grid grid-cols-3 gap-4 py-8 border-y border-white/5">
+                      <div>
+                        <p className="text-2xl font-black text-white">12m</p>
+                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecture</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white">{(story.views / 1000).toFixed(0)}k</p>
+                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecteurs</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-black text-white">4.9</p>
+                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Note</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-2xl font-black text-white">{(story.views / 1000).toFixed(0)}k</p>
-                      <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecteurs</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-white">4.9</p>
-                      <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Note</p>
-                    </div>
-                  </div>
 
-                  <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                    <Button size="lg" className="h-14 px-10 rounded-full font-black text-lg gold-shimmer group bg-primary text-black">
-                      Chapitre Suivant 
-                      <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                    <Button asChild variant="outline" size="lg" className="h-14 px-10 rounded-full border-white/20 text-white font-bold bg-white/5 hover:bg-white/10">
-                      <Link href={`/webtoon/${story.slug}`}>Détails de l'œuvre</Link>
-                    </Button>
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+                      <Button size="lg" className="h-14 px-10 rounded-full font-black text-lg gold-shimmer group bg-primary text-black">
+                        Chapitre Suivant 
+                        <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                      <Button asChild variant="outline" size="lg" className="h-14 px-10 rounded-full border-white/20 text-white font-bold bg-white/5 hover:bg-white/10">
+                        <Link href={`/webtoon/${story.slug}`}>Détails de l'œuvre</Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* BD Mode: One page at a time with swipe and click navigation */
+            <div className="h-full w-full flex items-center justify-center py-4">
+              <Carousel 
+                setApi={setApi} 
+                className="w-full h-full max-w-4xl"
+                opts={{
+                  align: "center",
+                  loop: false
+                }}
+              >
+                <CarouselContent className="h-full">
+                  {comicPages.map((page, index) => (
+                    <CarouselItem key={page.id} className="h-full flex items-center justify-center p-4">
+                      <div 
+                        className="relative w-full h-full max-h-[85vh] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/10 cursor-pointer select-none"
+                        onClick={handleImageClick}
+                        onContextMenu={(e) => { e.preventDefault(); handleImageClick(e); }}
+                      >
+                        <Image
+                          src={page.imageUrl}
+                          alt={page.description}
+                          fill
+                          className="object-contain"
+                          data-ai-hint={page.imageHint}
+                          priority={index === currentPage}
+                        />
+                        <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-white/80 uppercase tracking-widest border border-white/10">
+                          Planche {index + 1} / {comicPages.length}
+                        </div>
+                        
+                        {/* Interactive tooltips for onboarding */}
+                        {index === 0 && (
+                          <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-8 opacity-0 hover:opacity-100 transition-opacity duration-500">
+                            <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
+                              Clic Gauche<br/>PRÉCÉDENT
+                            </div>
+                            <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
+                              Clic Droit<br/>SUIVANT
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                
+                {/* Navigation controls shown on desktop */}
+                <div className="hidden lg:block">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-10 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 border-white/10 text-white hover:bg-primary hover:text-black transition-all"
+                    onClick={handlePagePrev}
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute right-10 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 border-white/10 text-white hover:bg-primary hover:text-black transition-all"
+                    onClick={handlePageNext}
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                </div>
+              </Carousel>
+            </div>
+          )}
         </main>
 
         {isCommentsOpen && (
