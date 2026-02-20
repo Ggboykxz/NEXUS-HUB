@@ -11,11 +11,20 @@ import { Heart, Share2, Play, BookOpen, Clock, Eye, Star, Award, PenSquare, Chev
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function StoryDetailPage({ params: propsParams }: { params: Promise<{ slug: string }> }) {
   const params = use(propsParams);
   const story = stories.find(s => s.slug === params.slug);
   const [isLiked, setIsLiked] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState('');
+
+  useEffect(() => {
+    if (story) {
+      setLastUpdate(format(new Date(story.updatedAt), 'd MMMM yyyy', { locale: fr }));
+    }
+  }, [story]);
 
   if (!story) {
     notFound();
@@ -64,6 +73,9 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                 {story.format}
               </Badge>
               {story.isPremium && <Badge className="bg-amber-500 text-black border-none uppercase tracking-widest text-[10px] px-3">PREMIUM</Badge>}
+              <Badge variant="secondary" className="bg-background/50 backdrop-blur-md text-[9px] h-5 gap-1.5 font-bold tracking-tight uppercase">
+                <Clock className="h-3 w-3 text-primary" /> Mis à jour : {lastUpdate}
+              </Badge>
             </div>
             
             <h1 className="text-4xl md:text-6xl font-display font-bold leading-tight">{story.title}</h1>

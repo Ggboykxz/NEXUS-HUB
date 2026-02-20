@@ -204,7 +204,7 @@ export const stories: Story[] = [
         { id: '1-2', slug: 'chapitre-2-l-epreuve', title: 'L\'Épreuve', releaseDate: '2024-05-15', status: 'Publié', pageCount: 25, version: 'v1.0' },
         { id: '1-3', slug: 'chapitre-3-l-ombre-grandit', title: 'L\'Ombre grandit', releaseDate: '2024-06-01', status: 'Programmé', pageCount: 23, version: 'v1.0' },
     ],
-    updatedAt: '2024-07-16T10:00:00Z',
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // Updated 2 hours ago
     format: 'Webtoon',
     status: 'En cours',
     collaborators: [
@@ -229,7 +229,7 @@ export const stories: Story[] = [
         { id: '2-1', slug: 'chapitre-1-neons-et-brouillard', title: 'Néons et Brouillard', releaseDate: '2024-04-20', status: 'Publié', pageCount: 30, version: 'v1.5', revisionNote: 'Texte révisé pour plus de clarté.' },
         { id: '2-2', slug: 'chapitre-2-le-contact', title: 'Le Contact', releaseDate: '2024-05-10', status: 'Publié', pageCount: 28, version: 'v1.0' },
     ],
-    updatedAt: '2024-07-13T10:00:00Z',
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // Updated yesterday
     format: 'Webtoon',
     status: 'En cours',
   },

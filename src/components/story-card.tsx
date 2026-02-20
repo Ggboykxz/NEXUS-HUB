@@ -5,10 +5,10 @@ import Link from 'next/link';
 import type { Story } from '@/lib/data';
 import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ const formatStat = (num: number): string => {
 
 export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
   const [date, setDate] = useState('');
+  const [relativeDate, setRelativeDate] = useState('');
   const { toast } = useToast();
 
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
@@ -46,6 +47,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const isHotAfro = story.genreSlug === 'afrofuturisme' && story.views > 500000;
 
   useEffect(() => {
+    // Relative date calculation after hydration
+    setRelativeDate(formatDistanceToNow(new Date(story.updatedAt), { addSuffix: true, locale: fr }));
+    
     if(showUpdateDate) {
         setDate(format(new Date(story.updatedAt), 'd MMM yyyy', { locale: fr }));
     }
@@ -185,9 +189,16 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       </div>
 
       <div className="space-y-0.5 px-0.5">
-        <Link href={storyUrl}>
-            <h3 className="font-display font-bold text-xs text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link href={storyUrl} className="min-w-0">
+              <h3 className="font-display font-bold text-xs text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
+          </Link>
+          {relativeDate && (
+            <span className="text-[7px] text-muted-foreground whitespace-nowrap flex items-center gap-0.5 uppercase tracking-tighter">
+              <Clock className="h-2 w-2" /> {relativeDate}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
             <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary transition-colors flex items-center gap-1">
                 <span className="font-medium truncate max-w-[80px]">{story.artistName}</span>
@@ -209,6 +220,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 {story.format === 'Webtoon' ? 'Série' : story.format}
             </Badge>
         </div>
+        {showUpdateDate && date && (
+          <p className="text-[8px] text-primary/60 font-bold mt-1 uppercase tracking-widest">Mis à jour le {date}</p>
+        )}
       </div>
     </div>
   );
