@@ -69,10 +69,10 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
       <div className="flex items-center gap-2 flex-1 justify-end">
         <div className="hidden sm:flex bg-card border border-border rounded-lg p-0.5">
           <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-[10px] font-black gap-1.5 uppercase">
-            <Layers className="h-3 w-3" /> Webtoon
+            <Layers className="h-3.5 w-3.5" /> Webtoon
           </Button>
           <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-[10px] font-black gap-1.5 uppercase">
-            <Book className="h-3 w-3" /> BD
+            <Book className="h-3.5 w-3.5" /> BD
           </Button>
         </div>
         <Button onClick={onBookmark} size="icon" variant="outline" className={cn("h-8 w-8", isBookmarked && "bg-primary/10 border-primary text-primary")}>
@@ -289,7 +289,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     if (activeMode !== 'pages') return;
     
     // Check if it's a context menu (right click)
-    if (e.button === 2) {
+    if (e.type === 'contextmenu') {
       e.preventDefault();
       handlePageNext();
     } else if (e.button === 0) {
@@ -388,7 +388,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             /* BD Mode: One page at a time with swipe and click navigation */
             <div className="h-full w-full flex items-center justify-center py-4">
               <Carousel 
-                setApi={setApi} 
+                setApi={setCarouselApi} 
                 className="w-full h-full max-w-4xl"
                 opts={{
                   align: "center",
