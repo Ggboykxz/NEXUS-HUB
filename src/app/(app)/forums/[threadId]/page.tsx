@@ -79,6 +79,8 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
   const [replyText, setReplyText] = useState('');
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
+  const thread = forumThreads.find((t) => t.id === threadId);
+
   useEffect(() => {
     // Generate gold particles for the hero
     const newParticles = [...Array(8)].map((_, i) => ({
@@ -97,8 +99,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
     notFound();
   }
 
-  const thread = forumThreads.find((t) => t.id === threadId);
-  const authorInfo = artists.find(a => a.name === thread?.author);
+  const authorInfo = artists.find(a => a.name === thread.author);
 
   const checkAuth = (action: string) => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -165,27 +166,27 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
           <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-700">
             <Badge className={cn(
               "uppercase tracking-widest text-[9px] font-black px-3 py-1 border-none shadow-lg",
-              thread?.isPremium ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
+              thread.isPremium ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
             )}>
-              {thread?.isPremium ? <><Crown className="h-3 w-3 mr-1 inline fill-current" /> Premium</> : <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Public</>}
+              {thread.isPremium ? <><Crown className="h-3 w-3 mr-1 inline fill-current" /> Premium</> : <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Public</>}
             </Badge>
             <Badge variant="secondary" className="bg-white/5 backdrop-blur-md border-white/10 text-stone-300 uppercase tracking-widest text-[9px] font-bold px-3 py-1">
-              {thread?.category}
+              {thread.category}
             </Badge>
           </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-white leading-tight gold-resplendant drop-shadow-[0_0_20px_rgba(212,168,67,0.3)] animate-in fade-in slide-in-from-top-4 duration-1000">
-            {thread?.title}
+            {thread.title}
           </h1>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 animate-in fade-in duration-1000 delay-300">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary/30 ring-2 ring-primary/10">
                 <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread?.author.slice(0,2)}</AvatarFallback>
+                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread.author.slice(0,2)}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-white font-bold text-sm">Posté par <span className="text-primary">{thread?.author}</span></p>
+                <p className="text-white font-bold text-sm">Posté par <span className="text-primary">{thread.author}</span></p>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">Il y a 2h</span>
                   {authorInfo?.isMentor && <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] h-3.5">Artiste Pro</Badge>}
@@ -196,8 +197,8 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
             <Separator orientation="vertical" className="hidden sm:block h-8 bg-white/10" />
 
             <div className="flex items-center gap-4 text-stone-400 text-xs font-bold uppercase tracking-tighter">
-              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread?.views} vues</span>
-              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread?.replies} réponses</span>
+              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread.views} vues</span>
+              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread.replies} réponses</span>
             </div>
 
             <Button onClick={handlePostReply} className="hidden sm:flex ml-auto rounded-full px-8 h-11 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
@@ -376,7 +377,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="Écrivez avec bienveillance et respect..." 
-                  className="min-h-[200px] bg-white/5 border-white/10 focus-visible:ring-primary rounded-3xl p-8 text-lg text-white font-light placeholder:text-stone-600 transition-all"
+                  className="min-h-[200px] bg-white/5 border-white/10 focus-visible:ring-primary rounded-3xl p-8 text-white font-light placeholder:text-stone-600 transition-all"
                 />
                 <div className="absolute right-6 bottom-6 flex items-center gap-3">
                   <Button 
@@ -399,7 +400,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
                   <Info className="h-4 w-4 text-primary" />
                   <p className="text-[10px] text-stone-300 uppercase tracking-widest font-black">
-                    {thread?.isPremium ? "Premium : Spoilers autorisés." : "Public : Masquez vos spoilers !"}
+                    {thread.isPremium ? "Premium : Spoilers autorisés." : "Public : Masquez vos spoilers !"}
                   </p>
                 </div>
                 <Button 
