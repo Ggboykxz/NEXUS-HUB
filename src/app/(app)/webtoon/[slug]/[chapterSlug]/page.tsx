@@ -24,6 +24,9 @@ import { Textarea } from '@/components/ui/textarea';
  * En-tête fixe
  */
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress }: any) {
+  // Calcul du numéro de chapitre (index + 1)
+  const chapterNumber = story.chapters.findIndex((c: any) => c.id === chapter.id) + 1;
+
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
       {/* Barre de progression dorée */}
@@ -38,7 +41,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
         </Button>
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-black text-primary tracking-widest leading-none mb-1">{story.title}</span>
-          <span className="text-xs font-bold text-foreground truncate max-w-[120px] sm:max-w-none">Chap. {chapter.title}</span>
+          <span className="text-xs font-bold text-foreground truncate max-w-[120px] sm:max-w-none">Chapitre {chapterNumber} : {chapter.title}</span>
         </div>
       </div>
 
@@ -49,9 +52,9 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {story.chapters.map((chap: Chapter) => (
+            {story.chapters.map((chap: Chapter, idx: number) => (
               <SelectItem key={chap.id} value={chap.slug} className="text-xs">
-                {chap.title}
+                Épisode {idx + 1} : {chap.title}
               </SelectItem>
             ))}
           </SelectContent>
@@ -152,7 +155,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
           </h3>
           <p className="text-[10px] text-stone-400 uppercase font-bold tracking-widest mt-1">Lecture & Débat en simultané</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-stone-500 hover:text-white rounded-full">
+        <Button variant="ghost" size="icon" onClose={onClose} className="text-stone-500 hover:text-white rounded-full">
           <X className="h-5 w-5" />
         </Button>
       </div>
@@ -354,7 +357,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           <aside className="w-full md:w-1/2 animate-in slide-in-from-right duration-500 ease-out">
             <CommentsPanel 
               storyId={story.id} 
-              chapterIndex={1} 
+              chapterIndex={story.chapters.findIndex(c => c.id === chapter.id) + 1} 
               onClose={() => setIsCommentsOpen(false)} 
             />
           </aside>
