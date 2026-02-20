@@ -1,7 +1,9 @@
+import { redirect } from 'next/navigation';
+
 /**
- * Fichier neutralisé au profit de src/app/page.tsx
- * pour assurer la priorité de rendu et éviter l'écran noir.
+ * Fichier neutralisé pour éviter les conflits avec src/app/page.tsx
+ * Redirige vers la racine pour stabiliser le build Next.js.
  */
 export default function AppGroupHomePage() {
-  return null;
+  redirect('/');
 }

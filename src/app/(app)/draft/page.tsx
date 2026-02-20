@@ -90,7 +90,7 @@ export default function DraftProgramPage() {
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <div className="bg-primary/20 p-1 rounded-full mt-1"><ChevronRight className="h-4 w-4 text-primary" /></div>
-                  <p className="font-medium">Atteignez 1000 abonnés pour débloquer le badge 'Espoir'.</p>
+                  <p className="font-medium">Atteignez 1000 abonnés pour débloquer le badge 'Espoir'.</p>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="bg-primary/20 p-1 rounded-full mt-1"><ChevronRight className="h-4 w-4 text-primary" /></div>
