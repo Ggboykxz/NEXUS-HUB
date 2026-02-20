@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function StoryDetailPage({ params: propsParams }: { params: Promise<{ slug: string }> }) {
   const params = use(propsParams);
