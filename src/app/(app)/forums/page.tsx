@@ -33,8 +33,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 export default function ForumsPage() {
+  const { openAuthModal } = useAuthModal();
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('public');
@@ -57,6 +59,15 @@ export default function ForumsPage() {
     const status = localStorage.getItem('accountType') === 'artist';
     setIsPremiumUser(status);
   }, []);
+
+  const handleCreateTopic = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('créer une nouvelle discussion');
+      return;
+    }
+    // Simulation: redirect to create topic page
+  };
 
   const filteredThreads = useMemo(() => {
     let threads = forumThreads.filter(t => activeTab === 'premium' ? t.isPremium : !t.isPremium);
@@ -170,7 +181,7 @@ export default function ForumsPage() {
             </DropdownMenu>
           </div>
 
-          <Button className="w-full md:w-auto h-10 px-6 rounded-full font-bold shadow-lg shadow-primary/20 gold-shimmer">
+          <Button onClick={handleCreateTopic} className="w-full md:w-auto h-10 px-6 rounded-full font-bold shadow-lg shadow-primary/20 gold-shimmer">
             <PlusCircle className="mr-2 h-4 w-4" />
             Créer un Nouveau Sujet
           </Button>
@@ -214,8 +225,8 @@ export default function ForumsPage() {
                 <p className="text-muted-foreground max-w-md mb-8 leading-relaxed">
                   Découvrez des discussions exclusives sur le futur de vos séries préférées. Spoilers autorisés ! Rejoignez la communauté Pro pour débloquer cet espace.
                 </p>
-                <Button asChild size="lg" className="rounded-full px-12 bg-amber-500 hover:bg-amber-600 text-black font-black shadow-xl shadow-amber-500/20">
-                  <Link href="/settings?tab=africoins">S'abonner pour 2,99€/mois</Link>
+                <Button onClick={() => openAuthModal('accéder au Forum Premium')} size="lg" className="rounded-full px-12 bg-amber-500 hover:bg-amber-600 text-black font-black shadow-xl shadow-amber-500/20">
+                  S'abonner pour 2,99€/mois
                 </Button>
               </div>
             )}
@@ -348,7 +359,7 @@ export default function ForumsPage() {
                   Si vous rencontrez un comportement inapproprié ou un spoiler non marqué, prévenez nos modérateurs immédiatement.
                 </p>
               </div>
-              <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-black font-bold px-8 h-12 transition-all">
+              <Button onClick={() => openAuthModal('signaler un problème')} variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-black font-bold px-8 h-12 transition-all">
                 Signaler un Message <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>

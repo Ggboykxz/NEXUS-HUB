@@ -12,13 +12,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 export default function SubmitPage() {
   const [step, setStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
 
   const handleCreate = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('lancer votre premier projet');
+      return;
+    }
+    
     setIsCreating(true);
     setTimeout(() => {
       setIsCreating(false);
@@ -149,7 +157,7 @@ export default function SubmitPage() {
                           <SelectItem value="illustrator">Illustrateur</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline">Ajouter</Button>
+                      <Button onClick={() => handleCreate()} variant="outline">Ajouter</Button>
                     </div>
                     <p className="text-xs text-muted-foreground italic">Les collaborateurs recevront une invitation par email pour rejoindre le projet.</p>
                   </div>

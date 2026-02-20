@@ -4,12 +4,26 @@ import type { Product } from '@/lib/data';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
+import { useAuthModal } from './providers/auth-modal-provider';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { openAuthModal } = useAuthModal();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('ajouter ce produit au panier');
+      return;
+    }
+    // Simulation logic here
+  };
+
   return (
     <Card className="overflow-hidden group flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
       <Link href={`/shop/${product.id}`} className="block">
@@ -30,12 +44,12 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </CardTitle>
           <p className="text-xl font-semibold text-primary mt-2">
-            ${product.price.toFixed(2)}
+            {product.price.toFixed(2)}€
           </p>
         </CardContent>
       </Link>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Button className="w-full">
+        <Button onClick={handleAddToCart} className="w-full">
           <ShoppingCart className="mr-2 h-4 w-4" />
           Ajouter au panier
         </Button>

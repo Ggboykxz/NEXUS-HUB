@@ -33,6 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 // --- MOCK DATA EXTENSION POUR LE PROTO ---
 const mockReplies = [
@@ -73,11 +74,10 @@ const mockReplies = [
 export default function ThreadPage(props: { params: Promise<{ threadId: string }> }) {
   const { threadId } = use(props.params);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
   const [isFollowing, setIsFollowing] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
-
-  const thread = forumThreads.find((t) => t.id === threadId);
 
   useEffect(() => {
     // Generate gold particles for the hero
@@ -97,9 +97,20 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
     notFound();
   }
 
-  const authorInfo = artists.find(a => a.name === thread.author);
+  const thread = forumThreads.find((t) => t.id === threadId);
+  const authorInfo = artists.find(a => a.name === thread?.author);
+
+  const checkAuth = (action: string) => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal(action);
+      return false;
+    }
+    return true;
+  };
 
   const handleFollow = () => {
+    if (!checkAuth('suivre cette discussion')) return;
     setIsFollowing(!isFollowing);
     toast({
       title: isFollowing ? "Discussion ignorée" : "Discussion suivie",
@@ -107,24 +118,22 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
     });
   };
 
+  const handlePostReply = () => {
+    if (!checkAuth('poster votre réponse')) return;
+    toast({ title: "Réponse publiée !", description: "Votre message est en ligne." });
+    setReplyText('');
+  };
+
+  const handleLike = () => {
+    if (!checkAuth('aimer ce post')) return;
+    toast({ title: "Merci pour le like !" });
+  };
+
   const handleShare = () => {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
       toast({ title: "Lien copié !", description: "Partagez la passion NexusHub." });
     }
-  };
-
-  // Simulation de masquage auto des spoilers en mode Public
-  const processContent = (text: string) => {
-    if (thread.isPremium) return text;
-    // Simple regex pour simuler l'IA de détection
-    const keywords = ["révélation", "mort", "tuer", "fin", "chapitre"];
-    let processed = text;
-    keywords.forEach(word => {
-      const regex = new RegExp(`(${word})`, 'gi');
-      processed = processed.replace(regex, "<span class='bg-primary/20 text-primary px-1 rounded'>$1</span>");
-    });
-    return processed;
   };
 
   return (
@@ -156,27 +165,27 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
           <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-700">
             <Badge className={cn(
               "uppercase tracking-widest text-[9px] font-black px-3 py-1 border-none shadow-lg",
-              thread.isPremium ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
+              thread?.isPremium ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-500 text-white shadow-emerald-500/20"
             )}>
-              {thread.isPremium ? <><Crown className="h-3 w-3 mr-1 inline fill-current" /> Premium</> : <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Public</>}
+              {thread?.isPremium ? <><Crown className="h-3 w-3 mr-1 inline fill-current" /> Premium</> : <><ShieldAlert className="h-3 w-3 mr-1 inline" /> Public</>}
             </Badge>
             <Badge variant="secondary" className="bg-white/5 backdrop-blur-md border-white/10 text-stone-300 uppercase tracking-widest text-[9px] font-bold px-3 py-1">
-              {thread.category}
+              {thread?.category}
             </Badge>
           </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-white leading-tight gold-resplendant drop-shadow-[0_0_20px_rgba(212,168,67,0.3)] animate-in fade-in slide-in-from-top-4 duration-1000">
-            {thread.title}
+            {thread?.title}
           </h1>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 animate-in fade-in duration-1000 delay-300">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary/30 ring-2 ring-primary/10">
                 <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread.author.slice(0,2)}</AvatarFallback>
+                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread?.author.slice(0,2)}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-white font-bold text-sm">Posté par <span className="text-primary">{thread.author}</span></p>
+                <p className="text-white font-bold text-sm">Posté par <span className="text-primary">{thread?.author}</span></p>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">Il y a 2h</span>
                   {authorInfo?.isMentor && <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] h-3.5">Artiste Pro</Badge>}
@@ -187,11 +196,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
             <Separator orientation="vertical" className="hidden sm:block h-8 bg-white/10" />
 
             <div className="flex items-center gap-4 text-stone-400 text-xs font-bold uppercase tracking-tighter">
-              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread.views} vues</span>
-              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread.replies} réponses</span>
+              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread?.views} vues</span>
+              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread?.replies} réponses</span>
             </div>
 
-            <Button className="hidden sm:flex ml-auto rounded-full px-8 h-11 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
+            <Button onClick={handlePostReply} className="hidden sm:flex ml-auto rounded-full px-8 h-11 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
               Répondre au Thread
             </Button>
           </div>
@@ -221,7 +230,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
               <Share2 className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="h-6 bg-border/50 mx-1" />
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-destructive">
+            <Button onClick={() => checkAuth('signaler ce contenu')} variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-destructive">
               <Flag className="h-4 w-4" />
             </Button>
           </div>
@@ -251,11 +260,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
               </div>
 
               <div className="flex items-center gap-4 pt-4 border-t border-primary/10">
-                <Button variant="ghost" size="sm" className="h-9 px-4 gap-2 rounded-full hover:bg-primary/10 hover:text-primary">
+                <Button onClick={handleLike} variant="ghost" size="sm" className="h-9 px-4 gap-2 rounded-full hover:bg-primary/10 hover:text-primary">
                   <ThumbsUp className="h-4 w-4" />
                   <span className="text-xs font-black">124 Likes</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="h-9 px-4 gap-2 rounded-full hover:bg-muted">
+                <Button onClick={handlePostReply} variant="ghost" size="sm" className="h-9 px-4 gap-2 rounded-full hover:bg-muted">
                   <Reply className="h-4 w-4" />
                   <span className="text-xs font-black">Répondre</span>
                 </Button>
@@ -296,11 +305,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                           dangerouslySetInnerHTML={{ __html: reply.content }}
                         />
                         <div className="flex items-center gap-4 pt-2">
-                          <Button variant="ghost" size="sm" className="h-8 px-3 gap-2 rounded-full hover:bg-primary/10 hover:text-primary">
+                          <Button onClick={handleLike} variant="ghost" size="sm" className="h-8 px-3 gap-2 rounded-full hover:bg-primary/10 hover:text-primary">
                             <ThumbsUp className="h-3.5 w-3.5" />
                             <span className="text-[10px] font-bold">{reply.likes}</span>
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 px-3 gap-2 rounded-full hover:bg-muted">
+                          <Button onClick={handlePostReply} variant="ghost" size="sm" className="h-8 px-3 gap-2 rounded-full hover:bg-muted">
                             <Reply className="h-3.5 w-3.5" />
                             <span className="text-[10px] font-bold">Répondre</span>
                           </Button>
@@ -328,10 +337,10 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                             </div>
                             <p className="text-xs text-foreground/80 leading-relaxed">{nested.content}</p>
                             <div className="flex items-center gap-3">
-                              <button className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                              <button onClick={handleLike} className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
                                 <ThumbsUp className="h-3 w-3" /> {nested.likes}
                               </button>
-                              <button className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors">Répondre</button>
+                              <button onClick={handlePostReply} className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors">Répondre</button>
                             </div>
                           </div>
                         </div>
@@ -374,7 +383,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                     variant="ghost" 
                     size="sm" 
                     className="h-9 px-4 rounded-xl text-stone-400 hover:text-white hover:bg-white/5 gap-2 text-xs font-bold"
-                    onClick={() => setReplyText(replyText + "<details><summary>Spoiler</summary>...</details>")}
+                    onClick={() => {
+                      if (checkAuth('utiliser des balises spoiler')) {
+                        setReplyText(replyText + "<details><summary>Spoiler</summary>...</details>");
+                      }
+                    }}
                   >
                     <ShieldAlert className="h-4 w-4 text-primary" /> Balise Spoiler
                   </Button>
@@ -386,10 +399,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
                   <Info className="h-4 w-4 text-primary" />
                   <p className="text-[10px] text-stone-300 uppercase tracking-widest font-black">
-                    {thread.isPremium ? "Premium : Spoilers autorisés." : "Public : Masquez vos spoilers !"}
+                    {thread?.isPremium ? "Premium : Spoilers autorisés." : "Public : Masquez vos spoilers !"}
                   </p>
                 </div>
                 <Button 
+                  onClick={handlePostReply}
                   disabled={!replyText.trim()}
                   className="w-full sm:w-auto h-14 px-12 rounded-full font-black text-lg shadow-2xl shadow-primary/30 gold-shimmer bg-primary text-black transition-all active:scale-95"
                 >

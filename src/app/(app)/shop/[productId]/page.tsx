@@ -1,4 +1,3 @@
-
 'use client';
 
 import { products } from '@/lib/data';
@@ -10,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useTranslation } from '@/components/providers/language-provider';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { use } from 'react';
 
 export default function ProductDetailPage(props: { params: Promise<{ productId: string }> }) {
   const { productId } = use(props);
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
   
   const product = products.find((p) => p.id === productId);
 
@@ -23,7 +24,17 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
     notFound();
   }
 
+  const checkAuth = (action: string) => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal(action);
+      return false;
+    }
+    return true;
+  };
+
   const handlePrintfulOrder = () => {
+      if (!checkAuth('finaliser votre commande')) return;
       toast({
           title: "Redirection vers Printful...",
           description: "Vous allez être redirigé vers notre partenaire d'impression pour finaliser votre commande."
@@ -33,6 +44,11 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
               window.open(product.printfulUrl, '_blank');
           }, 1500);
       }
+  };
+
+  const handleFavorite = () => {
+    if (!checkAuth('ajouter ce produit à vos favoris')) return;
+    toast({ title: "Produit ajouté aux favoris !" });
   };
 
   return (
@@ -89,7 +105,7 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
               <ExternalLink className="mr-2 h-5 w-5" />
               Commander via Printful
             </Button>
-            <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-border/50 hover:text-destructive transition-colors">
+            <Button onClick={handleFavorite} variant="outline" size="icon" className="h-14 w-14 rounded-xl border-border/50 hover:text-destructive transition-colors">
                 <Heart className="h-6 w-6" />
             </Button>
             <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-border/50 hover:text-primary transition-colors">

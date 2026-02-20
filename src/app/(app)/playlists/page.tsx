@@ -21,11 +21,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from '@/hooks/use-toast';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 export default function MyPlaylistsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
 
   useEffect(() => {
     setHasMounted(true);
@@ -52,11 +54,20 @@ export default function MyPlaylistsPage() {
 
   if (!currentUserId) {
       return (
-          <div className="container mx-auto max-w-7xl px-4 py-12 text-center">
-              <p className="text-muted-foreground">Veuillez vous connecter pour voir vos playlists.</p>
-              <Button asChild className="mt-4">
-                <Link href="/login">Se connecter</Link>
-              </Button>
+          <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
+              <ListMusic className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-20" />
+              <h1 className="text-3xl font-bold mb-4">Vos Playlists</h1>
+              <p className="text-muted-foreground max-w-md mx-auto mb-8">
+                Créez des collections d'œuvres personnalisées et organisez votre bibliothèque. Connectez-vous pour commencer.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Button onClick={() => openAuthModal('gérer vos playlists')} size="lg">
+                  Se connecter
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/signup">Créer un compte</Link>
+                </Button>
+              </div>
           </div>
       )
   }
