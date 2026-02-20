@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { playlists as allPlaylists } from '@/lib/data';
+import { useAuthModal } from './providers/auth-modal-provider';
 
 interface StoryCardProps {
   story: Story;
@@ -38,6 +39,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const [date, setDate] = useState('');
   const [relativeDate, setRelativeDate] = useState('');
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
 
   const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
   const artist = artists.find(a => a.id === story.artistId);
@@ -58,12 +60,22 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('ajouter cette œuvre à vos favoris');
+      return;
+    }
     toast({ title: "Ajouté aux favoris !" });
   };
 
   const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
     e.stopPropagation();
     e.preventDefault();
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('organiser vos lectures dans des playlists');
+      return;
+    }
     toast({
         title: `Ajouté à la playlist "${playlistName}" !`,
         description: `"${story.title}" a bien été ajouté.`

@@ -27,10 +27,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 export default function ArtistProfilePage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = use(props.params);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const router = useRouter();
@@ -49,6 +51,11 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
   }
 
   const handleSubscribeClick = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('suivre vos artistes préférés');
+      return;
+    }
     setIsSubscribed(!isSubscribed);
     toast({
       title: isSubscribed ? "Abonnement annulé" : "Abonné !",
@@ -57,6 +64,11 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
   };
 
   const handleDonation = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('soutenir directement les créateurs');
+      return;
+    }
     toast({
       title: "Merci pour votre soutien !",
       description: `Votre don à ${artist.name} a bien été enregistré (simulation).`,
@@ -121,7 +133,11 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
                     <Bell className={cn("mr-2 h-4 w-4", isSubscribed && "fill-current")} />
                     {isSubscribed ? 'Abonné' : 'S\'abonner'}
                   </Button>
-                  <Dialog>
+                  <Dialog onOpenChange={(open) => {
+                    if (open && localStorage.getItem('isLoggedIn') !== 'true') {
+                      openAuthModal('faire un don aux artistes');
+                    }
+                  }}>
                       <DialogTrigger asChild>
                           <Button size="sm" variant="outline">
                               <Heart className="mr-2 h-4 w-4 text-destructive fill-destructive" />
@@ -196,7 +212,7 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
             {artist.links.amazon && (
                 <Button variant="outline" asChild>
                 <a href={artist.links.amazon} target="_blank" rel="noopener noreferrer">
-                  <Book className="mr-2 h-4 w-4" /> Amazon
+                  < Book className="mr-2 h-4 w-4" /> Amazon
                 </a>
               </Button>
             )}

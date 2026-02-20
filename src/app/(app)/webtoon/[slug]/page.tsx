@@ -10,21 +10,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Heart, Share2, Play, BookOpen, Clock, Eye, Star, Award, 
   ChevronRight, Map, Info, MessageSquare, Flame, ShieldCheck, 
-  Flag, Lock, Sparkles, LayoutGrid, ScrollText, Timer
+  Flag, Lock, Sparkles, LayoutGrid, ScrollText, Timer, ThumbsUp, MoreHorizontal, Crown
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
 
 export default function StoryDetailPage({ params: propsParams }: { params: Promise<{ slug: string }> }) {
   const params = use(propsParams);
   const story = stories.find(s => s.slug === params.slug);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
   
   const [isLiked, setIsLiked] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
@@ -59,11 +59,25 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
   };
 
   const handleLike = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('ajouter cette œuvre à votre bibliothèque');
+      return;
+    }
     setIsLiked(!isLiked);
     toast({
       title: isLiked ? "Retiré des favoris" : "Ajouté aux favoris !",
       description: isLiked ? `"${story.title}" n'est plus dans votre bibliothèque.` : `Retrouvez "${story.title}" dans votre bibliothèque.`,
     });
+  };
+
+  const handleSupport = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+      openAuthModal('soutenir vos artistes avec des AfriCoins');
+      return;
+    }
+    toast({ title: "Merci pour votre soutien ! (Simulation)" });
   };
 
   return (
@@ -422,7 +436,13 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                           <div className="flex items-center gap-3 bg-muted/50 px-4 py-2 rounded-full border border-border/50">
                             <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Pas de spoilers majeurs ici !</span>
                           </div>
-                          <Button className="rounded-full px-10 h-12 font-black shadow-xl shadow-primary/20 gold-shimmer">
+                          <Button 
+                            onClick={() => {
+                              const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                              if (!isLoggedIn) openAuthModal('poster votre avis');
+                            }}
+                            className="rounded-full px-10 h-12 font-black shadow-xl shadow-primary/20 gold-shimmer"
+                          >
                             Poster mon Avis
                           </Button>
                         </div>
@@ -466,10 +486,24 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                           </div>
 
                           <div className="flex items-center gap-4 pl-2">
-                            <button className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground hover:text-primary transition-all">
+                            <button 
+                              onClick={() => {
+                                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                                if (!isLoggedIn) openAuthModal('interagir avec la communauté');
+                              }}
+                              className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground hover:text-primary transition-all"
+                            >
                               <ThumbsUp className="h-3.5 w-3.5" /> {comment.likes}
                             </button>
-                            <button className="text-[10px] font-black text-muted-foreground hover:text-primary transition-all">RÉPONDRE</button>
+                            <button 
+                              onClick={() => {
+                                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                                if (!isLoggedIn) openAuthModal('répondre aux commentaires');
+                              }}
+                              className="text-[10px] font-black text-muted-foreground hover:text-primary transition-all"
+                            >
+                              RÉPONDRE
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -517,7 +551,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                         <Avatar className="h-8 w-8"><AvatarImage src={artist?.avatar.imageUrl} /></Avatar>
                         <span className="text-[11px] font-bold text-white">{story.artistName}</span>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black text-primary hover:bg-primary/10">DONNER 🪙</Button>
+                      <Button onClick={handleSupport} variant="ghost" size="sm" className="h-7 text-[9px] font-black text-primary hover:bg-primary/10">DONNER 🪙</Button>
                     </div>
                     {story.collaborators?.map(collab => (
                       <div key={collab.id} className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
@@ -528,6 +562,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                             <p className="text-[8px] uppercase font-black text-stone-500">{collab.role}</p>
                           </div>
                         </div>
+                        <Button onClick={handleSupport} variant="ghost" size="sm" className="h-7 text-[9px] font-black text-primary hover:bg-primary/10">DONNER 🪙</Button>
                       </div>
                     ))}
                   </div>
