@@ -1,10 +1,8 @@
-import { Toaster } from '@/components/ui/toaster';
-import { LanguageProvider } from '@/components/providers/language-provider';
 import HeaderFooterWrapper from '@/components/common/header-footer-wrapper';
 
 /**
  * Layout imbriqué pour le groupe (app).
- * Ne contient pas de balises <html> ou <body> car elles sont héritées du RootLayout.
+ * Gère l'affichage du Header et du Footer pour toutes les pages de l'application.
  */
 export default function AppLayout({
   children,
@@ -12,11 +10,8 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <LanguageProvider>
-      <HeaderFooterWrapper>
-        {children}
-      </HeaderFooterWrapper>
-      <Toaster />
-    </LanguageProvider>
+    <HeaderFooterWrapper>
+      {children}
+    </HeaderFooterWrapper>
   );
 }
