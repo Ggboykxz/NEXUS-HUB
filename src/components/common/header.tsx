@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare, Globe } from 'lucide-react';
+import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare, Globe, MoreHorizontal } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -173,6 +173,9 @@ export default function Header() {
     );
   };
 
+  const visibleLinks = navLinks.slice(0, 5);
+  const hiddenLinks = navLinks.slice(5);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
       <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-12" : "h-14")}>
@@ -184,9 +187,39 @@ export default function Header() {
           </div>
 
           <nav className="hidden md:flex items-center gap-x-4">
-            {navLinks.slice(0, 5).map((link, idx) => (
+            {visibleLinks.map((link, idx) => (
               <NavLinkRenderer key={`nav-link-${idx}`} link={link} />
             ))}
+            
+            {hiddenLinks.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary transition-colors">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {hiddenLinks.map((link, idx) => (
+                    <DropdownMenuItem key={`hidden-link-${idx}`} asChild>
+                      <Link href={link.href} className="flex items-center justify-between w-full">
+                        <span className="flex items-center gap-2">
+                          <link.icon className="h-4 w-4 text-muted-foreground" />
+                          {link.label}
+                        </span>
+                        {link.badge && (
+                          <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn(
+                              "text-[8px] px-1 py-0 h-3",
+                              link.badge.variant === 'green' ? "bg-emerald-500 border-none" : "border-orange-500/50 text-orange-400"
+                          )}>
+                              {link.badge.label}
+                          </Badge>
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
 
           <div className="flex items-center gap-2">
