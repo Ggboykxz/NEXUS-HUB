@@ -89,6 +89,7 @@ export interface ForumThread {
     time: string;
   };
   category: string;
+  isPremium: boolean;
 }
 
 export interface Reader {
@@ -413,6 +414,40 @@ export const forumThreads: ForumThread[] = [
     views: 1200,
     lastPost: { author: 'Jelani Adebayo', time: 'Il y a 2h' },
     category: 'Discussions d\'œuvres',
+    isPremium: false,
+  },
+  {
+    id: 'thread-2',
+    title: '[SPOILERS] La révélation finale de Néo-Dakar',
+    author: 'CyberPunkAfro',
+    authorId: 'user-2',
+    replies: 156,
+    views: 5400,
+    lastPost: { author: 'Amina Diallo', time: 'Il y a 15 min' },
+    category: 'Théories Avancées',
+    isPremium: true,
+  },
+  {
+    id: 'thread-3',
+    title: 'Comment Anansé a-t-il pu survivre à l\'éclipse ?',
+    author: 'MythLover',
+    authorId: 'user-3',
+    replies: 89,
+    views: 3200,
+    lastPost: { author: 'Kwame Osei', time: 'Hier' },
+    category: 'Analyses Profondes',
+    isPremium: true,
+  },
+  {
+    id: 'thread-4',
+    title: 'Vôtre avis sur le nouveau style graphique ?',
+    author: 'ArtistEye',
+    authorId: 'user-4',
+    replies: 12,
+    views: 450,
+    lastPost: { author: 'ComicFan23', time: 'Il y a 5h' },
+    category: 'Général',
+    isPremium: false,
   },
 ];
 
