@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Coins, ShieldCheck, Zap, Globe, Wallet, Heart, ArrowRight, Info, CircleDollarSign } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function AfriCoinsEconomyPage() {
   return (

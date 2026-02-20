@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PenSquare, Users, MessageSquare, Rocket, Sparkles, BookOpen, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function DraftProgramPage() {
   const features = [
