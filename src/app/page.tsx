@@ -698,7 +698,7 @@ export default function HomePage() {
         <section className="relative">
             <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-4 bg-emerald-500/[0.02] -z-10 rounded-xl" />
             <div className="flex justify-between items-center mb-4 border-b border-emerald-500/10 pb-1.5">
-                <Link href="/stories?type=premium" className="flex items-center gap-2 group/title">
+                <Link href="/pro-selection" className="flex items-center gap-2 group/title">
                     <div className="bg-emerald-500/10 p-1 rounded-lg group-hover/title:bg-emerald-500/20 transition-colors">
                         <Award className="h-4 w-4 text-emerald-500" />
                     </div>
@@ -707,7 +707,7 @@ export default function HomePage() {
                         <p className="text-[9px] text-muted-foreground font-light">L'élite de la narration visuelle africaine.</p>
                     </div>
                 </Link>
-                <Link href="/stories?type=premium" className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 group">
+                <Link href="/pro-selection" className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 group">
                     Voir tout <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                 </Link>
             </div>
@@ -723,7 +723,7 @@ export default function HomePage() {
         <section className="relative">
             <div className="absolute -inset-x-6 md:-inset-x-12 -inset-y-4 bg-orange-500/[0.02] -z-10 rounded-xl" />
             <div className="flex justify-between items-center mb-4 border-b border-orange-500/10 pb-1.5">
-                <Link href="/stories?type=public" className="flex items-center gap-2 group/title">
+                <Link href="/draft-exploration" className="flex items-center gap-2 group/title">
                     <div className="bg-orange-500/10 p-1 rounded-lg group-hover/title:bg-orange-500/20 transition-colors">
                         <PenSquare className="h-4 w-4 text-orange-400" />
                     </div>
@@ -732,7 +732,7 @@ export default function HomePage() {
                         <p className="text-[9px] text-muted-foreground font-light">Les nouveaux visages du 9ème art.</p>
                     </div>
                 </Link>
-                <Link href="/stories?type=public" className="text-[10px] font-bold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 group">
+                <Link href="/draft-exploration" className="text-[10px] font-bold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 group">
                     Voir tout <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                 </Link>
             </div>
