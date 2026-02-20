@@ -284,7 +284,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     carouselApi?.scrollNext();
   };
 
-  // Custom click handler for BD images
+  // Custom click handler for BD images with side detection
   const handleImageClick = (e: React.MouseEvent) => {
     if (activeMode !== 'pages') return;
     
@@ -292,9 +292,22 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     if (e.type === 'contextmenu') {
       e.preventDefault();
       handlePageNext();
-    } else if (e.button === 0) {
-      // Left click
-      handlePagePrev();
+      return;
+    }
+
+    // Left click handling with side detection
+    if (e.button === 0) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left; // Click position relative to element
+      const width = rect.width;
+      
+      if (x < width / 2) {
+        // Clicked left side -> Previous
+        handlePagePrev();
+      } else {
+        // Clicked right side -> Next
+        handlePageNext();
+      }
     }
   };
 
@@ -419,10 +432,10 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                         {index === 0 && (
                           <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-8 opacity-0 hover:opacity-100 transition-opacity duration-500">
                             <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
-                              Clic Gauche<br/>PRÉCÉDENT
+                              Bord Gauche<br/>PRÉCÉDENT
                             </div>
                             <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
-                              Clic Droit<br/>SUIVANT
+                              Bord Droit<br/>SUIVANT
                             </div>
                           </div>
                         )}
