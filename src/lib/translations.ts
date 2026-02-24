@@ -204,7 +204,7 @@ export const translations = {
       featured_artists: "Mawaƙan da aka sanya wa gaba",
       vision_title: "Kasance cikin Juyin Juya Halin Afirka",
       vision_subtitle: "Aika Comic/Webtoon naka",
-      vision_cta: "Aika Yanzu",
+      vision_cta: "Aika Ynow",
       community_title: "Abin da al'umma ke cewa",
       community_cta: "Kasance cikin Tattaunawa"
     },

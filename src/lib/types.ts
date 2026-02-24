@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 4.1.0
+ * @version 4.2.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -80,6 +80,9 @@ export interface UserProfile {
   };
 }
 
+/**
+ * users/{uid}/library/{storyId}
+ */
 export interface LibraryEntry {
   storyId: string;
   addedAt: Timestamp | string;
@@ -92,6 +95,14 @@ export interface LibraryEntry {
   storyTitle: string;               // Dénormalisé pour affichage rapide
   storyCover: string;               // Dénormalisé
   isFavorite: boolean;
+}
+
+/**
+ * users/{uid}/subscriptions/{artistId}
+ */
+export interface Subscription {
+  artistId: string;
+  subscribedAt: Timestamp | string;
 }
 
 export interface Story {

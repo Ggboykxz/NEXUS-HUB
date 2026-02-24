@@ -50,7 +50,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   const [progress, setProgress] = useState(0);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isPro, setIsPro] = useState(false);
   
   // Reading Settings
   const [isLowData, setIsLowData] = useState(false);
@@ -67,9 +66,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
-  const [chatQuestion, setChatQuery] = useState('');
-  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'ai', text: string}[]>([]);
-  const [chatLoading, setChatLoading] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
@@ -163,7 +159,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
       </nav>
       
       <div className="flex-1 flex overflow-hidden relative">
-        {/* MAIN CONTENT AREA */}
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
@@ -188,7 +183,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                   priority={index < 2}
                 />
                 
-                {/* Panel Augmented Actions */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute top-6 right-6 flex flex-col gap-2">
                     <Button size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-primary hover:text-black">
@@ -214,7 +208,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </main>
 
-        {/* AUDIO CONTROLS (ONLY IN AUDIO MODE) */}
         {isAudioMode && (
           <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-500">
             <div className="bg-black/80 backdrop-blur-xl border border-primary/20 rounded-full p-2 flex items-center gap-4 px-6 shadow-2xl">
@@ -227,7 +220,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         )}
 
-        {/* SETTINGS SIDEBAR */}
         <aside className={cn(
           "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950/95 backdrop-blur-3xl border-r border-white/5 z-40 transition-transform duration-500",
           isSettingsOpen ? "translate-x-0" : "-translate-x-full"
@@ -254,7 +246,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </aside>
 
-        {/* AI SIDEBAR */}
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
           isSidebarOpen ? "translate-x-0" : "translate-x-full"
@@ -274,19 +265,33 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
 
           <div className="flex-1 overflow-y-auto h-[calc(100%-60px)]">
-            <div className="flex flex-col h-full">
-              <ScrollArea className="flex-1 p-6">
-                <div className="space-y-6">
-                  <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex gap-3">
-                    <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
-                    <p className="text-xs text-stone-300 leading-relaxed italic">"Je suis votre Assistant Lore. Posez-moi vos questions sur les personnages ou la mythologie."</p>
-                  </div>
+            <ScrollArea className="h-full p-6">
+              <div className="space-y-6">
+                <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex gap-3">
+                  <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-xs text-stone-300 leading-relaxed italic">"Je suis votre Assistant Lore. Posez-moi vos questions sur les personnages ou la mythologie."</p>
                 </div>
-              </ScrollArea>
-            </div>
+              </div>
+            </ScrollArea>
           </div>
         </aside>
       </div>
+
+      <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
+        <DialogContent className="bg-stone-900 border-primary/20 text-white rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="text-primary h-5 w-5" /> Résumé de rattrapage</DialogTitle>
+            <DialogDescription className="text-stone-400">Généré par l'IA Nexus pour vous remettre dans le bain.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {summaryLoading ? (
+              <div className="flex items-center justify-center py-8"><Wand2 className="h-8 w-8 text-primary animate-spin" /></div>
+            ) : (
+              <p className="text-sm leading-relaxed italic border-l-2 border-primary/30 pl-4">{aiSummary || "Prêt à résumer votre lecture..."}</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <RewardedAdModal 
         isOpen={isAdModalOpen} 

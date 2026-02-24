@@ -10,41 +10,27 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import type { Story } from '@/lib/types';
 import { 
   Play, 
-  Info, 
   TrendingUp, 
   Sparkles, 
   Trophy, 
   Banknote,
   Users,
   ChevronRight,
-  History,
-  BookHeart,
-  Globe,
   Flame,
-  Zap,
-  Calendar,
-  Award,
   Star,
-  PlayCircle,
   Coins,
-  Share2,
-  MessageSquare,
   Gift,
   ShieldCheck,
-  Building2,
   Handshake,
   LayoutGrid,
-  Languages,
+  Globe,
   BrainCircuit,
-  MapPin,
-  Smile,
-  Compass,
   Film,
   Headphones,
   Mic2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useTranslation } from '@/components/providers/language-provider';
