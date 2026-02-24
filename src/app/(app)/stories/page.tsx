@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, Suspense, useEffect } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { type Story } from '@/lib/data';
+import type { Story } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
 import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,34 +14,26 @@ import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useGenres } from '@/components/providers/genres-provider';
+import { useQuery } from '@tanstack/react-query';
 
 function StoriesContent() {
   const searchParams = useSearchParams();
   const initialGenre = searchParams.get('genre') || 'all';
   const { genres: uniqueGenres } = useGenres();
   
-  const [allStories, setAllStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
   const [genreFilter, setGenreFilter] = useState(initialGenre);
   const [sortFilter, setSortFilter] = useState('popular');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    async function fetchStories() {
-      try {
-        const q = query(collection(db, 'stories'), orderBy('views', 'desc'));
-        const snap = await getDocs(q);
-        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
-        setAllStories(data);
-      } catch (e) {
-        console.error("Error fetching stories:", e);
-      } finally {
-        setLoading(false);
-      }
+  const { data: allStories = [], isLoading } = useQuery({
+    queryKey: ['stories', 'all'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), orderBy('views', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
     }
-    fetchStories();
-  }, []);
+  });
 
   const filteredAndSortedStories = useMemo(() => {
     let filtered = allStories;
@@ -53,7 +45,6 @@ function StoriesContent() {
     }
 
     if (genreFilter !== 'all') {
-      // On filtre par le nom du genre
       const targetGenre = uniqueGenres.find(g => g.slug === genreFilter)?.name;
       if (targetGenre) {
         filtered = filtered.filter(story => story.genre === targetGenre);
@@ -74,7 +65,7 @@ function StoriesContent() {
         sorted.sort((a, b) => b.views - a.views);
         break;
       case 'newest':
-        sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        sorted.sort((a, b) => new Date(b.updatedAt as string).getTime() - new Date(a.updatedAt as string).getTime());
         break;
       case 'likes':
         sorted.sort((a, b) => b.likes - a.likes);
@@ -86,7 +77,7 @@ function StoriesContent() {
 
   const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="h-96 flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

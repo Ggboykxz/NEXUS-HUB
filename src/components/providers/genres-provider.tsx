@@ -1,12 +1,12 @@
 'use client';
 /**
- * @fileOverview Provider pour la gestion globale des genres.
- * Évite les requêtes multiples vers Firestore lors de la navigation.
+ * @fileOverview Provider pour la gestion globale des genres utilisant TanStack Query.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 
 interface Genre {
   name: string;
@@ -21,43 +21,30 @@ interface GenresContextType {
 const GenresContext = createContext<GenresContextType | undefined>(undefined);
 
 export function GenresProvider({ children }: { children: ReactNode }) {
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: genres = [], isLoading } = useQuery({
+    queryKey: ['genres'],
+    queryFn: async () => {
+      // Récupère un échantillon de stories pour extraire les genres uniques
+      const q = query(collection(db, 'stories'), limit(100));
+      const snap = await getDocs(q);
+      const genreMap = new Map<string, string>();
+      
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.genre && data.genreSlug) {
+          genreMap.set(data.genreSlug, data.genre);
+        }
+      });
 
-  useEffect(() => {
-    async function fetchGenres() {
-      try {
-        // On récupère un échantillon de stories pour extraire les genres uniques
-        // Dans une version plus avancée, on utiliserait une collection 'metadata/genres'
-        const q = query(collection(db, 'stories'), limit(100));
-        const snap = await getDocs(q);
-        const genreMap = new Map<string, string>();
-        
-        snap.forEach(doc => {
-          const data = doc.data();
-          if (data.genre && data.genreSlug) {
-            genreMap.set(data.genreSlug, data.genre);
-          }
-        });
+      const genreList = Array.from(genreMap.entries()).map(([slug, name]) => ({
+        name,
+        slug,
+      }));
 
-        const genreList = Array.from(genreMap.entries()).map(([slug, name]) => ({
-          name,
-          slug,
-        }));
-
-        // Tri alphabétique
-        genreList.sort((a, b) => a.name.localeCompare(b.name));
-
-        setGenres(genreList);
-      } catch (e) {
-        console.error("Error fetching genres:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchGenres();
-  }, []);
+      return genreList.sort((a, b) => a.name.localeCompare(b.name));
+    },
+    staleTime: Infinity, // Les genres changent rarement, on les garde indéfiniment
+  });
 
   return (
     <GenresContext.Provider value={{ genres, isLoading }}>

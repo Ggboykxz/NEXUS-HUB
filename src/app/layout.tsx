@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
 import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
 import { GenresProvider } from '@/components/providers/genres-provider';
+import { QueryProvider } from '@/components/providers/query-provider';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -33,14 +34,16 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
       </head>
       <body className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground" suppressHydrationWarning>
-        <LanguageProvider>
-          <AuthModalProvider>
-            <GenresProvider>
-              {children}
-              <Toaster />
-            </GenresProvider>
-          </AuthModalProvider>
-        </LanguageProvider>
+        <QueryProvider>
+          <LanguageProvider>
+            <AuthModalProvider>
+              <GenresProvider>
+                {children}
+                <Toaster />
+              </GenresProvider>
+            </AuthModalProvider>
+          </LanguageProvider>
+        </QueryProvider>
       </body>
     </html>
   );

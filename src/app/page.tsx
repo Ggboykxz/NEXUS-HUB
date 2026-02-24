@@ -1,18 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import type { StoryFull as Story } from '@/lib/types';
+import type { Story } from '@/lib/types';
 import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 interface SectionHeaderProps {
   title: string;
@@ -22,48 +23,40 @@ interface SectionHeaderProps {
 }
 
 export default function HomePage() {
-  const [featured, setFeatured] = useState<Story[]>([]);
-  const [popular, setPopular] = useState<Story[]>([]);
-  const [topRanked, setTopRanked] = useState<Story[]>([]);
-  const [proStories, setProStories] = useState<Story[]>([]);
-  const [draftStories, setDraftStories] = useState<Story[]>([]);
-  const [newReleases, setNewReleases] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const storiesRef = collection(db, 'stories');
-        
-        const [popSnap, rankSnap, newSnap] = await Promise.all([
-          getDocs(query(storiesRef, orderBy('views', 'desc'), limit(5))),
-          getDocs(query(storiesRef, orderBy('likes', 'desc'), limit(5))),
-          getDocs(query(storiesRef, orderBy('updatedAt', 'desc'), limit(5)))
-        ]);
-
-        const popData = popSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-        const rankData = rankSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-        const newData = newSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-
-        setPopular(popData);
-        setTopRanked(rankData);
-        setNewReleases(newData);
-        
-        setProStories(popData.slice(0, 5));
-        setDraftStories(newData.slice(0, 5));
-        
-        if (popData.length > 0) {
-          setFeatured([popData[0]]);
-        }
-
-      } catch (e) {
-        console.error("Error fetching stories:", e);
-      } finally {
-        setLoading(false);
-      }
+  // Fetch Popular Stories
+  const { data: popular = [], isLoading: loadingPopular } = useQuery({
+    queryKey: ['stories', 'popular'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(5));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
     }
-    fetchData();
-  }, []);
+  });
+
+  // Fetch Top Ranked Stories
+  const { data: topRanked = [], isLoading: loadingRanked } = useQuery({
+    queryKey: ['stories', 'top-ranked'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), orderBy('likes', 'desc'), limit(5));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+    }
+  });
+
+  // Fetch New Releases
+  const { data: newReleases = [], isLoading: loadingNew } = useQuery({
+    queryKey: ['stories', 'new-releases'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), orderBy('updatedAt', 'desc'), limit(5));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+    }
+  });
+
+  const featured = popular.length > 0 ? [popular[0]] : [];
+  const proStories = popular.slice(0, 5);
+  const draftStories = newReleases.slice(0, 5);
+  const isLoading = loadingPopular || loadingRanked || loadingNew;
 
   const SectionHeader = ({ title, icon: Icon, href, colorClass = "text-primary" }: SectionHeaderProps) => (
     <div className="flex justify-between items-center mb-6 border-b border-primary/10 pb-2">
@@ -104,7 +97,7 @@ export default function HomePage() {
           <section className="relative w-full pt-4 overflow-hidden px-4 md:px-8">
             <div className="container max-w-7xl mx-auto">
               <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
-                {featured.length > 0 ? (
+                {!isLoading && featured.length > 0 ? (
                   <>
                     <Image 
                       src={featured[0].coverImage?.imageUrl || 'https://picsum.photos/seed/1/1200/600'} 
@@ -126,7 +119,7 @@ export default function HomePage() {
                         </p>
                         <div className="flex gap-4 pt-4">
                           <Button asChild size="lg" className="rounded-full font-bold px-8 gold-shimmer">
-                            <Link href={`/webtoon/${featured[0].slug}/${featured[0].chapters[0]?.slug || ''}`}><Play className="mr-2 h-4 w-4 fill-current" /> Lire maintenant</Link>
+                            <Link href={`/webtoon/${featured[0].slug}/${featured[0].chapters?.[0]?.slug || 'chapitre-1'}`}><Play className="mr-2 h-4 w-4 fill-current" /> Lire maintenant</Link>
                           </Button>
                           <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md">
                             <Link href={`/webtoon/${featured[0].slug}`}><Info className="mr-2 h-4 w-4" /> Détails</Link>
@@ -149,27 +142,27 @@ export default function HomePage() {
           <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
             <section id="tendances">
               <SectionHeader title="Tendances Actuelles" icon={TrendingUp} href="/popular" />
-              <StoryGrid data={popular} loading={loading} />
+              <StoryGrid data={popular} loading={loadingPopular} />
             </section>
 
             <section id="elite">
               <SectionHeader title="Elite du Hub" icon={Crown} href="/rankings" colorClass="text-amber-500" />
-              <StoryGrid data={topRanked} loading={loading} />
+              <StoryGrid data={topRanked} loading={loadingRanked} />
             </section>
 
             <section id="pro">
               <SectionHeader title="Sélection NexusHub Pro" icon={Award} href="/pro-selection" colorClass="text-emerald-500" />
-              <StoryGrid data={proStories} loading={loading} />
+              <StoryGrid data={proStories} loading={loadingPopular} />
             </section>
 
             <section id="draft">
               <SectionHeader title="Exploration NexusHub Draft" icon={PenSquare} href="/draft-exploration" colorClass="text-orange-400" />
-              <StoryGrid data={draftStories} loading={loading} />
+              <StoryGrid data={draftStories} loading={loadingNew} />
             </section>
 
             <section id="nouveautes">
               <SectionHeader title="Nouveautés" icon={Sparkles} href="/new-releases" colorClass="text-cyan-500" />
-              <StoryGrid data={newReleases} loading={loading} />
+              <StoryGrid data={newReleases} loading={loadingNew} />
             </section>
 
             <section className="bg-stone-900 rounded-[2.5rem] p-12 text-center relative overflow-hidden border border-white/5 shadow-2xl">
