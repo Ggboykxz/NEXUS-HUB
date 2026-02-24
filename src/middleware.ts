@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 /**
  * Middleware de sécurité pour protéger les routes contre le CSRF
- * et valider les en-têtes d'origine sur les méthodes de mutation.
+ * et valider les en-headers d'origine sur les méthodes de mutation.
  */
 export function middleware(request: NextRequest) {
   const { method, headers } = request;
