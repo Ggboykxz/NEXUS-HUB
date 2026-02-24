@@ -1,69 +1,97 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { stories as allStories, type Story } from '@/lib/data';
+import { type Story } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
-import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-
-const uniqueGenres = [...new Set(allStories.map(s => s.genre))];
+import { Button } from '@/components/ui/button';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 
 function StoriesContent() {
   const searchParams = useSearchParams();
   const initialGenre = searchParams.get('genre') || 'all';
   
+  const [allStories, setAllStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
   const [genreFilter, setGenreFilter] = useState(initialGenre);
   const [sortFilter, setSortFilter] = useState('popular');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    async function fetchStories() {
+      try {
+        const q = query(collection(db, 'stories'), orderBy('views', 'desc'));
+        const snap = await getDocs(q);
+        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+        setAllStories(data);
+      } catch (e) {
+        console.error("Error fetching stories:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStories();
+  }, []);
+
+  const uniqueGenres = useMemo(() => {
+    return [...new Set(allStories.map(s => s.genre))].filter(Boolean);
+  }, [allStories]);
+
   const filteredAndSortedStories = useMemo(() => {
-    let filteredStories = allStories;
+    let filtered = allStories;
 
-    // Filter by type (Public vs Premium)
     if (typeFilter === 'public') {
-      filteredStories = filteredStories.filter(story => !story.isPremium);
+      filtered = filtered.filter(story => !story.isPremium);
     } else if (typeFilter === 'premium') {
-      filteredStories = filteredStories.filter(story => story.isPremium);
+      filtered = filtered.filter(story => story.isPremium);
     }
 
-    // Filter by genre
     if (genreFilter !== 'all') {
-      filteredStories = filteredStories.filter(story => story.genre === genreFilter);
+      filtered = filtered.filter(story => story.genre === genreFilter);
     }
 
-    // Basic search: filter titles and summaries (descriptions)
     if (searchQuery.trim()) {
       const lowerTerm = searchQuery.toLowerCase();
-      filteredStories = filteredStories.filter(story => 
+      filtered = filtered.filter(story => 
         story.title.toLowerCase().includes(lowerTerm) || 
         story.description.toLowerCase().includes(lowerTerm)
       );
     }
 
-    // Sort stories
-    const sortedStories = [...filteredStories];
+    const sorted = [...filtered];
     switch (sortFilter) {
       case 'popular':
-        sortedStories.sort((a, b) => b.views - a.views);
+        sorted.sort((a, b) => b.views - a.views);
         break;
       case 'newest':
-        sortedStories.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        sorted.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         break;
       case 'likes':
-        sortedStories.sort((a, b) => b.likes - a.likes);
+        sorted.sort((a, b) => b.likes - a.likes);
         break;
     }
 
-    return sortedStories;
-  }, [genreFilter, sortFilter, typeFilter, searchQuery]);
+    return sorted;
+  }, [allStories, genreFilter, sortFilter, typeFilter, searchQuery]);
 
   const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
+
+  if (loading) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground font-display font-bold">Chargement de la bibliothèque...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -159,9 +187,6 @@ function StoriesContent() {
                 {filteredAndSortedStories.length} résultats trouvés
             </h2>
         </div>
-        <div className="flex gap-2">
-            <Badge variant="outline" className="text-[10px] uppercase border-primary/20 text-primary">Affichage : Grille</Badge>
-        </div>
       </div>
 
       {filteredAndSortedStories.length > 0 ? (
@@ -207,7 +232,7 @@ export default function StoriesPage() {
       
       <Suspense fallback={
         <div className="h-96 flex flex-col items-center justify-center gap-4">
-            <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-muted-foreground font-display font-bold">Chargement de la bibliothèque...</p>
         </div>
       }>
@@ -216,5 +241,3 @@ export default function StoriesPage() {
     </div>
   );
 }
-
-import { Button } from '@/components/ui/button';

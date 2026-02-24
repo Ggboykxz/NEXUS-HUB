@@ -1,14 +1,43 @@
-import { artists } from '@/lib/data';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { Users, Award, PenSquare } from 'lucide-react';
+import { Users, Award, PenSquare, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function ArtistsPage() {
-  const proArtists = artists.filter(a => a.isMentor);
-  const draftArtists = artists.filter(a => !a.isMentor);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchArtists() {
+      try {
+        const q = query(collection(db, 'users'), where('role', 'in', ['artist_draft', 'artist_pro']));
+        const snap = await getDocs(q);
+        setArtists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchArtists();
+  }, []);
+
+  const proArtists = artists.filter(a => a.role === 'artist_pro');
+  const draftArtists = artists.filter(a => a.role === 'artist_draft');
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -36,10 +65,10 @@ export default function ArtistsPage() {
             <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
                 <div className="text-center transition-all h-full flex flex-col items-center">
                     <Avatar className="h-40 w-40 border-4 border-background ring-4 ring-emerald-500/20 mb-6 transition-all group-hover:ring-emerald-500 shadow-xl">
-                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                        <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+                        <AvatarFallback>{artist.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <h3 className="text-xl font-display font-bold group-hover:text-emerald-500 transition-colors mb-2">{artist.name}</h3>
+                    <h3 className="text-xl font-display font-bold group-hover:text-emerald-500 transition-colors mb-2">{artist.displayName}</h3>
                     <Badge variant="default" className="gap-1 text-[10px] bg-emerald-500 hover:bg-emerald-600 border-none uppercase tracking-widest px-3 py-1">
                         <Award className="h-3 w-3" />
                         Certifié Pro
@@ -66,10 +95,10 @@ export default function ArtistsPage() {
             <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
                 <div className="text-center transition-all h-full flex flex-col items-center">
                     <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-orange-400/30 mb-4 transition-all group-hover:ring-orange-400/60 grayscale-[0.5] group-hover:grayscale-0">
-                        <AvatarImage src={artist.avatar.imageUrl} alt={artist.name} data-ai-hint={artist.avatar.imageHint} />
-                        <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+                        <AvatarFallback>{artist.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <h3 className="text-lg font-display font-semibold group-hover:text-orange-400 transition-colors mb-2">{artist.name}</h3>
+                    <h3 className="text-lg font-display font-semibold group-hover:text-orange-400 transition-colors mb-2">{artist.displayName}</h3>
                     <Badge variant="outline" className="gap-1 text-[10px] border-orange-400/50 text-orange-400 uppercase tracking-widest px-2 py-0.5">
                         <PenSquare className="h-3 w-3" />
                         Talent Draft

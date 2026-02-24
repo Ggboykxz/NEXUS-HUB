@@ -1,11 +1,30 @@
 'use client';
 
-import { stories } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { type Story } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 export default function PopularStoriesPage() {
-  const popularStories = [...stories].sort((a, b) => b.views - a.views);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPopular() {
+      try {
+        const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(20));
+        const snap = await getDocs(q);
+        setStories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story)));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPopular();
+  }, []);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -19,11 +38,21 @@ export default function PopularStoriesPage() {
         Découvrez les œuvres qui passionnent notre communauté en ce moment.
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-        {popularStories.map((story) => (
-          <StoryCard key={story.id} story={story} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-24">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : stories.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+          {stories.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-24 border rounded-xl bg-card/50">
+            <p className="text-muted-foreground italic">Aucune œuvre populaire pour le moment.</p>
+        </div>
+      )}
     </div>
   );
 }
