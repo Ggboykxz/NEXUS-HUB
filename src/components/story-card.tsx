@@ -23,6 +23,7 @@ import {
 import { useAuthModal } from './providers/auth-modal-provider';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getCoverThumbnail } from '@/lib/image-utils';
 
 interface StoryCardProps {
   story: Story;
@@ -99,12 +100,15 @@ export function StoryCard({ story, className }: StoryCardProps) {
   const hasChapters = story.chapterCount > 0;
   const firstChapterUrl = story.chapters?.[0] ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
+  // Optimisation de l'URL de couverture
+  const optimizedCoverUrl = getCoverThumbnail(story.coverImage.imageUrl);
+
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
-              src={story.coverImage.imageUrl}
+              src={optimizedCoverUrl}
               alt={story.coverImage.alt || `Couverture de ${story.title}`}
               fill
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
@@ -232,11 +236,11 @@ export function StoryCard({ story, className }: StoryCardProps) {
         <div className="flex items-center justify-between mt-1 pt-1 border-t border-border/50">
             <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Eye className="h-2 w-2 text-primary" />
+                    <Eye className="h-2 text-primary" />
                     {formatStat(story.views)}
                 </div>
                 <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Heart className="h-2 w-2 text-destructive" />
+                    <Heart className="h-2 text-destructive" />
                     {formatStat(story.likes)}
                 </div>
             </div>

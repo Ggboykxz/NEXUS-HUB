@@ -1,0 +1,77 @@
+/**
+ * @fileOverview Utilitaires pour la transformation et l'optimisation automatique des images.
+ */
+
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'demo';
+
+export interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  quality?: number | 'auto';
+  format?: 'auto' | 'webp' | 'avif' | 'jpg';
+  crop?: 'fill' | 'scale' | 'thumb' | 'fit';
+  gravity?: 'auto' | 'center' | 'face';
+}
+
+/**
+ * Génère une URL d'image optimisée via Cloudinary.
+ * Si l'URL n'est pas une URL Cloudinary, retourne l'URL originale (Next.js Image s'occupera de l'optimisation de base).
+ */
+export function getOptimizedImage(url: string, options: ImageTransformOptions = {}): string {
+  if (!url) return '';
+  
+  // Si c'est déjà une URL Cloudinary ou si on veut forcer l'usage du CDN pour des images distantes
+  if (url.includes('res.cloudinary.com')) {
+    const {
+      width = 'auto',
+      height,
+      quality = 'auto',
+      format = 'auto',
+      crop = 'fill',
+      gravity = 'auto'
+    } = options;
+
+    const parts = url.split('/upload/');
+    if (parts.length !== 2) return url;
+
+    const transformation = [
+      width !== 'auto' ? `w_${width}` : '',
+      height ? `h_${height}` : '',
+      `c_${crop}`,
+      `g_${gravity}`,
+      `q_${quality}`,
+      `f_${format}`
+    ].filter(Boolean).join(',');
+
+    return `${parts[0]}/upload/${transformation}/${parts[1]}`;
+  }
+
+  // Fallback pour Unsplash ou autres (Next.js Image optimization prend le relais)
+  return url;
+}
+
+/**
+ * Helper spécifique pour les couvertures de BD (Ratio 2:3)
+ */
+export function getCoverThumbnail(url: string) {
+  return getOptimizedImage(url, {
+    width: 400,
+    height: 600,
+    crop: 'fill',
+    gravity: 'auto',
+    quality: 80
+  });
+}
+
+/**
+ * Helper spécifique pour les avatars (Carré)
+ */
+export function getAvatarThumbnail(url: string) {
+  return getOptimizedImage(url, {
+    width: 150,
+    height: 150,
+    crop: 'thumb',
+    gravity: 'face',
+    quality: 'auto'
+  });
+}

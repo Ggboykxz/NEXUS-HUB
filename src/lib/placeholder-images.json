@@ -3,133 +3,133 @@
     {
       "id": "hero",
       "description": "Image d'en-tête pour la page d'accueil, dans un style afro-futuriste",
-      "imageUrl": "https://images.unsplash.com/photo-1609804213568-19c806540d6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhZnJvZnV0dXJpc20lMjBkZWl0eXxlbnwwfHx8fDE3MTI5NTg0MDB8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/hero-afrofuturism.jpg",
       "imageHint": "afrofuturism deity"
     },
     {
       "id": "story-1",
       "description": "Couverture pour l'histoire 1, Les Chroniques d'Orisha",
-      "imageUrl": "https://images.unsplash.com/photo-1645041922459-7fe89578648a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx5b3J1YmElMjBvcmtpc2hhfGVufDB8fHx8MTcxMjk1ODU0NHww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/orisha-chronicles.jpg",
       "imageHint": "orisha art"
     },
     {
       "id": "story-2",
       "description": "Couverture pour l'histoire 2, une bande dessinée de science-fiction",
-      "imageUrl": "https://images.unsplash.com/photo-1679979391038-a128dce502b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhZnJvZnV0dXJpc20lMjBjaXR5fGVufDB8fHx8MTc3MTI1NzQwOXww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/scifi-africa.jpg",
       "imageHint": "afrofuturism city"
     },
     {
       "id": "story-3",
       "description": "Couverture pour l'histoire 3",
-      "imageUrl": "https://images.unsplash.com/photo-1766132078366-d5608da61ec1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhZHZlbnR1cmUlMjBjb21pY3xlbnwwfHx8fDE3NzEyNTI2ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/adventure-safari.jpg",
       "imageHint": "adventure comic"
     },
     {
       "id": "story-4",
       "description": "Couverture pour l'histoire 4",
-      "imageUrl": "https://images.unsplash.com/photo-1768401658097-f24dcd744134?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxteXN0ZXJ5JTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/mystery-temple.jpg",
       "imageHint": "mystery comic"
     },
     {
       "id": "story-5",
       "description": "Couverture pour l'histoire 5, La Toile d'Anansé",
-      "imageUrl": "https://images.unsplash.com/photo-1631024344446-324317924083?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwc3BpZGVyJTIwbXl0aHxlbnwwfHx8fDE3MTI5NTg2NjR8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/ananse-web.jpg",
       "imageHint": "golden spiderweb"
     },
     {
       "id": "story-6",
       "description": "Couverture pour l'histoire 6",
-      "imageUrl": "https://images.unsplash.com/photo-1650521552444-9051e78b4975?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxoaXN0b3JpY2FsJTIwY29taWN8ZW58MHx8fHwxNzcxMjUyNjgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/history-kings.jpg",
       "imageHint": "historical comic"
     },
     {
       "id": "artist-1",
       "description": "Avatar pour l'artiste Jelani Adebayo",
-      "imageUrl": "https://images.unsplash.com/photo-1530785602056-02a1e0c2f9e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhZnJpY2FuJTIwbWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzEyOTU4OTcxfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-1.jpg",
       "imageHint": "african portrait"
     },
     {
       "id": "artist-2",
       "description": "Avatar pour l'artiste Amina Diallo",
-      "imageUrl": "https://images.unsplash.com/photo-1602785139708-1442c75f6b28?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwd29tYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3MTI5NTkwMTZ8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-2.jpg",
       "imageHint": "african portrait"
     },
     {
       "id": "artist-3",
       "description": "Avatar pour l'artiste Kwame Osei",
-      "imageUrl": "https://images.unsplash.com/photo-1610640058814-e5b155a32663?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhZnJpY2FuJTIwbWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzEyOTU4OTcxfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-3.jpg",
       "imageHint": "african man"
     },
     {
       "id": "product-1",
       "description": "T-shirt Orisha Warrior",
-      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/shop/tshirt-orisha.jpg",
       "imageHint": "black t-shirt"
     },
     {
       "id": "product-2",
       "description": "Hoodie Néo-Dakar 2088",
-      "imageUrl": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/shop/hoodie-dakar.jpg",
       "imageHint": "hoodie streetwear"
     },
     {
       "id": "product-3",
       "description": "Mug Totem Sankofa",
-      "imageUrl": "https://images.unsplash.com/photo-1514228742587-6b1558fbed50?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/shop/mug-sankofa.jpg",
       "imageHint": "ceramic mug"
     },
     {
       "id": "product-4",
       "description": "Poster Premium Cyber-Reines",
-      "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/shop/poster-cyber.jpg",
       "imageHint": "art poster"
     },
     {
       "id": "page-1",
       "description": "Page de BD 1",
-      "imageUrl": "https://images.unsplash.com/photo-1760113671986-63ccb46ae202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21pYyUyMHBhbmVsfGVufDB8fHx8MTc3MTIyMjMzNnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/pages/page-1.jpg",
       "imageHint": "comic panel"
     },
     {
       "id": "page-2",
       "description": "Page de BD 2",
-      "imageUrl": "https://images.unsplash.com/photo-1649111986925-c050b3ccea70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhY3Rpb24lMjBzY2VuZXxlbnwwfHx8fDE3NzEyNTI2ODJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/pages/page-2.jpg",
       "imageHint": "action scene"
     },
     {
       "id": "page-3",
       "description": "Page de BD 3",
-      "imageUrl": "https://images.unsplash.com/photo-1760113671986-63ccb46ae202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkaWFsb2d1ZSUyMGNvbWljfGVufDB8fHx8MTc3MTI1MjY4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/pages/page-3.jpg",
       "imageHint": "dialogue comic"
     },
     {
       "id": "reader-1",
       "description": "Avatar pour une lectrice",
-      "imageUrl": "https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/reader-1.jpg",
       "imageHint": "woman portrait"
     },
     {
       "id": "reader-2",
       "description": "Avatar pour un lecteur",
-      "imageUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzEyMjA0NTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/reader-2.jpg",
       "imageHint": "man portrait"
     },
     {
       "id": "reader-3",
       "description": "Avatar pour une lectrice",
-      "imageUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MTIyMDQ1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/reader-3.jpg",
       "imageHint": "woman portrait"
     },
     {
       "id": "reader-4",
       "description": "Avatar pour un lecteur",
-      "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzEyMjA0NTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/reader-4.jpg",
       "imageHint": "man portrait"
     },
     {
       "id": "submission-cta",
       "description": "Artiste africain travaillant sur une tablette graphique",
-      "imageUrl": "https://images.unsplash.com/photo-1544256718-3bcf237f3974?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+      "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg",
       "imageHint": "artist drawing"
     }
   ]
