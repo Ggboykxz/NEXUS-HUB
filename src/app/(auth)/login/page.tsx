@@ -15,7 +15,13 @@ import { ChevronDown, ShieldCheck, Lock, Eye, EyeOff, ArrowRight, BookOpen, Zap,
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider, 
+  OAuthProvider 
+} from 'firebase/auth';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
@@ -27,6 +33,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -70,16 +77,43 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = (platform: string) => {
-    toast({
-      title: `Connexion avec ${platform}`,
-      description: "Sécurisation de la session en cours...",
-    });
+  const handleSocialLogin = async (platform: 'Google' | 'Facebook' | 'Apple') => {
+    setIsSocialLoading(platform);
+    let provider;
+    
+    switch (platform) {
+      case 'Google':
+        provider = new GoogleAuthProvider();
+        break;
+      case 'Facebook':
+        provider = new FacebookAuthProvider();
+        break;
+      case 'Apple':
+        provider = new OAuthProvider('apple.com');
+        break;
+    }
+
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: `Connecté avec ${platform}`,
+        description: "Bienvenue sur NexusHub !",
+      });
+      router.push('/');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Erreur d'authentification",
+        description: "La connexion a été annulée ou a échoué.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSocialLoading(null);
+    }
   };
 
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
-      {/* 1. HERO / TITRE D'ACCUEIL IMMEDIAT */}
       <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.15),transparent_70%)]" />
@@ -133,11 +167,8 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* 2. OPTIONS DE CONNEXION RAPIDE & FORMULAIRE */}
       <section className="relative py-8 md:py-12 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-12 items-start">
-          
-          {/* OPTIONS SOCIALES */}
           <div className="space-y-6 animate-in fade-in slide-in-from-left-10 duration-1000">
             <div className="text-center lg:text-left">
               <h2 className="text-xl md:text-2xl font-display font-bold text-white mb-1">Choisissez votre méthode</h2>
@@ -148,36 +179,50 @@ export default function LoginPage() {
               <Button 
                 variant="outline" 
                 size="lg" 
+                disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Google')}
                 className="h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-4 group overflow-hidden relative shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-google text-xl text-red-500" />
-                Se Connecter avec Google
+                {isSocialLoading === 'Google' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-google text-xl text-red-500" />
+                    Se Connecter avec Google
+                  </>
+                )}
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                onClick={() => handleSocialLogin('X')}
-                className="h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-4 group overflow-hidden relative shadow-lg"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-x-twitter text-xl" />
-                Se Connecter avec X (Twitter)
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
+                disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Facebook')}
                 className="h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-4 group overflow-hidden relative shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-facebook text-xl text-blue-600" />
-                Se Connecter avec Facebook
+                {isSocialLoading === 'Facebook' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-facebook text-xl text-blue-600" />
+                    Se Connecter avec Facebook
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                disabled={!!isSocialLoading}
+                onClick={() => handleSocialLogin('Apple')}
+                className="h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-4 group overflow-hidden relative shadow-lg"
+              >
+                {isSocialLoading === 'Apple' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-apple text-xl" />
+                    Se Connecter avec Apple
+                  </>
+                )}
               </Button>
             </div>
 
-            {/* TRUST INDICATORS */}
             <div className="pt-4 grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10 group hover:border-primary/30 transition-all">
                 <Lock className="h-5 w-5 text-primary" />
@@ -190,7 +235,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* FORMULAIRE EMAIL */}
           <div className="animate-in fade-in slide-in-from-right-10 duration-1000">
             <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl rounded-2xl overflow-hidden">
               <div className="h-1 w-full bg-primary" />
@@ -276,7 +320,6 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* SECURITY BAR */}
       <section className="py-6 border-t border-white/5 bg-stone-950 text-center">
         <p className="text-[9px] text-stone-600 uppercase font-black tracking-[0.3em] flex items-center justify-center gap-4">
           <span>Plateforme Certifiée</span>

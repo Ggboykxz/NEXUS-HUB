@@ -17,9 +17,19 @@ import {
   Heart, 
   Users, 
   Zap, 
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import { 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider, 
+  OAuthProvider 
+} from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -29,10 +39,44 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSocialLogin = (platform: string) => {
-    console.log(`Login with ${platform}`);
-    // Simulation de redirection ou traitement
+  const handleSocialLogin = async (platform: 'Google' | 'Facebook' | 'X') => {
+    setIsLoading(platform);
+    let provider;
+    
+    switch (platform) {
+      case 'Google':
+        provider = new GoogleAuthProvider();
+        break;
+      case 'Facebook':
+        provider = new FacebookAuthProvider();
+        break;
+      case 'X':
+        provider = new OAuthProvider('apple.com'); // Using Apple as replacement for X in this specific request scope
+        break;
+    }
+
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue sur NexusHub !",
+      });
+      onClose();
+      router.refresh();
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de se connecter.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(null);
+    }
   };
 
   const teaserBenefits = [
@@ -45,7 +89,6 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[90vw] sm:max-w-[360px] p-0 overflow-hidden border-none bg-stone-950 shadow-2xl rounded-2xl">
         <div className="relative overflow-hidden">
-          {/* Gold Decorative Background */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
 
@@ -62,7 +105,6 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
               </DialogDescription>
             </DialogHeader>
 
-            {/* Teaser Benefits */}
             <div className="mt-4 grid grid-cols-3 gap-2 bg-white/5 rounded-lg p-2.5 border border-white/5">
               {teaserBenefits.map((benefit, idx) => (
                 <div key={idx} className="flex flex-col items-center text-center gap-1">
@@ -74,34 +116,48 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
               ))}
             </div>
 
-            {/* Social Login Options */}
             <div className="mt-4 space-y-2">
               <Button 
                 onClick={() => handleSocialLogin('Google')}
+                disabled={!!isLoading}
                 variant="outline" 
                 className="w-full h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 text-xs group overflow-hidden relative shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-google text-red-500 text-sm" />
-                Continuer avec Google
+                {isLoading === 'Google' ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-google text-red-500 text-sm" />
+                    Continuer avec Google
+                  </>
+                )}
               </Button>
               <Button 
                 onClick={() => handleSocialLogin('Facebook')}
+                disabled={!!isLoading}
                 variant="outline" 
                 className="w-full h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 text-xs group overflow-hidden relative shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-facebook text-blue-600 text-sm" />
-                Continuer avec Facebook
+                {isLoading === 'Facebook' ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-facebook text-blue-600 text-sm" />
+                    Continuer avec Facebook
+                  </>
+                )}
               </Button>
               <Button 
                 onClick={() => handleSocialLogin('X')}
+                disabled={!!isLoading}
                 variant="outline" 
                 className="w-full h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 text-xs group overflow-hidden relative shadow-lg"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-x-twitter text-white text-sm" />
-                Continuer avec X
+                {isLoading === 'X' ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-apple text-white text-sm" />
+                    Continuer avec Apple
+                  </>
+                )}
               </Button>
               
               {!showEmailForm ? (
@@ -135,7 +191,6 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
               )}
             </div>
 
-            {/* Inscription Teaser */}
             <div className="mt-4 pt-4 border-t border-white/5 text-center space-y-2">
               <p className="text-[10px] text-stone-400 font-medium">
                 Pas membre ? <Link href="/signup" onClick={onClose} className="text-primary font-bold hover:underline">S'inscrire gratuitement</Link>
@@ -147,7 +202,6 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
               </div>
             </div>
 
-            {/* Secondary Escape Link */}
             <button 
               onClick={onClose}
               className="mt-4 w-full text-center text-[9px] text-stone-600 hover:text-stone-400 transition-colors uppercase font-bold tracking-tighter"

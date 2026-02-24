@@ -17,7 +17,14 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { 
+  createUserWithEmailAndPassword, 
+  updateProfile, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider, 
+  OAuthProvider 
+} from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
@@ -37,6 +44,7 @@ export default function SignupPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -71,7 +79,6 @@ export default function SignupPage() {
 
       await updateProfile(user, { displayName: values.name });
 
-      // Create user document in Firestore (fallback if function doesn't trigger)
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: values.email,
@@ -100,16 +107,43 @@ export default function SignupPage() {
     }
   }
 
-  const handleSocialLogin = (platform: string) => {
-    toast({
-      title: `Connexion avec ${platform}`,
-      description: "Redirection vers le service d'authentification...",
-    });
+  const handleSocialLogin = async (platform: 'Google' | 'Facebook' | 'Apple') => {
+    setIsSocialLoading(platform);
+    let provider;
+    
+    switch (platform) {
+      case 'Google':
+        provider = new GoogleAuthProvider();
+        break;
+      case 'Facebook':
+        provider = new FacebookAuthProvider();
+        break;
+      case 'Apple':
+        provider = new OAuthProvider('apple.com');
+        break;
+    }
+
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: `Connecté avec ${platform}`,
+        description: "Bienvenue sur NexusHub !",
+      });
+      router.push('/');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Erreur d'authentification",
+        description: "La connexion a été annulée ou a échoué.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSocialLoading(null);
+    }
   };
 
   return (
     <div className="flex flex-col bg-stone-950">
-      {/* 1. HERO BANNER - ACCUEIL ENGAGEANT */}
       <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8 md:py-12">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_60%)]" />
@@ -173,12 +207,10 @@ export default function SignupPage() {
         </div>
       </section>
 
-      {/* SECTION AUTHENTIFICATION */}
       <section className="relative py-8 md:py-16 px-4 md:px-6 bg-stone-950 border-t border-primary/10">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-12 items-start">
-          
           <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-left-10 duration-1000">
             <div className="text-center lg:text-left">
               <h2 className="text-xl md:text-2xl font-display font-bold text-white mb-1">Inscrivez-vous en un clic</h2>
@@ -189,32 +221,47 @@ export default function SignupPage() {
               <Button 
                 variant="outline" 
                 size="lg" 
+                disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Google')}
                 className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-google text-lg md:text-xl text-red-500" />
-                Continuer avec Google
+                {isSocialLoading === 'Google' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-google text-lg md:text-xl text-red-500" />
+                    Continuer avec Google
+                  </>
+                )}
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                onClick={() => handleSocialLogin('X')}
-                className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-x-twitter text-lg md:text-xl" />
-                Continuer avec X (Twitter)
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
+                disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Facebook')}
                 className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <i className="fa-brands fa-facebook text-lg md:text-xl text-blue-600" />
-                Continuer avec Facebook
+                {isSocialLoading === 'Facebook' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-facebook text-lg md:text-xl text-blue-600" />
+                    Continuer avec Facebook
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                disabled={!!isSocialLoading}
+                onClick={() => handleSocialLogin('Apple')}
+                className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
+              >
+                {isSocialLoading === 'Apple' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <i className="fa-brands fa-apple text-lg md:text-xl" />
+                    Continuer avec Apple
+                  </>
+                )}
               </Button>
             </div>
 
@@ -381,7 +428,6 @@ export default function SignupPage() {
         </div>
       </section>
 
-      {/* 4. TEASER AVANTAGES */}
       <section className="py-12 md:py-16 px-4 md:px-6 bg-gradient-to-b from-stone-950 to-stone-900 overflow-hidden relative">
         <div className="absolute bottom-0 right-0 w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10" />
         
