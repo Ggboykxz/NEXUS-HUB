@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { useAuthModal } from './providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
 
 interface ProductCardProps {
   product: Product;
@@ -16,8 +17,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('ajouter ce produit au panier');
       return;
     }

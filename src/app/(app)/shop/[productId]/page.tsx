@@ -11,6 +11,7 @@ import { useTranslation } from '@/components/providers/language-provider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { use } from 'react';
+import { auth } from '@/lib/firebase';
 
 export default function ProductDetailPage(props: { params: Promise<{ productId: string }> }) {
   const { productId } = use(props);
@@ -25,8 +26,7 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
   }
 
   const checkAuth = (action: string) => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal(action);
       return false;
     }

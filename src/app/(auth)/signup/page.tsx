@@ -12,11 +12,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight, PenSquare } from "lucide-react";
+import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight, PenSquare, Loader2 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -34,10 +36,10 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
-    // Generate particles on client side to avoid hydration mismatch
     const newParticles = [...Array(15)].map((_, i) => ({
       id: i,
       top: `${Math.random() * 100}%`,
@@ -61,18 +63,41 @@ export default function SignupPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('accountType', values.accountType === 'reader' ? 'reader' : 'artist');
-    localStorage.setItem('userId', values.accountType === 'reader' ? 'reader-1' : '1');
-    window.dispatchEvent(new Event('loginStateChange'));
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
 
-    toast({
-      title: "Bienvenue sur NexusHub !",
-      description: "Votre compte a été créé avec succès.",
-    });
+      await updateProfile(user, { displayName: values.name });
 
-    router.push('/');
+      // Create user document in Firestore (fallback if function doesn't trigger)
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: values.email,
+        displayName: values.name,
+        role: values.accountType,
+        afriCoins: 0,
+        bio: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Bienvenue sur NexusHub !",
+        description: "Votre compte a été créé avec succès.",
+      });
+
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        title: "Erreur d'inscription",
+        description: error.message || "Une erreur est survenue.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleSocialLogin = (platform: string) => {
@@ -333,9 +358,13 @@ export default function SignupPage() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full h-11 md:h-12 rounded-xl font-black text-sm md:text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_15px_rgba(212,168,67,0.25)] transition-all active:scale-95 group overflow-hidden relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    S'inscrire Gratuitement
+                  <Button type="submit" disabled={isLoading} className="w-full h-11 md:h-12 rounded-xl font-black text-sm md:text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_15px_rgba(212,168,67,0.25)] transition-all active:scale-95 group overflow-hidden relative">
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        S'inscrire Gratuitement
+                      </>
+                    )}
                   </Button>
                 </form>
               </Form>

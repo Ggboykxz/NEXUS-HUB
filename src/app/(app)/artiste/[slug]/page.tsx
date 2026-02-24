@@ -28,6 +28,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function ArtistProfilePage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = use(props.params);
@@ -35,15 +37,21 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
   const { openAuthModal } = useAuthModal();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const router = useRouter();
 
   const artist = artists.find((a) => a.slug === slug);
 
   useEffect(() => {
-    if (artist) {
-        const loggedInUserId = localStorage.getItem('userId');
-        setIsOwnProfile(loggedInUserId === artist.id);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (artist && user) {
+        setIsOwnProfile(user.uid === artist.id);
+      } else {
+        setIsOwnProfile(false);
+      }
+    });
+    return () => unsubscribe();
   }, [artist]);
 
   if (!artist) {
@@ -51,8 +59,7 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
   }
 
   const handleSubscribeClick = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!currentUser) {
       openAuthModal('suivre vos artistes préférés');
       return;
     }
@@ -64,8 +71,7 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
   };
 
   const handleDonation = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!currentUser) {
       openAuthModal('soutenir directement les créateurs');
       return;
     }
@@ -134,7 +140,7 @@ export default function ArtistProfilePage(props: { params: Promise<{ slug: strin
                     {isSubscribed ? 'Abonné' : 'S\'abonner'}
                   </Button>
                   <Dialog onOpenChange={(open) => {
-                    if (open && localStorage.getItem('isLoggedIn') !== 'true') {
+                    if (open && !auth.currentUser) {
                       openAuthModal('faire un don aux artistes');
                     }
                   }}>

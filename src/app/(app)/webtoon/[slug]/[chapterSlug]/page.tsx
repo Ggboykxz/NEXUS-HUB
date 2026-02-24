@@ -24,6 +24,8 @@ import {
   type CarouselApi
 } from "@/components/ui/carousel";
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 // #region Components
 
@@ -125,9 +127,16 @@ function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggle
 
 function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, chapterIndex: number, onClose: () => void }) {
   const { openAuthModal } = useAuthModal();
-  const isLoggedIn = typeof window !== 'undefined' ? localStorage.getItem('isLoggedIn') === 'true' : false;
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const storyComments = allComments.filter(c => c.storyId === storyId && c.chapter === chapterIndex);
   
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const processComment = (text: string) => {
     const keywords = ["spoiler", "mort", "fin", "trahison", "révélation"];
     let containsSensitive = false;
@@ -149,7 +158,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
   };
 
   const handlePostComment = () => {
-    if (!isLoggedIn) {
+    if (!currentUser) {
       openAuthModal('poster votre commentaire');
       return;
     }
@@ -275,8 +284,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   };
 
   const handleBookmark = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('sauvegarder ce chapitre');
       return;
     }
@@ -285,8 +293,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   };
 
   const handleLike = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('aimer cette œuvre');
       return;
     }

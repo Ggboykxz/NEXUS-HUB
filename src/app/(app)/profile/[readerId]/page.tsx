@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Ban, Heart, ListMusic, Lock, Globe } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function ProfilePage({ params: propsParams }: { params: { readerId: string } }) {
   const params = use(propsParams);
@@ -20,10 +23,16 @@ export default function ProfilePage({ params: propsParams }: { params: { readerI
   const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
-    // This logic runs only on the client, after hydration
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const accountType = localStorage.getItem('accountType');
-    setIsArtist(loggedIn && accountType === 'artist');
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        setIsArtist(userData?.role?.includes('artist'));
+      } else {
+        setIsArtist(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
 

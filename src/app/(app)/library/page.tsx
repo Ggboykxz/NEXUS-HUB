@@ -7,12 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookMarked, Heart, History, Clock, Library as LibraryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function LibraryPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   // Simuler des listes pour l'utilisateur connecté
@@ -20,7 +27,15 @@ export default function LibraryPage() {
   const favoriteStories = stories.slice(2, 5);
   const historyStories = stories.slice(1, 6);
 
-  if (!isLoggedIn) {
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-6 py-24 text-center">
+        <p className="text-muted-foreground animate-pulse">Synchronisation de votre bibliothèque...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return (
       <div className="container mx-auto max-w-7xl px-6 py-24 text-center">
         <LibraryIcon className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-20" />

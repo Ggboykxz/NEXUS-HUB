@@ -34,6 +34,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function ForumsPage() {
   const { openAuthModal } = useAuthModal();
@@ -55,14 +58,21 @@ export default function ForumsPage() {
     }));
     setParticles(newParticles);
 
-    // Simulate login status
-    const status = localStorage.getItem('accountType') === 'artist';
-    setIsPremiumUser(status);
+    // Listen to Auth changes and fetch role from Firestore
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        setIsPremiumUser(userData?.role?.includes('artist') || userData?.role === 'premium_reader');
+      } else {
+        setIsPremiumUser(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleCreateTopic = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('créer une nouvelle discussion');
       return;
     }

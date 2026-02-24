@@ -34,6 +34,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 // --- MOCK DATA EXTENSION POUR LE PROTO ---
 const mockReplies = [
@@ -77,6 +79,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
   const { openAuthModal } = useAuthModal();
   const [isFollowing, setIsFollowing] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   const thread = forumThreads.find((t) => t.id === threadId);
@@ -93,6 +96,11 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
       ty: `${Math.random() * -80}px`
     }));
     setParticles(newParticles);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
   }, []);
 
   if (!thread) {
@@ -102,8 +110,7 @@ export default function ThreadPage(props: { params: Promise<{ threadId: string }
   const authorInfo = artists.find(a => a.name === thread.author);
 
   const checkAuth = (action: string) => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal(action);
       return false;
     }

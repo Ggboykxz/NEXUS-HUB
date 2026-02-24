@@ -22,20 +22,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function MyPlaylistsPage() {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [hasMounted, setHasMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
 
   useEffect(() => {
-    setHasMounted(true);
-    // Simulate getting logged in user
-    setCurrentUserId(localStorage.getItem('userId'));
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const myPlaylists = allPlaylists.filter(p => p.authorId === currentUserId);
+  const myPlaylists = allPlaylists.filter(p => p.authorId === currentUser?.uid);
 
   const handleCreatePlaylist = () => {
     toast({
@@ -44,15 +48,15 @@ export default function MyPlaylistsPage() {
     });
   };
 
-  if (!hasMounted) {
+  if (loading) {
       return (
           <div className="container mx-auto max-w-7xl px-4 py-12 text-center">
-              <p className="text-muted-foreground">Chargement...</p>
+              <p className="text-muted-foreground">Chargement des playlists...</p>
           </div>
       );
   }
 
-  if (!currentUserId) {
+  if (!currentUser) {
       return (
           <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
               <ListMusic className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-20" />

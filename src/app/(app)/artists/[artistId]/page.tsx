@@ -27,6 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function ArtistProfilePage(props: { params: { artistId: string } }) {
   const params = use(props.params);
@@ -36,9 +38,10 @@ export default function ArtistProfilePage(props: { params: { artistId: string } 
   const router = useRouter();
 
   useEffect(() => {
-    // This logic runs only on the client, after hydration
-    const loggedInUserId = localStorage.getItem('userId');
-    setIsOwnProfile(loggedInUserId === params.artistId);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsOwnProfile(user?.uid === params.artistId);
+    });
+    return () => unsubscribe();
   }, [params.artistId]);
 
   const artist = artists.find((a) => a.id === params.artistId);

@@ -19,6 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function StoryDetailPage({ params: propsParams }: { params: Promise<{ slug: string }> }) {
   const params = use(propsParams);
@@ -28,6 +30,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
   
   const [isLiked, setIsLiked] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -42,6 +45,11 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
       ty: `${Math.random() * -80}px`
     }));
     setParticles(newParticles);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
   }, []);
 
   if (!story) {
@@ -59,8 +67,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
   };
 
   const handleLike = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!currentUser) {
       openAuthModal('ajouter cette œuvre à votre bibliothèque');
       return;
     }
@@ -72,8 +79,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
   };
 
   const handleSupport = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!currentUser) {
       openAuthModal('soutenir vos artistes avec des AfriCoins');
       return;
     }
@@ -438,8 +444,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                           </div>
                           <Button 
                             onClick={() => {
-                              const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-                              if (!isLoggedIn) openAuthModal('poster votre avis');
+                              if (!auth.currentUser) openAuthModal('poster votre avis');
                             }}
                             className="rounded-full px-10 h-12 font-black shadow-xl shadow-primary/20 gold-shimmer"
                           >
@@ -488,8 +493,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                           <div className="flex items-center gap-4 pl-2">
                             <button 
                               onClick={() => {
-                                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-                                if (!isLoggedIn) openAuthModal('interagir avec la communauté');
+                                if (!auth.currentUser) openAuthModal('interagir avec la communauté');
                               }}
                               className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground hover:text-primary transition-all"
                             >
@@ -497,8 +501,7 @@ export default function StoryDetailPage({ params: propsParams }: { params: Promi
                             </button>
                             <button 
                               onClick={() => {
-                                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-                                if (!isLoggedIn) openAuthModal('répondre aux commentaires');
+                                if (!auth.currentUser) openAuthModal('répondre aux commentaires');
                               }}
                               className="text-[10px] font-black text-muted-foreground hover:text-primary transition-all"
                             >

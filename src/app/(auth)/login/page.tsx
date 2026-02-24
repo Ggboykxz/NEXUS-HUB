@@ -11,9 +11,11 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronDown, ShieldCheck, Lock, Eye, EyeOff, ArrowRight, BookOpen, Zap, Sparkles } from "lucide-react";
+import { ChevronDown, ShieldCheck, Lock, Eye, EyeOff, ArrowRight, BookOpen, Zap, Sparkles, Loader2 } from "lucide-react";
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -47,18 +50,24 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('accountType', 'reader');
-    localStorage.setItem('userId', 'reader-1');
-    window.dispatchEvent(new Event('loginStateChange'));
-
-    toast({
-      title: "Connexion réussie !",
-      description: "Heureux de vous revoir parmi nous.",
-    });
-
-    router.push('/');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "Connexion réussie !",
+        description: "Heureux de vous revoir parmi nous.",
+      });
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        title: "Erreur de connexion",
+        description: "Email ou mot de passe incorrect.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleSocialLogin = (platform: string) => {
@@ -242,9 +251,13 @@ export default function LoginPage() {
                       <label htmlFor="remember" className="text-xs text-stone-400 font-medium cursor-pointer">Se souvenir de moi</label>
                     </div>
 
-                    <Button type="submit" className="w-full h-12 rounded-xl font-black text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)] transition-all active:scale-95 group overflow-hidden relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                      Se Connecter
+                    <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl font-black text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)] transition-all active:scale-95 group overflow-hidden relative">
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                          Se Connecter
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Form>
