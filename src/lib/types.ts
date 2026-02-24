@@ -1,61 +1,59 @@
-/**
- * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 4.2.0
- */
+import { Timestamp } from 'firebase/firestore';
 
-import type { Timestamp } from 'firebase/firestore';
+// ==================== ENUMS ====================
+export type UserRole = 
+  | 'reader' 
+  | 'artist_draft' 
+  | 'artist_pro' 
+  | 'artist_elite' 
+  | 'admin' 
+  | 'translator';
 
-// ─── TYPES PARTAGÉS ──────────────────────────────────────────────────────────
-
-export type UserRole = 'reader' | 'artist_draft' | 'artist_pro' | 'artist_elite' | 'admin' | 'translator';
-export type ArtistLevel = 'emergent' | 'draft' | 'pro' | 'elite';
 export type StoryFormat = 'Webtoon' | 'BD' | 'One-shot' | 'Roman Illustré' | 'Hybride';
 export type StoryStatus = 'En cours' | 'Terminé' | 'À venir';
-export type ChapterStatus = 'Publié' | 'Programmé' | 'Brouillon';
 export type StoryTier = 'free' | 'draft' | 'pro' | 'premium';
-export type Language = 'fr' | 'en' | 'sw' | 'ha' | 'am' | 'ar' | 'yo' | 'ig' | 'zu';
-export type TeamRole = 'author' | 'artist' | 'colorist' | 'letterer' | 'translator';
-export type TransactionType = 'purchase' | 'earn_streak' | 'spend_unlock' | 'donation' | 'payout';
-export type NotificationType = 'new_chapter' | 'new_follower' | 'comment' | 'africoins_received' | 'system';
+export type ChapterStatus = 'Brouillon' | 'Programmé' | 'Publié';
+export type MessageType = 'text' | 'image' | 'africoins' | 'sticker';
 
-export interface ImageData {
-  imageUrl: string;
-  width: number;
-  height: number;
-  blurHash?: string;
-  alt?: string;
-}
-
+// ==================== USER ====================
 export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  photoURL: string;
-  slug?: string;                    // ex: @allmight (unique)
-  country?: string;                 // Code pays ISO 3166-1 alpha-2
+  photoURL?: string;
+  slug?: string;                    // @pseudo unique
   role: UserRole;
-  level?: ArtistLevel;              // 🔒 Mis à jour par le système
+  level: number;
   bio?: string;
-  links?: { 
-    twitter?: string; 
-    instagram?: string; 
-    tiktok?: string; 
+  country?: string;                 // code ISO (NG, SN, CI, etc.)
+  languages: string[];
+  socialLinks?: {
+    twitter?: string;
+    instagram?: string;
+    tiktok?: string;
     facebook?: string;
-    personal?: string;
   };
-  isMentor?: boolean;
-  afriCoins: number;                // 🔒 Mis à jour par Cloud Functions
-  totalEarned?: number;             // 🔒 Total gagné (artistes)
-  subscribersCount: number;         // 🔒
+  afriCoins: number;
+  subscribersCount: number;
   followedCount: number;
-  storiesCount?: number;            // 🔒
-  totalViews?: number;              // 🔒
   isCertified: boolean;
-  isBanned: boolean;                // 🔒
-  isVerified: boolean;              // 🔒
-  isEmailVerified: boolean;         // 🔒
-  preferences: {
-    language: Language;
+  isBanned: boolean;
+  isVerified: boolean;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+  lastActive?: Timestamp | string;
+  readingStats?: {
+    preferredGenres: Record<string, number>;
+    totalReadTime: number;          // minutes
+    favoriteArtists: string[];
+  };
+  readingStreak?: {
+    currentCount: number;
+    lastReadDate: string;
+    longestStreak: number;
+  };
+  preferences?: {
+    language: string;
     theme: 'light' | 'dark' | 'system';
     notifications: boolean;
     privacy?: {
@@ -63,26 +61,214 @@ export interface UserProfile {
       showHistory: boolean;
     };
   };
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
-  lastActiveAt?: Timestamp | string;
-  readingStats?: {
-    preferredGenres: Record<string, number>;
-    totalReadTime: number;
-    favoriteArtists: string[];
-    chaptersRead: number;
-  };
-  readingStreak?: {
-    currentCount: number;
-    lastReadDate: string;
-    longestStreak: number;
-    nextRewardAt: number;
-  };
 }
 
-/**
- * users/{uid}/library/{storyId}
- */
+// ==================== STORY ====================
+export interface Story {
+  id: string;
+  slug: string;
+  artistId: string;
+  artistName?: string;              // Pratique pour l'UI
+  artistSlug?: string;
+  team?: Record<string, 'co_author' | 'colorist' | 'letterer' | 'translator'>;
+  title: string;
+  description: string;
+  format: StoryFormat;
+  status: StoryStatus;
+  tier: StoryTier;
+  coverImage: string;               // URL directe (Firestore v4.2.0)
+  bannerImage?: string;
+  genres: string[];                 // Liste de genres
+  genre?: string;                   // Rétrocompatibilité
+  genreSlug?: string;               // Rétrocompatibilité
+  tags: string[];
+  isPublished: boolean;
+  isBanned: boolean;
+  isOriginal: boolean;
+  isPremium: boolean;
+  views: number;
+  likes: number;
+  subscriptions: number;
+  chapterCount: number;
+  rating: number;                   // 0.0 à 5.0
+  createdAt: Timestamp | string;
+  publishedAt?: Timestamp | string;
+  updatedAt: Timestamp | string;
+  availableLanguages?: string[];
+  sponsoredBy?: { name: string; logoUrl?: string };
+}
+
+// ==================== CHAPTER ====================
+export interface Chapter {
+  id: string;
+  storyId: string;
+  slug: string;
+  number: number;
+  chapterNumber?: number;           // Compatibilité
+  title: string;
+  status: ChapterStatus;
+  releaseDate?: Timestamp | string;
+  publishedAt?: Timestamp | string;
+  views: number;
+  likes: number;
+  pages: string[];                  // URLs directes
+  isLocked: boolean;                // payant / premium
+  isPremium?: boolean;              // Compatibilité
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+// ==================== COMMENT ====================
+export interface Comment {
+  id: string;
+  storyId?: string;
+  chapterId?: string;
+  authorId: string;
+  authorName?: string;
+  authorAvatar?: string;
+  content: string;
+  likes: number;
+  isHidden: boolean;
+  isEdited: boolean;
+  pageIndex?: number;               // commentaire sur une page précise du webtoon
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
+
+// ==================== PLAYLIST ====================
+export interface Playlist {
+  id: string;
+  ownerId: string;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  storyIds: string[];
+  storyCount: number;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+// ==================== FORUM / THREAD / POST ====================
+export interface Forum {
+  id: string;
+  title: string;
+  isRestricted: boolean;
+  createdAt: Timestamp | string;
+}
+
+export interface Thread {
+  id: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  views: number;
+  replies: number;
+  replyCount?: number;
+  isPinned: boolean;
+  isLocked: boolean;
+  isSolved?: boolean;
+  isPremium: boolean;
+  isHidden: boolean;
+  lastPost: {
+    author: string;
+    time: string;
+  };
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+export interface Post {
+  id: string;
+  authorId: string;
+  content: string;
+  likes: number;
+  isHidden: boolean;
+  isEdited: boolean;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
+
+// ==================== CONVERSATION & MESSAGE ====================
+export interface Conversation {
+  id: string;
+  participants: string[];
+  isGroup: boolean;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+export interface Message {
+  id: string;
+  authorId: string;
+  type: MessageType;
+  content: string;
+  isDeleted: boolean;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
+
+// ==================== NOTIFICATION ====================
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'like' | 'comment' | 'new_chapter' | 'subscription' | 'transaction' | 'system';
+  title: string;
+  body: string;
+  isRead: boolean;
+  readAt?: Timestamp | string;
+  data?: any;
+  createdAt: Timestamp | string;
+}
+
+// ==================== TRANSACTION ====================
+export interface Transaction {
+  id: string;
+  userId: string;
+  type: 'earn' | 'spend' | 'purchase' | 'donation';
+  amount: number;
+  description: string;
+  createdAt: Timestamp | string;
+}
+
+// ==================== AUTRES ====================
+export interface Product {
+  id: string;
+  artistId: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  image: { imageUrl: string; imageHint?: string };
+  isAvailable: boolean;
+  universe?: string;
+  isCollectible?: boolean;
+  printfulUrl?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  date: string;
+  category: string;
+  tags: string[];
+  coverImage: { imageUrl: string; imageHint?: string };
+}
+
+export interface ComicPage {
+  id: string;
+  storyId: string;
+  chapterId: string;
+  pageNumber: number;
+  imageUrl: string;
+}
+
 export interface LibraryEntry {
   storyId: string;
   addedAt: Timestamp | string;
@@ -91,194 +277,13 @@ export interface LibraryEntry {
   lastReadChapterTitle?: string;
   lastReadPageIndex?: number;
   lastReadAt?: Timestamp | string;
-  progress: number;                 // 0–100 (%)
-  storyTitle: string;               // Dénormalisé pour affichage rapide
-  storyCover: string;               // Dénormalisé
+  progress: number;
+  storyTitle: string;
+  storyCover: string;
   isFavorite: boolean;
 }
 
-/**
- * users/{uid}/subscriptions/{artistId}
- */
-export interface Subscription {
-  artistId: string;
-  subscribedAt: Timestamp | string;
-}
-
-export interface Story {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  artistId: string;
-  artistName: string;
-  artistSlug?: string;
-  team?: Record<string, TeamRole>;
-  revenueShare?: Record<string, number>;
-  coverImage: ImageData;
-  format: StoryFormat;
-  genre: string;
-  genreSlug: string;
-  tags: string[];
-  language: Language;
-  country?: string;
-  status: StoryStatus;
-  tier: StoryTier;
-  isPremium: boolean;
-  afriCoinPrice?: number;
-  isPublished: boolean;
-  isOriginal: boolean;              // 🔒
-  isBanned: boolean;                // 🔒
-  views: number;                    // 🔒
-  likes: number;                    // 🔒
-  subscriptions: number;            // 🔒
-  chapterCount: number;             // 🔒
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
-  publishedAt?: Timestamp | string;
-  availableLanguages?: Language[];
-  sponsoredBy?: { name: string; logoUrl?: string };
-}
-
-export interface Chapter {
-  id: string;
-  storyId: string;
-  slug: string;
-  title: string;
-  chapterNumber: number;
-  pages: ImageData[];
-  pageCount: number;
-  status: ChapterStatus;
-  scheduledAt?: Timestamp | string;
-  isPremium: boolean;
-  afriCoinPrice?: number;
-  version: string;
-  revisionNote?: string;
-  views: number;                    // 🔒
-  likes: number;                    // 🔒
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
-  publishedAt?: Timestamp | string;
-}
-
-export interface Comment {
-  id: string;
-  storyId: string;
-  chapterId: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  content: string;
-  pageIndex?: number;
-  isSpoiler: boolean;
-  parentId?: string;
-  isHidden: boolean;
-  isEdited: boolean;
-  likes: number;                    // 🔒
-  replyCount?: number;              // 🔒
-  createdAt: Timestamp | string;
-  updatedAt?: Timestamp | string;
-}
-
-export interface Thread {
-  id: string;
-  forumId: string;
-  authorId: string;
-  authorName: string;
-  title: string;
-  content: string;
-  category: string;
-  tags: string[];
-  isPinned: boolean;
-  isLocked: boolean;
-  isSolved: boolean;
-  isPremium: boolean;
-  isHidden: boolean;
-  views: number;                    // 🔒
-  replies: number;                  // 🔒
-  lastPost: {
-    author: string;
-    time: string;
-  };
-  lastReplyAt?: Timestamp | string; // 🔒
-  createdAt: Timestamp | string;
-}
-
-export interface Forum {
-  id: string;
-  name: string;
-  description: string;
-  slug: string;
-  icon: string;
-  isRestricted: boolean;
-  order: number;
-  threadCount: number;              // 🔒
-  postCount: number;                // 🔒
-  createdAt: Timestamp | string;
-}
-
-export interface Playlist {
-  id: string;
-  ownerId: string;
-  title: string;
-  description?: string;
-  isPublic: boolean;
-  storyIds: string[];
-  storyCount: number;               // 🔒
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
-}
-
-export interface Product {
-  id: string;
-  artistId: string;
-  storyId?: string;
-  name: string;
-  description: string;
-  category: string;
-  price: number;
-  priceUSD?: number;
-  image: ImageData;
-  stock?: number | null;
-  isAvailable: boolean;
-  requiresShipping: boolean;
-  printfulId?: string;
-  printfulUrl?: string;
-  universe?: string;
-  isCollectible?: boolean;
-  createdAt: Timestamp | string;
-}
-
-export interface Transaction {
-  id: string;
-  userId: string;
-  type: TransactionType;
-  amount: number;
-  balanceBefore: number;
-  balanceAfter: number;
-  description: string;
-  reference?: string;
-  paymentMethod?: string;
-  paymentCurrency?: string;
-  paymentAmount?: number;
-  externalRef?: string;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  createdAt: Timestamp | string;
-  completedAt?: Timestamp | string;
-}
-
-// ─── HELPERS D'URLS ──────────────────────────────────────────────────────────
-
-export const getStoryUrl = (story: Pick<Story, 'format' | 'slug'>): string => {
-  const isWebtoonFormat = story.format === 'Webtoon' || story.format === 'Roman Illustré' || story.format === 'Hybride';
-  return isWebtoonFormat ? `/webtoon-hub/${story.slug}` : `/bd-africaine/${story.slug}`;
-};
-
-export const getChapterUrl = (story: Pick<Story, 'format' | 'slug'>, chapterSlug: string): string => {
-  return `${getStoryUrl(story)}/${chapterSlug}`;
-};
-
-export const getUserUrl = (user: Pick<UserProfile, 'uid' | 'role' | 'slug'>): string => {
-  if (user.role !== 'reader' && user.slug) return `/artiste/${user.slug}`;
-  return `/profile/${user.uid}`;
-};
+// ==================== HELPERS ====================
+export const getStoryUrl = (storyId: string) => `/read/${storyId}`;
+export const getChapterUrl = (storyId: string, chapterNumber: number) => `/read/${storyId}/${chapterNumber}`;
+export const getUserUrl = (slug: string) => `/artiste/${slug}`;

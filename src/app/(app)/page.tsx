@@ -68,14 +68,13 @@ export default function HomePage() {
     <div className="flex flex-col gap-12 pb-20">
       <PwaInstallBanner />
 
-      {/* HERO SECTION */}
       <section className="relative w-full pt-4 overflow-hidden px-4 md:px-8">
         <div className="container max-w-7xl mx-auto">
           <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
             {featured ? (
               <>
                 <Image 
-                  src={featured.coverImage.imageUrl} 
+                  src={featured.coverImage} 
                   alt={featured.title} 
                   fill 
                   className="object-cover opacity-50 transition-transform duration-[10000ms] hover:scale-110"
@@ -88,10 +87,10 @@ export default function HomePage() {
                     <p className="text-stone-300 text-sm md:text-lg font-light italic line-clamp-2">"{featured.description}"</p>
                     <div className="flex gap-4 pt-4">
                       <Button asChild size="lg" className="rounded-full font-black px-8 gold-shimmer h-14">
-                        <Link href={`/webtoon-hub/${featured.slug}/chapitre-1`}><Play className="mr-2 h-5 w-5 fill-current" /> Lire l'Épisode</Link>
+                        <Link href={`/read/${featured.id}`}><Play className="mr-2 h-5 w-5 fill-current" /> Lire l'Épisode</Link>
                       </Button>
                       <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-14 px-8">
-                        <Link href={`/webtoon-hub/${featured.slug}`}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
+                        <Link href={`/read/${featured.id}`}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
                       </Button>
                     </div>
                   </div>
@@ -107,8 +106,6 @@ export default function HomePage() {
       </section>
 
       <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
-        
-        {/* REWARDS & ENGAGEMENT */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Flame, title: "Streak de Lecture", text: "+2 🪙 / jour", color: "text-orange-500 bg-orange-500/10" },
@@ -130,7 +127,6 @@ export default function HomePage() {
           ))}
         </section>
 
-        {/* NEXUSHUB STUDIOS TEASER */}
         <section className="animate-in fade-in duration-700">
           <div className="grid md:grid-cols-3 gap-6">
             {studiosInfo.map((info, i) => (
@@ -147,7 +143,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* POPULAR STORIES */}
         <section>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -163,7 +158,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* AI STUDIO QUICK ACCESS */}
         <section className="p-8 rounded-[2.5rem] bg-stone-900 border border-primary/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><BrainCircuit className="h-48 w-48 text-primary" /></div>
             <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
@@ -196,7 +190,6 @@ export default function HomePage() {
             </div>
         </section>
 
-        {/* VISION & CTA */}
         <section className="py-24 border-t border-border/50 text-center space-y-12">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">

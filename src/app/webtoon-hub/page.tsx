@@ -1,7 +1,6 @@
 /**
  * Ce fichier est neutralisé pour éviter les conflits de parallélisme Next.js.
- * Le listing des webtoons est géré par src/app/(app)/webtoon-hub/page.tsx.
+ * Le hub des webtoons est géré exclusivement par src/app/(app)/webtoon-hub/page.tsx
+ * afin de bénéficier du layout global (Header/Footer).
  */
-export default function Page() {
-  return null;
-}
+export const dynamic = 'force-static';

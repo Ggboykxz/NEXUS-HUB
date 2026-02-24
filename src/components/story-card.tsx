@@ -3,12 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Story, UserProfile, Playlist } from '@/lib/types';
-import { getStoryUrl, getChapterUrl } from '@/lib/types';
+import { getStoryUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays, Handshake, Languages } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Clock, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
-import { differenceInDays, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,6 @@ import {
 import { useAuthModal } from './providers/auth-modal-provider';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { getCoverThumbnail } from '@/lib/image-utils';
 
 interface StoryCardProps {
   story: Story;
@@ -46,12 +45,18 @@ export function StoryCard({ story, className }: StoryCardProps) {
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
 
-  const updatedAt = story.updatedAt instanceof Date ? story.updatedAt : new Date(story.updatedAt as string);
-  const isNew = differenceInDays(new Date(), updatedAt) < 14;
-  const isHotAfro = story.genreSlug === 'afrofuturisme' && story.views > 500000;
+  const updatedAtDate = story.updatedAt instanceof Date 
+    ? story.updatedAt 
+    : typeof story.updatedAt === 'string' 
+      ? new Date(story.updatedAt)
+      : new Date();
 
   useEffect(() => {
-    setRelativeDate(formatDistanceToNow(updatedAt, { addSuffix: true, locale: fr }));
+    try {
+      setRelativeDate(formatDistanceToNow(updatedAtDate, { addSuffix: true, locale: fr }));
+    } catch (e) {
+      setRelativeDate('Récemment');
+    }
     
     const fetchArtist = async () => {
       try {
@@ -98,26 +103,21 @@ export function StoryCard({ story, className }: StoryCardProps) {
     });
   };
 
-  const storyUrl = getStoryUrl(story);
-  const hasChapters = (story.chapterCount || 0) > 0;
-  const firstChapterUrl = story.chapters?.[0] ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
-
-  const optimizedCoverUrl = getCoverThumbnail(story.coverImage.imageUrl);
-
-  const availableLanguages = story.availableLanguages || ['fr'];
+  const storyUrl = getStoryUrl(story.id);
+  const coverUrl = story.coverImage;
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
-              src={optimizedCoverUrl}
-              alt={story.coverImage.alt || `Couverture de ${story.title}`}
+              src={coverUrl}
+              alt={story.title}
               fill
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
               sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
               placeholder="blur"
-              blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
+              blurDataURL={DEFAULT_BLUR}
             />
         </Link>
         
@@ -139,13 +139,6 @@ export function StoryCard({ story, className }: StoryCardProps) {
                         Draft
                     </Badge>
                 )
-            )}
-            
-            {availableLanguages.length > 1 && (
-              <Badge className="gap-1 px-1.5 py-0.5 bg-blue-600/80 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-black tracking-widest">
-                <Languages className="h-2 w-2" />
-                {availableLanguages.length} Langues
-              </Badge>
             )}
         </div>
 
@@ -179,8 +172,8 @@ export function StoryCard({ story, className }: StoryCardProps) {
                                 <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {userPlaylists.length > 0 ? userPlaylists.map(p => (
-                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, (p as any).title || (p as any).name)}>
-                                        {(p as any).title || (p as any).name}
+                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, p.title)}>
+                                        {p.title}
                                     </DropdownMenuItem>
                                 )) : (
                                   <DropdownMenuItem disabled className="text-[10px]">Aucune playlist</DropdownMenuItem>
@@ -188,17 +181,11 @@ export function StoryCard({ story, className }: StoryCardProps) {
                             </DropdownMenuContent>
                         </DropdownMenu>
                         
-                        {hasChapters ? (
-                            <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10">
-                                <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
-                                    <Play className="ml-0.5 h-5 w-5 fill-current" />
-                                </Link>
-                            </Button>
-                        ) : (
-                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-white/10 opacity-50">
-                                <CalendarDays className="h-5 w-5 text-white" />
-                            </div>
-                        )}
+                        <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10">
+                            <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
+                                <Play className="ml-0.5 h-5 w-5 fill-current" />
+                            </Link>
+                        </Button>
 
                         <Button 
                           variant="secondary" 
@@ -233,8 +220,8 @@ export function StoryCard({ story, className }: StoryCardProps) {
           )}
         </div>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
-            <Link href={artistInfo ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1">
-                <span className="font-medium truncate max-w-[80px]">{artistInfo?.displayName || story.artistName}</span>
+            <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1">
+                <span className="font-medium truncate max-w-[80px]">{artistInfo?.displayName || 'Artiste'}</span>
                 {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>
         </div>
@@ -250,7 +237,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
                 </div>
             </div>
             <Badge variant="outline" className="text-[7px] uppercase font-bold tracking-tighter px-1 py-0 h-3 border-primary/20">
-                {story.format === 'Webtoon' ? 'Série' : story.format}
+                {story.format}
             </Badge>
         </div>
       </div>
