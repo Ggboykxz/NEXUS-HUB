@@ -28,7 +28,7 @@ export default function HomePage() {
       try {
         const storiesRef = collection(db, 'stories');
         
-        // Récupération parallèle des différentes sections pour optimiser le temps de réponse
+        // Parallel fetching for performance
         const [popSnap, rankSnap, newSnap] = await Promise.all([
           getDocs(query(storiesRef, orderBy('views', 'desc'), limit(5))),
           getDocs(query(storiesRef, orderBy('likes', 'desc'), limit(5))),
@@ -43,7 +43,7 @@ export default function HomePage() {
         setTopRanked(rankData);
         setNewReleases(newData);
         
-        // Simulation des sections Pro et Draft basées sur les critères de performance (Phase MVP)
+        // Mocking Pro/Draft based on performance for MVP
         setProStories(popData.slice(0, 5));
         setDraftStories(newData.slice(0, 5));
         
@@ -52,7 +52,7 @@ export default function HomePage() {
         }
 
       } catch (e) {
-        console.error("Erreur lors de la récupération des histoires:", e);
+        console.error("Error fetching stories:", e);
       } finally {
         setLoading(false);
       }
@@ -78,7 +78,7 @@ export default function HomePage() {
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
       {loading ? (
         [...Array(5)].map((_, i) => (
-          <div key={i} className="aspect-[3/4] rounded-lg bg-muted animate-pulse" />
+          <div key={i} className="aspect-[3/4] rounded-lg bg-muted/50 animate-pulse border border-border/50" />
         ))
       ) : data.length > 0 ? (
         data.map(story => <StoryCard key={story.id} story={story} />)
@@ -97,8 +97,8 @@ export default function HomePage() {
         <div className="flex flex-col gap-12 pb-20">
           
           {/* Hero Section */}
-          <section className="relative w-full pt-4 overflow-hidden">
-            <div className="container max-w-7xl mx-auto px-4 lg:px-8">
+          <section className="relative w-full pt-4 overflow-hidden px-4 md:px-8">
+            <div className="container max-w-7xl mx-auto">
               <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
                 {featured.length > 0 ? (
                   <>

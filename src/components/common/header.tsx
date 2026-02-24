@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, Library, PenSquare, MoreHorizontal } from 'lucide-react';
+import { Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, Library, PenSquare, MoreHorizontal, Database, Cloud } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ import { ThemeToggle } from './theme-toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, limit, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, limit, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Header() {
@@ -39,6 +39,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [uniqueGenres, setUniqueGenres] = useState<{name: string, slug: string}[]>([]);
+  const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
 
   const [hasMounted, setHasMounted] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -49,7 +50,14 @@ export default function Header() {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
 
-    // Fetch genres from Firestore
+    // Monitoring Firestore Connection
+    const storiesRef = collection(db, 'stories');
+    const unsubscribeDb = onSnapshot(query(storiesRef, limit(1)), 
+      () => setDbStatus('connected'),
+      () => setDbStatus('error')
+    );
+
+    // Fetch genres
     const fetchGenres = async () => {
       try {
         const q = query(collection(db, 'stories'), limit(20));
@@ -69,7 +77,7 @@ export default function Header() {
     fetchGenres();
 
     // Listen to Auth changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
         const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -84,7 +92,8 @@ export default function Header() {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      unsubscribe();
+      unsubscribeDb();
+      unsubscribeAuth();
     };
   }, []);
 
@@ -184,10 +193,21 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-sm">
       <div className={cn("container flex max-w-7xl items-center px-6 lg:px-12 transition-all", isScrolled ? "h-12" : "h-14")}>
         <div className={cn("w-full items-center justify-between", isSearchOpen ? 'hidden' : 'flex')}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2" aria-label="Accueil NexusHub">
               <span className="font-display font-bold text-lg tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
+            
+            {/* Database Connection Status Indicator */}
+            <div className="flex items-center gap-1.5 group cursor-help" title={dbStatus === 'connected' ? 'Base de données connectée' : 'Connexion en cours...'}>
+              <div className={cn(
+                "w-2 h-2 rounded-full transition-all duration-500",
+                dbStatus === 'connected' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" : 
+                dbStatus === 'error' ? "bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.6)]" : 
+                "bg-amber-500 animate-bounce"
+              )} />
+              <Cloud className={cn("h-3 w-3 transition-colors", dbStatus === 'connected' ? "text-emerald-500/50" : "text-muted-foreground/30")} />
+            </div>
           </div>
 
           <nav className="hidden md:flex items-center gap-x-4">
