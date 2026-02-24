@@ -1,6 +1,9 @@
+import { redirect } from 'next/navigation';
+
 /**
- * Ce fichier est neutralisé au profit de webtoon-hub pour résoudre le conflit de parallélisme.
+ * Fichier déplacé vers /webtoon-hub pour résoudre le conflit de parallélisme.
  */
-export default function NeutralizedGroupReader() {
-  return null;
+export default async function AppWebtoonChapterRedirect(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
+  const { slug, chapterSlug } = await props.params;
+  redirect(`/webtoon-hub/${slug}/${chapterSlug}`);
 }

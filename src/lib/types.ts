@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 2.6.0
+ * @version 2.8.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -46,12 +46,14 @@ export interface UserProfile {
   photoURL: string;
   slug?: string;
   role: UserRole;
-  level?: ArtistLevel;
+  level: ArtistLevel;
   bio?: string;
   links?: SocialLinks;
   afriCoins: number;
   subscribersCount: number;
   
+  revenueShare: number; // Pourcentage de redistribution (15, 30, 60, 70)
+
   readingStats: {
     preferredGenres: Record<string, number>; 
     culturalAffinity: string[];

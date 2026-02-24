@@ -4,9 +4,9 @@ import { StoryCard } from '@/components/story-card';
 import { Layers } from 'lucide-react';
 import type { Story } from '@/lib/types';
 
-export const revalidate = 3600; // ISR: Mise à jour toutes les heures
+export const revalidate = 3600;
 
-export default async function WebtoonListingPage() {
+export default async function WebtoonHubPage() {
   const q = query(
     collection(db, 'stories'), 
     where('format', 'in', ['Webtoon', 'Roman Illustré']),

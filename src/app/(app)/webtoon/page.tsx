@@ -1,7 +1,8 @@
+import { redirect } from 'next/navigation';
+
 /**
- * Ce fichier est neutralisé pour résoudre le conflit de parallélisme Next.js.
- * Utilisez src/app/(app)/webtoon-hub/page.tsx à la place.
+ * Route neutralisée au profit de webtoon-hub pour éviter les erreurs Next.js.
  */
-export default function NeutralizedGroupWebtoonPage() {
-  return null;
+export default function AppWebtoonGroupRedirect() {
+  redirect('/webtoon-hub');
 }

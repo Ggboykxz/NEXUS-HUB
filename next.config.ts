@@ -36,10 +36,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  /**
-   * Redirections centralisées pour NexusHub.
-   * Consolide les routes vers webtoon-hub pour éviter les erreurs de parallélisme.
-   */
   async redirects() {
     return [
       {
