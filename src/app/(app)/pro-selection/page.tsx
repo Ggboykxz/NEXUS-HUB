@@ -4,11 +4,12 @@ import { stories, artists } from '@/lib/data';
 import { StoryCard } from '@/components/story-card';
 import { Award, Star, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 export default function ProSelectionPage() {
   const proStories = stories.filter(s => {
     const artist = artists.find(a => a.id === s.artistId);
-    return artist?.isMentor;
+    return artist?.role === 'artist_pro';
   });
 
   return (
@@ -83,10 +84,11 @@ export default function ProSelectionPage() {
             </div>
           </div>
           <div className="relative aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <img 
+            <Image 
               src="https://images.unsplash.com/photo-1609804213568-19c806540d6c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" 
               alt="Elite Art" 
-              className="object-cover w-full h-full opacity-60" 
+              fill
+              className="object-cover opacity-60" 
             />
           </div>
         </div>
