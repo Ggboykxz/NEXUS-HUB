@@ -1,7 +1,6 @@
 /**
- * Ce fichier est neutralisé pour rediriger le flux de routage vers src/app/(app)/webtoon-hub/page.tsx.
- * La suppression de l'export default résout l'erreur "parallel pages" de Next.js.
+ * Ce fichier est neutralisé pour éviter les conflits de parallélisme avec src/app/(app)/webtoon-hub/page.tsx.
  */
-export default function WebtoonHubRootRedirect() {
-    return null;
+export default function ConflictResolver() {
+  return null;
 }

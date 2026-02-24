@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story, UserProfile, Playlist } from '@/lib/types';
 import { getStoryUrl, getChapterUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays, Handshake } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays, Handshake, Languages } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
@@ -104,6 +104,8 @@ export function StoryCard({ story, className }: StoryCardProps) {
 
   const optimizedCoverUrl = getCoverThumbnail(story.coverImage.imageUrl);
 
+  const availableLanguages = story.availableLanguages || ['fr'];
+
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
@@ -139,17 +141,10 @@ export function StoryCard({ story, className }: StoryCardProps) {
                 )
             )}
             
-            {isHotAfro && (
-              <Badge className="gap-1 px-1 py-0.5 bg-orange-600 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider animate-pulse">
-                <Flame className="h-2 w-2" />
-                Hot
-              </Badge>
-            )}
-
-            {isNew && !isHotAfro && (
-              <Badge className="gap-1 px-1 py-0.5 bg-cyan-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
-                <Sparkles className="h-2 w-2" />
-                Nouveau
+            {availableLanguages.length > 1 && (
+              <Badge className="gap-1 px-1.5 py-0.5 bg-blue-600/80 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-black tracking-widest">
+                <Languages className="h-2 w-2" />
+                {availableLanguages.length} Langues
               </Badge>
             )}
         </div>

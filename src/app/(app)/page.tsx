@@ -33,7 +33,8 @@ import {
   ShieldCheck,
   Building2,
   Handshake,
-  LayoutGrid
+  LayoutGrid,
+  Languages
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,15 +62,6 @@ export default function HomePage() {
     }
   });
 
-  const { data: sponsored = [] } = useQuery({
-    queryKey: ['stories', 'sponsored'],
-    queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('sponsoredBy', '!=', null), limit(4));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-    }
-  });
-
   const { data: artists = [] } = useQuery({
     queryKey: ['featured-artists'],
     queryFn: async () => {
@@ -85,21 +77,12 @@ export default function HomePage() {
   const rewardSteps = [
     { icon: Flame, title: "Streak Quotidien", reward: "+2 🪙", desc: "Lisez chaque jour pour accumuler des coins." },
     { icon: Share2, title: "Partage Social", reward: "+5 🪙", desc: "Invitez un ami et gagnez dès son inscription." },
-    { icon: MessageSquare, title: "Avis Utile", reward: "+3 🪙", desc: "Soyez récompensé pour vos critiques de qualité." },
+    { icon: Languages, title: "Traduction", reward: "+10 🪙", desc: "Contribuez aux traductions communautaires." },
     { icon: Users, title: "Parrainage Artiste", reward: "+20 🪙", desc: "Gagnez gros si votre ami devient un artiste Pro." },
-  ];
-
-  const brandPartners = [
-    { name: "Orange Money", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/1200px-Orange_logo.svg.png" },
-    { name: "MTN", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/MTN_Logo.svg/1200px-MTN_Logo.svg.png" },
-    { name: "Flutterwave", logo: "https://res.cloudinary.com/demo/image/upload/v1/samples/brands/flutterwave.png" },
-    { name: "Wave", logo: "https://res.cloudinary.com/demo/image/upload/v1/samples/brands/wave.png" },
   ];
 
   return (
     <div className="flex flex-col gap-12 pb-20">
-      
-      {/* PWA INSTALL PROMPT */}
       <PwaInstallBanner />
 
       {/* HERO SECTION */}
@@ -142,20 +125,6 @@ export default function HomePage() {
 
       <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
         
-        {/* BRAND PARTNERS MARQUEE */}
-        <section className="overflow-hidden py-4 border-y border-border/50">
-            <div className="flex items-center gap-8 animate-marquee whitespace-nowrap">
-                {[...brandPartners, ...brandPartners].map((brand, i) => (
-                    <div key={i} className="flex items-center gap-3 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer">
-                        <div className="relative h-8 w-8 rounded-md overflow-hidden">
-                            <Image src={brand.logo} alt={brand.name} fill className="object-contain" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-500">{brand.name}</span>
-                    </div>
-                ))}
-            </div>
-        </section>
-
         {/* REWARDS & ECONOMY QUICK ACCESS */}
         <section className="animate-in fade-in duration-700">
           <div className="flex items-center justify-between mb-8">
@@ -189,25 +158,34 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* SPONSORED CONTENT (BRANDED WEBTOONS) */}
-        {sponsored.length > 0 && (
-            <section className="p-12 rounded-[3rem] bg-stone-950 border border-primary/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-12 opacity-5"><Handshake className="h-64 w-64 text-primary" /></div>
-                <div className="relative z-10 space-y-12">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="space-y-2">
-                            <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black tracking-widest px-3">Branded Webtoons</Badge>
-                            <h2 className="text-3xl font-display font-black text-white gold-resplendant">Histoires Partenaires</h2>
-                            <p className="text-stone-400 text-sm italic font-light">"Quand les marques africaines racontent leurs valeurs à travers l'art."</p>
-                        </div>
-                        <Button variant="outline" className="rounded-full border-white/10 text-white hover:bg-white/5">Devenir Partenaire</Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                        {sponsored.map(s => <StoryCard key={s.id} story={s} />)}
+        {/* TRANSLATION HIGHLIGHT */}
+        <section className="p-12 rounded-[3rem] bg-emerald-950/20 border border-emerald-500/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-12 opacity-5"><Languages className="h-64 w-64 text-emerald-500" /></div>
+            <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                    <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black tracking-widest px-3">Nouveauté : Hub de Traduction</Badge>
+                    <h2 className="text-4xl font-display font-black text-white">Le monde parle votre langue</h2>
+                    <p className="text-emerald-100/70 text-lg leading-relaxed font-light italic">
+                        "Grâce à notre programme de traducteurs certifiés et notre IA culturelle, découvrez des œuvres en Hausa, Wolof, Yoruba et plus encore. Brisons les barrières de la langue."
+                    </p>
+                    <div className="flex gap-4">
+                        <Button asChild className="rounded-full bg-emerald-500 text-black font-black px-8">
+                            <Link href="/translators">Devenir Traducteur Certifié</Link>
+                        </Button>
                     </div>
                 </div>
-            </section>
-        )}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 text-center">
+                        <p className="text-3xl font-black text-emerald-500">12+</p>
+                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">Langues Africaines</p>
+                    </div>
+                    <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 text-center">
+                        <p className="text-3xl font-black text-emerald-500">500+</p>
+                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">Traducteurs Actifs</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         {/* FOR YOU - IA SECTION */}
         <section>
@@ -226,35 +204,6 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {isLoading ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-xl" />) : popular.slice(0, 5).map(s => <StoryCard key={s.id} story={s} />)}
             </div>
-        </section>
-
-        {/* ARTISTS SECTION */}
-        <section>
-          <div className="flex items-center justify-between mb-12">
-            <div className="space-y-1">
-              <h2 className="text-3xl font-display font-black uppercase tracking-tighter text-foreground">Artistes à l'honneur</h2>
-              <p className="text-muted-foreground text-lg italic font-light">Les visages derrière vos histoires préférées.</p>
-            </div>
-            <Button asChild variant="ghost" size="lg" className="rounded-full text-xs font-black uppercase tracking-widest">
-              <Link href="/artists">Tous les créateurs</Link>
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-            {artists.map((artist) => (
-              <Link key={artist.uid} href={`/artiste/${artist.slug}`} className="group block text-center space-y-4">
-                <Avatar className="h-24 w-24 mx-auto border-4 border-background ring-2 ring-primary/20 group-hover:ring-primary transition-all shadow-xl">
-                  <AvatarImage src={artist.photoURL} />
-                  <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{artist.displayName?.slice(0, 2)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h4 className="font-bold text-sm truncate">{artist.displayName}</h4>
-                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mt-1">
-                    {artist.role === 'artist_pro' ? 'Certifié Pro' : 'Talent Draft'}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
         </section>
 
         {/* VISION & CTA */}

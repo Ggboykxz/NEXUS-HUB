@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid, Languages } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -13,7 +13,7 @@ export type NavLink = {
   isGenreDropdown?: boolean;
   badge?: {
     label: string;
-    variant: 'green' | 'orange' | 'emerald';
+    variant: 'green' | 'orange' | 'emerald' | 'blue';
   };
 };
 
@@ -37,27 +37,10 @@ export const navLinks: NavLink[] = [
     badge: { label: 'LIVE', variant: 'orange' }
   },
   {
-    href: "/events",
-    label: "Événements",
-    icon: Zap,
-    subLinks: [
-      { href: "/events/live", label: "NexusHub Live" },
-      { href: "/events/hackathon", label: "Hackathon 24h" },
-      { href: "/events/festivals", label: "Festivals BD" },
-      { href: "/events/awards", label: "NexusHub Awards" },
-    ]
-  },
-  { 
-    href: "/cercles", 
-    label: "Cercles", 
-    icon: Users,
-    badge: { label: 'SOCIAL', variant: 'emerald' }
-  },
-  { 
-    href: "/clubs", 
-    label: "Clubs", 
-    icon: UserCircle,
-    badge: { label: 'NEW', variant: 'green' }
+    href: "/translators",
+    label: "Traducteurs",
+    icon: Languages,
+    badge: { label: 'HUB', variant: 'blue' }
   },
   { 
     href: "/rankings", 

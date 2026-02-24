@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 3.2.0
+ * @version 3.3.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -31,7 +31,7 @@ export type StoryStatus = 'En cours' | 'Terminé' | 'À venir';
 export type StoryTier = 'free' | 'draft' | 'pro' | 'premium';
 export type TeamRole = 'scenariste' | 'dessinateur' | 'coloriste' | 'lettreur' | 'traducteur' | 'owner';
 export type ChapterStatus = 'Publié' | 'Programmé' | 'Brouillon';
-export type UserRole = 'reader' | 'artist_draft' | 'artist_pro' | 'artist_elite' | 'admin';
+export type UserRole = 'reader' | 'artist_draft' | 'artist_pro' | 'artist_elite' | 'admin' | 'translator';
 export type ArtistLevel = 'emergent' | 'draft' | 'pro' | 'elite';
 export type Language = 'fr' | 'en' | 'sw' | 'ha' | 'am' | 'ar' | 'yo' | 'ig' | 'zu';
 
@@ -143,7 +143,9 @@ export interface Story {
   region?: string;
   updatedAt: Timestamp | string;
   chapters?: Chapter[];
-  sponsoredBy?: BrandSponsor; // Nouveauté : Partenariat de marque
+  sponsoredBy?: BrandSponsor;
+  availableLanguages?: Language[]; // Nouveauté : Langues dispo
+  translationCredits?: Record<string, string>; // mapping {lang: userId}
 }
 
 export interface Chapter {
@@ -159,6 +161,7 @@ export interface Chapter {
   views: number;
   likes: number;
   publishedAt?: Timestamp | string;
+  translations?: Record<string, string>; // mapping {lang: firestoreId}
 }
 
 // ─── HELPERS D'URLS ──────────────────────────────────────────────────────────
