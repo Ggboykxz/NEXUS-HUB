@@ -94,132 +94,69 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  
+  .text-glow {
+    text-shadow: 0 0 15px hsl(var(--primary) / 0.5);
+  }
+  
+  .gold-resplendant {
+    background: linear-gradient(135deg, #fff 0%, #D4A843 50%, #8A6E2F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(212, 168, 67, 0.3));
+  }
+
+  .gold-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .gold-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 60%,
+      transparent 100%
+    );
+    animation: shimmer 3s infinite;
+  }
 }
 
-.btn-primary-anim {
-  @apply transition-all duration-300 active:scale-95;
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%); }
+  100% { transform: translateX(100%) translateY(100%); }
 }
 
-.btn-border-anim {
-  @apply transition-all duration-300 border-2 border-primary/20 hover:border-primary/60;
-}
-
-.fade-in {
-  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-::-webkit-scrollbar { @apply w-1.5; }
-::-webkit-scrollbar-track { @apply bg-background; }
-::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--primary) / 0.3);
-  @apply rounded-full transition-colors hover:bg-primary/50;
-}
-
-.hero {
-  @apply relative flex items-end overflow-hidden pt-16 md:min-h-[450px];
-}
-
-.hero-bg {
-  @apply absolute inset-0;
-  background:
-    radial-gradient(ellipse 120% 80% at 70% 30%, hsl(var(--chart-2) / 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 20% 70%, hsl(var(--primary) / 0.1) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 80% at 50% 10%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
-    linear-gradient(160deg, hsl(var(--ink-2)) 0%, hsl(var(--background)) 40%, hsl(var(--ink)) 100%);
-}
-
-.hero-pattern {
-  @apply absolute inset-0 opacity-[0.04] pointer-events-none;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 59px, hsl(var(--primary)) 60px),
-    repeating-linear-gradient(90deg, transparent, transparent 59px, hsl(var(--primary)) 60px);
-  background-size: 60px 60px;
-}
-
-.hero-deco {
-  @apply absolute -right-24 -top-24 w-[700px] h-[700px] border rounded-full pointer-events-none;
-  border-color: hsl(var(--primary) / 0.08);
-}
-
-.cover-art-hero {
-  @apply absolute right-[5%] top-1/2 -translate-y-1/2 w-[clamp(260px,30vw,420px)] aspect-[2/3] rounded-lg border overflow-hidden shadow-2xl;
-  border-color: hsl(var(--border-gold));
-  box-shadow: -40px 0 120px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6);
-  animation: cover-reveal 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
-  will-change: transform, opacity;
-}
-
-.hero-content {
-  @apply relative z-20 px-8 pb-12 pt-24 md:pt-12;
-  max-width: 700px;
-  animation: hero-content-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
-  will-change: transform, opacity;
-}
-
-@keyframes cover-reveal {
-    from { opacity: 0; transform: translateY(calc(-50% + 20px)) scale(0.95); filter: blur(8px); }
-    to { opacity: 1; transform: translateY(-50%) scale(1); filter: blur(0); }
-}
-
-@keyframes hero-content-in {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes particle-drift {
+  0% { transform: translate(0,0) scale(0); opacity: 0; }
+  20% { opacity: 0.8; transform: translate(var(--tx), var(--ty)) scale(1); }
+  100% { transform: translate(calc(var(--tx) * 1.5), calc(var(--ty) * 1.5)) scale(0); opacity: 0; }
 }
 
 .particle {
-  @apply absolute w-0.5 h-0.5 rounded-full pointer-events-none opacity-0;
-  background-color: hsl(var(--gold-bright));
-  animation: particle-drift var(--dur, 8s) ease-in-out infinite;
-  animation-delay: var(--del, 0s);
-  will-change: transform, opacity;
+  animation: particle-drift var(--dur) ease-out var(--del) infinite;
 }
 
-.main-body { @apply grid grid-cols-1 md:grid-cols-[1fr,340px] gap-8 max-w-7xl mx-auto px-4 sm:px-8 py-12; }
-.left-col { @apply flex flex-col gap-10; }
-
-.section-heading { @apply flex items-center gap-3.5 mb-6; }
-.section-heading h2 { @apply font-display text-sm tracking-[0.15em] uppercase text-foreground; }
-.section-line { @apply flex-1 h-px; background: linear-gradient(to right, hsl(var(--border)), transparent); }
-
-.ch-num { @apply w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-md font-display text-xs transition-all duration-200; background-color: hsl(var(--ink-3)); border: 1px solid hsl(var(--border)); color: hsl(var(--cream-dim)); }
-.chapter-row:hover .ch-num { border-color: hsl(var(--border-gold)); color: hsl(var(--primary)); transform: scale(1.05); }
-
-.rating-bar-row { @apply flex items-center gap-2.5; }
-.bar-fill { @apply h-full rounded-full; background: linear-gradient(to right, hsl(var(--gold-dim)), hsl(var(--primary))); transition: width 0.8s cubic-bezier(0.16,1,0.3,1); will-change: width; }
-
-.carousel-content-animate {
-  animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+.reader-ui-transition {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
 }
 
-@keyframes slide-up-fade {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.reader-ui-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.cinematic-vignette {
-  @apply pointer-events-none absolute inset-0 z-20;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
-}
-
-@media (max-width: 900px) {
-  .hero {
-    @apply py-16 items-end;
-  }
-  .main-body { @apply grid-cols-1; }
-  .right-col { @apply contents; }
-  .sticky-col { @apply static; }
-  .cover-art-hero { @apply hidden; }
-  .hero-fade { @apply hidden; }
-  .hero-content { @apply max-w-full; }
+.reader-footer-hidden {
+  transform: translate(-50%, 200%);
+  opacity: 0;
+  pointer-events: none;
 }

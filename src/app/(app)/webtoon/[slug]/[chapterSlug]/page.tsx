@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { stories, comicPages, comments as allComments, artists, getChapterUrl } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Layers, Book, ChevronLeft, ChevronRight, Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, SendHorizonal, Smile, Flame, Zap, X
+  Layers, Book, ChevronLeft, ChevronRight, Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, SendHorizonal, Smile, Zap, X, Maximize2, Minimize2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,58 +40,71 @@ interface ReaderHeaderProps {
   isBookmarked: boolean;
   progress: number;
   onChapterChange: (slug: string) => void;
+  isVisible: boolean;
 }
 
-function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: ReaderHeaderProps) {
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange, isVisible }: ReaderHeaderProps) {
   const chapterNumber = story.chapters?.findIndex((c) => c.slug === chapter.slug) + 1 || 1;
 
   return (
-    <nav className="fixed top-14 left-0 right-0 h-11 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl transition-all">
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
+      !isVisible && "reader-ui-hidden"
+    )}>
       <div 
-        className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_10px_hsl(var(--primary))] transition-all duration-300 ease-out" 
+        className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_15px_hsl(var(--primary))] transition-all duration-300 ease-out z-50" 
         style={{ width: `${progress}%` }}
       />
 
       <div className="flex items-center gap-4 flex-1">
-        <Button asChild variant="ghost" size="icon" className="text-primary hover:text-primary/80 h-8 w-8">
-          <Link href={`/webtoon/${story.slug}`}><ArrowLeft className="h-4 w-4" /></Link>
+        <Button asChild variant="ghost" size="icon" className="text-primary hover:text-primary/80 h-9 w-9 rounded-full bg-white/5">
+          <Link href={`/webtoon/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
         <div className="flex flex-col justify-center">
-          <span className="text-[9px] uppercase font-black text-primary tracking-widest leading-none mb-0.5">{story.title}</span>
-          <span className="text-[11px] font-bold text-foreground truncate max-w-[120px] sm:max-w-none">Chapitre {chapterNumber} : {chapter.title}</span>
+          <span className="text-[10px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1">{story.title}</span>
+          <span className="text-xs font-bold text-foreground truncate max-w-[150px] sm:max-w-none">Ch. {chapterNumber} : {chapter.title}</span>
         </div>
       </div>
 
       <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-        <Button size="icon" variant="outline" className="w-7 h-7 border-primary/20"><ChevronLeft className="h-3.5 w-3.5" /></Button>
+        <Button size="icon" variant="ghost" className="w-8 h-8 text-stone-500 hover:text-primary"><ChevronLeft className="h-4 w-4" /></Button>
         <Select defaultValue={chapter.slug} onValueChange={onChapterChange}>
-          <SelectTrigger className="w-[220px] h-7 text-[10px] font-bold border-primary/20 bg-muted/30">
+          <SelectTrigger className="w-[240px] h-9 text-xs font-black border-white/10 bg-white/5 rounded-full px-4">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-stone-900 border-white/10 text-white">
             {story.chapters?.map((chap, idx) => (
-              <SelectItem key={chap.id} value={chap.slug} className="text-[10px]">
-                Chapitre {idx + 1} : {chap.title}
+              <SelectItem key={chap.id} value={chap.slug} className="text-xs font-bold focus:bg-primary focus:text-black">
+                Épisode {idx + 1} : {chap.title}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Button size="icon" variant="outline" className="w-7 h-7 border-primary/20"><ChevronRight className="h-3.5 w-3.5" /></Button>
+        <Button size="icon" variant="ghost" className="w-8 h-8 text-stone-500 hover:text-primary"><ChevronRight className="h-4 w-4" /></Button>
       </div>
 
-      <div className="flex items-center gap-2 flex-1 justify-end">
-        <div className="hidden sm:flex bg-card border border-border rounded-lg p-0.5">
-          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-6 text-[9px] font-black gap-1 uppercase px-2">
-            <Layers className="h-3 w-3" /> Webtoon
+      <div className="flex items-center gap-3 flex-1 justify-end">
+        <div className="hidden sm:flex bg-white/5 border border-white/10 rounded-full p-1">
+          <Button 
+            onClick={() => onModeChange('scroll')} 
+            size="sm" 
+            variant={activeMode === 'scroll' ? 'default' : 'ghost'} 
+            className={cn("h-7 text-[10px] font-black gap-1.5 uppercase px-3 rounded-full", activeMode === 'scroll' && "bg-primary text-black shadow-lg shadow-primary/20")}
+          >
+            <Layers className="h-3.5 w-3.5" /> Webtoon
           </Button>
-          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-6 text-[9px] font-black gap-1 uppercase px-2">
-            <Book className="h-3 w-3" /> BD
+          <Button 
+            onClick={() => onModeChange('pages')} 
+            size="sm" 
+            variant={activeMode === 'pages' ? 'default' : 'ghost'} 
+            className={cn("h-7 text-[10px] font-black gap-1.5 uppercase px-3 rounded-full", activeMode === 'pages' && "bg-primary text-black shadow-lg shadow-primary/20")}
+          >
+            <Book className="h-3.5 w-3.5" /> BD
           </Button>
         </div>
-        <Button onClick={onBookmark} size="icon" variant="outline" className={cn("h-7 w-7", isBookmarked && "bg-primary/10 border-primary text-primary")}>
-          <Bookmark className={cn("h-3.5 w-3.5", isBookmarked && "fill-current")} />
+        <Button onClick={onBookmark} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-full bg-white/5", isBookmarked && "text-primary bg-primary/10")}>
+          <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-current")} />
         </Button>
-        <Button size="icon" variant="outline" className="h-7 w-7 md:flex hidden"><Settings className="h-3.5 w-3.5" /></Button>
       </div>
     </nav>
   );
@@ -105,41 +118,43 @@ interface ReaderFooterProps {
   onShare: () => void;
   onToggleComments: () => void;
   isCommentsOpen: boolean;
+  isVisible: boolean;
 }
 
-function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen }: ReaderFooterProps) {
+function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen, isVisible }: ReaderFooterProps) {
   return (
     <div className={cn(
-      "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-2xl border border-white/10 p-2 rounded-full shadow-2xl transition-all duration-500",
-      isCommentsOpen && "translate-x-[-100%] md:translate-x-[-150%]"
+      "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-stone-900/80 backdrop-blur-3xl border border-white/10 p-2 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500",
+      isCommentsOpen && "translate-x-[-100%] md:translate-x-[-150%]",
+      !isVisible && "reader-footer-hidden"
     )}>
-      <Button variant="ghost" size="icon" className="rounded-full text-stone-400 hover:text-primary"><ChevronLeft className="h-5 w-5" /></Button>
+      <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 text-stone-400 hover:text-primary hover:bg-white/5"><ChevronLeft className="h-6 w-6" /></Button>
       
-      <Separator orientation="vertical" className="h-6 bg-white/10 mx-1" />
+      <Separator orientation="vertical" className="h-8 bg-white/10 mx-1" />
       
       <Button 
         onClick={onLike}
         variant="ghost" 
-        className={cn("rounded-full gap-2 px-4 h-10 font-bold", isLiked ? "text-primary bg-primary/10" : "text-stone-300")}
+        className={cn("rounded-full gap-2.5 px-6 h-11 font-black transition-all", isLiked ? "text-primary bg-primary/10 scale-105" : "text-stone-300 hover:bg-white/5")}
       >
         <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-        <span className="text-xs">{(story.likes / 1000).toFixed(1)}k</span>
+        <span className="text-sm">{(story.likes / 1000).toFixed(1)}k</span>
       </Button>
 
       <Button 
         onClick={onToggleComments}
         variant="ghost" 
-        className={cn("rounded-full gap-2 px-4 h-10 font-bold", isCommentsOpen ? "text-primary bg-primary/10" : "text-stone-300")}
+        className={cn("rounded-full gap-2.5 px-6 h-11 font-black transition-all", isCommentsOpen ? "text-primary bg-primary/10 scale-105" : "text-stone-300 hover:bg-white/5")}
       >
         <MessageSquare className={cn("h-5 w-5", isCommentsOpen && "fill-current")} />
-        <span className="text-xs">{commentsCount}</span>
+        <span className="text-sm">{commentsCount}</span>
       </Button>
 
-      <Button onClick={onShare} variant="ghost" size="icon" className="rounded-full text-stone-300 hover:text-primary"><Share2 className="h-5 w-5" /></Button>
+      <Button onClick={onShare} variant="ghost" size="icon" className="rounded-full h-11 w-11 text-stone-300 hover:text-primary hover:bg-white/5"><Share2 className="h-5 w-5" /></Button>
       
-      <Separator orientation="vertical" className="h-6 bg-white/10 mx-1" />
+      <Separator orientation="vertical" className="h-8 bg-white/10 mx-1" />
 
-      <Button variant="ghost" size="icon" className="rounded-full text-stone-400 hover:text-primary"><ChevronRight className="h-5 w-5" /></Button>
+      <Button variant="ghost" size="icon" className="rounded-full h-11 w-11 text-stone-400 hover:text-primary hover:bg-white/5"><ChevronRight className="h-6 w-6" /></Button>
     </div>
   );
 }
@@ -164,64 +179,72 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
   };
 
   return (
-    <div className="flex flex-col h-full bg-stone-950 border-l border-white/10">
-      <div className="p-6 border-b border-white/5 bg-stone-900/50 flex items-center justify-between">
+    <div className="flex flex-col h-full bg-stone-950 border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)]">
+      <div className="p-8 border-b border-white/5 bg-stone-900/30 flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-display font-black text-white flex items-center gap-3 gold-resplendant">
-            <MessageSquare className="h-6 w-6 text-primary" /> Communauté
+          <h3 className="text-2xl font-display font-black text-white flex items-center gap-3 gold-resplendant">
+            <MessageSquare className="h-7 w-7 text-primary" /> Communauté
           </h3>
-          <p className="text-[10px] text-stone-400 uppercase font-bold tracking-widest mt-1">Lecture & Débat en simultané</p>
+          <p className="text-[10px] text-stone-500 uppercase font-black tracking-[0.3em] mt-2">Zone de Débats & Théories</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-stone-500 hover:text-white rounded-full">
-          <X className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-stone-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10">
+          <X className="h-6 w-6" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 p-6">
-        <div className="space-y-8">
+      <ScrollArea className="flex-1 p-8">
+        <div className="space-y-10">
           {storyComments.length > 0 ? storyComments.map((comment) => (
-            <div key={comment.id} className="group animate-in fade-in duration-500">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-10 w-10 border-2 border-white/5">
-                  <AvatarImage src={comment.authorAvatar.imageUrl} />
-                  <AvatarFallback>{comment.authorName[0]}</AvatarFallback>
-                </Avatar>
+            <div key={comment.id} className="group animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex items-start gap-5">
+                <div className="relative">
+                  <Avatar className="h-12 w-12 border-2 border-white/10 ring-2 ring-primary/10">
+                    <AvatarImage src={comment.authorAvatar.imageUrl} />
+                    <AvatarFallback className="bg-primary/5 text-primary font-black">{comment.authorName[0]}</AvatarFallback>
+                  </Avatar>
+                  {comment.authorBadge === 'Artiste Pro' && (
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-stone-950">
+                      <Zap className="h-2.5 w-2.5 text-black fill-current" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="font-bold text-sm text-stone-200">{comment.authorName}</span>
-                    <Badge variant="outline" className="text-[8px] h-4 uppercase border-primary/20 text-primary">{comment.authorBadge || 'Lecteur'}</Badge>
-                    <span className="text-[9px] text-stone-500 font-bold uppercase ml-auto">{comment.timestamp}</span>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="font-black text-base text-stone-200">{comment.authorName}</span>
+                    <Badge variant="outline" className="text-[9px] h-4.5 uppercase font-black border-primary/20 text-primary px-2 tracking-tighter">{comment.authorBadge || 'Lecteur'}</Badge>
+                    <span className="text-[10px] text-stone-600 font-bold uppercase ml-auto tracking-widest">{comment.timestamp}</span>
                   </div>
-                  <div className="text-sm text-stone-400 leading-relaxed font-light bg-white/5 p-3 rounded-2xl border border-white/5">
+                  <div className="text-base text-stone-400 leading-relaxed font-light bg-white/5 p-4 rounded-3xl rounded-tl-none border border-white/5 shadow-inner">
                     <p>{comment.content}</p>
                   </div>
-                  <div className="flex items-center gap-4 mt-2">
-                    <button className="flex items-center gap-1.5 text-[10px] font-black text-stone-500 hover:text-primary transition-all">
-                      <Heart className="h-3 w-3" /> {comment.likes}
+                  <div className="flex items-center gap-6 mt-3 pl-2">
+                    <button className="flex items-center gap-2 text-[11px] font-black text-stone-500 hover:text-primary transition-all uppercase tracking-widest group">
+                      <Heart className="h-4 w-4 group-hover:fill-current" /> {comment.likes}
                     </button>
-                    <button className="text-[10px] font-black text-stone-500 hover:text-primary transition-all uppercase">Répondre</button>
+                    <button className="text-[11px] font-black text-stone-500 hover:text-primary transition-all uppercase tracking-widest">Répondre</button>
                   </div>
                 </div>
               </div>
             </div>
           )) : (
-            <div className="text-center py-12">
-              <p className="text-stone-500 italic text-sm">Soyez le premier à commenter ce chapitre !</p>
+            <div className="text-center py-20 opacity-30">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4" />
+              <p className="text-stone-400 italic text-sm font-light">Le silence règne avant la tempête...</p>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="p-6 border-t border-white/5 bg-stone-900/50">
-        <div className="relative">
+      <div className="p-8 border-t border-white/5 bg-stone-900/50">
+        <div className="relative group">
           <Textarea 
-            placeholder="Écrivez avec bienveillance..." 
-            className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-sm text-white focus-visible:ring-primary"
+            placeholder="Partagez votre lumière..." 
+            className="min-h-[120px] bg-white/5 border-white/10 rounded-3xl p-6 text-base text-white focus-visible:ring-primary focus-visible:bg-white/10 transition-all placeholder:text-stone-700"
           />
-          <div className="absolute right-3 bottom-3 flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500"><Smile className="h-5 w-5" /></Button>
-            <Button onClick={handlePostComment} size="icon" className="h-8 w-8 rounded-xl bg-primary text-black shadow-lg">
-              <SendHorizonal className="h-4 w-4" />
+          <div className="absolute right-4 bottom-4 flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-stone-500 hover:text-white hover:bg-white/5 rounded-full"><Smile className="h-6 w-6" /></Button>
+            <Button onClick={handlePostComment} size="icon" className="h-12 w-12 rounded-2xl bg-primary text-black shadow-2xl shadow-primary/30 gold-shimmer group-focus-within:scale-110 transition-transform">
+              <SendHorizonal className="h-6 w-6" />
             </Button>
           </div>
         </div>
@@ -251,8 +274,23 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const [progress, setProgress] = useState(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentPage, setCurrentPage] = useState(0);
+  const [isUIVisible, setIsUIVisible] = useState(true);
+  const [particles, setParticles] = useState<{id: number, tx: string, ty: string, dur: string, del: string}[]>([]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    // Generate end-chapter particles
+    const newParticles = [...Array(12)].map((_, i) => ({
+      id: i,
+      tx: `${(Math.random() - 0.5) * 300}px`,
+      ty: `${-Math.random() * 200 - 100}px`,
+      dur: `${2 + Math.random() * 2}s`,
+      del: `${Math.random() * 2}s`
+    }));
+    setParticles(newParticles);
+  }, []);
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -272,13 +310,21 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     };
   }, [carouselApi, activeMode]);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const currentScrollY = target.scrollTop;
+    
+    // Zen Mode: Hide UI on scroll down, show on scroll up
+    if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
+      setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 100);
+      lastScrollY.current = currentScrollY;
+    }
+
     if (activeMode === 'scroll') {
-      const target = e.currentTarget;
       const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
       setProgress(currentProgress);
     }
-  };
+  }, [activeMode]);
 
   const handleBookmark = () => {
     if (!auth.currentUser) {
@@ -308,7 +354,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   };
 
   return (
-    <div className="h-screen bg-[#050505] flex flex-col selection:bg-primary/30 overflow-hidden">
+    <div className="h-screen bg-[#050505] flex flex-col selection:bg-primary/30 overflow-hidden text-stone-200">
       <ReaderHeader 
         story={story} 
         chapter={chapter} 
@@ -318,71 +364,101 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         isBookmarked={isBookmarked}
         progress={progress}
         onChapterChange={handleChapterChange}
+        isVisible={isUIVisible}
       />
       
-      <div className="flex-1 flex overflow-hidden pt-[100px] relative">
+      <div className="flex-1 flex overflow-hidden relative">
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
           className={cn(
-            "flex-1 overflow-y-auto transition-all duration-500 scroll-smooth",
+            "flex-1 overflow-y-auto transition-all duration-500 scroll-smooth hide-scrollbar",
             isCommentsOpen ? "w-1/2 border-r border-white/5" : "w-full"
           )}
         >
           {activeMode === 'scroll' ? (
-            <div className="mx-auto flex flex-col items-center py-8 max-w-[800px] px-0">
+            <div className="mx-auto flex flex-col items-center max-w-[800px] px-0">
               <div className="w-full space-y-0">
                 {comicPages.map((page, index) => (
-                  <div key={page.id} className="relative w-full aspect-[2/3] mb-4 sm:mb-8">
+                  <div key={page.id} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000">
                     <Image
-                      src={getOptimizedImage(page.imageUrl, { width: 800, quality: 'auto' })}
+                      src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
                       alt={page.description}
                       fill
                       className="object-contain md:object-cover"
                       data-ai-hint={page.imageHint}
-                      priority={index < 3}
-                      loading={index < 3 ? undefined : "lazy"}
+                      priority={index < 2}
+                      loading={index < 2 ? undefined : "lazy"}
                       sizes="(max-width: 768px) 100vw, 800px"
                     />
                   </div>
                 ))}
               </div>
               
-              <div className="w-full max-w-[800px] py-32 px-6">
-                <div className="relative bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 md:p-16 text-center overflow-hidden shadow-[0_0_50px_rgba(212,168,67,0.1)]">
-                  <div className="relative z-10 space-y-8 animate-in zoom-in duration-1000">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="bg-primary/10 p-4 rounded-full w-fit">
-                        <Zap className="h-10 w-10 text-primary" />
+              {/* MAGICAL END OF CHAPTER */}
+              <div className="w-full max-w-[800px] py-40 px-6 relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none">
+                  {particles.map(p => (
+                    <div 
+                      key={p.id} 
+                      className="absolute left-1/2 top-1/2 w-1.5 h-1.5 bg-primary rounded-full particle"
+                      style={{ '--tx': p.tx, '--ty': p.ty, '--dur': p.dur, '--del': p.del } as any}
+                    />
+                  ))}
+                </div>
+
+                <div className="relative bg-stone-900/40 backdrop-blur-3xl border border-primary/20 rounded-[3rem] p-10 md:p-20 text-center overflow-hidden shadow-[0_0_100px_rgba(212,168,67,0.15)]">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                  
+                  <div className="relative z-10 space-y-10 animate-in zoom-in duration-1000">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary blur-3xl opacity-20 animate-pulse" />
+                        <div className="bg-primary/10 p-6 rounded-full w-fit relative border border-primary/30">
+                          <Zap className="h-14 w-14 text-primary fill-primary/20" />
+                        </div>
                       </div>
-                      <h3 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">Chapitre Terminé !</h3>
-                      <p className="text-stone-400 font-light italic max-w-md mx-auto">
-                        "L'histoire ne fait que commencer. Votre soutien permet à {artist?.displayName || 'l\'artiste'} de continuer cette légende."
+                      <h3 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant tracking-tighter leading-tight">
+                        Légende <br/> Enregistrée
+                      </h3>
+                      <p className="text-stone-400 font-light italic max-w-md mx-auto text-lg leading-relaxed">
+                        "Chaque chapitre lu est une pierre ajoutée à l'édifice de la culture africaine. Merci de porter cette lumière."
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                      <Button size="lg" className="h-14 px-10 rounded-full font-black text-lg gold-shimmer group bg-primary text-black">
+                    <div className="flex flex-col sm:flex-row justify-center gap-5 pt-6">
+                      <Button size="lg" className="h-16 px-12 rounded-full font-black text-xl gold-shimmer group bg-primary text-black shadow-2xl shadow-primary/30 active:scale-95 transition-all">
                         Chapitre Suivant 
-                        <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        <ChevronRight className="ml-2 h-6 w-6 group-hover:translate-x-2 transition-transform" />
                       </Button>
-                      <Button asChild variant="outline" size="lg" className="h-14 px-10 rounded-full border-white/20 text-white font-bold bg-white/5 hover:bg-white/10">
-                        <Link href={`/webtoon/${story.slug}`}>Détails de l'œuvre</Link>
+                      <Button asChild variant="outline" size="lg" className="h-16 px-12 rounded-full border-white/10 text-white font-bold bg-white/5 hover:bg-white/10 backdrop-blur-xl active:scale-95 transition-all">
+                        <Link href={`/webtoon/${story.slug}`}>Détails & Galerie</Link>
                       </Button>
+                    </div>
+
+                    <div className="pt-10 border-t border-white/5 flex flex-col items-center gap-4">
+                      <p className="text-[10px] uppercase font-black tracking-[0.4em] text-stone-600">Soutenir {artist?.displayName}</p>
+                      <div className="flex gap-3">
+                        {[10, 50, 100].map(val => (
+                          <Button key={val} variant="ghost" size="sm" className="h-10 w-16 rounded-xl border border-white/5 bg-white/5 text-xs font-black text-primary hover:bg-primary hover:text-black">
+                            {val} 🪙
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-full w-full flex items-center justify-center py-4">
-              <Carousel setApi={setCarouselApi} className="w-full h-full max-w-4xl">
+            <div className="h-full w-full flex items-center justify-center bg-stone-950">
+              <Carousel setApi={setCarouselApi} className="w-full h-full max-w-5xl">
                 <CarouselContent className="h-full">
                   {comicPages.map((page, index) => (
-                    <CarouselItem key={page.id} className="h-full flex items-center justify-center p-4">
-                      <div className="relative w-full h-full max-h-[85vh] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/10">
+                    <CarouselItem key={page.id} className="h-full flex items-center justify-center p-6">
+                      <div className="relative w-full h-full max-h-[90vh] aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8)] border border-white/5 group">
                         <Image
-                          src={getOptimizedImage(page.imageUrl, { width: 1200, quality: 'auto' })}
+                          src={getOptimizedImage(page.imageUrl, { width: 1200, quality: 95 })}
                           alt={page.description}
                           fill
                           className="object-contain"
@@ -390,6 +466,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                           priority={index === currentPage}
                           sizes="(max-width: 1024px) 100vw, 1200px"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                       </div>
                     </CarouselItem>
                   ))}
@@ -400,7 +477,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         </main>
 
         {isCommentsOpen && (
-          <aside className="w-full md:w-1/2 animate-in slide-in-from-right duration-500 ease-out">
+          <aside className="w-full md:w-1/2 animate-in slide-in-from-right duration-700 ease-out z-40">
             <CommentsPanel 
               storyId={story.id} 
               chapterIndex={story.chapters?.findIndex(c => c.id === chapter.id) + 1 || 1} 
@@ -414,10 +491,11 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         story={story}
         isLiked={isLiked}
         onLike={handleLike}
-        commentsCount={story.chapterCount * 15}
+        commentsCount={story.chapterCount * 12}
         onShare={handleShare}
         onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}
         isCommentsOpen={isCommentsOpen}
+        isVisible={isUIVisible}
       />
     </div>
   );
