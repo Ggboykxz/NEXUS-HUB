@@ -37,6 +37,11 @@ const nextConfig: NextConfig = {
         destination: '/webtoon',
         permanent: true,
       },
+      {
+        source: '/comics',
+        destination: '/bd-africaine',
+        permanent: true,
+      },
     ];
   },
 };
