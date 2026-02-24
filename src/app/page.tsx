@@ -8,7 +8,7 @@ import { StoryCard } from '@/components/story-card';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import type { Story } from '@/lib/data';
-import { Play, Info, TrendingUp, Sparkles, BookOpen } from 'lucide-react';
+import { Play, Info, TrendingUp, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
@@ -90,7 +90,6 @@ export default function HomePage() {
                   </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-                    <BookOpen className="h-16 w-16 text-primary/40 mb-4" />
                     <h2 className="text-2xl font-display font-bold text-white mb-2">Bienvenue sur NexusHub</h2>
                     <p className="text-stone-400 max-w-md">Commencez l'aventure en publiant votre première œuvre ou en explorant le catalogue.</p>
                     <Button asChild className="mt-6 rounded-full px-8">
