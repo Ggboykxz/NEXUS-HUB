@@ -187,3 +187,27 @@ export interface Comment {
   tag?: string;
   pageIndex?: number;
 }
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: 'Vêtements' | 'Accessoires' | 'Art' | 'Tous';
+  image: ImagePlaceholder;
+  printfulUrl?: string;
+  universe?: string;
+  isAvailable: boolean;
+}
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  author: string;
+  date: string;
+  category: string;
+  coverImage: ImagePlaceholder;
+  tags: string[];
+}

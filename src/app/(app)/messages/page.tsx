@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Paperclip, SendHorizonal, Smile, MoreVertical, Search, Phone, Video, Check, Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { cn } from '@/lib/utils';
-import { db, auth } from '@/lib/firebase';
-import { collection, query, limit, getDocs, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, limit, getDocs } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
 
 export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [messageText, setMessageText] = useState('');
 
   useEffect(() => {
@@ -24,9 +25,8 @@ export default function MessagesPage() {
         const q = query(collection(db, 'users'), limit(10));
         const querySnapshot = await getDocs(q);
         const fetchedUsers = querySnapshot.docs.map(doc => ({
-          id: doc.id,
           ...doc.data()
-        }));
+        } as UserProfile));
         setUsers(fetchedUsers);
         if (fetchedUsers.length > 0) {
           setSelectedUser(fetchedUsers[0]);
@@ -66,16 +66,16 @@ export default function MessagesPage() {
         <ScrollArea className="flex-1">
           {users.length > 0 ? users.map((user) => (
             <div 
-              key={user.id} 
+              key={user.uid} 
               onClick={() => setSelectedUser(user)}
               className={cn(
                 "flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-all relative border-b border-border/50",
-                selectedUser?.id === user.id && "bg-primary/5 border-r-4 border-r-primary"
+                selectedUser?.uid === user.uid && "bg-primary/5 border-r-4 border-r-primary"
               )}
             >
               <div className="relative">
                 <Avatar className="h-12 w-12 border">
-                  <AvatarImage src={user.photoURL} alt={user.displayName} />
+                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
                   <AvatarFallback>{user.displayName?.slice(0, 2) || 'U'}</AvatarFallback>
                 </Avatar>
                 <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
@@ -86,7 +86,7 @@ export default function MessagesPage() {
                   <span className="text-[10px] text-muted-foreground">10:33 AM</span>
                 </div>
                 <p className="text-sm text-muted-foreground truncate font-light">
-                  {user.role === 'artist_pro' ? 'Nouvelle mise à jour disponible !' : 'Salut ! Tu as lu le dernier chapitre ?'}
+                  {user.role?.includes('artist') ? 'Nouvelle mise à jour disponible !' : 'Salut ! Tu as lu le dernier chapitre ?'}
                 </p>
               </div>
             </div>
@@ -106,11 +106,11 @@ export default function MessagesPage() {
             <div className="p-4 px-6 border-b flex items-center justify-between bg-card/50 backdrop-blur-md">
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10 border">
-                  <AvatarImage src={selectedUser.photoURL} alt={selectedUser.displayName} />
+                  <AvatarImage src={selectedUser.photoURL || ''} alt={selectedUser.displayName || 'User'} />
                   <AvatarFallback>{selectedUser.displayName?.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Link href={selectedUser.role?.includes('artist') ? `/artiste/${selectedUser.slug}` : `/profile/${selectedUser.id}`}>
+                  <Link href={selectedUser.role?.includes('artist') ? `/artiste/${selectedUser.slug}` : `/profile/${selectedUser.uid}`}>
                       <h3 className="text-lg font-bold hover:text-primary transition-colors">{selectedUser.displayName}</h3>
                   </Link>
                   <div className="flex items-center gap-1.5">
@@ -135,7 +135,7 @@ export default function MessagesPage() {
 
                 <div className="flex justify-start gap-3 max-w-[80%]">
                   <Avatar className="h-8 w-8 mt-1 border">
-                    <AvatarImage src={selectedUser.photoURL} />
+                    <AvatarImage src={selectedUser.photoURL || ''} />
                     <AvatarFallback>{selectedUser.displayName?.slice(0,2)}</AvatarFallback>
                   </Avatar>
                   <div>

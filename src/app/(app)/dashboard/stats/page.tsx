@@ -9,6 +9,10 @@ import { TrendingUp, Wallet, Users, BookOpen, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
+// Mock data types
+type ChapterView = { name: string; vues: number };
+type ChapterViewsData = { [storyId: string]: ChapterView[] };
+
 // Mock data, in a real app this would come from an API
 const revenueData = [
   { month: 'Jan', total: 120, dons: 40, abonnements: 60, africoins: 20 },
@@ -28,7 +32,7 @@ const subscriberData = [
   { month: 'Juin', abonnés: 820 },
 ];
 
-const chapterViewsData = {
+const chapterViewsData: ChapterViewsData = {
   '1': [
     { name: 'Chap 1', vues: 4000 },
     { name: 'Chap 2', vues: 3000 },
@@ -47,7 +51,7 @@ export default function StatsDashboardPage() {
   const router = useRouter();
   const artistId = '1';
   const myStories = stories.filter(story => story.artistId === artistId);
-  const [selectedStoryId, setSelectedStoryId] = useState(myStories[0]?.id || '');
+  const [selectedStoryId, setSelectedStoryId] = useState<string>(myStories[0]?.id || '');
 
   const totalRevenue = revenueData.reduce((acc, curr) => acc + curr.total, 0);
   const totalSubscribers = subscriberData[subscriberData.length - 1].abonnés;
@@ -55,7 +59,7 @@ export default function StatsDashboardPage() {
 
   // Simplified read-through rate calculation
   const getReadThroughRate = (storyId: string): string => {
-    const storyData = (chapterViewsData as any)[storyId];
+    const storyData = chapterViewsData[storyId];
     if (!storyData || storyData.length < 2) return 'N/A';
     const firstChapterViews = storyData[0].vues;
     const lastChapterViews = storyData[storyData.length - 1].vues;
@@ -63,7 +67,7 @@ export default function StatsDashboardPage() {
     return `${((lastChapterViews / firstChapterViews) * 100).toFixed(0)}%`;
   }
   
-  const currentChapterViews = (chapterViewsData as any)[selectedStoryId] || [];
+  const currentChapterViews = chapterViewsData[selectedStoryId] || [];
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">

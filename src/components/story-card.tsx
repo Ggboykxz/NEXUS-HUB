@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Story } from '@/lib/data';
+import type { StoryFull as Story, ArtistProfile, Playlist } from '@/lib/types';
 import { getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame, Clock } from 'lucide-react';
@@ -39,13 +39,12 @@ const formatStat = (num: number): string => {
 export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
   const [date, setDate] = useState('');
   const [relativeDate, setRelativeDate] = useState('');
-  const [artistInfo, setArtistInfo] = useState<any>(null);
-  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [artistInfo, setArtistInfo] = useState<ArtistProfile | null>(null);
+  const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
 
   const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 14;
-  const isTrending = story.likes > 50000;
   const isHotAfro = story.genreSlug === 'afrofuturisme' && story.views > 500000;
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       try {
         const userDoc = await getDoc(doc(db, 'users', story.artistId));
         if (userDoc.exists()) {
-          setArtistInfo(userDoc.data());
+          setArtistInfo(userDoc.data() as ArtistProfile);
         }
       } catch (e) {
         console.error("Error fetching artist info:", e);
@@ -72,9 +71,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     // Fetch User Playlists if logged in
     if (auth.currentUser) {
       const fetchPlaylists = async () => {
-        const q = query(collection(db, 'playlists'), where('authorId', '==', auth.currentUser?.uid));
+        const q = query(collection(db, 'playlists'), where('ownerId', '==', auth.currentUser?.uid));
         const snap = await getDocs(q);
-        setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() } as Playlist)));
       };
       fetchPlaylists();
     }
