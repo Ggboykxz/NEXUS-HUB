@@ -4,7 +4,7 @@ import { StoryCard } from '@/components/story-card';
 import { Layers } from 'lucide-react';
 import type { Story } from '@/lib/types';
 
-export const revalidate = 3600; // ISR: Revalidate every hour
+export const revalidate = 3600; // ISR: Mise à jour toutes les heures
 
 export default async function WebtoonListingPage() {
   const q = query(
@@ -26,7 +26,7 @@ export default async function WebtoonListingPage() {
         </div>
         <h1 className="text-4xl font-bold font-display">Univers Webtoons</h1>
       </div>
-      <p className="text-lg text-muted-foreground mb-12">
+      <p className="text-lg text-muted-foreground mb-12 italic">
         Découvrez nos œuvres optimisées pour la lecture verticale. Un format moderne pour une immersion totale dans les cultures africaines.
       </p>
 
