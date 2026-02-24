@@ -2,13 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { StoryFull as Story, ArtistProfile, Playlist } from '@/lib/types';
-import { getStoryUrl, getChapterUrl } from '@/lib/data';
+import type { Story, UserProfile, Playlist } from '@/lib/types';
+import { getStoryUrl, getChapterUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame, Clock } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
-import { format, differenceInDays, formatDistanceToNow } from 'date-fns';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -36,31 +36,25 @@ const formatStat = (num: number): string => {
   return num.toString();
 };
 
-export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
-  const [date, setDate] = useState('');
+export function StoryCard({ story, className }: StoryCardProps) {
   const [relativeDate, setRelativeDate] = useState('');
-  const [artistInfo, setArtistInfo] = useState<ArtistProfile | null>(null);
+  const [artistInfo, setArtistInfo] = useState<UserProfile | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
 
-  const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 14;
+  const updatedAt = story.updatedAt instanceof Date ? story.updatedAt : new Date(story.updatedAt as string);
+  const isNew = differenceInDays(new Date(), updatedAt) < 14;
   const isHotAfro = story.genreSlug === 'afrofuturisme' && story.views > 500000;
 
   useEffect(() => {
-    // Relative date calculation after hydration
-    setRelativeDate(formatDistanceToNow(new Date(story.updatedAt), { addSuffix: true, locale: fr }));
+    setRelativeDate(formatDistanceToNow(updatedAt, { addSuffix: true, locale: fr }));
     
-    if(showUpdateDate) {
-        setDate(format(new Date(story.updatedAt), 'd MMM yyyy', { locale: fr }));
-    }
-
-    // Fetch Artist Info from Firestore
     const fetchArtist = async () => {
       try {
         const userDoc = await getDoc(doc(db, 'users', story.artistId));
         if (userDoc.exists()) {
-          setArtistInfo(userDoc.data() as ArtistProfile);
+          setArtistInfo(userDoc.data() as UserProfile);
         }
       } catch (e) {
         console.error("Error fetching artist info:", e);
@@ -68,7 +62,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     };
     fetchArtist();
 
-    // Fetch User Playlists if logged in
     if (auth.currentUser) {
       const fetchPlaylists = async () => {
         const q = query(collection(db, 'playlists'), where('ownerId', '==', auth.currentUser?.uid));
@@ -77,7 +70,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
       };
       fetchPlaylists();
     }
-  }, [story.updatedAt, story.artistId, showUpdateDate]);
+  }, [story.updatedAt, story.artistId]);
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -103,8 +96,8 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   };
 
   const storyUrl = getStoryUrl(story);
-  const hasChapters = story.chapters && story.chapters.length > 0;
-  const firstChapterUrl = hasChapters ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
+  const hasChapters = story.chapterCount > 0;
+  const firstChapterUrl = story.chapters?.[0] ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
@@ -112,10 +105,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
               src={story.coverImage.imageUrl}
-              alt={`Couverture de ${story.title}`}
+              alt={story.coverImage.alt || `Couverture de ${story.title}`}
               fill
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
-              data-ai-hint={story.coverImage.imageHint}
               sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
             />
         </Link>
@@ -170,17 +162,16 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                                     size="icon"
                                     className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
                                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                    aria-label="Ajouter à une playlist"
                                 >
                                     <ListPlus className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-40">
+                            <DropdownMenuContent align="center" className="w-40">
                                 <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {userPlaylists.length > 0 ? userPlaylists.map(playlist => (
-                                    <DropdownMenuItem key={playlist.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
-                                        {playlist.name}
+                                {userPlaylists.length > 0 ? userPlaylists.map(p => (
+                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, p.title)}>
+                                        {p.title}
                                     </DropdownMenuItem>
                                 )) : (
                                   <DropdownMenuItem disabled className="text-[10px]">Aucune playlist</DropdownMenuItem>
@@ -189,13 +180,13 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                         </DropdownMenu>
                         
                         {hasChapters ? (
-                            <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10" aria-label={`Lire ${story.title}`}>
+                            <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10">
                                 <Link href={firstChapterUrl} onClick={(e) => e.stopPropagation()}>
                                     <Play className="ml-0.5 h-5 w-5 fill-current" />
                                 </Link>
                             </Button>
                         ) : (
-                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-white/10 opacity-50" title="Bientôt disponible">
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-white/10 opacity-50">
                                 <CalendarDays className="h-5 w-5 text-white" />
                             </div>
                         )}
@@ -205,7 +196,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                           size="icon" 
                           className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
                           onClick={handleHeartClick}
-                          aria-label="Ajouter aux favoris"
                         >
                             <Heart className="h-4 w-4" />
                         </Button>
@@ -234,7 +224,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
           )}
         </div>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
-            <Link href={`/artiste/${artistInfo?.slug}`} className="hover:text-primary transition-colors flex items-center gap-1">
+            <Link href={artistInfo ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1">
                 <span className="font-medium truncate max-w-[80px]">{artistInfo?.displayName || story.artistName}</span>
                 {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>
@@ -254,9 +244,6 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                 {story.format === 'Webtoon' ? 'Série' : story.format}
             </Badge>
         </div>
-        {showUpdateDate && date && (
-          <p className="text-[8px] text-primary/60 font-bold mt-1 uppercase tracking-widest">Mis à jour le {date}</p>
-        )}
       </div>
     </div>
   );

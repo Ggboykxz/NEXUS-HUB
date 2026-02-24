@@ -1,29 +1,23 @@
 /**
- * @fileOverview Types et Helpers pour les données de NexusHub.
+ * @fileOverview Données initiales et helpers pour NexusHub.
  */
 
-import { StoryFull, ArtistProfile, ChapterContent, Playlist, Product, BlogPost, UserProfile, ForumThread, Comment, ComicPage } from './types';
+import { Story, UserProfile, Chapter, Playlist, Product, BlogPost, Forum, Thread, Comment, ComicPage } from './types';
 
-export type { ArtistProfile as Artist, ChapterContent as Chapter, StoryFull as Story, StoryFormat } from './types';
+// Exportation des types pour compatibilité descendante si nécessaire
+export type { Story, UserProfile as Artist, Chapter, UserRole as ArtistRole } from './types';
 
-// Helpers d'URLs
-export const getStoryUrl = (story: StoryFull) => {
-  const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
-  return `${prefix}/${story.slug}`;
-};
+// Re-export des helpers centralisés
+export { getStoryUrl, getChapterUrl, getUserUrl } from './types';
 
-export const getChapterUrl = (story: StoryFull, chapterSlug: string) => {
-  const prefix = (story.format === 'Webtoon' || story.format === 'Roman Illustré') ? '/webtoon' : '/bd-africaine';
-  return `${prefix}/${story.slug}/${chapterSlug}`;
-};
-
-// Listes de données typées
-export const stories: StoryFull[] = [];
-export const artists: ArtistProfile[] = [];
+// Listes de données typées (à peupler via Firestore en production)
+export const stories: Story[] = [];
+export const artists: UserProfile[] = [];
 export const comicPages: ComicPage[] = [];
 export const comments: Comment[] = [];
 export const playlists: Playlist[] = [];
 export const products: Product[] = [];
 export const blogPosts: BlogPost[] = [];
 export const readers: UserProfile[] = [];
-export const forumThreads: ForumThread[] = [];
+export const forumThreads: Thread[] = [];
+export const forums: Forum[] = [];

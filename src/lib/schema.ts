@@ -1,39 +1,14 @@
 /**
- * @fileOverview Schéma de données pour Firestore - NexusHub Production
+ * @fileOverview Bridge de compatibilité pour le schéma de données.
  */
 
-import { UserProfile, StoryFull, ChapterContent, Transaction, Playlist } from './types';
+import * as Types from './types';
 
-export type { UserProfile, StoryFull, ChapterContent, Transaction, Playlist };
-
-export interface StoryMetadata extends Omit<StoryFull, 'chapters'> {
-  // Metadata specifically for Firestore collection root
-}
-
-export interface ChapterData extends ChapterContent {
-  pages: string[]; // URLs des images
+export type UserProfile = Types.UserProfile;
+export interface StoryMetadata extends Omit<Types.Story, 'chapters'> {}
+export interface ChapterData extends Types.Chapter {
   isFree: boolean;
 }
-
-export interface TransactionRecord extends Transaction {
-  targetId?: string; // artistId ou storyId
-}
-
-export interface ReportRecord {
-  id: string;
-  reporterId: string;
-  targetId: string;
-  targetType: 'story' | 'chapter' | 'comment' | 'user' | 'post' | 'thread' | 'message';
-  reason: string;
-  status: 'pending' | 'resolved' | 'dismissed';
-  createdAt: string;
-}
-
-export interface AfriCoinsPackage {
-  id: string;
-  name: string;
-  amount: number;
-  price: number;
-  currency: string;
-  isPopular?: boolean;
+export interface TransactionRecord extends Types.Transaction {
+  targetId?: string;
 }
