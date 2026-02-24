@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, CircleDollarSign, Coins, ShieldAlert, Zap, Globe } from 'lucide-react';
+import { Settings, CircleDollarSign, Coins, ShieldAlert, Zap, Globe, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,15 +13,48 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export default function SettingsPage() {
-  const [accountType, setAccountType] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const type = localStorage.getItem('accountType');
-    setAccountType(type);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setProfile({ uid: user.uid, ...userDoc.data() });
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.uid) return;
+
+    try {
+      const userRef = doc(db, 'users', profile.uid);
+      await updateDoc(userRef, {
+        displayName: profile.displayName,
+        bio: profile.bio,
+        photoURL: profile.photoURL
+      });
+      toast({ title: "Profil mis à jour !" });
+    } catch (error) {
+      toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
+    }
+  };
 
   const handleCryptoPayment = () => {
     toast({
@@ -29,6 +62,26 @@ export default function SettingsPage() {
         description: "Redirection vers la passerelle Bitcoin/CFA sécurisée...",
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-24 text-center">
+        <h1 className="text-2xl font-bold mb-4">Accès réservé aux membres</h1>
+        <p className="text-muted-foreground mb-8">Veuillez vous connecter pour gérer vos paramètres.</p>
+        <Button asChild><Link href="/login">Se connecter</Link></Button>
+      </div>
+    );
+  }
+
+  const isArtist = profile.role?.includes('artist');
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
@@ -46,70 +99,56 @@ export default function SettingsPage() {
         </TabsList>
         
         <TabsContent value="profile" className="mt-6">
-          {accountType === 'artist' ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Profil d'Artiste</CardTitle>
-                <CardDescription>
-                  Gérez votre identité artistique et vos liens sociaux.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{isArtist ? "Profil d'Artiste" : "Profil Lecteur"}</CardTitle>
+              <CardDescription>
+                Gérez votre identité publique sur NexusHub.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="flex items-center gap-6">
-                  <Avatar className="h-24 w-24 border-2 border-primary">
-                    <AvatarImage src="" alt="Avatar d'artiste" />
-                    <AvatarFallback>ART</AvatarFallback>
+                  <Avatar className={cn("h-24 w-24", isArtist && "border-2 border-primary")}>
+                    <AvatarImage src={profile.photoURL} alt="Avatar" />
+                    <AvatarFallback>{profile.displayName?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="avatar-url">URL de l'avatar</Label>
-                    <Input id="avatar-url" placeholder="https://..." />
+                    <Label htmlFor="avatar-url">URL de l'avatar</Link>
+                    <Input 
+                      id="avatar-url" 
+                      value={profile.photoURL || ''} 
+                      onChange={(e) => setProfile({...profile, photoURL: e.target.value})}
+                      placeholder="https://..." 
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom d'artiste</Label>
-                  <Input id="name" placeholder="Votre nom ou pseudonyme" />
+                  <Label htmlFor="name">{isArtist ? "Nom d'artiste" : "Nom d'affichage"}</Label>
+                  <Input 
+                    id="name" 
+                    value={profile.displayName || ''} 
+                    onChange={(e) => setProfile({...profile, displayName: e.target.value})}
+                    placeholder="Votre nom" 
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Biographie (Multilingue acceptée)</Label>
+                  <Label htmlFor="bio">Biographie</Label>
                   <Textarea
                     id="bio"
+                    value={profile.bio || ''}
+                    onChange={(e) => setProfile({...profile, bio: e.target.value})}
                     placeholder="Parlez de votre univers..."
                     className="min-h-[120px]"
                   />
                 </div>
 
-                <Button className="w-full sm:w-auto">Enregistrer les modifications</Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Profil Lecteur</CardTitle>
-                <CardDescription>Gérez vos informations publiques.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src="" alt="Avatar de lecteur" />
-                    <AvatarFallback>VOUS</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-2">
-                    <Label htmlFor="reader-avatar-url">URL de l'avatar</Label>
-                    <Input id="reader-avatar-url" placeholder="https://..." />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reader-name">Votre nom</Label>
-                  <Input id="reader-name" placeholder="Votre nom" />
-                </div>
-
-                <Button className="w-full sm:w-auto">Enregistrer les modifications</Button>
-              </CardContent>
-            </Card>
-          )}
+                <Button type="submit" className="w-full sm:w-auto">Enregistrer les modifications</Button>
+              </form>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="africoins" className="mt-6 space-y-6">
@@ -119,9 +158,9 @@ export default function SettingsPage() {
                 <CardTitle className="text-2xl flex items-center gap-2">
                     <Coins className="text-primary h-6 w-6" /> Portefeuille AfriCoins
                 </CardTitle>
-                <CardDescription>Convertissez votre talent en valeur réelle.</CardDescription>
+                <CardDescription>Consultez votre solde et rechargez votre compte.</CardDescription>
               </div>
-              <Badge variant="secondary" className="text-lg py-1 px-4">150 🪙</Badge>
+              <Badge variant="secondary" className="text-lg py-1 px-4">{profile.afriCoins || 0} 🪙</Badge>
             </CardHeader>
             <CardContent className="space-y-6">
               
@@ -206,7 +245,7 @@ export default function SettingsPage() {
                         <Label htmlFor="new-pass">Nouveau mot de passe</Label>
                         <Input id="new-pass" type="password" />
                     </div>
-                    <Button>Mettre à jour</Button>
+                    <Button>Mettre à jour le mot de passe</Button>
                 </CardContent>
             </Card>
         </TabsContent>

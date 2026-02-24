@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Award, PenSquare, ArrowRight, UploadCloud, BookOpen, Users, Globe, ChevronRight, CheckCircle2 } from 'lucide-react';
@@ -13,16 +13,25 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function SubmitPage() {
   const [step, setStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleCreate = () => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!isAuthenticated) {
       openAuthModal('lancer votre premier projet');
       return;
     }
@@ -34,7 +43,6 @@ export default function SubmitPage() {
         title: "Œuvre créée avec succès !",
         description: "Bienvenue dans votre nouvel univers. Redirection vers l'Atelier...",
       });
-      // Simulate redirection
     }, 2000);
   };
 
@@ -54,7 +62,6 @@ export default function SubmitPage() {
       </div>
 
       <div className="max-w-3xl mx-auto">
-        {/* Progress Bar */}
         <div className="flex justify-between items-center mb-12 relative">
           <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 -z-10" />
           {steps.map((s) => (
@@ -157,7 +164,7 @@ export default function SubmitPage() {
                           <SelectItem value="illustrator">Illustrateur</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button onClick={() => handleCreate()} variant="outline">Ajouter</Button>
+                      <Button variant="outline">Ajouter</Button>
                     </div>
                     <p className="text-xs text-muted-foreground italic">Les collaborateurs recevront une invitation par email pour rejoindre le projet.</p>
                   </div>
@@ -211,7 +218,6 @@ export default function SubmitPage() {
           </CardFooter>
         </Card>
 
-        {/* Informational Section (Toggleable or below) */}
         <div className="mt-20 pt-12 border-t border-dashed">
            <div className="flex flex-col md:flex-row items-center gap-12 opacity-60 hover:opacity-100 transition-opacity">
               <div className="flex-1 space-y-4">
