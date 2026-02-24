@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -51,6 +51,14 @@ export interface UserProfile {
   afriCoins: number;
   subscribersCount: number;
   
+  // Profiling Algorithmique
+  readingStats: {
+    preferredGenres: Record<string, number>; // { 'afrofuturisme': 120 (min), 'mythologie': 45 }
+    culturalAffinity: string[]; // ['fang', 'yoruba', 'wolof']
+    lastReadRegion?: string;
+    totalReadingTime: number;
+  };
+
   readingStreak: {
     currentCount: number;
     lastReadDate: string; // ISO
@@ -113,6 +121,7 @@ export interface Story {
   views: number;
   likes: number;
   chapterCount: number;
+  region?: string; // 'Gabon', 'Nigeria', 'Sénégal'
   updatedAt: Timestamp | string;
   chapters?: Chapter[];
 }
@@ -141,13 +150,13 @@ export interface Comment {
   content: string;
   isSpoiler: boolean;
   likes: number;
-  pageIndex?: number; // Rattaché à une planche précise
+  pageIndex?: number; 
   createdAt: Timestamp | string;
 }
 
 export interface PanelReaction {
   pageIndex: number;
-  reactions: Record<string, number>; // { '🔥': 12, '❤️': 5 }
+  reactions: Record<string, number>; 
 }
 
 export interface Playlist {

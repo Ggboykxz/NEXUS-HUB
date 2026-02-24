@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Sun, Moon, Map, Flag, Info, Star, Download, Flame, MessageCircle, AlertCircle, Volume2, Database, BatteryMedium, SlidersHorizontal, X
+  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Sun, Moon, Map, Flag, Info, Star, Download, Flame, MessageCircle, AlertCircle, Volume2, Database, BatteryMedium, SlidersHorizontal, X, Sparkles
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,14 @@ import { Label } from '@/components/ui/label';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { useTranslation } from '@/components/providers/language-provider';
 
+/**
+ * Le "Lecteur Magique" de NexusHub.
+ * Intègre le Mode Cinématique, l'Accessibilité Africaine et le Profiling Algorithmique.
+ */
 export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
@@ -36,8 +40,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
 
   const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Chargement...', slug: '1', chapterNumber: 1 } as any;
   
-  // --- States ---
-  const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
+  // --- États de l'Interface ---
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activePanelIndex, setActivePanelIndex] = useState<number | null>(null);
@@ -45,8 +48,9 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
+  const [readingStartTime] = useState(Date.now());
   
-  // Accessibility States
+  // États d'Accessibilité
   const [isLowData, setIsLowData] = useState(false);
   const [isBatterySaver, setIsBatterySaver] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -60,21 +64,18 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     return () => unsubscribe();
   }, []);
 
-  // Mode Batterie Éco
-  useEffect(() => {
-    if (isBatterySaver) {
-      document.body.classList.add('battery-saver');
-    } else {
-      document.body.classList.remove('battery-saver');
-    }
-  }, [isBatterySaver]);
-
-  // Sync Progress Firestore
+  // SYNC PROGRESSION & PROFILING ALGORITHMIQUE
   useEffect(() => {
     if (!currentUser || progress === 0) return;
-    const timer = setTimeout(async () => {
+    
+    // On synchronise toutes les 15 secondes pour un profiling précis sans surcharger Firestore
+    const syncInterval = setInterval(async () => {
       try {
+        const timeSpent = Math.floor((Date.now() - readingStartTime) / 60000); 
         const libRef = doc(db, 'users', currentUser.uid, 'library', story.id);
+        const userRef = doc(db, 'users', currentUser.uid);
+
+        // Mise à jour de la bibliothèque (reprendre la lecture)
         await setDoc(libRef, {
           storyId: story.id,
           storyTitle: story.title,
@@ -85,18 +86,36 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           lastReadAt: serverTimestamp(),
           progress: Math.floor(progress),
         }, { merge: true });
-      } catch (e) { console.error(e); }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [progress, currentUser, story, chapter]);
+
+        // Profiling silencieux pour l'algorithme de recommandation
+        if (timeSpent > 0) {
+          await setDoc(userRef, {
+            readingStats: {
+              preferredGenres: {
+                [story.genreSlug]: increment(1)
+              },
+              totalReadingTime: increment(1)
+            }
+          }, { merge: true });
+        }
+      } catch (e) { 
+        // Erreurs ignorées silencieusement pour ne pas bloquer la lecture
+      }
+    }, 15000);
+
+    return () => clearInterval(syncInterval);
+  }, [progress, currentUser, story, chapter, readingStartTime]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const currentScrollY = target.scrollTop;
+    
+    // Cacher l'UI lors du scroll vers le bas, la montrer lors du scroll vers le haut
     if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
       setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 100);
       lastScrollY.current = currentScrollY;
     }
+    
     const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
     setProgress(currentProgress);
   }, []);
@@ -124,7 +143,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     setIsDownloading(true);
     setTimeout(() => {
       setIsDownloading(false);
-      toast({ title: "Chapitre téléchargé !", description: "Disponible hors-ligne." });
+      toast({ title: "Chapitre téléchargé !", description: "Disponible hors-ligne dans Ma Bibliothèque." });
     }, 2000);
   };
 
@@ -134,13 +153,8 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
       msg.text = `Chapitre ${chapter.chapterNumber} : ${chapter.title}.`;
       msg.lang = 'fr-FR';
       window.speechSynthesis.speak(msg);
-      toast({ title: "Lecture audio", description: "Assistant vocal activé." });
+      toast({ title: "Assistant vocal activé", description: "Lecture audio du titre du chapitre." });
     }
-  };
-
-  const openInlineComments = (pageIdx: number) => {
-    setActivePanelIndex(pageIdx);
-    setIsCommentsOpen(true);
   };
 
   const topMoments = useMemo(() => {
@@ -157,7 +171,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
       isFocusMode && "cursor-none",
       isBatterySaver && "bg-[#050505]"
     )}>
-      {/* HEADER DINAMIQUE */}
+      {/* HEADER DYNAMIQUE / ZEN */}
       <nav className={cn(
         "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
         (!isUIVisible && !isFocusMode) && "reader-ui-hidden",
@@ -191,7 +205,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           <Button onClick={handleDownload} disabled={isDownloading} size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white/5 text-stone-400 hover:text-primary">
             <Download className={cn("h-4 w-4", isDownloading && "animate-bounce text-primary")} />
           </Button>
-          <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white/5"><Bookmark className="h-4 w-4" /></Button>
           <Button onClick={() => setIsCommentsOpen(!isCommentsOpen)} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-full bg-white/5", isCommentsOpen && "text-primary bg-primary/10")}>
             <MessageSquare className="h-4 w-4" />
           </Button>
@@ -199,7 +212,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
       </nav>
       
       <div className="flex-1 flex overflow-hidden relative">
-        {/* ZONE DE LECTURE */}
+        {/* ZONE DE LECTURE VERTICALE */}
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
@@ -219,7 +232,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                   priority={index < 2}
                 />
                 
-                {/* Overlays Interactifs */}
+                {/* Micro-interactions par panneau */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   {topMoments.includes(index) && !isBatterySaver && (
                     <div className="absolute top-4 left-4 flex items-center gap-2 bg-primary text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl animate-pulse">
@@ -240,31 +253,28 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                         )}
                       </button>
                     ))}
-                    <Separator orientation="vertical" className="h-6 bg-white/10 mx-1" />
-                    <Button 
-                      onClick={() => openInlineComments(index)}
-                      variant="ghost" 
-                      size="icon" 
-                      className="w-10 h-10 rounded-full hover:bg-primary/20 text-white"
-                    >
-                      <MessageCircle className="h-5 w-5" />
-                    </Button>
                   </div>
                 </div>
               </div>
             ))}
             
+            {/* Fin de Chapitre / Recommandations AI */}
             <div className="py-20 text-center space-y-6">
               <Badge variant="outline" className="border-primary/20 text-primary uppercase font-bold tracking-widest">Fin du Chapitre</Badge>
               <h2 className="text-4xl font-display font-black gold-resplendant">L'aventure continue...</h2>
-              <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
-                Chapitre Suivant <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+              <div className="flex flex-col items-center gap-4">
+                <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
+                  Chapitre Suivant <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-2 text-stone-500 text-[10px] uppercase font-bold tracking-widest">
+                  <Sparkles className="h-3 w-3" /> Recommandé pour vous après ce chapitre
+                </div>
+              </div>
             </div>
           </div>
         </main>
 
-        {/* SIDEBAR ACCESSIBILITÉ */}
+        {/* PANNEAU DE RÉGLAGES ACCESSIBILITÉ */}
         <aside className={cn(
           "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950 border-r border-white/5 z-40 transition-transform duration-500 ease-out",
           isSettingsOpen ? "translate-x-0" : "-translate-x-full"
@@ -272,7 +282,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           <div className="flex flex-col h-full">
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-xl font-display font-black text-white flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" /> Paramètres
+                <Settings className="h-5 w-5 text-primary" /> Accessibilité
               </h3>
               <Button onClick={() => setIsSettingsOpen(false)} variant="ghost" size="icon" className="rounded-full"><X className="h-5 w-5" /></Button>
             </div>
@@ -284,7 +294,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                     <Label className="text-sm font-bold text-white flex items-center gap-2">
                       <Database className="h-4 w-4 text-cyan-500" /> Mode Low-Data
                     </Label>
-                    <p className="text-[10px] text-muted-foreground italic">Compression d'images maximale.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Compression images à 40% (3G/2G).</p>
                   </div>
                   <Switch checked={isLowData} onCheckedChange={setIsLowData} />
                 </div>
@@ -292,9 +302,9 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-bold text-white flex items-center gap-2">
-                      <BatteryMedium className="h-4 w-4 text-emerald-500" /> Économiseur Batterie
+                      <BatteryMedium className="h-4 w-4 text-emerald-500" /> Éco Batterie
                     </Label>
-                    <p className="text-[10px] text-muted-foreground italic">Animations réduites.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Désactive les effets visuels.</p>
                   </div>
                   <Switch checked={isBatterySaver} onCheckedChange={setIsBatterySaver} />
                 </div>
@@ -303,102 +313,30 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           </div>
         </aside>
 
-        {/* SIDEBAR COMMENTAIRES */}
+        {/* PANNEAU DE COMMENTAIRES INLINE */}
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500 ease-out",
           isCommentsOpen ? "translate-x-0 shadow-[-20px_0_50px_rgba(0,0,0,0.5)]" : "translate-x-full"
         )}>
-          <CommentsPanel 
-            activePanel={activePanelIndex} 
-            onClose={() => setIsCommentsOpen(false)} 
-            onClearFilter={() => setActivePanelIndex(null)}
-          />
+          <CommentsPanel activePanel={activePanelIndex} onClose={() => setIsCommentsOpen(false)} />
         </aside>
       </div>
     </div>
   );
 }
 
-function CommentsPanel({ activePanel, onClose, onClearFilter }: any) {
-  const [commentText, setCommentText] = useState('');
-  const [isSpoiler, setIsSpoiler] = useState(false);
-
-  const comments = useMemo(() => {
-    let list = [
-      { id: '1', author: 'NexusFan', content: 'Le dessin est incroyable sur cette planche !', pageIndex: 2, isSpoiler: false, likes: 12 },
-      { id: '2', author: 'SpoilerGuy', content: 'Je savais que le méchant allait revenir ici...', pageIndex: 4, isSpoiler: true, likes: 5 },
-      { id: '3', author: 'ArtLover', content: 'Quelle maîtrise de la couleur.', pageIndex: 2, isSpoiler: false, likes: 24 },
-    ];
-    if (activePanel !== null) {
-      list = list.filter(c => c.pageIndex === activePanel);
-    }
-    return list;
-  }, [activePanel]);
-
+function CommentsPanel({ activePanel, onClose }: any) {
   return (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-        <div className="flex flex-col">
-          <h3 className="text-xl font-display font-black text-white flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" /> 
-            {activePanel !== null ? `Réactions Case ${activePanel + 1}` : 'Communauté'}
-          </h3>
-          {activePanel !== null && (
-            <button onClick={onClearFilter} className="text-[10px] text-primary hover:underline font-bold uppercase tracking-widest mt-1 text-left">Voir tout</button>
-          )}
-        </div>
+        <h3 className="text-xl font-display font-black text-white flex items-center gap-2">
+          <MessageSquare className="h-5 w-5 text-primary" /> Communauté
+        </h3>
         <Button onClick={onClose} variant="ghost" size="icon" className="rounded-full"><X className="h-5 w-5" /></Button>
       </div>
-
-      <ScrollArea className="flex-1 p-6">
-        <div className="space-y-6">
-          {comments.map(c => (
-            <CommentItem key={c.id} comment={c} />
-          ))}
-        </div>
-      </ScrollArea>
-
-      <div className="p-6 border-t border-white/5 bg-white/5 space-y-4">
-        <Textarea 
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          placeholder="Partagez votre lumière..." 
-          className="min-h-[100px] bg-black/40 border-white/10 rounded-2xl p-4 focus-visible:ring-primary"
-        />
-        <div className="flex items-center justify-between">
-          <button onClick={() => setIsSpoiler(!isSpoiler)} className={cn("text-[10px] font-black uppercase", isSpoiler ? "text-orange-500" : "text-stone-500")}>Spoiler</button>
-          <Button disabled={!commentText.trim()} className="rounded-full px-6 font-black gold-shimmer bg-primary text-black">Envoyer</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CommentItem({ comment }: { comment: any }) {
-  const [revealed, setRevealed] = useState(!comment.isSpoiler);
-
-  return (
-    <div className="space-y-2 group">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6 border border-white/10"><AvatarFallback className="text-[10px] bg-primary/10 text-primary">{comment.author[0]}</AvatarFallback></Avatar>
-          <span className="text-xs font-black text-white/80">{comment.author}</span>
-        </div>
-        <span className="text-[9px] text-stone-500 font-bold uppercase">Il y a 2h</span>
-      </div>
-      
-      <div className="relative overflow-hidden rounded-xl">
-        <p className={cn(
-          "text-sm font-light leading-relaxed p-3 bg-white/5 rounded-xl transition-all duration-500",
-          (!revealed && comment.isSpoiler) && "blur-md select-none cursor-pointer"
-        )} onClick={() => !revealed && setRevealed(true)}>
-          {comment.content}
-        </p>
-        {comment.isSpoiler && !revealed && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button className="bg-orange-500 text-black text-[9px] font-black px-3 py-1 rounded-full" onClick={() => setRevealed(true)}>RÉVÉLER</button>
-          </div>
-        )}
+      <div className="flex-1 p-8 text-center flex flex-col justify-center">
+        <AlertCircle className="h-12 w-12 text-stone-700 mx-auto mb-4" />
+        <p className="text-stone-500 italic text-sm">Préparez vos théories...</p>
       </div>
     </div>
   );

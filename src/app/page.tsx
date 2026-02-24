@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -8,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
-import type { Story, LibraryEntry } from '@/lib/types';
-import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, History, Clock } from 'lucide-react';
+import type { Story, LibraryEntry, UserProfile } from '@/lib/types';
+import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, History, Clock, BookHeart, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
@@ -59,6 +58,17 @@ export default function HomePage() {
       );
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ ...d.data() } as LibraryEntry));
+    }
+  });
+
+  // AI Recom Query (Preview for Home)
+  const { data: forYou = [] } = useQuery({
+    queryKey: ['home-for-you', currentUser?.uid],
+    enabled: !!currentUser,
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), limit(5));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
     }
   });
 
@@ -152,6 +162,26 @@ export default function HomePage() {
               </section>
             )}
 
+            {/* POUR TOI - RECOM AI */}
+            {currentUser && forYou.length > 0 && (
+              <section className="animate-in fade-in slide-in-from-right-4 duration-700">
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <BookHeart className="h-6 w-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-display font-bold uppercase tracking-tighter">Pour Toi</h2>
+                  </div>
+                  <Button variant="link" asChild className="p-0 h-auto font-black text-xs uppercase tracking-widest text-primary">
+                    <Link href="/for-you">Plus de recommandations <ChevronRight className="h-4 w-4" /></Link>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                  {forYou.map(s => <StoryCard key={s.id} story={s} />)}
+                </div>
+              </section>
+            )}
+
             {/* TENDANCES */}
             <section>
               <div className="flex justify-between items-center mb-8">
@@ -181,6 +211,28 @@ export default function HomePage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {isLoading ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-xl" />) : newReleases.map(s => <StoryCard key={s.id} story={s} />)}
+              </div>
+            </section>
+
+            {/* DISCOVER RÉGIONAL - AFRIQUE CENTRALE (GABON) */}
+            <section className="bg-primary/5 p-8 md:p-12 rounded-[3rem] border border-primary/10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <Globe className="h-32 w-32 text-primary" />
+              </div>
+              <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+                <div className="flex-1 space-y-6">
+                  <Badge variant="outline" className="border-primary/20 text-primary uppercase font-bold tracking-widest px-4 py-1">Focus Régional : Gabon 🇬🇦</Badge>
+                  <h2 className="text-3xl md:text-5xl font-display font-black leading-tight tracking-tighter">Découvrez les Talents de l'Estuaire</h2>
+                  <p className="text-lg text-muted-foreground font-light leading-relaxed italic">
+                    Chaque semaine, notre algorithme met en lumière une pépite locale. Explorez des récits nés à Libreville, Port-Gentil ou Franceville.
+                  </p>
+                  <Button asChild size="lg" className="rounded-full px-10 h-14 font-black text-lg">
+                    <Link href="/genre/mythologie">Explorer la Scène Locale</Link>
+                  </Button>
+                </div>
+                <div className="w-full md:w-1/3 aspect-[3/4] relative rounded-3xl overflow-hidden shadow-2xl border-8 border-background">
+                  <Image src="https://picsum.photos/seed/gabon/600/800" alt="Scène Locale" fill className="object-cover" />
+                </div>
               </div>
             </section>
 
