@@ -4,43 +4,50 @@
       "id": "hero",
       "description": "Image d'en-tête pour la page d'accueil, dans un style afro-futuriste",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/hero-afrofuturism.jpg",
-      "imageHint": "afrofuturism deity"
+      "imageHint": "afrofuturism deity",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-1",
       "description": "Couverture pour l'histoire 1, Les Chroniques d'Orisha",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/orisha-chronicles.jpg",
-      "imageHint": "orisha art"
+      "imageHint": "orisha art",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-2",
       "description": "Couverture pour l'histoire 2, une bande dessinée de science-fiction",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/scifi-africa.jpg",
-      "imageHint": "afrofuturism city"
+      "imageHint": "afrofuturism city",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+Z9PQAI8AKp7999XAAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-3",
       "description": "Couverture pour l'histoire 3",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/adventure-safari.jpg",
-      "imageHint": "adventure comic"
+      "imageHint": "adventure comic",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-4",
       "description": "Couverture pour l'histoire 4",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/mystery-temple.jpg",
-      "imageHint": "mystery comic"
+      "imageHint": "mystery comic",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-5",
       "description": "Couverture pour l'histoire 5, La Toile d'Anansé",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/ananse-web.jpg",
-      "imageHint": "golden spiderweb"
+      "imageHint": "golden spiderweb",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
     },
     {
       "id": "story-6",
       "description": "Couverture pour l'histoire 6",
       "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/history-kings.jpg",
-      "imageHint": "historical comic"
+      "imageHint": "historical comic",
+      "blurHash": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     },
     {
       "id": "artist-1",

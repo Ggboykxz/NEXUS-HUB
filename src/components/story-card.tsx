@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -30,6 +31,8 @@ interface StoryCardProps {
   className?: string;
   showUpdateDate?: boolean;
 }
+
+const DEFAULT_BLUR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 
 const formatStat = (num: number): string => {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
@@ -100,7 +103,6 @@ export function StoryCard({ story, className }: StoryCardProps) {
   const hasChapters = story.chapterCount > 0;
   const firstChapterUrl = story.chapters?.[0] ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
-  // Optimisation de l'URL de couverture
   const optimizedCoverUrl = getCoverThumbnail(story.coverImage.imageUrl);
 
   return (
@@ -113,6 +115,8 @@ export function StoryCard({ story, className }: StoryCardProps) {
               fill
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
               sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
+              placeholder="blur"
+              blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
             />
         </Link>
         

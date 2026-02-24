@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -27,6 +28,8 @@ interface StoryDetailClientProps {
   artist: UserProfile | null;
   similarStories: Story[];
 }
+
+const DEFAULT_BLUR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 export default function StoryDetailClient({ story, artist, similarStories }: StoryDetailClientProps) {
   const { toast } = useToast();
@@ -96,6 +99,8 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
             fill
             className="object-cover scale-110 blur-[2px]"
             priority
+            placeholder="blur"
+            blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-black/40" />
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
@@ -128,6 +133,8 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                 alt={story.title}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
+                placeholder="blur"
+                blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -287,7 +294,14 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="group relative aspect-[16/9] rounded-2xl overflow-hidden border-2 border-primary/5 hover:border-primary/40 transition-all cursor-pointer shadow-xl">
-                        <Image src={story.coverImage.imageUrl} alt={`Concept ${i}`} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <Image 
+                          src={story.coverImage.imageUrl} 
+                          alt={`Concept ${i}`} 
+                          fill 
+                          className="object-cover group-hover:scale-110 transition-transform duration-700" 
+                          placeholder="blur"
+                          blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
+                        />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Eye className="text-white h-8 w-8" />
                         </div>
@@ -314,7 +328,14 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                           {isNew && <div className="absolute top-0 left-0 w-1 h-full bg-primary" />}
                           <CardContent className="p-4 flex items-center gap-6">
                             <div className="relative h-20 w-32 rounded-xl overflow-hidden shadow-lg border border-white/5">
-                              <Image src={story.coverImage.imageUrl} alt={chapter.title} fill className="object-cover transition-transform group-hover:scale-110" />
+                              <Image 
+                                src={story.coverImage.imageUrl} 
+                                alt={chapter.title} 
+                                fill 
+                                className="object-cover transition-transform group-hover:scale-110" 
+                                placeholder="blur"
+                                blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
+                              />
                               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Play className="text-white h-6 w-6 fill-current" />
                               </div>
@@ -419,7 +440,14 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
             <Link key={s.id} href={getChapterUrl(s, s.chapters?.[0]?.slug || 'chapitre-1')} className="group">
               <Card className="border-none bg-transparent shadow-none overflow-hidden transition-all">
                 <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 border-2 border-transparent group-hover:border-primary/50 transition-all shadow-xl group-hover:-translate-y-2">
-                  <Image src={s.coverImage.imageUrl} alt={s.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <Image 
+                    src={s.coverImage.imageUrl} 
+                    alt={s.title} 
+                    fill 
+                    className="object-cover transition-all duration-700 group-hover:scale-110" 
+                    placeholder="blur"
+                    blurDataURL={s.coverImage.blurHash || DEFAULT_BLUR}
+                  />
                 </div>
                 <h3 className="font-display font-black text-lg group-hover:text-primary transition-colors truncate">{s.title}</h3>
                 <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Par {s.artistName}</p>

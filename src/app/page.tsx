@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -21,6 +22,8 @@ interface SectionHeaderProps {
   href: string;
   colorClass?: string;
 }
+
+const DEFAULT_BLUR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 export default function HomePage() {
   // Fetch Popular Stories
@@ -105,6 +108,8 @@ export default function HomePage() {
                       fill 
                       className="object-cover opacity-50"
                       priority
+                      placeholder="blur"
+                      blurDataURL={featured[0].coverImage?.blurHash || DEFAULT_BLUR}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-8 md:p-16">
                       <div className="max-w-2xl space-y-4">
