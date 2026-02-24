@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, MessageSquare, SlidersHorizontal, X, ChevronRight, Heart, Share2, 
   Sparkles, Flame, AlertCircle, Coins, Info, Languages, History, BrainCircuit,
-  Maximize2, Eye, Database, BatteryMedium, Wand2, BookOpen
+  Maximize2, Eye, Database, BatteryMedium, Wand2, BookOpen, Headphones, Music, Volume2, VolumeX
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -58,6 +58,10 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   const [isEyeProtection, setIsEyeProtection] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+  
+  // Audio Mode (Webtoon Sonore)
+  const [isAudioMode, setIsAudioMode] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   // Augmented Reading State
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -109,40 +113,12 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     }
   };
 
-  const handleAiChat = async () => {
-    if (!chatQuestion.trim()) return;
-    setChatLoading(true);
-    const userMsg = chatQuestion;
-    setChatQuery('');
-    setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
-    
-    try {
-      const res = await augmentedReadingAction({
-        type: 'chat',
-        storyTitle: story.title,
-        userQuery: userMsg,
-        context: `Lecteur au chapitre ${chapter.chapterNumber}. Lore : ${story.description}`
-      });
-      setChatHistory(prev => [...prev, { role: 'ai', text: res.result }]);
-    } catch (e) {
-      setChatHistory(prev => [...prev, { role: 'ai', text: "Désolé, ma connexion au lore a été interrompue." }]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const handlePanelTranslate = async (idx: number) => {
-    toast({ title: "Traduction IA...", description: "Analyse du panneau en cours." });
-    try {
-      const res = await augmentedReadingAction({
-        type: 'translate',
-        storyTitle: story.title,
-        panelContent: `Contenu visuel du panneau ${idx + 1}`
-      });
-      toast({ title: "Traduction effectuée", description: res.result });
-    } catch (e) {
-      toast({ title: "Erreur traduction", variant: "destructive" });
-    }
+  const handleToggleAudio = () => {
+    setIsAudioMode(!isAudioMode);
+    toast({
+      title: isAudioMode ? "Mode Sonore désactivé" : "Mode Sonore activé",
+      description: isAudioMode ? "Lecture silencieuse." : "Expérience audio dramatisée en cours.",
+    });
   };
 
   return (
@@ -171,14 +147,14 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
+          <Button onClick={handleToggleAudio} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isAudioMode ? "text-primary bg-primary/10" : "text-stone-500")}>
+            <Headphones className="h-4 w-4" />
+          </Button>
           <Button onClick={handleGetSummary} variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white/5 text-emerald-500 hover:bg-emerald-500/10">
             <History className="h-4 w-4" />
           </Button>
           <Button onClick={() => setIsSettingsOpen(!isSettingsOpen)} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isSettingsOpen && "text-primary bg-primary/10")}>
             <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => { setIsSidebarOpen(!isSidebarOpen); setSidebarTab('comments'); }} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-full bg-white/5", (isSidebarOpen && sidebarTab === 'comments') && "text-primary bg-primary/10")}>
-            <MessageSquare className="h-4 w-4" />
           </Button>
           <Button onClick={() => { setIsSidebarOpen(!isSidebarOpen); setSidebarTab('ai'); }} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-full bg-white/5", (isSidebarOpen && sidebarTab === 'ai') && "text-primary bg-primary/10")}>
             <BrainCircuit className="h-4 w-4" />
@@ -215,10 +191,10 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                 {/* Panel Augmented Actions */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute top-6 right-6 flex flex-col gap-2">
-                    <Button onClick={() => handlePanelTranslate(index)} size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-primary hover:text-black">
+                    <Button size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-primary hover:text-black">
                       <Languages className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => toast({ title: "Glossaire", description: "Ce motif Kente symbolise la sagesse." })} size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-emerald-500 hover:text-black">
+                    <Button size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-emerald-500 hover:text-black">
                       <Info className="h-4 w-4" />
                     </Button>
                   </div>
@@ -237,6 +213,19 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
             </div>
           </div>
         </main>
+
+        {/* AUDIO CONTROLS (ONLY IN AUDIO MODE) */}
+        {isAudioMode && (
+          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-black/80 backdrop-blur-xl border border-primary/20 rounded-full p-2 flex items-center gap-4 px-6 shadow-2xl">
+              <Music className="h-4 w-4 text-primary animate-pulse" />
+              <p className="text-[10px] font-black uppercase text-stone-300 tracking-widest whitespace-nowrap">Audio Dramatisé : Chap. {chapter.chapterNumber}</p>
+              <Button onClick={() => setIsMuted(!isMuted)} variant="ghost" size="icon" className="text-primary hover:bg-primary/10 rounded-full h-8 w-8">
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* SETTINGS SIDEBAR */}
         <aside className={cn(
@@ -265,7 +254,7 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </aside>
 
-        {/* COMMUNITY & AI SIDEBAR */}
+        {/* AI SIDEBAR */}
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
           isSidebarOpen ? "translate-x-0" : "translate-x-full"
@@ -273,16 +262,8 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div className="flex gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
               <Button 
-                onClick={() => setSidebarTab('comments')} 
-                variant={sidebarTab === 'comments' ? 'default' : 'ghost'} 
-                size="sm" 
-                className="rounded-lg text-[10px] font-black uppercase tracking-widest h-8"
-              >
-                Avis
-              </Button>
-              <Button 
                 onClick={() => setSidebarTab('ai')} 
-                variant={sidebarTab === 'ai' ? 'default' : 'ghost'} 
+                variant="default"
                 size="sm" 
                 className="rounded-lg text-[10px] font-black uppercase tracking-widest h-8"
               >
@@ -293,73 +274,19 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
 
           <div className="flex-1 overflow-y-auto h-[calc(100%-60px)]">
-            {sidebarTab === 'comments' ? (
-              <div className="p-8 space-y-8">
-                <div className="bg-stone-900 p-8 rounded-[2.5rem] border border-white/5 text-center">
-                  <AlertCircle className="h-12 w-12 text-stone-700 mx-auto mb-4" />
-                  <p className="text-stone-400 font-light italic text-sm">Les discussions arrivent bientôt. Les spoilers seront automatiquement filtrés par notre IA.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full">
-                <ScrollArea className="flex-1 p-6">
-                  <div className="space-y-6">
-                    <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex gap-3">
-                      <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
-                      <p className="text-xs text-stone-300 leading-relaxed italic">"Je suis votre Assistant Lore. Posez-moi vos questions sur les personnages, la mythologie ou les chapitres précédents de **{story.title}**."</p>
-                    </div>
-                    {chatHistory.map((msg, i) => (
-                      <div key={i} className={cn("flex flex-col gap-1 max-w-[85%]", msg.role === 'user' ? "ml-auto items-end" : "items-start")}>
-                        <div className={cn("p-4 rounded-2xl text-sm", msg.role === 'user' ? "bg-primary text-black font-medium rounded-tr-none" : "bg-white/5 border border-white/10 rounded-tl-none")}>
-                          {msg.text}
-                        </div>
-                      </div>
-                    ))}
-                    {chatLoading && <div className="flex gap-2 items-center text-stone-500 text-[10px] font-black uppercase animate-pulse"><Sparkles className="h-3 w-3" /> L'IA explore les archives...</div>}
-                  </div>
-                </ScrollArea>
-                <div className="p-6 bg-black/40 border-t border-white/5">
-                  <div className="flex gap-2">
-                    <Input 
-                      value={chatQuestion}
-                      onChange={(e) => setChatQuery(e.target.value)}
-                      placeholder="Posez votre question sur l'œuvre..." 
-                      className="bg-white/5 border-white/10 rounded-xl h-11 text-sm"
-                      onKeyDown={(e) => e.key === 'Enter' && handleAiChat()}
-                    />
-                    <Button onClick={handleAiChat} disabled={chatLoading || !chatQuestion.trim()} size="icon" className="h-11 w-11 rounded-xl bg-primary text-black"><Sparkles className="h-4 w-4" /></Button>
+            <div className="flex flex-col h-full">
+              <ScrollArea className="flex-1 p-6">
+                <div className="space-y-6">
+                  <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex gap-3">
+                    <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+                    <p className="text-xs text-stone-300 leading-relaxed italic">"Je suis votre Assistant Lore. Posez-moi vos questions sur les personnages ou la mythologie."</p>
                   </div>
                 </div>
-              </div>
-            )}
+              </ScrollArea>
+            </div>
           </div>
         </aside>
       </div>
-
-      {/* CATCH UP SUMMARY DIALOG */}
-      <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
-        <DialogContent className="max-w-[400px] bg-stone-950 border-primary/20 shadow-2xl rounded-[2.5rem] p-0 overflow-hidden">
-          <div className="h-1 w-full bg-emerald-500" />
-          <div className="p-8 space-y-6">
-            <DialogHeader className="space-y-4">
-              <div className="bg-emerald-500/10 p-3 rounded-2xl w-fit"><History className="h-6 w-6 text-emerald-500" /></div>
-              <DialogTitle className="text-2xl font-display font-black text-white">Résumé de Rattrapage</DialogTitle>
-              <DialogDescription className="text-stone-400 italic">"On vous remet dans le bain en quelques secondes."</DialogDescription>
-            </DialogHeader>
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 min-h-[150px] flex items-center justify-center">
-              {summaryLoading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[10px] uppercase font-black text-emerald-500 tracking-widest">Génération du résumé...</p>
-                </div>
-              ) : (
-                <p className="text-sm text-stone-200 leading-relaxed font-light italic">"{aiSummary || "Prêt à générer votre résumé sur mesure."}"</p>
-              )}
-            </div>
-            <Button onClick={() => setIsSummaryOpen(false)} className="w-full h-12 rounded-xl bg-emerald-500 text-black font-black">Continuer la lecture</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <RewardedAdModal 
         isOpen={isAdModalOpen} 

@@ -3,7 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Trophy, Target, Users, Zap, Calendar, Award, Banknote, ShieldCheck, ArrowRight, Sparkles, Star, Globe, Building2, Handshake, Film, Gavel } from 'lucide-react';
+import { 
+  Trophy, Target, Users, Zap, Calendar, Award, 
+  Banknote, ShieldCheck, ArrowRight, Sparkles, Star, 
+  Globe, Building2, Handshake, Film, Gavel, Mic2, 
+  PlayCircle, Clapperboard
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -17,10 +22,10 @@ export default function OriginalsCompetitionPage() {
     sponsor: "Flutterwave"
   };
 
-  const upcomingThemes = [
-    { title: "Mythologies Africaines", date: "Septembre 2026", icon: Sparkles, color: "text-amber-500 bg-amber-500/10" },
-    { title: "Héroïnes du Quotidien", date: "Décembre 2026", icon: Star, color: "text-rose-500 bg-rose-500/10" },
-    { title: "Cyberpunk Lagos", date: "Mars 2027", icon: Zap, color: "text-cyan-500 bg-cyan-500/10" }
+  const studioSeries = [
+    { title: "Les Veilleurs d'Akoma", studio: "NexusHub Studios", type: "Original", icon: Film },
+    { title: "Néo-Dakar 2088", studio: "Nexus x Kugali", type: "Co-production", icon: Handshake },
+    { title: "L'Éveil du Shango", studio: "Nexus x Studio Tam", type: "Animation Pilot", icon: Clapperboard },
   ];
 
   return (
@@ -39,26 +44,57 @@ export default function OriginalsCompetitionPage() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-display font-black text-white leading-tight tracking-tighter gold-resplendant">
-            Entrez dans la <br/> Légende Originals
+            NexusHub Studios <br/> & Productions
           </h1>
           
           <p className="text-xl text-stone-300 max-w-3xl mx-auto font-light italic leading-relaxed">
-            "Le concours trimestriel qui transforme les créateurs en icônes. Gagnez gros et bénéficiez d'une agence IP dédiée pour vos droits d'adaptation."
+            "Nous ne nous contentons pas d'héberger des histoires. Nous les produisons. Découvrez nos séries Originales et nos adaptations en animation."
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
             <Button asChild size="lg" className="h-14 px-10 rounded-full font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
-              <Link href="/submit">Participer au Concours</Link>
+              <Link href="/submit">Postuler au Studio</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-14 px-10 rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md">
-              <Link href="#rules">Consulter le Règlement</Link>
+              <Link href="#productions">Voir nos Co-productions</Link>
             </Button>
           </div>
         </div>
       </section>
 
+      {/* NEXUSHUB STUDIOS WALL */}
+      <section id="productions" className="py-20 container max-w-7xl mx-auto px-6">
+        <div className="flex items-center gap-3 mb-12">
+          <div className="bg-primary/10 p-2 rounded-lg"><Clapperboard className="h-6 w-6 text-primary" /></div>
+          <h2 className="text-3xl font-display font-black uppercase tracking-tighter">En Production</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {studioSeries.map((s, i) => (
+            <Card key={i} className="bg-stone-900 border-white/5 rounded-[2rem] overflow-hidden group hover:border-primary/30 transition-all duration-500">
+              <div className="relative h-48 overflow-hidden">
+                <Image src={`https://picsum.photos/seed/studio${i}/600/400`} alt={s.title} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent" />
+                <Badge className="absolute top-4 left-4 bg-primary text-black font-black text-[8px] uppercase tracking-widest">{s.type}</Badge>
+              </div>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/5 p-2 rounded-xl"><s.icon className="h-4 w-4 text-primary" /></div>
+                  <div>
+                    <h4 className="font-bold text-white text-lg leading-tight">{s.title}</h4>
+                    <p className="text-stone-500 text-xs font-medium">{s.studio}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" className="w-full text-xs font-black uppercase tracking-widest gap-2 hover:bg-white/5 text-primary">
+                  Voir le Trailer <PlayCircle className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       {/* CURRENT COMPETITION */}
-      <section className="py-20 container max-w-7xl mx-auto px-6">
+      <section className="py-20 container max-w-7xl mx-auto px-6 border-t border-white/5">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
@@ -68,7 +104,7 @@ export default function OriginalsCompetitionPage() {
                     <Handshake className="h-3 w-3" /> Propulsé par {currentContest.sponsor}
                 </Badge>
               </div>
-              <h2 className="text-4xl font-display font-bold">Thème Actuel : <span className="text-primary">{currentContest.title}</span></h2>
+              <h2 className="text-4xl font-display font-bold">Le Concours : <span className="text-primary">{currentContest.title}</span></h2>
               <p className="text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/20 pl-6">
                 {currentContest.theme}
               </p>
@@ -88,15 +124,6 @@ export default function OriginalsCompetitionPage() {
                     <Trophy className="h-20 w-20" />
                 </div>
               </div>
-            </div>
-
-            {/* IP Licensing Highlight */}
-            <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="bg-emerald-500/20 p-2 rounded-lg"><Gavel className="h-5 w-5 text-emerald-500" /></div>
-                    <h4 className="font-black text-emerald-500 uppercase tracking-widest text-xs">Gestion IP & Licences</h4>
-                </div>
-                <p className="text-sm text-stone-400 italic">"Les gagnants Originals rejoignent automatiquement le catalogue **NexusHub Agency**. Nous négocions pour vous les droits d'adaptation avec les studios d'animation et plateformes de streaming mondiales."</p>
             </div>
           </div>
 
@@ -118,14 +145,14 @@ export default function OriginalsCompetitionPage() {
       </section>
 
       {/* CALL TO ACTION */}
-      <section className="py-24 text-center px-6">
+      <section className="py-24 text-center px-6 bg-primary/5">
         <div className="max-w-2xl mx-auto space-y-8">
             <div className="mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center animate-bounce">
                 <Award className="h-12 w-12 text-primary" />
             </div>
-            <h2 className="text-4xl font-display font-black">Prêt à changer votre destin ?</h2>
+            <h2 className="text-4xl font-display font-black">Prêt à entrer dans l'histoire ?</h2>
             <p className="text-lg text-muted-foreground italic">"Chaque grand artiste a commencé par oser franchir le pas. Votre univers peut devenir la prochaine grande franchise africaine."</p>
-            <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20">
+            <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 gold-shimmer bg-primary text-black">
                 <Link href="/submit">Soumettre mon Projet</Link>
             </Button>
         </div>

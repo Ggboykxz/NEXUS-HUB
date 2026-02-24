@@ -1,7 +1,7 @@
 {
   "name": "NexusHub",
   "short_name": "NexusHub",
-  "description": "Plateforme de narration visuelle panafricaine.",
+  "description": "Le hub créatif de la narration visuelle africaine.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
@@ -10,12 +10,14 @@
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

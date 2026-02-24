@@ -1,7 +1,7 @@
 /**
- * Ce fichier est neutralisé pour éviter les conflits avec src/app/(app)/webtoon-hub/page.tsx.
- * Le groupe de route (app) gère désormais le hub webtoon.
+ * Ce fichier est neutralisé pour éviter les conflits de parallélisme Next.js.
+ * Le listing des webtoons est géré par src/app/(app)/webtoon-hub/page.tsx.
  */
-export default function WebtoonHubRedirect() {
+export default function Page() {
   return null;
 }

@@ -1,7 +1,7 @@
 /**
- * Ce fichier est neutralisé pour éviter les conflits avec src/app/(app)/page.tsx.
- * Le groupe de route (app) gère désormais la page d'accueil avec le Header et le Footer.
+ * Ce fichier est neutralisé pour éviter les conflits de parallélisme Next.js.
+ * La page d'accueil est gérée par src/app/(app)/page.tsx.
  */
-export default function RootPageRedirect() {
+export default function Page() {
   return null;
 }
