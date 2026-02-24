@@ -6,7 +6,7 @@ import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Volume2, Database, BatteryMedium, SlidersHorizontal, X, Sparkles, Flame, AlertCircle, Headphones, ZoomIn, Maximize2
+  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Volume2, Database, BatteryMedium, SlidersHorizontal, X, Sparkles, Flame, AlertCircle, Headphones, ZoomIn, Maximize2, Coins
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { useTranslation } from '@/components/providers/language-provider';
+import { SponsoredPanel } from '@/components/ads/sponsored-panel';
+import { RewardedAdModal } from '@/components/ads/rewarded-ad-modal';
 
 export default function MagicalReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
@@ -37,11 +39,13 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   const [progress, setProgress] = useState(0);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isPro, setIsPro] = useState(false);
   
   const [isLowData, setIsLowData] = useState(false);
   const [isBatterySaver, setIsBatterySaver] = useState(false);
   const [isEyeProtection, setIsEyeProtection] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [zoomLevel, setZoomIn] = useState(1);
   
   const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
@@ -51,7 +55,17 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        // Simulation check pro
+        const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', user.uid)));
+        if (!userDoc.empty) {
+          const role = userDoc.docs[0].data().role;
+          setIsPro(role === 'artist_pro' || role === 'artist_elite');
+        }
+      }
+    });
     return () => unsubscribe();
   }, []);
 
@@ -116,13 +130,12 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     toast({ title: `Réaction ${emoji} envoyée !` });
   };
 
-  const topMoments = useMemo(() => {
-    const scores = Object.entries(panelReactions).map(([idx, reacts]) => ({
-      idx: parseInt(idx),
-      score: Object.values(reacts).reduce((a, b) => a + b, 0)
-    }));
-    return scores.sort((a, b) => b.score - a.score).slice(0, 3).map(s => s.idx);
-  }, [panelReactions]);
+  const handleAdReward = () => {
+    if (currentUser) {
+      const userRef = doc(db, 'users', currentUser.uid);
+      setDoc(userRef, { afriCoins: increment(1) }, { merge: true });
+    }
+  };
 
   return (
     <div className={cn(
@@ -149,9 +162,11 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white/5 hidden md:flex">
-            <Headphones className="h-4 w-4" />
-          </Button>
+          {!isPro && (
+            <Button onClick={() => setIsAdModalOpen(true)} variant="ghost" size="sm" className="h-8 rounded-full bg-primary/10 text-primary border border-primary/20 gap-2 text-[10px] font-black uppercase hidden sm:flex">
+              <Coins className="h-3 w-3" /> Gagner 1 🪙
+            </Button>
+          )}
           <Button onClick={() => setIsSettingsOpen(!isSettingsOpen)} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isSettingsOpen && "text-primary bg-primary/10")}>
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
@@ -188,12 +203,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                 />
                 
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {topMoments.includes(index) && !isBatterySaver && (
-                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-primary text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl animate-pulse">
-                      <Flame className="h-3 w-3 fill-current" /> Top Moment
-                    </div>
-                  )}
-
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/60 backdrop-blur-xl border border-white/10 p-1 rounded-full shadow-2xl">
                     {['🔥', '❤️', '😱', '✨'].map(emoji => (
                       <button
@@ -209,6 +218,9 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
               </div>
             ))}
             
+            {/* SPONSORED PANEL - RESPECTFUL AD */}
+            {!isPro && (progress > 95 || progress < 5) && <SponsoredPanel />}
+
             <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
               <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
                 <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
@@ -287,7 +299,7 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
 
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
-          isCommentsOpen ? "translate-x-0" : "translate-x-full"
+          isCommentsOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <h3 className="text-lg font-display font-black text-white flex items-center gap-2">
@@ -308,6 +320,12 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </aside>
       </div>
+
+      <RewardedAdModal 
+        isOpen={isAdModalOpen} 
+        onClose={() => setIsAdModalOpen(false)} 
+        onReward={handleAdReward} 
+      />
     </div>
   );
 }

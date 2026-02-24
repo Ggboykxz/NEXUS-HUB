@@ -1,20 +1,20 @@
-
 'use client';
 
 import { products } from '@/lib/data';
 import { ProductCard } from '@/components/product-card';
-import { Store, ShoppingBag, Shirt, Palette, Sparkles, Filter } from 'lucide-react';
+import { Store, ShoppingBag, Shirt, Palette, Sparkles, Filter, Download, Zap, PackageOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default function ShopPage() {
-  const [activeCategory, setActiveCategory] = useState<'Tous' | 'Vêtements' | 'Accessoires' | 'Art'>('Tous');
+  const [activeCategory, setActiveCategory] = useState<'Tous' | 'Vêtements' | 'E-books' | 'Art'>('Tous');
 
   const categories = [
     { name: 'Tous', icon: Store },
     { name: 'Vêtements', icon: Shirt },
-    { name: 'Accessoires', icon: ShoppingBag },
+    { name: 'E-books', icon: Download },
     { name: 'Art', icon: Palette }
   ];
 
@@ -24,20 +24,41 @@ export default function ShopPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="bg-primary/10 p-3 rounded-2xl">
-                <Store className="w-10 h-10 text-primary" />
+      {/* 1. HERO BOUTIQUE 2.0 */}
+      <header className="mb-16 relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+          <div className="space-y-6 text-center lg:text-left flex-1">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
+              <PackageOpen className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Merchandising & IP</span>
             </div>
-            <div>
-                <h1 className="text-4xl font-bold font-display">Hub Goodies</h1>
-                <p className="text-lg text-muted-foreground mt-1">
-                    Portez vos histoires préférées. Merchandising officiel NexusHub.
-                </p>
+            <h1 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
+              Portez vos <br/><span className="gold-resplendant">Légendes</span>
+            </h1>
+            <p className="text-lg text-stone-400 font-light italic max-w-xl">
+              "Soutenez vos artistes en achetant des produits dérivés officiels. Impression à la demande via Printful, expédition mondiale sans stock."
+            </p>
+            <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
+              <Button size="lg" className="rounded-full px-8 font-black bg-primary text-black gold-shimmer">Explorer les E-books</Button>
+              <Button variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md">Vendre mon Merch</Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-primary">100%</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Sans Stock</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-emerald-500">Global</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Livraison</p>
             </div>
           </div>
         </div>
+      </header>
+
+      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
         <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50">
             {categories.map((cat) => (
                 <button
@@ -66,6 +87,11 @@ export default function ShopPage() {
                     {product.universe}
                 </Badge>
             )}
+            {product.isCollectible && (
+                <Badge className="absolute top-4 right-4 bg-amber-500 text-black border-none text-[8px] font-black uppercase tracking-tighter px-2">
+                    <Zap className="h-3 w-3 mr-1 inline fill-current" /> Édition Collectionneur
+                </Badge>
+            )}
           </div>
         ))}
       </div>
@@ -77,19 +103,35 @@ export default function ShopPage() {
           </div>
       )}
 
-      <section className="mt-24 p-12 rounded-3xl bg-primary/5 border border-primary/10 relative overflow-hidden">
+      {/* VISION IP SECTION */}
+      <section className="mt-24 p-12 rounded-[3rem] bg-stone-900 text-white relative overflow-hidden border border-white/5">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-          <div className="max-w-2xl relative z-10">
-              <h2 className="text-3xl font-bold font-display mb-4 flex items-center gap-3">
-                  <Shirt className="text-primary h-8 w-8" /> Impression à la demande
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                  En partenariat avec <strong>Printful</strong>, nous expédions vos goodies partout dans le monde. Chaque achat soutient directement l'artiste créateur de l'univers.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                  <Badge variant="outline" className="border-primary/20 px-4 py-1.5 uppercase font-bold tracking-widest text-[10px]">Livraison Mondiale</Badge>
-                  <Badge variant="outline" className="border-primary/20 px-4 py-1.5 uppercase font-bold tracking-widest text-[10px]">Support Artistes</Badge>
-                  <Badge variant="outline" className="border-primary/20 px-4 py-1.5 uppercase font-bold tracking-widest text-[10px]">Eco-Friendly</Badge>
+          <div className="relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                  <div className="space-y-4">
+                      <h2 className="text-4xl font-display font-black gold-resplendant leading-tight">Valorisez votre <br/> Propriété Intellectuelle</h2>
+                      <p className="text-stone-400 text-lg font-light leading-relaxed italic">
+                          "NexusHub n'est pas qu'une plateforme de lecture. Nous sommes l'agent de votre talent. De l'impression à la demande aux droits d'adaptation cinématographique, nous bâtissons l'empire de votre univers."
+                      </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                          <div className="bg-white/5 p-2 rounded-lg w-fit"><Shirt className="h-5 w-5 text-primary" /></div>
+                          <h4 className="font-bold text-sm">Zéro Stock</h4>
+                          <p className="text-[10px] text-stone-500 leading-snug">Vendez vos T-shirts via Printful sans avancer de fonds.</p>
+                      </div>
+                      <div className="space-y-2">
+                          <div className="bg-white/5 p-2 rounded-lg w-fit"><Download className="h-5 w-5 text-emerald-500" /></div>
+                          <h4 className="font-bold text-sm">E-books Premium</h4>
+                          <p className="text-[10px] text-stone-500 leading-snug">Vendez vos séries terminées en format haute définition.</p>
+                      </div>
+                  </div>
+              </div>
+              <div className="relative aspect-video rounded-[2rem] overflow-hidden border-8 border-white/5 shadow-2xl">
+                  <Image src="https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg" alt="Licensing IP" fill className="object-cover opacity-60" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <Badge className="bg-primary text-black font-black uppercase text-xs px-6 py-2 shadow-2xl">NexusHub Agency</Badge>
+                  </div>
               </div>
           </div>
       </section>

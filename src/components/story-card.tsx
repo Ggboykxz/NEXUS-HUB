@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -6,7 +5,7 @@ import Link from 'next/link';
 import type { Story, UserProfile, Playlist } from '@/lib/types';
 import { getStoryUrl, getChapterUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Flame, Clock, CalendarDays, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { differenceInDays, formatDistanceToNow } from 'date-fns';
@@ -70,7 +69,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
       const fetchPlaylists = async () => {
         const q = query(collection(db, 'playlists'), where('ownerId', '==', auth.currentUser?.uid));
         const snap = await getDocs(q);
-        setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() } as Playlist)));
+        setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
       };
       fetchPlaylists();
     }
@@ -100,7 +99,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
   };
 
   const storyUrl = getStoryUrl(story);
-  const hasChapters = story.chapterCount > 0;
+  const hasChapters = (story.chapterCount || 0) > 0;
   const firstChapterUrl = story.chapters?.[0] ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
   const optimizedCoverUrl = getCoverThumbnail(story.coverImage.imageUrl);
@@ -121,16 +120,23 @@ export function StoryCard({ story, className }: StoryCardProps) {
         </Link>
         
         <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
-            {artistInfo?.role?.includes('pro') ? (
-                <Badge variant="default" className="gap-1 px-1 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
-                    <Award className="h-2 w-2" />
-                    Pro
+            {story.sponsoredBy ? (
+                <Badge className="gap-1 px-1.5 py-0.5 bg-black/60 text-emerald-400 backdrop-blur-md border-emerald-500/30 shadow-lg text-[7px] uppercase font-black tracking-widest">
+                    <Handshake className="h-2 w-2" />
+                    Par {story.sponsoredBy.name}
                 </Badge>
             ) : (
-                <Badge variant="outline" className="gap-1 px-1 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[7px] uppercase font-bold tracking-wider">
-                    <PenSquare className="h-2 w-2" />
-                    Draft
-                </Badge>
+                artistInfo?.role?.includes('pro') ? (
+                    <Badge variant="default" className="gap-1 px-1 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
+                        <Award className="h-2 w-2" />
+                        Pro
+                    </Badge>
+                ) : (
+                    <Badge variant="outline" className="gap-1 px-1 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[7px] uppercase font-bold tracking-wider">
+                        <PenSquare className="h-2 w-2" />
+                        Draft
+                    </Badge>
+                )
             )}
             
             {isHotAfro && (
@@ -178,8 +184,8 @@ export function StoryCard({ story, className }: StoryCardProps) {
                                 <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {userPlaylists.length > 0 ? userPlaylists.map(p => (
-                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, p.title)}>
-                                        {p.title}
+                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, (p as any).title || (p as any).name)}>
+                                        {(p as any).title || (p as any).name}
                                     </DropdownMenuItem>
                                 )) : (
                                   <DropdownMenuItem disabled className="text-[10px]">Aucune playlist</DropdownMenuItem>

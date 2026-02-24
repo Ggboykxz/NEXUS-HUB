@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 3.1.0
+ * @version 3.2.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -35,6 +35,13 @@ export type UserRole = 'reader' | 'artist_draft' | 'artist_pro' | 'artist_elite'
 export type ArtistLevel = 'emergent' | 'draft' | 'pro' | 'elite';
 export type Language = 'fr' | 'en' | 'sw' | 'ha' | 'am' | 'ar' | 'yo' | 'ig' | 'zu';
 
+export interface BrandSponsor {
+  name: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  description?: string;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  COLLECTION : users/{uid}
 // ═══════════════════════════════════════════════════════════════════════════
@@ -51,7 +58,7 @@ export interface UserProfile {
   links?: SocialLinks;
   afriCoins: number;
   subscribersCount: number;
-  followedCount: number; // Nouveauté : nombre de personnes suivies
+  followedCount: number; 
   isCertified?: boolean; 
   
   revenueShare: number; 
@@ -112,22 +119,6 @@ export interface LibraryEntry {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  COLLECTION : cercles/{cercleId}
-// ═══════════════════════════════════════════════════════════════════════════
-
-export interface ReadingCercle {
-  id: string;
-  name: string;
-  description: string;
-  ownerId: string;
-  members: string[];
-  currentStoryId?: string;
-  currentChapterId?: string;
-  createdAt: Timestamp | string;
-  isPrivate: boolean;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 //  COLLECTION : stories/{storyId}
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -152,6 +143,7 @@ export interface Story {
   region?: string;
   updatedAt: Timestamp | string;
   chapters?: Chapter[];
+  sponsoredBy?: BrandSponsor; // Nouveauté : Partenariat de marque
 }
 
 export interface Chapter {

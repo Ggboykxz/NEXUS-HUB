@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Trophy, Target, Users, Zap, Calendar, Award, Banknote, ShieldCheck, ArrowRight, Sparkles, Star, Globe } from 'lucide-react';
+import { Trophy, Target, Users, Zap, Calendar, Award, Banknote, ShieldCheck, ArrowRight, Sparkles, Star, Globe, Building2, Handshake, Film, Gavel } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -14,7 +13,8 @@ export default function OriginalsCompetitionPage() {
     theme: "Imaginez l'Afrique du prochain siècle : technologie, écologie et traditions fusionnées.",
     deadline: "30 Juin 2026",
     prize: "5 000€ + 50 000 🪙",
-    status: "Inscriptions Ouvertes"
+    status: "Inscriptions Ouvertes",
+    sponsor: "Flutterwave"
   };
 
   const upcomingThemes = [
@@ -43,7 +43,7 @@ export default function OriginalsCompetitionPage() {
           </h1>
           
           <p className="text-xl text-stone-300 max-w-3xl mx-auto font-light italic leading-relaxed">
-            "Le concours trimestriel qui transforme les créateurs en icônes. Gagnez en visibilité, remportez des prix prestigieux et rejoignez l'élite de la narration africaine."
+            "Le concours trimestriel qui transforme les créateurs en icônes. Gagnez gros et bénéficiez d'une agence IP dédiée pour vos droits d'adaptation."
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
@@ -62,7 +62,12 @@ export default function OriginalsCompetitionPage() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <Badge className="bg-emerald-500 text-white border-none uppercase tracking-widest px-3 py-1">{currentContest.status}</Badge>
+              <div className="flex items-center gap-3">
+                <Badge className="bg-emerald-500 text-white border-none uppercase tracking-widest px-3 py-1">{currentContest.status}</Badge>
+                <Badge variant="outline" className="border-primary/20 text-primary gap-2 flex items-center h-7 font-black text-[9px] uppercase">
+                    <Handshake className="h-3 w-3" /> Propulsé par {currentContest.sponsor}
+                </Badge>
+              </div>
               <h2 className="text-4xl font-display font-bold">Thème Actuel : <span className="text-primary">{currentContest.title}</span></h2>
               <p className="text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/20 pl-6">
                 {currentContest.theme}
@@ -85,11 +90,14 @@ export default function OriginalsCompetitionPage() {
               </div>
             </div>
 
-            <Button asChild variant="link" className="p-0 h-auto text-primary font-bold group">
-                <Link href="/blog/guide-originals" className="flex items-center gap-2">
-                    Comment gagner ? Lire notre guide <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-            </Button>
+            {/* IP Licensing Highlight */}
+            <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="bg-emerald-500/20 p-2 rounded-lg"><Gavel className="h-5 w-5 text-emerald-500" /></div>
+                    <h4 className="font-black text-emerald-500 uppercase tracking-widest text-xs">Gestion IP & Licences</h4>
+                </div>
+                <p className="text-sm text-stone-400 italic">"Les gagnants Originals rejoignent automatiquement le catalogue **NexusHub Agency**. Nous négocions pour vous les droits d'adaptation avec les studios d'animation et plateformes de streaming mondiales."</p>
+            </div>
           </div>
 
           <div className="relative aspect-square rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl">
@@ -100,95 +108,12 @@ export default function OriginalsCompetitionPage() {
                 className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-10">
-                <p className="text-white font-display text-2xl font-bold">"L'avenir s'écrit maintenant."</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRIZES & JURY */}
-      <section className="py-24 bg-stone-950 text-white">
-        <div className="container max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl font-display font-black tracking-tight">Le Prestige NexusHub</h2>
-            <p className="text-stone-400 max-w-2xl mx-auto font-light">Une dotation hybride conçue pour soutenir votre carrière d'artiste professionnel.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-white/5 border-white/10 hover:border-primary/30 transition-all group p-8 rounded-[2.5rem]">
-              <div className="bg-primary/20 p-4 rounded-2xl w-fit mb-6 group-hover:scale-110 transition-transform">
-                <Banknote className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle className="text-white text-2xl mb-4">Cash & Mobile Money</CardTitle>
-              <CardContent className="p-0 text-stone-400 text-sm leading-relaxed">
-                Les prix cash sont versés en USD/EUR par transfert bancaire ou Mobile Money (Orange Money, Wave, MTN), garantissant une accessibilité immédiate.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/5 border-white/10 hover:border-emerald-500/30 transition-all group p-8 rounded-[2.5rem]">
-              <div className="bg-emerald-500/20 p-4 rounded-2xl w-fit mb-6 group-hover:scale-110 transition-transform">
-                <Users className="h-8 w-8 text-emerald-500" />
-              </div>
-              <CardTitle className="text-white text-2xl mb-4">Jury International</CardTitle>
-              <CardContent className="p-0 text-stone-400 text-sm leading-relaxed">
-                Un panel d'éditeurs africains et internationaux (France, USA, Corée) analyse vos œuvres pour détecter les futurs blockbusters mondiaux.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/5 border-white/10 hover:border-amber-500/30 transition-all group p-8 rounded-[2.5rem]">
-              <div className="bg-amber-500/20 p-4 rounded-2xl w-fit mb-6 group-hover:scale-110 transition-transform">
-                <Globe className="h-8 w-8 text-amber-500" />
-              </div>
-              <CardTitle className="text-white text-2xl mb-4">Promotion Maximale</CardTitle>
-              <CardContent className="p-0 text-stone-400 text-sm leading-relaxed">
-                Le gagnant intègre la sélection "Originals" : campagne marketing dédiée, traduction prioritaire et mise en avant permanente sur le Hub.
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* UPCOMING THEMES */}
-      <section className="py-24 container max-w-7xl mx-auto px-6">
-        <h3 className="text-2xl font-display font-bold mb-12 flex items-center gap-3">
-            <Zap className="text-primary h-6 w-6" /> Calendrier de la Saison
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {upcomingThemes.map((theme, i) => (
-                <div key={i} className="flex items-center gap-5 p-6 bg-muted/30 rounded-3xl border border-border/50 group hover:bg-muted/50 transition-all">
-                    <div className={cn("p-4 rounded-2xl shrink-0 transition-transform group-hover:scale-110", theme.color)}>
-                        <theme.icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{theme.date}</p>
-                        <h4 className="text-xl font-bold font-display">{theme.title}</h4>
-                    </div>
-                </div>
-            ))}
-        </div>
-      </section>
-
-      {/* RULES & LEGAL */}
-      <section id="rules" className="py-20 bg-primary/5 border-y border-primary/10">
-        <div className="container max-w-4xl mx-auto px-6">
-            <div className="flex items-center gap-4 mb-8">
-                <ShieldCheck className="h-10 w-10 text-primary" />
-                <h2 className="text-3xl font-bold font-display">Éthique & Propriété</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-10">
-                <div className="space-y-4">
-                    <h4 className="font-bold text-lg">Vos Droits sont Sacrés</h4>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                        L'artiste conserve 100% de la propriété intellectuelle de son œuvre. NexusHub obtient uniquement une licence de diffusion exclusive de 2 ans pour les œuvres gagnantes.
-                    </p>
-                </div>
-                <div className="space-y-4">
-                    <h4 className="font-bold text-lg">Inclusion & Équité</h4>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                        La compétition est ouverte à tous les pays d'Afrique. Le jury s'engage à respecter les sensibilités culturelles et à encourager l'originalité pure.
-                    </p>
+                <div className="space-y-2">
+                    <Badge className="bg-rose-600 text-white border-none text-[8px] font-black uppercase">Futur Adapté</Badge>
+                    <p className="text-white font-display text-2xl font-bold">"L'avenir s'écrit maintenant."</p>
                 </div>
             </div>
+          </div>
         </div>
       </section>
 
@@ -199,7 +124,7 @@ export default function OriginalsCompetitionPage() {
                 <Award className="h-12 w-12 text-primary" />
             </div>
             <h2 className="text-4xl font-display font-black">Prêt à changer votre destin ?</h2>
-            <p className="text-lg text-muted-foreground italic">"Chaque grand artiste a commencé par oser franchir le pas."</p>
+            <p className="text-lg text-muted-foreground italic">"Chaque grand artiste a commencé par oser franchir le pas. Votre univers peut devenir la prochaine grande franchise africaine."</p>
             <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20">
                 <Link href="/submit">Soumettre mon Projet</Link>
             </Button>
