@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
-import { stories, comicPages, comments as allComments, artists, type Chapter, getChapterUrl } from '@/lib/data';
+import { stories, comicPages, comments as allComments, artists, getChapterUrl } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -26,13 +26,14 @@ import {
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import type { StoryFull, ChapterContent } from '@/lib/types';
+import type { Story, Chapter } from '@/lib/types';
+import { getOptimizedImage } from '@/lib/image-utils';
 
-// #region Types
+// #region Components
 
 interface ReaderHeaderProps {
-  story: StoryFull;
-  chapter: ChapterContent;
+  story: Story;
+  chapter: Chapter;
   onModeChange: (mode: 'scroll' | 'pages') => void;
   activeMode: string;
   onBookmark: () => void;
@@ -41,22 +42,8 @@ interface ReaderHeaderProps {
   onChapterChange: (slug: string) => void;
 }
 
-interface ReaderFooterProps {
-  story: StoryFull;
-  isLiked: boolean;
-  onLike: () => void;
-  commentsCount: number;
-  onShare: () => void;
-  onToggleComments: () => void;
-  isCommentsOpen: boolean;
-}
-
-// #endregion
-
-// #region Components
-
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: ReaderHeaderProps) {
-  const chapterNumber = story.chapters.findIndex((c) => c.slug === chapter.slug) + 1;
+  const chapterNumber = story.chapters?.findIndex((c) => c.slug === chapter.slug) + 1 || 1;
 
   return (
     <nav className="fixed top-14 left-0 right-0 h-11 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl transition-all">
@@ -82,7 +69,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {story.chapters.map((chap, idx) => (
+            {story.chapters?.map((chap, idx) => (
               <SelectItem key={chap.id} value={chap.slug} className="text-[10px]">
                 Chapitre {idx + 1} : {chap.title}
               </SelectItem>
@@ -108,6 +95,16 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
       </div>
     </nav>
   );
+}
+
+interface ReaderFooterProps {
+  story: Story;
+  isLiked: boolean;
+  onLike: () => void;
+  commentsCount: number;
+  onShare: () => void;
+  onToggleComments: () => void;
+  isCommentsOpen: boolean;
 }
 
 function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen }: ReaderFooterProps) {
@@ -159,26 +156,6 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
     return () => unsubscribe();
   }, []);
 
-  const processComment = (text: string) => {
-    const keywords = ["spoiler", "mort", "fin", "trahison", "révélation"];
-    let containsSensitive = false;
-    keywords.forEach(word => {
-      if (text.toLowerCase().includes(word)) containsSensitive = true;
-    });
-
-    if (containsSensitive) {
-      return (
-        <details className="group/spoiler cursor-pointer">
-          <summary className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 flex items-center gap-2 list-none">
-            <Flame className="h-3 w-3" /> Spoiler potentiel : Cliquer pour voir
-          </summary>
-          <p className="pl-4 border-l-2 border-primary/20 py-1 transition-all">{text}</p>
-        </details>
-      );
-    }
-    return <p>{text}</p>;
-  };
-
   const handlePostComment = () => {
     if (!currentUser) {
       openAuthModal('poster votre commentaire');
@@ -216,7 +193,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
                     <span className="text-[9px] text-stone-500 font-bold uppercase ml-auto">{comment.timestamp}</span>
                   </div>
                   <div className="text-sm text-stone-400 leading-relaxed font-light bg-white/5 p-3 rounded-2xl border border-white/5">
-                    {processComment(comment.content)}
+                    <p>{comment.content}</p>
                   </div>
                   <div className="flex items-center gap-4 mt-2">
                     <button className="flex items-center gap-1.5 text-[10px] font-black text-stone-500 hover:text-primary transition-all">
@@ -264,8 +241,8 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const story = stories.find(s => s.slug === slug);
   if (!story) notFound();
 
-  const chapter = story.chapters.find(c => c.slug === chapterSlug) || story.chapters[0];
-  const artist = artists.find(a => a.id === story.artistId)!;
+  const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Chargement...', slug: '1' } as any;
+  const artist = artists.find(a => a.uid === story.artistId);
 
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -358,12 +335,14 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                 {comicPages.map((page, index) => (
                   <div key={page.id} className="relative w-full aspect-[2/3] mb-4 sm:mb-8">
                     <Image
-                      src={page.imageUrl}
+                      src={getOptimizedImage(page.imageUrl, { width: 800, quality: 'auto' })}
                       alt={page.description}
                       fill
                       className="object-contain md:object-cover"
                       data-ai-hint={page.imageHint}
                       priority={index < 3}
+                      loading={index < 3 ? undefined : "lazy"}
+                      sizes="(max-width: 768px) 100vw, 800px"
                     />
                   </div>
                 ))}
@@ -378,7 +357,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                       </div>
                       <h3 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">Chapitre Terminé !</h3>
                       <p className="text-stone-400 font-light italic max-w-md mx-auto">
-                        "L'histoire ne fait que commencer. Votre soutien permet à {artist.displayName || 'l\'artiste'} de continuer cette légende."
+                        "L'histoire ne fait que commencer. Votre soutien permet à {artist?.displayName || 'l\'artiste'} de continuer cette légende."
                       </p>
                     </div>
 
@@ -403,12 +382,13 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                     <CarouselItem key={page.id} className="h-full flex items-center justify-center p-4">
                       <div className="relative w-full h-full max-h-[85vh] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/10">
                         <Image
-                          src={page.imageUrl}
+                          src={getOptimizedImage(page.imageUrl, { width: 1200, quality: 'auto' })}
                           alt={page.description}
                           fill
                           className="object-contain"
                           data-ai-hint={page.imageHint}
                           priority={index === currentPage}
+                          sizes="(max-width: 1024px) 100vw, 1200px"
                         />
                       </div>
                     </CarouselItem>
@@ -423,7 +403,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           <aside className="w-full md:w-1/2 animate-in slide-in-from-right duration-500 ease-out">
             <CommentsPanel 
               storyId={story.id} 
-              chapterIndex={story.chapters.findIndex(c => c.id === chapter.id) + 1} 
+              chapterIndex={story.chapters?.findIndex(c => c.id === chapter.id) + 1 || 1} 
               onClose={() => setIsCommentsOpen(false)} 
             />
           </aside>
@@ -434,7 +414,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         story={story}
         isLiked={isLiked}
         onLike={handleLike}
-        commentsCount={story.chapters.length * 15}
+        commentsCount={story.chapterCount * 15}
         onShare={handleShare}
         onToggleComments={() => setIsCommentsOpen(!isCommentsOpen)}
         isCommentsOpen={isCommentsOpen}
