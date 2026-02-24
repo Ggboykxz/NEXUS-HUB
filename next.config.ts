@@ -30,6 +30,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/webtoons',
+        destination: '/webtoon',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
