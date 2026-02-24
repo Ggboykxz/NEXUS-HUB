@@ -1,7 +1,9 @@
+import { redirect } from 'next/navigation';
+
 /**
- * Ce fichier est neutralisé pour éviter les conflits de routage avec (app)/webtoon-hub.
- * La route canonique est désormais /webtoon-hub, gérée par src/app/(app)/webtoon-hub/page.tsx.
+ * Route neutralisée pour résoudre le conflit de parallélisme Next.js.
+ * L'univers Webtoon est désormais centralisé dans src/app/(app)/webtoon-hub.
  */
-export default function NeutralizedRootWebtoonPage() {
-  return null;
+export default function WebtoonRootRedirect() {
+  redirect('/webtoon-hub');
 }
