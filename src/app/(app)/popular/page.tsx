@@ -1,30 +1,22 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { type Story } from '@/lib/data';
-import { StoryCard } from '@/components/story-card';
-import { TrendingUp, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { StoryCard } from '@/components/story-card';
+import { TrendingUp } from 'lucide-react';
+import type { Story } from '@/lib/types';
 
-export default function PopularStoriesPage() {
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
+export const revalidate = 3600;
 
-  useEffect(() => {
-    async function fetchPopular() {
-      try {
-        const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(20));
-        const snap = await getDocs(q);
-        setStories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story)));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPopular();
-  }, []);
+export default async function PopularStoriesPage() {
+  const q = query(
+    collection(db, 'stories'), 
+    where('isPublished', '==', true),
+    where('isBanned', '==', false),
+    orderBy('views', 'desc'),
+    limit(40)
+  );
+  
+  const snap = await getDocs(q);
+  const popularStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -38,13 +30,9 @@ export default function PopularStoriesPage() {
         Découvrez les œuvres qui passionnent notre communauté en ce moment.
       </p>
 
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : stories.length > 0 ? (
+      {popularStories.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-          {stories.map((story) => (
+          {popularStories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </div>

@@ -1,11 +1,22 @@
-'use client';
-
-import { stories } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
 import { Book } from 'lucide-react';
+import type { Story } from '@/lib/types';
 
-export default function BdAfricaineListingPage() {
-  const comics = stories.filter(s => s.format === 'BD');
+export const revalidate = 3600; // ISR
+
+export default async function BdAfricaineListingPage() {
+  const q = query(
+    collection(db, 'stories'), 
+    where('format', '==', 'BD'),
+    where('isPublished', '==', true),
+    where('isBanned', '==', false),
+    orderBy('updatedAt', 'desc')
+  );
+  
+  const snap = await getDocs(q);
+  const comics = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">

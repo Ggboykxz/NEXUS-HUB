@@ -1,11 +1,22 @@
-'use client';
-
-import { stories } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
 import { Sparkles } from 'lucide-react';
+import type { Story } from '@/lib/types';
 
-export default function NewReleasesPage() {
-  const newStories = [...stories].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+export const revalidate = 3600;
+
+export default async function NewReleasesPage() {
+  const q = query(
+    collection(db, 'stories'), 
+    where('isPublished', '==', true),
+    where('isBanned', '==', false),
+    orderBy('updatedAt', 'desc'),
+    limit(40)
+  );
+  
+  const snap = await getDocs(q);
+  const newStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
