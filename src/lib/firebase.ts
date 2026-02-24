@@ -22,7 +22,6 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Analytics is only supported in the browser
 export const initAnalytics = async () => {
   if (typeof window !== "undefined" && await isSupported()) {
     return getAnalytics(app);

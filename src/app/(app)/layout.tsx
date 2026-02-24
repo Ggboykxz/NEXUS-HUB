@@ -1,7 +1,9 @@
+import Header from '@/components/common/header';
+import Footer from '@/components/common/footer';
+
 /**
- * Layout épuré pour le groupe (app).
- * Le Header et le Footer sont gérés par le Root Layout via HeaderFooterWrapper
- * pour éviter les conflits de priorité et les écrans noirs.
+ * Layout pour les pages principales de l'application.
+ * Contient le Header et le Footer partagés.
  */
 export default function AppLayout({
   children,
@@ -9,8 +11,12 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
-      {children}
-    </>
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        {children}
+      </main>
+      <Footer />
+    </div>
   );
 }
