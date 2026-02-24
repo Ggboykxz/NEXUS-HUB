@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
-import type { Story, UserProfile } from '@/lib/types';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import type { Story } from '@/lib/types';
 import { 
   Play, 
   Info, 
@@ -35,15 +35,18 @@ import {
   Handshake,
   LayoutGrid,
   Languages,
-  BrainCircuit
+  BrainCircuit,
+  MapPin,
+  Smile,
+  Compass
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useTranslation } from '@/components/providers/language-provider';
 import { PwaInstallBanner } from '@/components/pwa/pwa-install-banner';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -69,8 +72,15 @@ export default function HomePage() {
   const rewardSteps = [
     { icon: Flame, title: "Streak Quotidien", reward: "+2 🪙", desc: "Lisez chaque jour pour accumuler des coins." },
     { icon: Share2, title: "Partage Social", reward: "+5 🪙", desc: "Invitez un ami et gagnez dès son inscription." },
+    { icon: Award, title: "Parrainage Artiste", reward: "+20 🪙", desc: "Gagnez dès que votre ami atteint le niveau Pro." },
     { icon: Languages, title: "Traduction", reward: "+10 🪙", desc: "Contribuez aux traductions communautaires." },
-    { icon: Users, title: "Parrainage Artiste", reward: "+20 🪙", desc: "Gagnez gros si votre ami devient un artiste Pro." },
+  ];
+
+  const regions = [
+    { name: "Afrique Ouest", icon: "🌍", story: popular[1] || popular[0] },
+    { name: "Afrique Centrale", icon: "🦁", story: popular[2] || popular[0] },
+    { name: "Afrique Est", icon: "🏔️", story: popular[3] || popular[0] },
+    { name: "Afrique Australe", icon: "💎", story: popular[4] || popular[0] },
   ];
 
   return (
@@ -117,6 +127,39 @@ export default function HomePage() {
 
       <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
         
+        {/* DECOUVERTE DE LA SEMAINE - REGIONAL */}
+        <section className="animate-in fade-in duration-700">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="bg-primary/10 p-2 rounded-lg"><Compass className="h-6 w-6 text-primary" /></div>
+            <h2 className="text-3xl font-display font-black uppercase tracking-tighter">Découverte de la Semaine</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {regions.map((region, i) => (
+              <Card key={i} className="bg-card/50 border-border/50 rounded-[2rem] overflow-hidden group hover:border-primary/30 transition-all">
+                <CardHeader className="p-0 relative h-40 overflow-hidden">
+                  {region.story ? (
+                    <Image src={region.story.coverImage.imageUrl} alt={region.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                  ) : (
+                    <div className="w-full h-full bg-muted" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute top-4 left-4 flex items-center gap-2">
+                    <span className="text-2xl">{region.icon}</span>
+                    <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 text-[8px] font-black uppercase tracking-widest">{region.name}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <h4 className="font-bold text-sm mb-1 truncate">{region.story?.title || "Bientôt disponible"}</h4>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Chef-d'œuvre régional</p>
+                  <Button asChild variant="link" className="p-0 h-auto text-primary text-[10px] font-black uppercase mt-4">
+                    <Link href={region.story ? `/webtoon-hub/${region.story.slug}` : "#"}>Explorer <ChevronRight className="h-3 w-3" /></Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
         {/* AI STUDIO QUICK ACCESS */}
         <section className="p-8 rounded-[2.5rem] bg-stone-900 border border-primary/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><BrainCircuit className="h-48 w-48 text-primary" /></div>
@@ -231,6 +274,14 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+function Palette(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.5 1.5-1.3 0-.4-.1-.8-.4-1.1-.3-.3-.5-.8-.5-1.3 0-1.1.9-2 2-2H16c3.9 0 6-3.1 6-7 0-5.2-4.5-9-10-9z"/></svg>
+}
+
+function Waves(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
 }
 
 function HeartPulse(props: any) {

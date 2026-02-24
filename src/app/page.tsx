@@ -1,7 +1,7 @@
 /**
- * Ce fichier est neutralisé pour éviter les conflits de parallélisme avec src/app/(app)/page.tsx.
- * Next.js utilisera automatiquement la page située dans le groupe de routes (app).
+ * Ce fichier est neutralisé pour éviter les conflits avec src/app/(app)/page.tsx.
+ * Le groupe de route (app) gère désormais la page d'accueil avec le Header et le Footer.
  */
-export default function ConflictResolver() {
+export default function RootPageRedirect() {
   return null;
 }
