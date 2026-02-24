@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -51,6 +51,7 @@ export interface UserProfile {
   links?: SocialLinks;
   afriCoins: number;
   subscribersCount: number;
+  followedCount: number; // Nouveauté : nombre de personnes suivies
   isCertified?: boolean; 
   
   revenueShare: number; 
@@ -60,6 +61,7 @@ export interface UserProfile {
     culturalAffinity: string[];
     lastReadRegion?: string;
     totalReadingTime: number;
+    chaptersRead: number;
   };
 
   readingStreak: {
@@ -75,6 +77,12 @@ export interface UserProfile {
   preferences: {
     language: Language;
     theme: 'light' | 'dark' | 'system';
+    privacy: {
+      isPublicLibrary: boolean;
+      showCurrentReading: boolean;
+      showReadingHistory: boolean;
+      allowFollowers: boolean;
+    };
     notifications: {
       newChapter: boolean;
       newFollower: boolean;
@@ -100,6 +108,23 @@ export interface LibraryEntry {
   lastReadScrollPosition?: number;
   lastReadAt: Timestamp | string;
   progress: number;
+  isFavorite: boolean;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  COLLECTION : cercles/{cercleId}
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ReadingCercle {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  members: string[];
+  currentStoryId?: string;
+  currentChapterId?: string;
+  createdAt: Timestamp | string;
+  isPrivate: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -142,57 +167,6 @@ export interface Chapter {
   views: number;
   likes: number;
   publishedAt?: Timestamp | string;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  COLLECTION : clubs/{clubId}
-// ═══════════════════════════════════════════════════════════════════════════
-
-export interface ReadingClub {
-  id: string;
-  name: string;
-  description: string;
-  coverImage: string;
-  type: 'official' | 'user';
-  storyId?: string;
-  storyTitle?: string;
-  artistId?: string;
-  memberCount: number;
-  lastActivity: Timestamp | string;
-  isPrivate: boolean;
-}
-
-export interface ClubDiscussion {
-  id: string;
-  clubId: string;
-  chapterId?: string;
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar: string;
-  isSpoiler: boolean;
-  likes: number;
-  createdAt: Timestamp | string;
-}
-
-export interface ClubPoll {
-  id: string;
-  clubId: string;
-  question: string;
-  options: { id: string; text: string; votes: number }[];
-  totalVotes: number;
-  expiresAt: Timestamp | string;
-}
-
-export interface ClubFanArt {
-  id: string;
-  clubId: string;
-  imageUrl: string;
-  title: string;
-  authorId: string;
-  authorName: string;
-  createdAt: Timestamp | string;
 }
 
 // ─── HELPERS D'URLS ──────────────────────────────────────────────────────────

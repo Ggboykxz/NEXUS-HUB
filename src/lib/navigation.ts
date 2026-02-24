@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -13,7 +13,7 @@ export type NavLink = {
   isGenreDropdown?: boolean;
   badge?: {
     label: string;
-    variant: 'green' | 'orange';
+    variant: 'green' | 'orange' | 'emerald';
   };
 };
 
@@ -35,6 +35,23 @@ export const navLinks: NavLink[] = [
     label: "Originals",
     icon: Trophy,
     badge: { label: 'LIVE', variant: 'orange' }
+  },
+  {
+    href: "/events",
+    label: "Événements",
+    icon: Zap,
+    subLinks: [
+      { href: "/events/live", label: "NexusHub Live" },
+      { href: "/events/hackathon", label: "Hackathon 24h" },
+      { href: "/events/festivals", label: "Festivals BD" },
+      { href: "/events/awards", label: "NexusHub Awards" },
+    ]
+  },
+  { 
+    href: "/cercles", 
+    label: "Cercles", 
+    icon: Users,
+    badge: { label: 'SOCIAL', variant: 'emerald' }
   },
   { 
     href: "/clubs", 
@@ -77,6 +94,4 @@ export const navLinks: NavLink[] = [
   },
   { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
-  { href: "/africoins", label: "AfriCoins", icon: Coins },
-  { href: "/faq", label: "FAQ", icon: HelpCircle },
 ];

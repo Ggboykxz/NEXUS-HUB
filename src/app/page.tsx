@@ -1,5 +1,7 @@
-// Ce fichier est neutralisé pour éviter les conflits de parallélisme avec src/app/(app)/page.tsx
-// Toute la logique de la page d'accueil réside désormais dans le groupe de routes (app).
-export default function RootRedirect() {
+/**
+ * @fileOverview Point d'entrée neutralisé.
+ * Toute la logique réside désormais dans src/app/(app)/page.tsx
+ */
+export default function RootPage() {
   return null;
 }
