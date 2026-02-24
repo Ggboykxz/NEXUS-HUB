@@ -1,11 +1,12 @@
+
 'use client';
 
 import { use } from 'react';
-import StoryDetailPage from '../../webtoon/[slug]/page';
+import StoryDetailPage from '../../webtoon-hub/[slug]/page';
 
 /**
- * Réutilise le composant StoryDetailPage pour les BD Africaines.
- * La logique de détection du format est gérée par le composant partagé.
+ * Réutilise le composant StoryDetailPage consolidé.
+ * La redirection et la logique de format sont gérées par le hub centralisé.
  */
 export default function BdAfricaineDetailPage(props: { params: Promise<{ slug: string }> }) {
   return <StoryDetailPage params={props.params} />;

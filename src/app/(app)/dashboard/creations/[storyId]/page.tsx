@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -8,24 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { 
   PlusCircle, ArrowLeft, CalendarIcon, UploadCloud, FilePen, Trash2, 
   MoreHorizontal, Users, History, CheckCircle2, AlertCircle, 
   Layers, ShieldCheck, Clock, Split, Zap, Filter, Eye, Settings2, Sparkles, LayoutGrid,
-  Coins, MessageSquare, ChevronRight, UserPlus, SlidersHorizontal, BarChart3, Bot, Languages, Wand2
+  Coins, MessageSquare, ChevronRight, UserPlus, SlidersHorizontal, BarChart3, Bot, Languages, Wand2,
+  ListFilter, Activity, Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +36,7 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
 
   // AI Assistant States
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [aiType, setAiType] = useState<'dialogue' | 'synopsis' | 'brainstorm' | 'rhythm' | 'tags'>('dialogue');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResult, setAiResult] = useState<any>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -53,16 +50,16 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
   const story = stories.find(s => s.id === resolvedParams.storyId) as any;
   if (!story) notFound();
 
-  const artist = artists.find(a => a.id === story.artistId);
-
-  const handleAISuggestion = async (type: 'dialogue' | 'synopsis' | 'brainstorm') => {
+  const handleAISuggestion = async (type: typeof aiType) => {
+    setAiType(type);
     setIsAiLoading(true);
+    setAiResult(null);
     try {
       const result = await creativeAssistant({
         type,
-        context: `Série: ${story.title}. Genre: ${story.genre}.`,
+        context: `Série: ${story.title}. Genre: ${story.genre}. Format: ${story.format}.`,
         content: aiPrompt,
-        tone: 'héroïque'
+        tone: 'épique'
       });
       setAiResult(result);
     } catch (e) {
@@ -81,7 +78,7 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
         </Button>
         <div className="flex gap-2">
             <Button onClick={() => setIsAIOpen(true)} variant="outline" size="sm" className="rounded-full gap-2 border-primary/20 text-primary bg-primary/5 hover:bg-primary/10">
-                <Bot className="h-4 w-4" /> Assistant IA Nexus
+                <Bot className="h-4 w-4" /> Studio IA
             </Button>
             <Button variant="outline" size="sm" className="rounded-full gap-2 border-emerald-500/20 text-emerald-500">
                 <ShieldCheck className="h-4 w-4" /> Mode Production
@@ -108,7 +105,7 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
 
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" className="rounded-xl border-white/10 text-white hover:bg-white/5 h-11" asChild>
-                    <Link href={`/webtoon-hub/${story.slug}`} target="_blank"><Eye className="mr-2 h-4 w-4" /> Voir comme un lecteur</Link>
+                    <Link href={`/webtoon-hub/${story.slug}`} target="_blank"><Eye className="mr-2 h-4 w-4" /> Voir en ligne</Link>
                 </Button>
                 <Button onClick={() => setIsAIOpen(true)} className="rounded-xl h-11 px-6 bg-primary text-black font-bold gap-2">
                     <Sparkles className="h-4 w-4" /> Optimiser avec l'IA
@@ -147,7 +144,7 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2 text-cyan-500 text-[10px] font-black">
-                                        <CheckCircle2 className="h-3 w-3" /> RYTHME OPTIMAL
+                                        <CheckCircle2 className="h-3 w-3" /> RYTHME ANALYSÉ
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right pr-8">
@@ -163,34 +160,40 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
 
       {/* AI ASSISTANT DIALOG */}
       <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-stone-950 border-none rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[700px] bg-stone-950 border-none rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-cyan-500 to-primary" />
             <div className="p-8 space-y-8">
                 <div className="flex items-center gap-4">
                     <div className="bg-primary/10 p-3 rounded-2xl"><Bot className="h-8 w-8 text-primary" /></div>
                     <div>
                         <h2 className="text-2xl font-display font-black text-white">Assistant IA Nexus</h2>
-                        <p className="text-stone-400 text-xs italic">Propulsé par Genkit & Gemini 2.5 Flash</p>
+                        <p className="text-stone-400 text-xs italic">Optimisez votre œuvre avec Genkit & Gemini</p>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <Label className="text-[10px] uppercase font-black text-primary tracking-widest">Votre requête ou texte original</Label>
+                    <Label className="text-[10px] uppercase font-black text-primary tracking-widest">Texte à analyser ou prompt créatif</Label>
                     <Textarea 
                         value={aiPrompt}
                         onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="Ex: Reformule ce dialogue pour qu'il soit plus dramatique..." 
+                        placeholder="Ex: Analyse le rythme de ce script..." 
                         className="bg-white/5 border-white/10 min-h-[120px] rounded-2xl text-white"
                     />
-                    <div className="grid grid-cols-3 gap-2">
-                        <Button onClick={() => handleAISuggestion('dialogue')} disabled={isAiLoading} variant="outline" className="text-[10px] font-black h-10 gap-2 border-white/10 rounded-xl">
-                            <Languages className="h-3.5 w-3.5 text-cyan-500" /> DIALOGUES
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <Button onClick={() => handleAISuggestion('dialogue')} disabled={isAiLoading} variant="outline" className="text-[9px] font-black h-10 gap-1 border-white/10 rounded-xl">
+                            <Languages className="h-3.5 w-3.5 text-cyan-500" /> DIALOGUE
                         </Button>
-                        <Button onClick={() => handleAISuggestion('synopsis')} disabled={isAiLoading} variant="outline" className="text-[10px] font-black h-10 gap-2 border-white/10 rounded-xl">
+                        <Button onClick={() => handleAISuggestion('synopsis')} disabled={isAiLoading} variant="outline" className="text-[9px] font-black h-10 gap-1 border-white/10 rounded-xl">
                             <Wand2 className="h-3.5 w-3.5 text-emerald-500" /> SYNOPSIS
                         </Button>
-                        <Button onClick={() => handleAISuggestion('brainstorm')} disabled={isAiLoading} variant="outline" className="text-[10px] font-black h-10 gap-2 border-white/10 rounded-xl">
-                            <Sparkles className="h-3.5 w-3.5 text-amber-500" /> IDÉES
+                        <Button onClick={() => handleAISuggestion('rhythm')} disabled={isAiLoading} variant="outline" className="text-[9px] font-black h-10 gap-1 border-white/10 rounded-xl">
+                            <Activity className="h-3.5 w-3.5 text-rose-500" /> RYTHME
+                        </Button>
+                        <Button onClick={() => handleAISuggestion('tags')} disabled={isAiLoading} variant="outline" className="text-[9px] font-black h-10 gap-1 border-white/10 rounded-xl">
+                            <ListFilter className="h-3.5 w-3.5 text-amber-500" /> TAGS
+                        </Button>
+                        <Button onClick={() => handleAISuggestion('brainstorm')} disabled={isAiLoading} variant="outline" className="text-[9px] font-black h-10 gap-1 border-white/10 rounded-xl">
+                            <Sparkles className="h-3.5 w-3.5 text-purple-500" /> IDÉES
                         </Button>
                     </div>
                 </div>
@@ -203,25 +206,27 @@ export default function ManageStoryPage({ params: propsParams }: { params: Promi
                 )}
 
                 {aiResult && !isAiLoading && (
-                    <Card className="bg-primary/5 border-primary/20 rounded-2xl animate-in fade-in zoom-in-95 duration-500">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-black uppercase text-primary">Suggestions de l'Oracle</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                {aiResult.suggestions.map((s: string, i: number) => (
-                                    <div key={i} className="bg-black/40 p-3 rounded-xl border border-white/5 text-sm text-stone-200 leading-relaxed italic">
-                                        "{s}"
-                                    </div>
-                                ))}
-                            </div>
-                            <Separator className="bg-primary/10" />
-                            <p className="text-[10px] text-stone-500 leading-relaxed font-light">{aiResult.explanation}</p>
-                        </CardContent>
-                    </Card>
+                    <ScrollArea className="max-h-[300px]">
+                        <Card className="bg-primary/5 border-primary/20 rounded-2xl animate-in fade-in zoom-in-95 duration-500">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-black uppercase text-primary">Réponse de l'Oracle Nexus</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    {aiResult.suggestions.map((s: string, i: number) => (
+                                        <div key={i} className="bg-black/40 p-3 rounded-xl border border-white/5 text-sm text-stone-200 leading-relaxed italic">
+                                            "{s}"
+                                        </div>
+                                    ))}
+                                </div>
+                                <Separator className="bg-primary/10" />
+                                <p className="text-xs text-stone-400 leading-relaxed font-light">{aiResult.explanation}</p>
+                            </CardContent>
+                        </Card>
+                    </ScrollArea>
                 )}
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 pt-4">
                     <Button onClick={() => setIsAIOpen(false)} variant="ghost" className="flex-1 rounded-xl text-stone-500 font-bold">Fermer</Button>
                     {aiResult && <Button className="flex-1 rounded-xl bg-primary text-black font-black">Appliquer</Button>}
                 </div>

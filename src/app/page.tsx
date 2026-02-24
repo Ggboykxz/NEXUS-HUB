@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -8,7 +9,7 @@ import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import type { Story, LibraryEntry, UserProfile } from '@/lib/types';
-import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, History, Clock, BookHeart, Globe } from 'lucide-react';
+import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, History, Clock, BookHeart, Globe, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
@@ -103,10 +104,10 @@ export default function HomePage() {
                         <p className="text-stone-300 text-sm md:text-lg font-light italic line-clamp-2">"{featured.description}"</p>
                         <div className="flex gap-4 pt-4">
                           <Button asChild size="lg" className="rounded-full font-black px-8 gold-shimmer h-14">
-                            <Link href={`/webtoon/${featured.slug}/chapitre-1`}><Play className="mr-2 h-5 w-5 fill-current" /> Lire le Chapitre 1</Link>
+                            <Link href={`/webtoon-hub/${featured.slug}/chapitre-1`}><Play className="mr-2 h-5 w-5 fill-current" /> Lire le Chapitre 1</Link>
                           </Button>
                           <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-14 px-8">
-                            <Link href={`/webtoon/${featured.slug}`}><Info className="mr-2 h-5 w-5" /> Détails</Link>
+                            <Link href={`/webtoon-hub/${featured.slug}`}><Info className="mr-2 h-5 w-5" /> Détails</Link>
                           </Button>
                         </div>
                       </div>
@@ -123,6 +124,35 @@ export default function HomePage() {
 
           <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
             
+            {/* ORIGINALS TEASER */}
+            <section className="animate-in fade-in duration-1000">
+                <Link href="/originals" className="block group">
+                    <Card className="bg-stone-900 border-none rounded-[2rem] p-8 md:p-12 overflow-hidden relative shadow-2xl transition-all hover:ring-4 ring-primary/20">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:opacity-20 transition-all duration-700">
+                            <Trophy className="h-48 w-48 text-primary" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                            <div className="space-y-4 text-center md:text-left flex-1">
+                                <Badge className="bg-orange-500 text-white border-none animate-pulse">EN COURS : AFROFUTURISME 2100</Badge>
+                                <h2 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">NexusHub Originals</h2>
+                                <p className="text-stone-400 text-lg font-light italic">Participez à la plus grande compétition trimestrielle de BD africaine. 5 000€ de prix à gagner.</p>
+                                <Button className="rounded-full px-8 font-black bg-primary text-black h-12 shadow-lg shadow-primary/20">Voir la Compétition <ChevronRight className="ml-2 h-4 w-4" /></Button>
+                            </div>
+                            <div className="hidden md:flex gap-4">
+                                <div className="flex flex-col items-center gap-2 p-6 bg-white/5 rounded-[2rem] border border-white/10 text-center w-32">
+                                    <Banknote className="h-8 w-8 text-primary" />
+                                    <span className="text-[10px] font-black text-white uppercase">Cash</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-2 p-6 bg-white/5 rounded-[2rem] border border-white/10 text-center w-32">
+                                    <Globe className="h-8 w-8 text-emerald-500" />
+                                    <span className="text-[10px] font-black text-white uppercase">Promo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </Link>
+            </section>
+
             {/* CONTINUE READING */}
             {currentUser && continueReading.length > 0 && (
               <section className="animate-in fade-in slide-in-from-left-4 duration-700">
@@ -134,7 +164,7 @@ export default function HomePage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {continueReading.map((entry) => (
-                    <Link key={entry.storyId} href={`/webtoon/${entry.lastReadChapterSlug}`} className="group relative overflow-hidden bg-card border border-border/50 rounded-2xl p-4 flex gap-4 hover:border-primary/30 transition-all hover:shadow-xl">
+                    <Link key={entry.storyId} href={`/webtoon-hub/${entry.lastReadChapterSlug}`} className="group relative overflow-hidden bg-card border border-border/50 rounded-2xl p-4 flex gap-4 hover:border-primary/30 transition-all hover:shadow-xl">
                       <div className="relative h-24 w-16 rounded-lg overflow-hidden shrink-0 shadow-md">
                         <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>

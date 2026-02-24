@@ -1,8 +1,9 @@
+
 import { redirect } from 'next/navigation';
 
 /**
- * Route neutralisée au profit de webtoon-hub pour éviter les erreurs Next.js.
+ * Route consolidée. Redirige vers webtoon-hub pour éviter les erreurs Next.js.
  */
-export default function AppWebtoonGroupRedirect() {
+export default function AppWebtoonRedirect() {
   redirect('/webtoon-hub');
 }

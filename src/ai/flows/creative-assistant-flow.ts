@@ -1,14 +1,15 @@
+
 'use server';
 /**
  * @fileOverview Assistant Créatif IA pour les auteurs NexusHub.
- * Gère la reformulation de dialogues, la génération de synopsis et le brainstorming.
+ * Gère la reformulation, le synopsis, le rythme narratif et le brainstorming.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const CreativeInputSchema = z.object({
-  type: z.enum(['dialogue', 'synopsis', 'brainstorm']).describe('Le type de tâche créative.'),
+  type: z.enum(['dialogue', 'synopsis', 'brainstorm', 'rhythm', 'tags']).describe('Le type de tâche créative.'),
   context: z.string().describe('Le contexte de la scène ou de la série.'),
   content: z.string().optional().describe('Le texte original à transformer ou le sujet du brainstorming.'),
   tone: z.string().default('épique').describe('Le ton souhaité (ex: mystérieux, humoristique, dramatique).'),
@@ -17,6 +18,7 @@ const CreativeInputSchema = z.object({
 const CreativeOutputSchema = z.object({
   suggestions: z.array(z.string()).describe('Liste de propositions générées par l\'IA.'),
   explanation: z.string().describe('Explication des choix créatifs de l\'IA.'),
+  metadata: z.record(z.any()).optional().describe('Données additionnelles (ex: score de rythme, tags suggérés).'),
 });
 
 export async function creativeAssistant(input: z.infer<typeof CreativeInputSchema>) {
@@ -34,11 +36,13 @@ const prompt = ai.definePrompt({
   Contexte : {{{context}}}
   Contenu original : {{{content}}}
 
-  Directives :
-  - Respecte les sensibilités culturelles africaines.
-  - Pour les dialogues, propose des versions percutantes adaptées au format bulles.
-  - Pour le synopsis, sois accrocheur et mystérieux (3 lignes max).
-  - Pour le brainstorming, inspire-toi des mythologies, paysages et cultures du continent.`,
+  Directives spécifiques :
+  - Respecte scrupuleusement les sensibilités culturelles africaines (Gabon, Afrique de l'Ouest, etc.).
+  - Pour les DIALOGUES, propose des versions percutantes adaptées aux bulles.
+  - Pour le SYNOPSIS, génère exactement 3 lignes accrocheuses pour les métadonnées.
+  - Pour le RYTHME, analyse si le script est trop dense ou vide et propose des ajustements.
+  - Pour les TAGS, suggère 5 hashtags culturels pertinents.
+  - Pour le BRAINSTORMING, inspire-toi des mythologies et du futurisme du continent.`,
 });
 
 const creativeAssistantFlow = ai.defineFlow(
