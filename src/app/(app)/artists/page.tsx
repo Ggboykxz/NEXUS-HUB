@@ -8,9 +8,10 @@ import { Users, Award, PenSquare, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { ArtistProfile } from '@/lib/types';
 
 export default function ArtistsPage() {
-  const [artists, setArtists] = useState<any[]>([]);
+  const [artists, setArtists] = useState<ArtistProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function ArtistsPage() {
       try {
         const q = query(collection(db, 'users'), where('role', 'in', ['artist_draft', 'artist_pro']));
         const snap = await getDocs(q);
-        setArtists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setArtists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as ArtistProfile)));
       } catch (e) {
         console.error(e);
       } finally {
@@ -62,10 +63,10 @@ export default function ArtistsPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {proArtists.map((artist) => (
-            <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
+            <Link key={artist.uid} href={`/artiste/${artist.slug}`} className="block h-full group">
                 <div className="text-center transition-all h-full flex flex-col items-center">
                     <Avatar className="h-40 w-40 border-4 border-background ring-4 ring-emerald-500/20 mb-6 transition-all group-hover:ring-emerald-500 shadow-xl">
-                        <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+                        <AvatarImage src={artist.photoURL || ''} alt={artist.displayName || 'Artiste'} />
                         <AvatarFallback>{artist.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <h3 className="text-xl font-display font-bold group-hover:text-emerald-500 transition-colors mb-2">{artist.displayName}</h3>
@@ -92,10 +93,10 @@ export default function ArtistsPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {draftArtists.map((artist) => (
-            <Link key={artist.id} href={`/artiste/${artist.slug}`} className="block h-full group">
+            <Link key={artist.uid} href={`/artiste/${artist.slug}`} className="block h-full group">
                 <div className="text-center transition-all h-full flex flex-col items-center">
                     <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-orange-400/30 mb-4 transition-all group-hover:ring-orange-400/60 grayscale-[0.5] group-hover:grayscale-0">
-                        <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+                        <AvatarImage src={artist.photoURL || ''} alt={artist.displayName || 'Artiste'} />
                         <AvatarFallback>{artist.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <h3 className="text-lg font-display font-semibold group-hover:text-orange-400 transition-colors mb-2">{artist.displayName}</h3>

@@ -16,9 +16,12 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import type { UserProfile } from '@/lib/types';
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -28,7 +31,7 @@ export default function SettingsPage() {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
-            setProfile({ uid: user.uid, ...userDoc.data() });
+            setProfile(userDoc.data() as UserProfile);
           }
         } catch (error) {
           console.error("Error fetching profile:", error);
@@ -110,11 +113,11 @@ export default function SettingsPage() {
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="flex items-center gap-6">
                   <Avatar className={cn("h-24 w-24", isArtist && "border-2 border-primary")}>
-                    <AvatarImage src={profile.photoURL} alt="Avatar" />
+                    <AvatarImage src={profile.photoURL || ''} alt="Avatar" />
                     <AvatarFallback>{profile.displayName?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="avatar-url">URL de l'avatar</Link>
+                    <Label htmlFor="avatar-url">URL de l'avatar</Label>
                     <Input 
                       id="avatar-url" 
                       value={profile.photoURL || ''} 

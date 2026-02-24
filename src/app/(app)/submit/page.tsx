@@ -3,17 +3,16 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, Globe, ChevronRight, CheckCircle2, UploadCloud, Loader2 } from 'lucide-react';
+import { BookOpen, Users, Globe, ChevronRight, CheckCircle2, UploadCloud, Loader2, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, functions } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User, sendEmailVerification } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -21,12 +20,12 @@ import Link from 'next/link';
 export default function SubmitPage() {
   const [step, setStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   const router = useRouter();
 
-  // Form State
   const [formData, setFormData] = useState({
     title: '',
     genre: '',
@@ -35,15 +34,32 @@ export default function SubmitPage() {
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
+  const handleResendEmail = async () => {
+    if (user) {
+      try {
+        await sendEmailVerification(user);
+        toast({ title: "Email envoyé", description: "Vérifiez votre boîte de réception." });
+      } catch (e) {
+        toast({ title: "Erreur", description: "Impossible de renvoyer l'email.", variant: "destructive" });
+      }
+    }
+  };
+
   const handleCreate = async () => {
-    if (!isAuthenticated) {
+    if (!user) {
       openAuthModal('lancer votre premier projet');
+      return;
+    }
+
+    if (!user.emailVerified) {
+      toast({ title: "Email non vérifié", description: "Veuillez valider votre email pour publier.", variant: "destructive" });
       return;
     }
     
@@ -55,20 +71,40 @@ export default function SubmitPage() {
 
       toast({
         title: "Œuvre créée avec succès !",
-        description: "Validation serveur réussie. Bienvenue dans votre nouvel univers.",
+        description: "Validation serveur réussie.",
       });
       
       router.push(`/dashboard/creations/${id}`);
     } catch (error: any) {
       toast({
         title: "Erreur lors de la création",
-        description: error.message || "Une erreur est survenue côté serveur.",
+        description: error.message || "Une erreur est survenue.",
         variant: "destructive",
       });
     } finally {
       setIsCreating(false);
     }
   };
+
+  if (loading) {
+    return <div className="flex justify-center py-24"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
+  }
+
+  if (user && !user.emailVerified) {
+    return (
+      <div className="container mx-auto max-w-xl px-4 py-24 text-center">
+        <ShieldAlert className="h-16 w-16 text-orange-500 mx-auto mb-6" />
+        <h1 className="text-3xl font-bold mb-4">Vérifiez votre email</h1>
+        <p className="text-muted-foreground mb-8">
+          Pour garantir la sécurité de la plateforme, les artistes doivent vérifier leur adresse email avant de publier.
+        </p>
+        <div className="flex flex-col gap-4">
+          <Button onClick={handleResendEmail}>Renvoyer le lien de vérification</Button>
+          <Button variant="ghost" onClick={() => window.location.reload()}>J'ai vérifié mon email</Button>
+        </div>
+      </div>
+    );
+  }
 
   const steps = [
     { id: 1, label: "Informations" },

@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, limit, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import type { UserProfile } from '@/lib/types';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -37,13 +38,13 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [uniqueGenres, setUniqueGenres] = useState<{name: string, slug: string}[]>([]);
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
 
   const [hasMounted, setHasMounted] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const dropdownTimers = useRef<{ [key: string]: any }>({});
+  const dropdownTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   useEffect(() => {
     setHasMounted(true);
@@ -82,7 +83,7 @@ export default function Header() {
         setIsLoggedIn(true);
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          setUserProfile({ id: user.uid, ...userDoc.data() });
+          setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
         }
       } else {
         setIsLoggedIn(false);
@@ -99,7 +100,6 @@ export default function Header() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    // Supprime le cookie de session pour le middleware
     document.cookie = "nexushub-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push('/');
     router.refresh();
@@ -201,7 +201,6 @@ export default function Header() {
               <span className="font-display font-bold text-lg tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
             
-            {/* Database Connection Status Indicator */}
             <div className="flex items-center gap-1.5 group cursor-help" title={dbStatus === 'connected' ? 'Base de données connectée' : 'Connexion en cours...'}>
               <div className={cn(
                 "w-2 h-2 rounded-full transition-all duration-500",
@@ -285,7 +284,7 @@ export default function Header() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
                         <Avatar className="h-7 w-7 border-2 border-primary/20">
-                          <AvatarImage src={userProfile?.photoURL} alt={userProfile?.displayName} />
+                          <AvatarImage src={userProfile?.photoURL || ''} alt={userProfile?.displayName || 'Utilisateur'} />
                           <AvatarFallback>{userProfile?.displayName?.slice(0, 2) || 'U'}</AvatarFallback>
                         </Avatar>
                       </Button>
