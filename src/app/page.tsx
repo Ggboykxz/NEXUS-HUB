@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -8,12 +7,27 @@ import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
-import type { Story, LibraryEntry, UserProfile } from '@/lib/types';
-import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, History, Clock, BookHeart, Globe, Trophy } from 'lucide-react';
+import type { Story, LibraryEntry } from '@/lib/types';
+import { 
+  Play, 
+  Info, 
+  TrendingUp, 
+  Sparkles, 
+  Crown, 
+  Award, 
+  PenSquare, 
+  ChevronRight, 
+  History, 
+  Clock, 
+  BookHeart, 
+  Globe, 
+  Trophy, 
+  Banknote 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
-import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
 

@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 2.8.0
+ * @version 2.9.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -51,8 +51,9 @@ export interface UserProfile {
   links?: SocialLinks;
   afriCoins: number;
   subscribersCount: number;
+  isCertified?: boolean; // Mentorat 2.0
   
-  revenueShare: number; // Pourcentage de redistribution (15, 30, 60, 70)
+  revenueShare: number; 
 
   readingStats: {
     preferredGenres: Record<string, number>; 
@@ -145,10 +146,6 @@ export interface Chapter {
 
 // ─── HELPERS D'URLS ──────────────────────────────────────────────────────────
 
-/**
- * Retourne l'URL canonique d'une œuvre selon son format.
- * Utilise webtoon-hub pour centraliser le routage et éviter les conflits Next.js.
- */
 export const getStoryUrl = (story: Pick<Story, 'format' | 'slug'>): string => {
   const isWebtoonFormat = story.format === 'Webtoon' || story.format === 'Roman Illustré' || story.format === 'Hybride';
   return isWebtoonFormat ? `/webtoon-hub/${story.slug}` : `/bd-africaine/${story.slug}`;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useRef, useCallback, useMemo } from 'react';
-import { stories, comicPages, comments as allComments, getChapterUrl } from '@/lib/data';
+import { stories, comicPages, getChapterUrl } from '@/lib/data';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -21,51 +21,40 @@ import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { useTranslation } from '@/components/providers/language-provider';
 
-/**
- * LE LECTEUR MAGIQUE NEXUSHUB
- * Unifie l'expérience de lecture cinématique, l'accessibilité africaine et le profiling IA.
- */
 export default function MagicalReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   const { t } = useTranslation();
-  const router = useRouter();
   
-  // Data Retrieval
   const story = stories.find(s => s.slug === slug);
   if (!story) notFound();
 
   const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Épisode', slug: '1', chapterNumber: 1 } as any;
   
-  // UI States
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
-  // Technical Accessibility States
   const [isLowData, setIsLowData] = useState(false);
   const [isBatterySaver, setIsBatterySaver] = useState(false);
   const [isEyeProtection, setIsEyeProtection] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [zoomLevel, setZoomIn] = useState(1);
   
-  // Analytics & Recom States
   const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
   const [readingStartTime] = useState(Date.now());
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
-  // AUTH SYNC
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
     return () => unsubscribe();
   }, []);
 
-  // SILENT PROFILING & SYNC (Every 15s)
   useEffect(() => {
     if (!currentUser || progress === 0) return;
     
@@ -75,7 +64,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         const libRef = doc(db, 'users', currentUser.uid, 'library', story.id);
         const userRef = doc(db, 'users', currentUser.uid);
 
-        // Sync Progress
         await setDoc(libRef, {
           storyId: story.id,
           storyTitle: story.title,
@@ -87,7 +75,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           progress: Math.floor(progress),
         }, { merge: true });
 
-        // Sync Stats for AI Recom
         if (timeSpent > 0) {
           await setDoc(userRef, {
             readingStats: {
@@ -104,12 +91,10 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     return () => clearInterval(syncInterval);
   }, [progress, currentUser, story, chapter, readingStartTime]);
 
-  // SMART UI VISIBILITY
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const currentScrollY = target.scrollTop;
     
-    // Auto-hide UI on scroll down, show on scroll up
     if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
       setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 50);
       lastScrollY.current = currentScrollY;
@@ -119,7 +104,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     setProgress(currentProgress);
   }, []);
 
-  // REACTION ENGINE
   const handleReaction = (pageIdx: number, emoji: string) => {
     if (!currentUser) {
       openAuthModal(`réagir avec ${emoji}`);
@@ -132,7 +116,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     toast({ title: `Réaction ${emoji} envoyée !` });
   };
 
-  // TOP MOMENTS ALGORITHM (Simulated)
   const topMoments = useMemo(() => {
     const scores = Object.entries(panelReactions).map(([idx, reacts]) => ({
       idx: parseInt(idx),
@@ -141,14 +124,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     return scores.sort((a, b) => b.score - a.score).slice(0, 3).map(s => s.idx);
   }, [panelReactions]);
 
-  // AUDIO ASSISTANT (TTS Simulation)
-  const handleTTS = () => {
-    toast({
-      title: "Assistant Vocal Activé",
-      description: "Lecture des dialogues en cours... (Mode accessibilité)",
-    });
-  };
-
   return (
     <div className={cn(
       "h-screen flex flex-col overflow-hidden text-stone-200 transition-all duration-1000",
@@ -156,7 +131,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
       isBatterySaver && "battery-saver",
       isEyeProtection && "sepia-[0.3] brightness-90"
     )}>
-      {/* 1. BARRE DE NAVIGATION FLOTTANTE */}
       <nav className={cn(
         "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
         (!isUIVisible && !isFocusMode) && "reader-ui-hidden",
@@ -175,7 +149,7 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
-          <Button onClick={handleTTS} variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white/5 hidden md:flex">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white/5 hidden md:flex">
             <Headphones className="h-4 w-4" />
           </Button>
           <Button onClick={() => setIsSettingsOpen(!isSettingsOpen)} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isSettingsOpen && "text-primary bg-primary/10")}>
@@ -187,7 +161,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         </div>
       </nav>
       
-      {/* 2. ZONE DE LECTURE PRINCIPALE */}
       <div className="flex-1 flex overflow-hidden relative">
         <main 
           ref={scrollRef}
@@ -214,7 +187,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                   priority={index < 2}
                 />
                 
-                {/* Micro-interactions Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   {topMoments.includes(index) && !isBatterySaver && (
                     <div className="absolute top-4 left-4 flex items-center gap-2 bg-primary text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl animate-pulse">
@@ -237,7 +209,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
               </div>
             ))}
             
-            {/* FIN DE CHAPITRE LÉGENDAIRE */}
             <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
               <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
                 <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
@@ -261,7 +232,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </main>
 
-        {/* 3. PANNEAU DE RÉGLAGES (SIDEBAR GAUCHE) */}
         <aside className={cn(
           "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950/95 backdrop-blur-3xl border-r border-white/5 z-40 transition-transform duration-500",
           isSettingsOpen ? "translate-x-0" : "-translate-x-full"
@@ -315,7 +285,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </aside>
 
-        {/* 4. PANNEAU DE COMMENTAIRES (SIDEBAR DROITE) */}
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
           isCommentsOpen ? "translate-x-0" : "translate-x-full"

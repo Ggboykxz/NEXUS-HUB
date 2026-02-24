@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, Award, Eye, Star, PenSquare, Edit } from 'lucide-react';
+import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, Award, Eye, Star, PenSquare, Edit, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -86,29 +86,43 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <div className="md:flex gap-8">
         <div className="md:w-1/3 text-center md:text-left">
-          <Avatar className="h-48 w-48 border-4 border-background ring-4 ring-primary mx-auto md:mx-0">
-            <AvatarImage src={artist.photoURL} alt={artist.displayName} />
-            <AvatarFallback>{artist.displayName.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <div className="relative inline-block md:block">
+            <Avatar className="h-48 w-48 border-4 border-background ring-4 ring-primary mx-auto md:mx-0 shadow-2xl">
+              <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+              <AvatarFallback>{artist.displayName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            {artist.isCertified && (
+              <Badge className="absolute -bottom-2 -right-2 md:bottom-2 md:right-2 bg-emerald-500 text-white border-2 border-background p-1.5 shadow-xl animate-bounce">
+                <CheckCircle2 className="h-5 w-5" />
+              </Badge>
+            )}
+          </div>
           
-          <div className="flex flex-col items-center md:items-start mt-4 gap-y-4">
+          <div className="flex flex-col items-center md:items-start mt-6 gap-y-4">
             <div className="flex items-center gap-x-3">
               <h1 className="text-4xl font-bold font-display">{artist.displayName}</h1>
               {artist.role === 'artist_pro' ? (
-                <Badge variant="secondary" className="flex items-center gap-1.5 text-sm h-fit py-1 px-2.5">
+                <Badge variant="secondary" className="flex items-center gap-1.5 text-sm h-fit py-1 px-2.5 bg-emerald-500/10 text-emerald-500 border-none">
                     <Award className="h-4 w-4" />
                     Pro
                 </Badge>
               ) : (
-                <Badge variant="outline" className="flex items-center gap-1.5 text-sm h-fit py-1 px-2.5">
+                <Badge variant="outline" className="flex items-center gap-1.5 text-sm h-fit py-1 px-2.5 border-orange-500/50 text-orange-400">
                     <PenSquare className="h-4 w-4" />
                     Draft
                 </Badge>
               )}
             </div>
+
+            {artist.isCertified && (
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/20">
+                <ShieldCheck className="h-3 w-3" /> Diplômé NexusHub
+              </div>
+            )}
+
             <div className="flex items-center gap-2">
               {isOwnProfile ? (
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="rounded-full px-6">
                   <Link href="/settings">
                     <Edit className="mr-2 h-4 w-4" />
                     Éditer le profil
@@ -120,6 +134,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
                     onClick={handleSubscribeClick}
                     variant={isSubscribed ? 'secondary' : 'default'}
                     size="sm"
+                    className="rounded-full px-6"
                   >
                     <Bell className={cn("mr-2 h-4 w-4", isSubscribed && "fill-current")} />
                     {isSubscribed ? 'Abonné' : 'S\'abonner'}
@@ -130,7 +145,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
                     }
                   }}>
                       <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" className="rounded-full px-6">
                               <Heart className="mr-2 h-4 w-4 text-destructive fill-destructive" />
                               Faire un don
                           </Button>
@@ -184,14 +199,14 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           
           <div className="flex gap-2 justify-center md:justify-start flex-wrap mt-6">
             {artist.links?.twitter && (
-              <Button variant="outline" size="icon" asChild>
+              <Button variant="outline" size="icon" className="rounded-full" asChild>
                 <a href={artist.links.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
                   <Twitter className="h-4 w-4" />
                 </a>
               </Button>
             )}
             {artist.links?.instagram && (
-              <Button variant="outline" size="icon" asChild>
+              <Button variant="outline" size="icon" className="rounded-full" asChild>
                 <a href={artist.links.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                   <Instagram className="h-4 w-4" />
                 </a>
@@ -201,55 +216,48 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
         </div>
 
         <div className="md:w-2/3 mt-8 md:mt-0">
-          <h2 className="text-2xl font-bold font-display mb-2">Biographie</h2>
-          <p className="text-lg text-foreground/80 leading-relaxed">{artist.bio || "Aucune biographie disponible."}</p>
+          <h2 className="text-2xl font-bold font-display mb-4">Biographie</h2>
+          <p className="text-lg text-foreground/80 leading-relaxed italic font-light">"{artist.bio || "Explorateur de récits et bâtisseur d'univers."}"</p>
+          
+          {artist.isCertified && (
+            <div className="mt-8 p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+              <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 flex items-center gap-2 mb-2">
+                <ShieldCheck className="h-4 w-4" /> Distinction Académique
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Cet artiste a suivi le programme complet de mentorat NexusHub, validant les modules de narration séquentielle et de character design africain.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <Separator className="my-12" />
+      <Separator className="my-12 opacity-50" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vues Totales</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatStat(totalViews)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Likes Totaux</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatStat(totalLikes)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Abonnés</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatStat(artist.subscribersCount)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Œuvres</CardTitle>
-            <Book className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalWorks}</div>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Vues Totales", val: formatStat(totalViews), icon: Eye },
+          { label: "Engagement", val: formatStat(totalLikes), icon: Heart },
+          { label: "Fans", val: formatStat(artist.subscribersCount), icon: Star },
+          { label: "Production", val: totalWorks, icon: Book },
+        ].map((stat, i) => (
+          <Card key={i} className="border-none bg-muted/30 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
+              <stat.icon className="h-4 w-4 text-primary opacity-50" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-black">{stat.val}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="mt-16">
-        <h2 className="text-3xl font-bold font-display mb-6">Portfolio</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <h2 className="text-3xl font-bold font-display mb-10 flex items-center gap-3">
+          <LayoutGrid className="h-8 w-8 text-primary" /> Portfolio
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
           {artistStories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
