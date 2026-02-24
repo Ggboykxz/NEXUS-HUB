@@ -1,4 +1,4 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid, Languages } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid, Languages, BrainCircuit } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
@@ -37,10 +37,10 @@ export const navLinks: NavLink[] = [
     badge: { label: 'LIVE', variant: 'orange' }
   },
   {
-    href: "/translators",
-    label: "Traducteurs",
-    icon: Languages,
-    badge: { label: 'HUB', variant: 'blue' }
+    href: "/dashboard/ai-studio",
+    label: "AI Studio",
+    icon: BrainCircuit,
+    badge: { label: 'NEW', variant: 'emerald' }
   },
   { 
     href: "/rankings", 

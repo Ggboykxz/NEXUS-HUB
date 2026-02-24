@@ -34,7 +34,8 @@ import {
   Building2,
   Handshake,
   LayoutGrid,
-  Languages
+  Languages,
+  BrainCircuit
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,15 +60,6 @@ export default function HomePage() {
       const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(10));
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-    }
-  });
-
-  const { data: artists = [] } = useQuery({
-    queryKey: ['featured-artists'],
-    queryFn: async () => {
-      const q = query(collection(db, 'users'), limit(6));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile));
     }
   });
 
@@ -125,6 +117,34 @@ export default function HomePage() {
 
       <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
         
+        {/* AI STUDIO QUICK ACCESS */}
+        <section className="p-8 rounded-[2.5rem] bg-stone-900 border border-primary/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><BrainCircuit className="h-48 w-48 text-primary" /></div>
+            <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-6">
+                    <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black tracking-widest px-3">NOUVEAU : NEXUSHUB AI STUDIO</Badge>
+                    <h2 className="text-4xl font-display font-black text-white leading-tight">Assistance Créative <br/> de Prochaine Génération</h2>
+                    <p className="text-stone-400 text-lg font-light italic">"Storyboard, Colorisation textile et Consistance de personnages. Libérez votre génie avec nos outils IA spécialisés."</p>
+                    <Button asChild size="lg" className="rounded-full bg-primary text-black font-black px-8 h-14 gold-shimmer shadow-2xl shadow-primary/20">
+                        <Link href="/dashboard/ai-studio">Découvrir le Studio AI <ChevronRight className="ml-2 h-5 w-5" /></Link>
+                    </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    {[
+                        { label: "Storyboard", icon: LayoutGrid },
+                        { label: "Palettes Kente", icon: Palette },
+                        { label: "SFX Culturels", icon: Waves },
+                        { label: "Anti-Burnout", icon: HeartPulse }
+                    ].map((item, i) => (
+                        <div key={i} className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center gap-2">
+                            <item.icon className="h-6 w-6 text-primary" />
+                            <span className="text-[10px] font-bold uppercase text-stone-300">{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
         {/* REWARDS & ECONOMY QUICK ACCESS */}
         <section className="animate-in fade-in duration-700">
           <div className="flex items-center justify-between mb-8">
@@ -156,35 +176,6 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
-        </section>
-
-        {/* TRANSLATION HIGHLIGHT */}
-        <section className="p-12 rounded-[3rem] bg-emerald-950/20 border border-emerald-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 opacity-5"><Languages className="h-64 w-64 text-emerald-500" /></div>
-            <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-                <div className="space-y-6">
-                    <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black tracking-widest px-3">Nouveauté : Hub de Traduction</Badge>
-                    <h2 className="text-4xl font-display font-black text-white">Le monde parle votre langue</h2>
-                    <p className="text-emerald-100/70 text-lg leading-relaxed font-light italic">
-                        "Grâce à notre programme de traducteurs certifiés et notre IA culturelle, découvrez des œuvres en Hausa, Wolof, Yoruba et plus encore. Brisons les barrières de la langue."
-                    </p>
-                    <div className="flex gap-4">
-                        <Button asChild className="rounded-full bg-emerald-500 text-black font-black px-8">
-                            <Link href="/translators">Devenir Traducteur Certifié</Link>
-                        </Button>
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 text-center">
-                        <p className="text-3xl font-black text-emerald-500">12+</p>
-                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">Langues Africaines</p>
-                    </div>
-                    <div className="p-6 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 text-center">
-                        <p className="text-3xl font-black text-emerald-500">500+</p>
-                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">Traducteurs Actifs</p>
-                    </div>
-                </div>
-            </div>
         </section>
 
         {/* FOR YOU - IA SECTION */}
@@ -240,4 +231,8 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+function HeartPulse(props: any) {
+    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
 }
