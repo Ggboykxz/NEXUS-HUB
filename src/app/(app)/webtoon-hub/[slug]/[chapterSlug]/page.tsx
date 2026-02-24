@@ -2,11 +2,11 @@
 
 import { useState, useEffect, use, useRef, useCallback, useMemo } from 'react';
 import { stories, comicPages, comments as allComments, getChapterUrl } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Volume2, Database, BatteryMedium, SlidersHorizontal, X, Sparkles, Flame, AlertCircle
+  Bookmark, Settings, Heart, MessageSquare, Share2, ArrowLeft, ChevronRight, Eye, MonitorPlay, Volume2, Database, BatteryMedium, SlidersHorizontal, X, Sparkles, Flame, AlertCircle, Headphones, ZoomIn, Maximize2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -21,37 +21,51 @@ import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { useTranslation } from '@/components/providers/language-provider';
 
-export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
+/**
+ * LE LECTEUR MAGIQUE NEXUSHUB
+ * Unifie l'expérience de lecture cinématique, l'accessibilité africaine et le profiling IA.
+ */
+export default function MagicalReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   const { t } = useTranslation();
+  const router = useRouter();
   
+  // Data Retrieval
   const story = stories.find(s => s.slug === slug);
   if (!story) notFound();
 
-  const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Chargement...', slug: '1', chapterNumber: 1 } as any;
+  const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Épisode', slug: '1', chapterNumber: 1 } as any;
   
+  // UI States
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
-  const [readingStartTime] = useState(Date.now());
   
+  // Technical Accessibility States
   const [isLowData, setIsLowData] = useState(false);
   const [isBatterySaver, setIsBatterySaver] = useState(false);
+  const [isEyeProtection, setIsEyeProtection] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [zoomLevel, setZoomIn] = useState(1);
+  
+  // Analytics & Recom States
+  const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
+  const [readingStartTime] = useState(Date.now());
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
+  // AUTH SYNC
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
     return () => unsubscribe();
   }, []);
 
+  // SILENT PROFILING & SYNC (Every 15s)
   useEffect(() => {
     if (!currentUser || progress === 0) return;
     
@@ -61,6 +75,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         const libRef = doc(db, 'users', currentUser.uid, 'library', story.id);
         const userRef = doc(db, 'users', currentUser.uid);
 
+        // Sync Progress
         await setDoc(libRef, {
           storyId: story.id,
           storyTitle: story.title,
@@ -72,6 +87,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           progress: Math.floor(progress),
         }, { merge: true });
 
+        // Sync Stats for AI Recom
         if (timeSpent > 0) {
           await setDoc(userRef, {
             readingStats: {
@@ -80,18 +96,22 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             }
           }, { merge: true });
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Nexus Sync Error:", e);
+      }
     }, 15000);
 
     return () => clearInterval(syncInterval);
   }, [progress, currentUser, story, chapter, readingStartTime]);
 
+  // SMART UI VISIBILITY
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const currentScrollY = target.scrollTop;
     
+    // Auto-hide UI on scroll down, show on scroll up
     if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
-      setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 100);
+      setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 50);
       lastScrollY.current = currentScrollY;
     }
     
@@ -99,18 +119,20 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     setProgress(currentProgress);
   }, []);
 
+  // REACTION ENGINE
   const handleReaction = (pageIdx: number, emoji: string) => {
     if (!currentUser) {
-      openAuthModal(`reagir avec ${emoji}`);
+      openAuthModal(`réagir avec ${emoji}`);
       return;
     }
     setPanelReactions(prev => {
       const current = prev[pageIdx] || {};
       return { ...prev, [pageIdx]: { ...current, [emoji]: (current[emoji] || 0) + 1 } };
     });
-    toast({ title: `Réaction ${emoji} !` });
+    toast({ title: `Réaction ${emoji} envoyée !` });
   };
 
+  // TOP MOMENTS ALGORITHM (Simulated)
   const topMoments = useMemo(() => {
     const scores = Object.entries(panelReactions).map(([idx, reacts]) => ({
       idx: parseInt(idx),
@@ -119,12 +141,22 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     return scores.sort((a, b) => b.score - a.score).slice(0, 3).map(s => s.idx);
   }, [panelReactions]);
 
+  // AUDIO ASSISTANT (TTS Simulation)
+  const handleTTS = () => {
+    toast({
+      title: "Assistant Vocal Activé",
+      description: "Lecture des dialogues en cours... (Mode accessibilité)",
+    });
+  };
+
   return (
     <div className={cn(
-      "h-screen bg-black flex flex-col overflow-hidden text-stone-200 transition-colors duration-1000",
-      isFocusMode && "cursor-none",
-      isBatterySaver && "battery-saver"
+      "h-screen flex flex-col overflow-hidden text-stone-200 transition-all duration-1000",
+      isFocusMode ? "bg-black cursor-none" : "bg-stone-950",
+      isBatterySaver && "battery-saver",
+      isEyeProtection && "sepia-[0.3] brightness-90"
     )}>
+      {/* 1. BARRE DE NAVIGATION FLOTTANTE */}
       <nav className={cn(
         "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
         (!isUIVisible && !isFocusMode) && "reader-ui-hidden",
@@ -133,16 +165,19 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         <div className="absolute bottom-0 left-0 h-0.5 bg-primary shadow-[0_0_15px_hsl(var(--primary))] transition-all duration-300 z-50" style={{ width: `${progress}%` }} />
         
         <div className="flex items-center gap-4 flex-1">
-          <Button asChild variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-full bg-white/5">
-            <Link href={`/webtoon/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
+          <Button asChild variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-full bg-white/5 hover:bg-primary/10">
+            <Link href={`/webtoon-hub/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
           <div className="flex flex-col">
-            <span className="text-[9px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1">{story.title}</span>
-            <span className="text-xs font-bold text-foreground truncate max-w-[150px]">Ch. {chapter.chapterNumber}</span>
+            <span className="text-[9px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1 truncate max-w-[120px] md:max-w-none">{story.title}</span>
+            <span className="text-xs font-bold text-foreground truncate max-w-[150px]">Épisode {chapter.chapterNumber}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
+          <Button onClick={handleTTS} variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-white/5 hidden md:flex">
+            <Headphones className="h-4 w-4" />
+          </Button>
           <Button onClick={() => setIsSettingsOpen(!isSettingsOpen)} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isSettingsOpen && "text-primary bg-primary/10")}>
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
@@ -152,26 +187,34 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
         </div>
       </nav>
       
+      {/* 2. ZONE DE LECTURE PRINCIPALE */}
       <div className="flex-1 flex overflow-hidden relative">
         <main 
           ref={scrollRef}
           onScroll={handleScroll}
+          onDoubleClick={() => setIsFocusMode(!isFocusMode)}
           className={cn(
             "flex-1 overflow-y-auto transition-all duration-700 scroll-smooth hide-scrollbar",
             isCommentsOpen ? "lg:mr-[400px]" : "w-full"
           )}
         >
-          <div className="mx-auto flex flex-col items-center max-w-[800px]">
+          <div className="mx-auto flex flex-col items-center max-w-[800px] py-14">
             {comicPages.map((page, index) => (
               <div key={page.id} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000 group">
                 <Image
-                  src={getOptimizedImage(page.imageUrl, { width: 1000, quality: isLowData ? 30 : 90, lowData: isLowData })}
+                  src={getOptimizedImage(page.imageUrl, { 
+                    width: 1000, 
+                    quality: isLowData ? 30 : 90, 
+                    lowData: isLowData 
+                  })}
                   alt={page.description}
                   fill
-                  className="object-contain md:object-cover"
+                  className="object-contain md:object-cover transition-transform duration-500"
+                  style={{ transform: `scale(${zoomLevel})` }}
                   priority={index < 2}
                 />
                 
+                {/* Micro-interactions Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   {topMoments.includes(index) && !isBatterySaver && (
                     <div className="absolute top-4 left-4 flex items-center gap-2 bg-primary text-black px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl animate-pulse">
@@ -194,43 +237,85 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
               </div>
             ))}
             
-            <div className="py-24 text-center space-y-8">
-              <h2 className="text-4xl font-display font-black gold-resplendant">Fin du Chapitre</h2>
-              <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
-                Chapitre Suivant <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+            {/* FIN DE CHAPITRE LÉGENDAIRE */}
+            <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
+              <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
+                <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
+                <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
+                  Épisode Suivant <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 rounded-full border-white/10 text-white gap-2 font-bold h-12">
+                    <Heart className="h-4 w-4" /> Favori
+                  </Button>
+                  <Button variant="outline" className="flex-1 rounded-full border-white/10 text-white gap-2 font-bold h-12">
+                    <Share2 className="h-4 w-4" /> Partager
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </main>
 
+        {/* 3. PANNEAU DE RÉGLAGES (SIDEBAR GAUCHE) */}
         <aside className={cn(
-          "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950 border-r border-white/5 z-40 transition-transform duration-500",
+          "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950/95 backdrop-blur-3xl border-r border-white/5 z-40 transition-transform duration-500",
           isSettingsOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="p-6 space-y-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-display font-black text-primary">Réglages</h3>
-              <Button onClick={() => setIsSettingsOpen(false)} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-white flex items-center gap-2"><Database className="h-4 w-4 text-cyan-500" /> Mode Low-Data</Label>
-                  <p className="text-[10px] text-muted-foreground italic">Compression images à 40%.</p>
-                </div>
-                <Switch checked={isLowData} onCheckedChange={setIsLowData} />
+          <div className="p-8 space-y-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-2 rounded-lg"><SlidersHorizontal className="h-5 w-5 text-primary" /></div>
+                <h3 className="text-lg font-display font-black text-white">Réglages</h3>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-white flex items-center gap-2"><BatteryMedium className="h-4 w-4 text-emerald-500" /> Éco Batterie</Label>
-                  <p className="text-[10px] text-muted-foreground italic">Désactive les animations.</p>
+              <Button onClick={() => setIsSettingsOpen(false)} variant="ghost" size="icon" className="text-stone-500"><X className="h-5 w-5" /></Button>
+            </div>
+
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <Label className="text-[10px] uppercase font-black text-primary tracking-widest">Affichage</Label>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-white flex items-center gap-2"><Maximize2 className="h-4 w-4 text-primary" /> Mode Focus</Label>
+                    <p className="text-[10px] text-muted-foreground italic">Masque toute l'interface.</p>
+                  </div>
+                  <Switch checked={isFocusMode} onCheckedChange={setIsFocusMode} />
                 </div>
-                <Switch checked={isBatterySaver} onCheckedChange={setIsBatterySaver} />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-white flex items-center gap-2"><Eye className="h-4 w-4 text-amber-500" /> Protection Yeux</Label>
+                    <p className="text-[10px] text-muted-foreground italic">Filtre lumière bleue adaptive.</p>
+                  </div>
+                  <Switch checked={isEyeProtection} onCheckedChange={setIsEyeProtection} />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <Label className="text-[10px] uppercase font-black text-cyan-500 tracking-widest">Optimisation Africaine</Label>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-white flex items-center gap-2"><Database className="h-4 w-4 text-cyan-500" /> Mode Low-Data</Label>
+                    <p className="text-[10px] text-muted-foreground italic">Compression images à 40%.</p>
+                  </div>
+                  <Switch checked={isLowData} onCheckedChange={setIsLowData} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-white flex items-center gap-2"><BatteryMedium className="h-4 w-4 text-emerald-500" /> Éco Batterie</Label>
+                    <p className="text-[10px] text-muted-foreground italic">Désactive les particules IA.</p>
+                  </div>
+                  <Switch checked={isBatterySaver} onCheckedChange={setIsBatterySaver} />
+                </div>
               </div>
             </div>
           </div>
         </aside>
 
+        {/* 4. PANNEAU DE COMMENTAIRES (SIDEBAR DROITE) */}
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
           isCommentsOpen ? "translate-x-0" : "translate-x-full"
@@ -239,11 +324,18 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             <h3 className="text-lg font-display font-black text-white flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-primary" /> Communauté
             </h3>
-            <Button onClick={() => setIsCommentsOpen(false)} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
+            <Button onClick={() => setIsCommentsOpen(false)} variant="ghost" size="icon" className="text-stone-500"><X className="h-5 w-5" /></Button>
           </div>
           <div className="p-8 text-center flex flex-col justify-center h-[calc(100%-60px)]">
-            <AlertCircle className="h-12 w-12 text-stone-700 mx-auto mb-4" />
-            <p className="text-stone-500 italic text-sm">Discussions en cours de chargement...</p>
+            <div className="bg-stone-900 p-8 rounded-[2.5rem] border border-white/5">
+                <AlertCircle className="h-12 w-12 text-stone-700 mx-auto mb-4" />
+                <p className="text-stone-400 font-light italic text-sm leading-relaxed">
+                    Les discussions pour cet épisode arrivent bientôt. Partagez votre théorie en premier !
+                </p>
+                <Button className="mt-8 rounded-full px-8 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                    Lancer le débat
+                </Button>
+            </div>
           </div>
         </aside>
       </div>

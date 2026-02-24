@@ -1,6 +1,7 @@
 /**
- * Ce fichier est neutralisé au profit de webtoon-hub pour résoudre le conflit de parallélisme.
+ * Ce fichier est neutralisé pour résoudre le conflit de parallélisme Next.js.
+ * Utilisez src/app/(app)/webtoon-hub/page.tsx à la place.
  */
-export default function NeutralizedGroupPage() {
+export default function NeutralizedGroupWebtoonPage() {
   return null;
 }

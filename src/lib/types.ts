@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 2.4.0
+ * @version 2.6.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -29,7 +29,7 @@ export interface SocialLinks {
 export type StoryFormat = 'Webtoon' | 'BD' | 'One-shot' | 'Roman Illustré' | 'Hybride';
 export type StoryStatus = 'En cours' | 'Terminé' | 'À venir';
 export type StoryTier = 'free' | 'draft' | 'pro' | 'premium';
-export type TeamRole = 'scenariste' | 'dessinateur' | 'coloriste' | 'lettreur' | 'traducteur';
+export type TeamRole = 'scenariste' | 'dessinateur' | 'coloriste' | 'lettreur' | 'traducteur' | 'owner';
 export type ChapterStatus = 'Publié' | 'Programmé' | 'Brouillon';
 export type UserRole = 'reader' | 'artist_draft' | 'artist_pro' | 'artist_elite' | 'admin';
 export type ArtistLevel = 'emergent' | 'draft' | 'pro' | 'elite';
@@ -103,13 +103,6 @@ export interface LibraryEntry {
 //  COLLECTION : stories/{storyId}
 // ═══════════════════════════════════════════════════════════════════════════
 
-export interface StoryArc {
-  id: string;
-  title: string;
-  order: number;
-  description?: string;
-}
-
 export interface Story {
   id: string;
   slug: string;
@@ -119,7 +112,6 @@ export interface Story {
   artistName: string;
   artistSlug?: string;
   coverImage: ImageData;
-  coverVariants?: ImageData[]; 
   format: StoryFormat;
   genre: string;
   genreSlug: string;
@@ -130,7 +122,6 @@ export interface Story {
   likes: number;
   chapterCount: number;
   region?: string;
-  arcs?: StoryArc[]; 
   updatedAt: Timestamp | string;
   chapters?: Chapter[];
 }
@@ -138,49 +129,26 @@ export interface Story {
 export interface Chapter {
   id: string;
   storyId: string;
-  arcId?: string; 
   slug: string;
   title: string;
   chapterNumber: number;
   pages: ImageData[];
   pageCount: number;
   isPremium: boolean;
-  isDraft: boolean;
-  version: string; 
   status: ChapterStatus;
-  scheduledAt?: Timestamp | string; 
-  watermarkEnabled: boolean; 
   views: number;
   likes: number;
   publishedAt?: Timestamp | string;
 }
 
-export interface Comment {
-  id: string;
-  storyId: string;
-  chapterId: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  content: string;
-  isSpoiler: boolean;
-  likes: number;
-  pageIndex?: number; 
-  createdAt: Timestamp | string;
-}
-
-export interface Playlist {
-  id: string;
-  ownerId: string;
-  title: string;
-  storyIds: string[];
-  isPublic: boolean;
-}
-
 // ─── HELPERS D'URLS ──────────────────────────────────────────────────────────
 
+/**
+ * Retourne l'URL canonique d'une œuvre selon son format.
+ * Utilise webtoon-hub pour centraliser le routage et éviter les conflits Next.js.
+ */
 export const getStoryUrl = (story: Pick<Story, 'format' | 'slug'>): string => {
-  const isWebtoonFormat = story.format === 'Webtoon' || story.format === 'Roman Illustré';
+  const isWebtoonFormat = story.format === 'Webtoon' || story.format === 'Roman Illustré' || story.format === 'Hybride';
   return isWebtoonFormat ? `/webtoon-hub/${story.slug}` : `/bd-africaine/${story.slug}`;
 };
 

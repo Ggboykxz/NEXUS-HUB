@@ -6,18 +6,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Paperclip, SendHorizonal, Smile, MoreVertical, Search, Phone, Video, Check, Loader2, MessageSquare } from "lucide-react";
+import { 
+  Paperclip, SendHorizonal, Smile, MoreVertical, Search, 
+  Phone, Video, Check, Loader2, MessageSquare, Users, 
+  Settings, Info, Trash2, Heart, CircleDollarSign, Zap
+} from "lucide-react";
 import Link from "next/link";
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
-import { collection, query, limit, getDocs } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('direct');
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedChat, setSelectedChat] = useState<any>(null);
   const [messageText, setMessageText] = useState('');
+
+  // Simulation de chats d'équipe
+  const projectChats = [
+    { 
+      id: 'p1', 
+      type: 'project', 
+      name: 'Orisha Chronicles - Team', 
+      members: 4, 
+      lastMsg: 'Amina: Le lineart du Chap 14 est fini.',
+      photo: 'https://res.cloudinary.com/demo/image/upload/v1/samples/stories/orisha-chronicles.jpg'
+    },
+    { 
+      id: 'p2', 
+      type: 'project', 
+      name: 'Cyber-Reines - Prod', 
+      members: 3, 
+      lastMsg: 'Koffi: J\'ai mis à jour les palettes.',
+      photo: 'https://res.cloudinary.com/demo/image/upload/v1/samples/stories/scifi-africa.jpg'
+    }
+  ];
 
   useEffect(() => {
     async function fetchUsers() {
@@ -29,7 +55,7 @@ export default function MessagesPage() {
         } as UserProfile));
         setUsers(fetchedUsers);
         if (fetchedUsers.length > 0) {
-          setSelectedUser(fetchedUsers[0]);
+          setSelectedChat(fetchedUsers[0]);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -50,146 +76,200 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex container mx-auto max-w-7xl px-0 border rounded-2xl overflow-hidden my-4 bg-card shadow-2xl">
-      {/* Sidebar with conversations */}
-      <aside className="w-full md:w-1/3 lg:w-1/4 border-r bg-muted/30 flex flex-col">
-        <div className="p-6 border-b bg-card">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold font-display">Messages</h2>
-            <Button variant="ghost" size="icon"><MoreVertical className="h-5 w-5" /></Button>
+    <div className="h-[calc(100vh-5rem)] flex container mx-auto max-w-7xl px-0 border-none rounded-[2.5rem] overflow-hidden my-4 bg-card shadow-2xl">
+      {/* Sidebar */}
+      <aside className="w-full md:w-1/3 lg:w-1/4 border-r bg-stone-900/50 backdrop-blur-xl flex flex-col">
+        <div className="p-6 border-b border-white/5 space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-black font-display text-white">Hub Messages</h2>
+            <Button variant="ghost" size="icon" className="text-stone-500"><Settings className="h-5 w-5" /></Button>
           </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-white/5 p-1 rounded-xl h-10">
+              <TabsTrigger value="direct" className="rounded-lg text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">Direct</TabsTrigger>
+              <TabsTrigger value="team" className="rounded-lg text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Équipes</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher une discussion..." className="pl-9 bg-muted/50 border-none rounded-full h-9" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-600" />
+            <Input placeholder="Rechercher..." className="pl-9 bg-white/5 border-none rounded-xl h-10 text-white text-xs" />
           </div>
         </div>
+
         <ScrollArea className="flex-1">
-          {users.length > 0 ? users.map((user) => (
-            <div 
-              key={user.uid} 
-              onClick={() => setSelectedUser(user)}
-              className={cn(
-                "flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-all relative border-b border-border/50",
-                selectedUser?.uid === user.uid && "bg-primary/5 border-r-4 border-r-primary"
-              )}
-            >
-              <div className="relative">
-                <Avatar className="h-12 w-12 border">
-                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                  <AvatarFallback>{user.displayName?.slice(0, 2) || 'U'}</AvatarFallback>
-                </Avatar>
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline mb-0.5">
-                  <p className="font-bold truncate">{user.displayName}</p>
-                  <span className="text-[10px] text-muted-foreground">10:33 AM</span>
+          <div className="p-2 space-y-1">
+            {activeTab === 'direct' ? (
+              users.map((user) => (
+                <div 
+                  key={user.uid} 
+                  onClick={() => setSelectedChat(user)}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border-2 border-transparent",
+                    selectedChat?.uid === user.uid ? "bg-primary/10 border-primary/20" : "hover:bg-white/5"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar className="h-12 w-12 border-2 border-white/5">
+                      <AvatarImage src={user.photoURL} />
+                      <AvatarFallback>{user.displayName?.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-stone-900" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-0.5">
+                      <p className="font-bold text-white truncate text-sm">{user.displayName}</p>
+                      <span className="text-[9px] text-stone-500 font-bold uppercase">10:33</span>
+                    </div>
+                    <p className="text-xs text-stone-400 truncate font-light italic">"Salut ! Tu as lu le dernier..."</p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground truncate font-light">
-                  {user.role?.includes('artist') ? 'Nouvelle mise à jour disponible !' : 'Salut ! Tu as lu le dernier chapitre ?'}
-                </p>
-              </div>
-            </div>
-          )) : (
-            <div className="p-8 text-center text-muted-foreground text-sm italic">
-              Aucune conversation trouvée.
-            </div>
-          )}
+              ))
+            ) : (
+              projectChats.map((chat) => (
+                <div 
+                  key={chat.id} 
+                  onClick={() => setSelectedChat(chat)}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border-2 border-transparent",
+                    selectedChat?.id === chat.id ? "bg-emerald-500/10 border-emerald-500/20" : "hover:bg-white/5"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar className="h-12 w-12 border-2 border-white/5 rounded-xl overflow-hidden">
+                      <AvatarImage src={chat.photo} className="object-cover" />
+                      <AvatarFallback className="rounded-xl">P</AvatarFallback>
+                    </Avatar>
+                    <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[8px] px-1 h-4 border-stone-900 min-w-[16px] flex items-center justify-center">3</Badge>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-0.5">
+                      <p className="font-black text-white truncate text-sm tracking-tight">{chat.name}</p>
+                    </div>
+                    <p className="text-xs text-stone-400 truncate font-medium flex items-center gap-1.5">
+                        <Users className="h-3 w-3 text-emerald-500" /> {chat.members} co-créateurs
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </ScrollArea>
       </aside>
 
       {/* Main chat area */}
-      <main className="hidden md:flex flex-1 flex-col bg-background">
-        {selectedUser ? (
+      <main className="hidden md:flex flex-1 flex-col bg-stone-950">
+        {selectedChat ? (
           <>
             {/* Chat header */}
-            <div className="p-4 px-6 border-b flex items-center justify-between bg-card/50 backdrop-blur-md">
+            <div className="p-4 px-8 border-b border-white/5 flex items-center justify-between bg-white/5 backdrop-blur-2xl">
               <div className="flex items-center gap-4">
-                <Avatar className="h-10 w-10 border">
-                  <AvatarImage src={selectedUser.photoURL || ''} alt={selectedUser.displayName || 'User'} />
-                  <AvatarFallback>{selectedUser.displayName?.slice(0, 2)}</AvatarFallback>
+                <Avatar className={cn("h-11 w-11 border-2", selectedChat.type === 'project' ? "rounded-xl border-emerald-500/30" : "border-primary/30")}>
+                  <AvatarImage src={selectedChat.photoURL || selectedChat.photo} className="object-cover" />
+                  <AvatarFallback>{(selectedChat.displayName || selectedChat.name)?.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Link href={selectedUser.role?.includes('artist') ? `/artiste/${selectedUser.slug}` : `/profile/${selectedUser.uid}`}>
-                      <h3 className="text-lg font-bold hover:text-primary transition-colors">{selectedUser.displayName}</h3>
-                  </Link>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">En ligne</p>
+                  <h3 className="text-lg font-black text-white tracking-tight">{selectedChat.displayName || selectedChat.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="text-[9px] text-stone-400 uppercase font-black tracking-[0.2em]">
+                        {selectedChat.type === 'project' ? 'Canal de Production Actif' : 'En ligne'}
+                    </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="text-muted-foreground"><Phone className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon" className="text-muted-foreground"><Video className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon" className="text-muted-foreground"><MoreVertical className="h-5 w-5" /></Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="text-stone-400 hover:text-white rounded-full"><Phone className="h-5 w-5" /></Button>
+                <Button variant="ghost" size="icon" className="text-stone-400 hover:text-white rounded-full"><Video className="h-5 w-5" /></Button>
+                <Separator orientation="vertical" className="h-6 bg-white/5 mx-2" />
+                <Button variant="ghost" size="icon" className="text-stone-400 hover:text-white rounded-full"><MoreVertical className="h-5 w-5" /></Button>
               </div>
             </div>
 
             {/* Chat messages */}
             <ScrollArea className="flex-1 p-8">
-              <div className="space-y-8">
+              <div className="max-w-4xl mx-auto space-y-10">
                 <div className="flex justify-center">
-                  <Badge variant="secondary" className="bg-muted text-muted-foreground text-[10px] px-4 rounded-full uppercase tracking-tighter">Aujourd'hui</Badge>
+                  <Badge variant="secondary" className="bg-white/5 text-stone-500 text-[9px] px-4 rounded-full uppercase tracking-[0.3em] font-black border-white/5">Session Sécurisée</Badge>
                 </div>
 
-                <div className="flex justify-start gap-3 max-w-[80%]">
-                  <Avatar className="h-8 w-8 mt-1 border">
-                    <AvatarImage src={selectedUser.photoURL || ''} />
-                    <AvatarFallback>{selectedUser.displayName?.slice(0,2)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="bg-muted p-4 rounded-2xl rounded-tl-none shadow-sm">
-                      <p className="text-sm leading-relaxed">Bienvenue sur la messagerie de NexusHub ! Comment puis-je t'aider aujourd'hui ?</p>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1.5 font-bold">10:30 AM</p>
-                  </div>
-                </div>
+                {/* Simulated Project Conversation */}
+                {selectedChat.type === 'project' ? (
+                    <div className="space-y-8">
+                        <div className="flex justify-start gap-4 max-w-[85%]">
+                            <Avatar className="h-9 w-9 mt-1 border border-white/10"><AvatarImage src="https://picsum.photos/seed/amina/100/100" /></Avatar>
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Amina (Dessinatrice)</p>
+                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl rounded-tl-none shadow-sm text-stone-200">
+                                    <p className="text-sm leading-relaxed">Salut l'équipe ! J'ai terminé l'encrage des 5 premières pages. Koffi, tu peux commencer à poser les bases de couleurs ?</p>
+                                    <div className="mt-4 p-3 bg-black/40 rounded-xl border border-white/5 flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-emerald-500/20 rounded-lg flex items-center justify-center"><Zap className="h-5 w-5 text-emerald-500" /></div>
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-bold text-white">Ch14_Lineart_v1.psd</p>
+                                            <p className="text-[8px] text-stone-500">12.4 MB &bull; Ajouté à l'Atelier</p>
+                                        </div>
+                                        <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black text-emerald-500">VOIR</Button>
+                                    </div>
+                                </div>
+                                <p className="text-[9px] text-stone-600 font-bold">10:30 AM</p>
+                            </div>
+                        </div>
 
-                <div className="flex justify-end gap-3 ml-auto max-w-[80%]">
-                  <div>
-                    <div className="bg-primary text-primary-foreground p-4 rounded-2xl rounded-tr-none shadow-lg">
-                      <p className="text-sm leading-relaxed">Hey ! Je voulais juste te dire que j'adore ton travail. Les derniers chapitres sont incroyables !</p>
+                        <div className="flex justify-end gap-4 ml-auto max-w-[85%]">
+                            <div className="space-y-2 text-right">
+                                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Vous (Scénariste)</p>
+                                <div className="bg-primary text-black p-4 rounded-2xl rounded-tr-none shadow-2xl font-medium">
+                                    <p className="text-sm leading-relaxed">Génial Amina ! Le rendu est super dynamique. J'ajoute les bulles de dialogue finales cet après-midi.</p>
+                                </div>
+                                <div className="flex justify-end items-center gap-1.5 mt-1.5">
+                                    <p className="text-[9px] text-stone-600 font-bold">10:35 AM</p>
+                                    <span className="text-primary"><Check className="h-3 w-3" /></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-end items-center gap-1 mt-1.5">
-                      <p className="text-[10px] text-muted-foreground font-bold">10:32 AM</p>
-                      <span className="text-primary"><Check className="h-3 w-3" /></span>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 opacity-40">
+                        <Zap className="h-12 w-12 text-primary mb-4" />
+                        <p className="text-stone-500 italic text-sm">Début de votre conversation avec {selectedChat.displayName}...</p>
                     </div>
-                  </div>
-                </div>
+                )}
               </div>
             </ScrollArea>
 
             {/* Chat input */}
-            <div className="p-6 border-t bg-card/30">
-              <div className="relative flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><Paperclip className="h-5 w-5" /></Button>
+            <div className="p-6 md:p-8 bg-white/5 border-t border-white/5 backdrop-blur-3xl">
+              <div className="max-w-4xl mx-auto flex items-center gap-4">
+                <Button variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-12 w-12 bg-white/5"><Paperclip className="h-5 w-5" /></Button>
                 <div className="relative flex-1">
                   <Input 
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    placeholder="Écrivez votre message..." 
-                    className="pr-12 bg-muted/50 border-none rounded-2xl h-12 focus-visible:ring-primary" 
+                    placeholder="Écrivez un message à l'équipe..." 
+                    className="pr-12 bg-white/5 border-white/10 rounded-2xl h-14 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-600" 
                   />
-                  <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary h-8 w-8">
+                  <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 hover:text-white h-10 w-10">
                     <Smile className="h-5 w-5" />
                   </Button>
                 </div>
-                <Button size="icon" className="rounded-2xl h-12 w-12 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
-                  <SendHorizonal className="h-5 w-5" />
+                <Button size="icon" className="rounded-2xl h-14 w-14 bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all active:scale-90">
+                  <SendHorizonal className="h-6 w-6 text-black" />
                 </Button>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
-            <div className="bg-primary/10 p-6 rounded-full mb-6">
-              <MessageSquare className="h-12 w-12 text-primary" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-6">
+            <div className="bg-primary/10 p-10 rounded-[3rem] border border-primary/10">
+              <MessageSquare className="h-16 w-16 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold font-display mb-2">Tes Messages</h3>
-            <p className="text-muted-foreground max-w-sm">
-              Sélectionne une discussion pour commencer à échanger avec la communauté NexusHub.
-            </p>
+            <div>
+                <h3 className="text-3xl font-black font-display text-white mb-2 tracking-tight">Vos Conversations</h3>
+                <p className="text-stone-500 max-w-sm font-light italic leading-relaxed">
+                  Sélectionnez un co-créateur ou un canal de projet pour coordonner votre prochaine production légendaire.
+                </p>
+            </div>
           </div>
         )}
       </main>
