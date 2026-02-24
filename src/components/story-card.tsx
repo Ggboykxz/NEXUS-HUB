@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Story } from '@/lib/data';
-import { artists, getStoryUrl, getChapterUrl } from '@/lib/data';
+import { getStoryUrl, getChapterUrl } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Sparkles, Zap, CalendarDays, Flame, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +20,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { playlists as allPlaylists } from '@/lib/data';
 import { useAuthModal } from './providers/auth-modal-provider';
+import { db, auth } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 interface StoryCardProps {
   story: Story;
@@ -38,11 +39,10 @@ const formatStat = (num: number): string => {
 export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) {
   const [date, setDate] = useState('');
   const [relativeDate, setRelativeDate] = useState('');
+  const [artistInfo, setArtistInfo] = useState<any>(null);
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
-
-  const userPlaylists = allPlaylists.filter(p => p.authorId === 'reader-1');
-  const artist = artists.find(a => a.id === story.artistId);
 
   const isNew = differenceInDays(new Date(), new Date(story.updatedAt)) < 14;
   const isTrending = story.likes > 50000;
@@ -55,13 +55,35 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
     if(showUpdateDate) {
         setDate(format(new Date(story.updatedAt), 'd MMM yyyy', { locale: fr }));
     }
-  }, [story.updatedAt, showUpdateDate]);
+
+    // Fetch Artist Info from Firestore
+    const fetchArtist = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', story.artistId));
+        if (userDoc.exists()) {
+          setArtistInfo(userDoc.data());
+        }
+      } catch (e) {
+        console.error("Error fetching artist info:", e);
+      }
+    };
+    fetchArtist();
+
+    // Fetch User Playlists if logged in
+    if (auth.currentUser) {
+      const fetchPlaylists = async () => {
+        const q = query(collection(db, 'playlists'), where('authorId', '==', auth.currentUser?.uid));
+        const snap = await getDocs(q);
+        setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      };
+      fetchPlaylists();
+    }
+  }, [story.updatedAt, story.artistId, showUpdateDate]);
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('ajouter cette œuvre à vos favoris');
       return;
     }
@@ -71,8 +93,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
     e.stopPropagation();
     e.preventDefault();
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
+    if (!auth.currentUser) {
       openAuthModal('organiser vos lectures dans des playlists');
       return;
     }
@@ -83,12 +104,12 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
   };
 
   const storyUrl = getStoryUrl(story);
-  const hasChapters = story.chapters.length > 0;
+  const hasChapters = story.chapters && story.chapters.length > 0;
   const firstChapterUrl = hasChapters ? getChapterUrl(story, story.chapters[0].slug) : storyUrl;
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) group-hover:shadow-xl group-hover:-translate-y-1">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
               src={story.coverImage.imageUrl}
@@ -101,7 +122,7 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
         </Link>
         
         <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
-            {artist?.isMentor ? (
+            {artistInfo?.role?.includes('pro') ? (
                 <Badge variant="default" className="gap-1 px-1 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
                     <Award className="h-2 w-2" />
                     Pro
@@ -158,11 +179,13 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
                             <DropdownMenuContent onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} align="center" className="w-40">
                                 <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {userPlaylists.map(playlist => (
+                                {userPlaylists.length > 0 ? userPlaylists.map(playlist => (
                                     <DropdownMenuItem key={playlist.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, playlist.name)}>
                                         {playlist.name}
                                     </DropdownMenuItem>
-                                ))}
+                                )) : (
+                                  <DropdownMenuItem disabled className="text-[10px]">Aucune playlist</DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                         
@@ -212,9 +235,9 @@ export function StoryCard({ story, className, showUpdateDate }: StoryCardProps) 
           )}
         </div>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
-            <Link href={`/artiste/${story.artistSlug}`} className="hover:text-primary transition-colors flex items-center gap-1">
-                <span className="font-medium truncate max-w-[80px]">{story.artistName}</span>
-                {artist?.isMentor ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
+            <Link href={`/artiste/${artistInfo?.slug}`} className="hover:text-primary transition-colors flex items-center gap-1">
+                <span className="font-medium truncate max-w-[80px]">{artistInfo?.displayName || story.artistName}</span>
+                {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>
         </div>
         <div className="flex items-center justify-between mt-1 pt-1 border-t border-border/50">

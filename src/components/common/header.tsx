@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Search, ArrowLeft, Bell, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, TrendingUp, ListMusic, Library, PenSquare, Globe, MoreHorizontal } from 'lucide-react';
+import { Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, ChevronDown, CircleDollarSign, Brush, Library, PenSquare, MoreHorizontal } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu, 
@@ -18,13 +18,15 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { stories, artists } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '../providers/language-provider';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { db, auth } from '@/lib/firebase';
+import { collection, getDocs, limit, query, where, doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -35,59 +37,59 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isArtist, setIsArtist] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userSlug, setUserSlug] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [uniqueGenres, setUniqueGenres] = useState<{name: string, slug: string}[]>([]);
 
   const [hasMounted, setHasMounted] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: any }>({});
 
-  const uniqueGenres = useMemo(() => {
-    const genreMap = new Map();
-    stories.forEach(s => {
-      if (!genreMap.has(s.genreSlug)) {
-        genreMap.set(s.genreSlug, { name: s.genre, slug: s.genreSlug });
-      }
-    });
-    return Array.from(genreMap.values());
-  }, []);
-
   useEffect(() => {
     setHasMounted(true);
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
-  useEffect(() => {
-    if (!hasMounted) return;
-    const handleStorageChange = () => {
-      const status = localStorage.getItem('isLoggedIn') === 'true';
-      const type = localStorage.getItem('accountType');
-      const id = localStorage.getItem('userId');
-      setIsLoggedIn(status);
-      setIsArtist(status && type === 'artist');
-      setUserId(status ? id : null);
-      if (status && type === 'artist') {
-        const artist = artists.find(a => a.id === id);
-        setUserSlug(artist?.slug || null);
+    // Fetch genres from Firestore
+    const fetchGenres = async () => {
+      try {
+        const q = query(collection(db, 'stories'), limit(20));
+        const snap = await getDocs(q);
+        const genreMap = new Map();
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.genre && data.genreSlug) {
+            genreMap.set(data.genreSlug, { name: data.genre, slug: data.genreSlug });
+          }
+        });
+        setUniqueGenres(Array.from(genreMap.values()));
+      } catch (e) {
+        console.error("Error fetching genres:", e);
       }
     };
-    handleStorageChange();
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('loginStateChange', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('loginStateChange', handleStorageChange);
-    };
-  }, [hasMounted]);
+    fetchGenres();
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('accountType');
-    localStorage.removeItem('userId');
-    window.dispatchEvent(new Event('loginStateChange')); 
+    // Listen to Auth changes
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserProfile({ id: user.uid, ...userDoc.data() });
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserProfile(null);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/');
   };
 
@@ -133,11 +135,13 @@ export default function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Genres</DropdownMenuLabel>
-                  {uniqueGenres.map((genre) => (
+                  {uniqueGenres.length > 0 ? uniqueGenres.map((genre) => (
                     <DropdownMenuItem key={`header-genre-${genre.slug}`} asChild>
                       <Link href={`/genre/${genre.slug}`}>{genre.name}</Link>
                     </DropdownMenuItem>
-                  ))}
+                  )) : (
+                    <DropdownMenuItem disabled className="text-xs italic text-muted-foreground">Aucun genre trouvé</DropdownMenuItem>
+                  )}
                 </>
               )}
               {link.subLinks?.map((sub) => (
@@ -251,15 +255,15 @@ export default function Header() {
                 <div className="flex items-center gap-2">
                   <Link href="/settings?tab=africoins" className="flex items-center gap-1 hover:bg-muted p-1 rounded-full transition-colors" aria-label="Solde AfriCoins">
                     <CircleDollarSign className="h-4 w-4 text-primary" />
-                    <span className="font-bold text-xs">150</span>
+                    <span className="font-bold text-xs">{userProfile?.afriCoins || 0}</span>
                   </Link>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
                         <Avatar className="h-7 w-7 border-2 border-primary/20">
-                          <AvatarImage src="https://images.unsplash.com/photo-1557053910-d9eadeed1c58" alt="Profil" />
-                          <AvatarFallback>LD</AvatarFallback>
+                          <AvatarImage src={userProfile?.photoURL} alt={userProfile?.displayName} />
+                          <AvatarFallback>{userProfile?.displayName?.slice(0, 2) || 'U'}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -267,12 +271,12 @@ export default function Header() {
                       <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href={isArtist ? `/artiste/${userSlug}` : `/profile/${userId}`}><UserCircle className="mr-2 h-4 w-4" />{t('nav.profile')}</Link>
+                        <Link href={userProfile?.role?.includes('artist') ? `/artiste/${userProfile?.slug}` : `/profile/${userProfile?.uid}`}><UserCircle className="mr-2 h-4 w-4" />{t('nav.profile')}</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href="/library"><Library className="mr-2 h-4 w-4" />{t('nav.library')}</Link>
                       </DropdownMenuItem>
-                      {isArtist && (
+                      {userProfile?.role?.includes('artist') && (
                         <DropdownMenuItem asChild>
                           <Link href="/dashboard/creations"><Brush className="mr-2 h-4 w-4" />{t('nav.workshop')}</Link>
                         </DropdownMenuItem>
@@ -391,7 +395,7 @@ export default function Header() {
                               <Library className="h-4 w-4 text-muted-foreground" />
                               {t('nav.library')}
                             </Link>
-                            {isArtist && (
+                            {userProfile?.role?.includes('artist') && (
                               <Link href="/dashboard/creations" className="flex items-center gap-3 text-sm font-semibold px-3 py-3 hover:bg-muted rounded-xl transition-colors text-foreground/80">
                                 <Brush className="h-4 w-4 text-muted-foreground" />
                                 {t('nav.workshop')}
