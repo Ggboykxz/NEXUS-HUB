@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper pour vérifier l'authentification
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper pour vérifier la propriété d'un document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Règles pour les profils utilisateurs
+    match /users/{userId} {
+      allow read: if true; // Profils publics consultables par tous
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId) 
+                    && request.resource.data.afriCoins == resource.data.afriCoins; // Empêche la modification frauduleuse du solde
+      allow delete: if false; // Suppression de compte manuelle par admin
+    }
+
+    // Règles pour les histoires
+    match /stories/{storyId} {
+      allow read: if true;
+      allow create: if isSignedIn() 
+                    && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist_draft' 
+                    || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist_pro');
+      allow update, delete: if isSignedIn() && resource.data.artistId == request.auth.uid;
+      
+      // Sous-collection des chapitres
+      match /chapters/{chapterId} {
+        allow read: if true;
+        allow write: if isSignedIn() && get(/databases/$(database)/documents/stories/$(storyId)).data.artistId == request.auth.uid;
+      }
+    }
+
+    // Règles pour les playlists
+    match /playlists/{playlistId} {
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.authorId);
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.authorId);
+    }
+
+    // Règles pour les transactions (historique personnel)
+    match /transactions/{transactionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Les transactions sont gérées uniquement côté serveur/Cloud Functions
+    }
+  }
+}
