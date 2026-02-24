@@ -18,6 +18,9 @@ export function LanguageSwitcher() {
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'sw', label: 'Kiswahili', flag: '🌍' },
+    { code: 'ha', label: 'Hausa', flag: '🇳🇬' },
+    { code: 'am', label: 'Amharic', flag: '🇪🇹' },
+    { code: 'ar', label: 'العربية', flag: '🌍' },
   ];
 
   const currentLang = languages.find(l => l.code === language);
@@ -30,7 +33,7 @@ export function LanguageSwitcher() {
           <span className="hidden sm:inline">{currentLang?.code}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-48 p-2 rounded-xl">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}

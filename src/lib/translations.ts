@@ -1,5 +1,4 @@
-
-export type Language = 'fr' | 'en' | 'sw';
+export type Language = 'fr' | 'en' | 'sw' | 'ha' | 'am' | 'ar';
 
 export const translations = {
   fr: {
@@ -52,7 +51,10 @@ export const translations = {
       views: "Lectures",
       likes: "Favoris",
       new_badge: "Nouveau",
-      trending_badge: "Tendance"
+      trending_badge: "Tendance",
+      low_data: "Mode Low-Data",
+      battery_saver: "Éco Batterie",
+      listen: "Écouter"
     }
   },
   en: {
@@ -105,7 +107,10 @@ export const translations = {
       views: "Reads",
       likes: "Likes",
       new_badge: "New",
-      trending_badge: "Trending"
+      trending_badge: "Trending",
+      low_data: "Low-Data Mode",
+      battery_saver: "Battery Saver",
+      listen: "Listen"
     }
   },
   sw: {
@@ -158,7 +163,178 @@ export const translations = {
       views: "Usomaji",
       likes: "Mapenzi",
       new_badge: "Mpya",
-      trending_badge: "Inavuma"
+      trending_badge: "Inavuma",
+      low_data: "Hali ya Data Chini",
+      battery_saver: "Okoa Betri",
+      listen: "Sikiliza"
+    }
+  },
+  ha: {
+    nav: {
+      browse: "Bincika",
+      rankings: "Matsayi",
+      artists: "Mawaƙa",
+      forums: "Dandalin Tattaunawa",
+      shop: "Shago",
+      pro: "NexusHub Pro",
+      draft: "NexusHub Draft",
+      submit: "Bugawa",
+      login: "Shiga",
+      signup: "Yi Rajista",
+      search: "Neman littafi ko marubuci...",
+      library: "Laburaren nawa",
+      playlists: "Jerin Littattafai",
+      workshop: "Studio tawa",
+      stats: "Alkaluma",
+      settings: "Saituna",
+      logout: "Fita",
+      profile: "Bayanan martaba"
+    },
+    home: {
+      hero_title: "Raba hangen nesa",
+      hero_desc: "Kasance cikin al'ummarmu ta mawaƙa kuma ku raba gwanintar ku da duniya.",
+      for_you_title: "NA KU",
+      trending_fallback: "NA KU",
+      pro_title: "Zabin NexusHub Pro",
+      draft_title: "Binciken NexusHub Draft",
+      new_releases_title: "Sabbin Littattafai",
+      trending: "Masu tasowa",
+      new: "Sababbi",
+      popular: "Shahara",
+      featured_artists: "Mawaƙan da aka sanya wa gaba",
+      vision_title: "Kasance cikin Juyin Juya Halin Afirka",
+      vision_subtitle: "Aika Comic/Webtoon naka",
+      vision_cta: "Aika Yanzu",
+      community_title: "Abin da al'umma ke cewa",
+      community_cta: "Kasance cikin Tattaunawa"
+    },
+    common: {
+      read: "Karanta",
+      details: "Cikakkun bayanai",
+      more_details: "Duba ƙarin bayani",
+      subscribe: "Bi",
+      following: "Ina bi",
+      support: "Taimaka",
+      chapters: "Sura",
+      views: "Karatun",
+      likes: "Likes",
+      new_badge: "Sabo",
+      trending_badge: "Yana tasowa",
+      low_data: "Yanayin Karancin Data",
+      battery_saver: "Ajiye Batir",
+      listen: "Saurara"
+    }
+  },
+  am: {
+    nav: {
+      browse: "ያስሱ",
+      rankings: "ደረጃዎች",
+      artists: "አርቲስቶች",
+      forums: "መድረኮች",
+      shop: "ሱቅ",
+      pro: "NexusHub Pro",
+      draft: "NexusHub Draft",
+      submit: "ያትሙ",
+      login: "ይግቡ",
+      signup: "ይመዝገቡ",
+      search: "ስራ ወይም ደራሲ ይፈልጉ...",
+      library: "የእኔ ቤተ-መጽሐፍት",
+      playlists: "የእኔ አጫዋች ዝርዝሮች",
+      workshop: "የእኔ ስቱዲዮ",
+      stats: "አኃዛዊ መረጃዎች",
+      settings: "ቅንብሮች",
+      logout: "ይውጡ",
+      profile: "መገለጫ"
+    },
+    home: {
+      hero_title: "ራዕይዎን ያካፍሉ",
+      hero_desc: "የአርቲስቶች ማህበረሰባችንን ይቀላቀሉ እና ችሎታዎን ለአለም ያካፍሉ።",
+      for_you_title: "ለእርስዎ",
+      trending_fallback: "ለእርስዎ",
+      pro_title: "NexusHub Pro ምርጫ",
+      draft_title: "NexusHub Draft አሰሳ",
+      new_releases_title: "አዲስ የተለቀቁ",
+      trending: "በመታየት ላይ ያሉ",
+      new: "አዲስ",
+      popular: "ታዋቂ",
+      featured_artists: "ታዋቂ አርቲስቶች",
+      vision_title: "የፓን-አፍሪካን አብዮት ይቀላቀሉ",
+      vision_subtitle: "የእርስዎን ኮሚክ/Webtoon ያስገቡ",
+      vision_cta: "አሁን ያስገቡ",
+      community_title: "ማህበረሰቡ የሚለው",
+      community_cta: "ውይይቱን ይቀላቀሉ"
+    },
+    common: {
+      read: "አንብብ",
+      details: "ዝርዝሮች",
+      more_details: "ተጨማሪ ዝርዝሮችን ይመልከቱ",
+      subscribe: "ይከተሉ",
+      following: "ተከታይ ነዎት",
+      support: "ይደግፉ",
+      chapters: "ምዕራፎች",
+      views: "እይታዎች",
+      likes: "ተወዳጅ",
+      new_badge: "አዲስ",
+      trending_badge: "በመታየት ላይ",
+      low_data: "ዝቅተኛ የዳታ ሁኔታ",
+      battery_saver: "ባትሪ ቆጣቢ",
+      listen: "ያዳምጡ"
+    }
+  },
+  ar: {
+    nav: {
+      browse: "تصفح",
+      rankings: "الترتيب",
+      artists: "الفنانين",
+      forums: "المنتديات",
+      shop: "المتجر",
+      pro: "NexusHub Pro",
+      draft: "NexusHub Draft",
+      submit: "نشر",
+      login: "تسجيل الدخول",
+      signup: "إنشاء حساب",
+      search: "ابحث عن عمل أو مؤلف...",
+      library: "مكتبتي",
+      playlists: "قوائمي",
+      workshop: "استوديو الخاص بي",
+      stats: "الإحصائيات",
+      settings: "الإعدادات",
+      logout: "تسجيل الخروج",
+      profile: "الملف الشخصي"
+    },
+    home: {
+      hero_title: "شارك رؤيتك",
+      hero_desc: "انضم إلى مجتمع الفنانين لدينا وشارك موهبتك مع جمهور عالمي.",
+      for_you_title: "من أجلك",
+      trending_fallback: "من أجلك",
+      pro_title: "اختيارات NexusHub Pro",
+      draft_title: "استكشاف NexusHub Draft",
+      new_releases_title: "إصدارات جديدة",
+      trending: "رائج",
+      new: "جديد",
+      popular: "شعبي",
+      featured_artists: "فنانون مميزون",
+      vision_title: "انضم إلى الثورة الأفريقية",
+      vision_subtitle: "أرسل عملك الفني",
+      vision_cta: "أرسل الآن",
+      community_title: "ماذا يقول المجتمع",
+      community_cta: "انضم إلى النقاش"
+    },
+    common: {
+      read: "اقرأ",
+      details: "تفاصيل",
+      more_details: "عرض المزيد من التفاصيل",
+      subscribe: "اشترك",
+      following: "مشترك",
+      support: "دعم",
+      chapters: "فصول",
+      views: "قراءات",
+      likes: "إعجابات",
+      new_badge: "جديد",
+      trending_badge: "رائج",
+      low_data: "وضع توفير البيانات",
+      battery_saver: "توفير البطارية",
+      listen: "استمع"
     }
   }
 };

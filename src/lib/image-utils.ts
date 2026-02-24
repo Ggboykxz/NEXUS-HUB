@@ -11,21 +11,21 @@ export interface ImageTransformOptions {
   format?: 'auto' | 'webp' | 'avif' | 'jpg';
   crop?: 'fill' | 'scale' | 'thumb' | 'fit';
   gravity?: 'auto' | 'center' | 'face';
+  lowData?: boolean;
 }
 
 /**
  * Génère une URL d'image optimisée via Cloudinary.
- * Si l'URL n'est pas une URL Cloudinary, retourne l'URL originale (Next.js Image s'occupera de l'optimisation de base).
+ * Si l'URL n'est pas une URL Cloudinary, retourne l'URL originale.
  */
 export function getOptimizedImage(url: string, options: ImageTransformOptions = {}): string {
   if (!url) return '';
   
-  // Si c'est déjà une URL Cloudinary ou si on veut forcer l'usage du CDN pour des images distantes
   if (url.includes('res.cloudinary.com')) {
     const {
       width = 'auto',
       height,
-      quality = 'auto',
+      quality = options.lowData ? 30 : 'auto', // Réduit drastiquement la qualité en mode Low-Data
       format = 'auto',
       crop = 'fill',
       gravity = 'auto'
@@ -34,8 +34,11 @@ export function getOptimizedImage(url: string, options: ImageTransformOptions = 
     const parts = url.split('/upload/');
     if (parts.length !== 2) return url;
 
+    // En mode low data, on force également une largeur maximale plus petite
+    const effectiveWidth = options.lowData && typeof width === 'number' ? Math.min(width, 400) : width;
+
     const transformation = [
-      width !== 'auto' ? `w_${width}` : '',
+      effectiveWidth !== 'auto' ? `w_${effectiveWidth}` : '',
       height ? `h_${height}` : '',
       `c_${crop}`,
       `g_${gravity}`,
@@ -46,20 +49,20 @@ export function getOptimizedImage(url: string, options: ImageTransformOptions = 
     return `${parts[0]}/upload/${transformation}/${parts[1]}`;
   }
 
-  // Fallback pour Unsplash ou autres (Next.js Image optimization prend le relais)
   return url;
 }
 
 /**
  * Helper spécifique pour les couvertures de BD (Ratio 2:3)
  */
-export function getCoverThumbnail(url: string) {
+export function getCoverThumbnail(url: string, lowData: boolean = false) {
   return getOptimizedImage(url, {
     width: 400,
     height: 600,
     crop: 'fill',
     gravity: 'auto',
-    quality: 80
+    quality: lowData ? 20 : 80,
+    lowData
   });
 }
 

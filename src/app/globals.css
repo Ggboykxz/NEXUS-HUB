@@ -86,6 +86,26 @@
   }
 }
 
+/* Mode Batterie Éco - Désactive animations et flous */
+.battery-saver *, 
+.battery-saver *::before, 
+.battery-saver *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.battery-saver .particle,
+.battery-saver .gold-shimmer::after {
+  display: none !important;
+}
+
+.battery-saver {
+  --background: 0 0% 2% !important;
+  --card: 0 0% 4% !important;
+}
+
 @layer utilities {
   .hide-scrollbar {
     -ms-overflow-style: none;
