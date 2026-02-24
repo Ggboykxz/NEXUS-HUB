@@ -51,7 +51,6 @@ export interface UserProfile {
   afriCoins: number;
   subscribersCount: number;
   
-  // -- Nouveaux champs d'engagement --
   readingStreak: {
     currentCount: number;
     lastReadDate: string; // ISO
@@ -80,8 +79,8 @@ export interface UserProfile {
 
 export interface LibraryEntry {
   storyId: string;
-  storyTitle: string; // Dénormalisé pour UI rapide
-  storyCover: string; // Dénormalisé
+  storyTitle: string; 
+  storyCover: string; 
   addedAt: Timestamp | string;
   lastReadChapterId: string;
   lastReadChapterSlug: string;
@@ -134,13 +133,21 @@ export interface Chapter {
 
 export interface Comment {
   id: string;
+  storyId: string;
+  chapterId: string;
   authorId: string;
   authorName: string;
   authorAvatar?: string;
   content: string;
   isSpoiler: boolean;
   likes: number;
+  pageIndex?: number; // Rattaché à une planche précise
   createdAt: Timestamp | string;
+}
+
+export interface PanelReaction {
+  pageIndex: number;
+  reactions: Record<string, number>; // { '🔥': 12, '❤️': 5 }
 }
 
 export interface Playlist {

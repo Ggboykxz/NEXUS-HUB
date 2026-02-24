@@ -17,16 +17,18 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi
+} from "@/components/ui/carousel";
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 
-/**
- * Le "Magical Reader" NexusHub v2.5
- * Fusionne les modes cinématiques et les interactions communautaires par case.
- */
 export default function ReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
   const { slug, chapterSlug } = use(props.params);
   const { toast } = useToast();
@@ -46,7 +48,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [panelReactions, setPanelReactions] = useState<Record<number, Record<string, number>>>({});
-  const [blueLightFilter, setBlueLightFilter] = useState(0);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
@@ -56,7 +57,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     return () => unsubscribe();
   }, []);
 
-  // Sync Progress & Reading Streak Simulation
+  // Sync Progress
   useEffect(() => {
     if (!currentUser || progress === 0) return;
     const timer = setTimeout(async () => {
@@ -72,7 +73,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           lastReadAt: serverTimestamp(),
           progress: Math.floor(progress),
         }, { merge: true });
-      } catch (e) { console.error("Sync error:", e); }
+      } catch (e) { console.error(e); }
     }, 3000);
     return () => clearTimeout(timer);
   }, [progress, currentUser, story, chapter]);
@@ -80,13 +81,10 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const currentScrollY = target.scrollTop;
-    
-    // Auto-hide UI on scroll down
     if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
       setIsUIVisible(currentScrollY < lastScrollY.current || currentScrollY < 100);
       lastScrollY.current = currentScrollY;
     }
-    
     const currentProgress = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
     setProgress(currentProgress);
   }, []);
@@ -111,7 +109,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     setIsCommentsOpen(true);
   };
 
-  // Algorithme "Top Moments" simplifié
+  // Top Moments detection
   const topMoments = useMemo(() => {
     const scores = Object.entries(panelReactions).map(([idx, reacts]) => ({
       idx: parseInt(idx),
@@ -125,13 +123,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
       "h-screen bg-black flex flex-col selection:bg-primary/30 overflow-hidden text-stone-200 transition-colors duration-1000",
       isFocusMode && "cursor-none"
     )}>
-      {/* Filtre de lumière bleue pour la lecture nocturne */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-[100] transition-opacity duration-500" 
-        style={{ backgroundColor: `rgba(255, 150, 0, ${blueLightFilter / 400})`, opacity: blueLightFilter > 0 ? 1 : 0 }}
-      />
-
-      {/* HEADER NAV */}
+      {/* HEADER */}
       <nav className={cn(
         "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
         (!isUIVisible && !isFocusMode) && "reader-ui-hidden",
@@ -145,23 +137,13 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
           </Button>
           <div className="flex flex-col justify-center">
             <span className="text-[10px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1">{story.title}</span>
-            <span className="text-xs font-bold text-foreground truncate max-w-[120px]">Ch. {chapter.chapterNumber} : {chapter.title}</span>
+            <span className="text-xs font-bold text-foreground truncate max-w-[120px]">Ch. {chapter.chapterNumber}</span>
           </div>
         </div>
 
-        <div className="hidden lg:flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-            <Sun className="h-3 w-3 text-stone-500" />
-            <Slider 
-              value={[blueLightFilter]} 
-              onValueChange={(val) => setBlueLightFilter(val[0])} 
-              max={100} 
-              className="w-24"
-            />
-            <Moon className="h-3 w-3 text-primary" />
-          </div>
-          <Button onClick={() => setIsFocusMode(!isFocusMode)} size="sm" variant="ghost" className="h-9 px-4 rounded-full bg-white/5 text-xs font-black uppercase tracking-widest">
-            {isFocusMode ? "Quitter Focus" : "Focus Mode"}
+        <div className="hidden lg:flex items-center gap-2">
+          <Button onClick={() => setIsFocusMode(!isFocusMode)} size="sm" variant="ghost" className="h-9 px-4 rounded-full bg-white/5 text-xs font-bold">
+            {isFocusMode ? "Quitter Focus" : "Mode Focus"}
           </Button>
         </div>
 
@@ -231,9 +213,9 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             ))}
             
             <div className="py-20 text-center space-y-6">
-              <Badge variant="outline" className="border-primary/20 text-primary uppercase font-bold tracking-widest">Fin du Chapitre</Badge>
+              <Badge variant="outline" className="border-primary/20 text-primary">Fin du Chapitre</Badge>
               <h2 className="text-4xl font-display font-black gold-resplendant">L'aventure continue...</h2>
-              <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl shadow-primary/20">
+              <Button size="lg" className="rounded-full px-12 h-14 font-black text-lg gold-shimmer">
                 Chapitre Suivant <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -281,7 +263,7 @@ function CommentsPanel({ activePanel, onClose, onClearFilter }: any) {
             {activePanel !== null ? `Réactions Case ${activePanel + 1}` : 'Communauté'}
           </h3>
           {activePanel !== null && (
-            <button onClick={onClearFilter} className="text-[10px] text-primary hover:underline font-bold uppercase tracking-widest mt-1 text-left">Voir tout</button>
+            <button onClick={onClearFilter} className="text-[10px] text-primary hover:underline font-bold uppercase tracking-widest mt-1 text-left">Voir tous les commentaires</button>
           )}
         </div>
         <Button onClick={onClose} variant="ghost" size="icon" className="rounded-full"><X className="h-5 w-5" /></Button>
@@ -316,7 +298,7 @@ function CommentsPanel({ activePanel, onClose, onClearFilter }: any) {
               isSpoiler ? "text-orange-500" : "text-stone-500 hover:text-stone-300"
             )}
           >
-            <AlertCircle className="h-3.5 w-3.5" /> Spoiler
+            <AlertCircle className="h-3.5 w-3.5" /> Marquer comme Spoiler
           </button>
           <Button disabled={!commentText.trim()} className="rounded-full px-6 font-black gold-shimmer bg-primary text-black">Envoyer</Button>
         </div>
@@ -338,7 +320,7 @@ function CommentItem({ comment }: { comment: any }) {
             <Badge variant="outline" className="text-[8px] h-4 px-1.5 border-primary/20 text-primary">Case {comment.pageIndex + 1}</Badge>
           )}
         </div>
-        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-tighter">Il y a 2h</span>
+        <span className="text-[9px] text-stone-500 font-bold uppercase">Il y a 2h</span>
       </div>
       
       <div className="relative overflow-hidden rounded-xl">
@@ -352,7 +334,7 @@ function CommentItem({ comment }: { comment: any }) {
         {comment.isSpoiler && !revealed && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <button className="bg-orange-500 text-black text-[9px] font-black px-3 py-1 rounded-full shadow-2xl pointer-events-auto" onClick={() => setRevealed(true)}>
-              RÉVÉLER
+              REVELER SPOILER
             </button>
           </div>
         )}
@@ -365,15 +347,5 @@ function CommentItem({ comment }: { comment: any }) {
         <button className="text-[10px] font-bold text-stone-500 hover:text-white">Répondre</button>
       </div>
     </div>
-  );
-}
-
-function Slider({ className, ...props }: any) {
-  return (
-    <input 
-      type="range" 
-      className={cn("h-1 bg-white/10 rounded-full appearance-none accent-primary", className)} 
-      {...props} 
-    />
   );
 }
