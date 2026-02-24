@@ -1,51 +1,76 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper pour vérifier l'authentification
+    
+    // --- FONCTIONS HELPER ---
+    
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper pour vérifier la propriété d'un document
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Règles pour les profils utilisateurs
-    match /users/{userId} {
-      allow read: if true; // Profils publics consultables par tous
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId) 
-                    && request.resource.data.afriCoins == resource.data.afriCoins; // Empêche la modification frauduleuse du solde
-      allow delete: if false; // Suppression de compte manuelle par admin
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Règles pour les histoires
+    function hasArtistRole() {
+      return isSignedIn() && (getUserData().role == 'artist_draft' || getUserData().role == 'artist_pro');
+    }
+
+    // --- RÈGLES PAR COLLECTION ---
+
+    // Collection Utilisateurs
+    match /users/{userId} {
+      allow read: if true; // Profils publics
+      allow create: if isOwner(userId) && request.resource.data.afriCoins == 0;
+      allow update: if isOwner(userId) 
+                    // Empêche la modification de champs sensibles par le client
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['afriCoins', 'role', 'email', 'createdAt']);
+      allow delete: if false; // Suppression gérée par admin uniquement
+    }
+
+    // Collection Histoires (Stories)
     match /stories/{storyId} {
       allow read: if true;
-      allow create: if isSignedIn() 
-                    && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist_draft' 
-                    || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist_pro');
-      allow update, delete: if isSignedIn() && resource.data.artistId == request.auth.uid;
+      allow create: if hasArtistRole() 
+                    && request.resource.data.artistId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.artistId == request.auth.uid
+                    // L'artiste ne peut pas modifier les stats manuellement
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['artistId', 'views', 'likes', 'createdAt']);
+      allow delete: if isSignedIn() && resource.data.artistId == request.auth.uid;
       
       // Sous-collection des chapitres
       match /chapters/{chapterId} {
         allow read: if true;
-        allow write: if isSignedIn() && get(/databases/$(database)/documents/stories/$(storyId)).data.artistId == request.auth.uid;
+        allow write: if isSignedIn() 
+                     && get(/databases/$(database)/documents/stories/$(storyId)).data.artistId == request.auth.uid;
       }
     }
 
-    // Règles pour les playlists
+    // Collection Playlists
     match /playlists/{playlistId} {
       allow read: if resource.data.isPublic == true || isOwner(resource.data.authorId);
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.authorId);
     }
 
-    // Règles pour les transactions (historique personnel)
+    // Collection Transactions (Historique financier)
     match /transactions/{transactionId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow write: if false; // Les transactions sont gérées uniquement côté serveur/Cloud Functions
+      allow write: if false; // Les transactions sont créées uniquement via Cloud Functions
+    }
+
+    // Collection Forum (Threads)
+    match /forumThreads/{threadId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || hasArtistRole());
+      allow delete: if false; // Modération manuelle ou via role admin
     }
   }
 }
