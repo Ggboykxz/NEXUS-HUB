@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
 import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
+import { GenresProvider } from '@/components/providers/genres-provider';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -34,8 +35,10 @@ export default function RootLayout({
       <body className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <LanguageProvider>
           <AuthModalProvider>
-            {children}
-            <Toaster />
+            <GenresProvider>
+              {children}
+              <Toaster />
+            </GenresProvider>
           </AuthModalProvider>
         </LanguageProvider>
       </body>

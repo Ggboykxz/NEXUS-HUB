@@ -13,10 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useGenres } from '@/components/providers/genres-provider';
 
 function StoriesContent() {
   const searchParams = useSearchParams();
   const initialGenre = searchParams.get('genre') || 'all';
+  const { genres: uniqueGenres } = useGenres();
   
   const [allStories, setAllStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +43,6 @@ function StoriesContent() {
     fetchStories();
   }, []);
 
-  const uniqueGenres = useMemo(() => {
-    return [...new Set(allStories.map(s => s.genre))].filter(Boolean);
-  }, [allStories]);
-
   const filteredAndSortedStories = useMemo(() => {
     let filtered = allStories;
 
@@ -55,7 +53,11 @@ function StoriesContent() {
     }
 
     if (genreFilter !== 'all') {
-      filtered = filtered.filter(story => story.genre === genreFilter);
+      // On filtre par le nom du genre
+      const targetGenre = uniqueGenres.find(g => g.slug === genreFilter)?.name;
+      if (targetGenre) {
+        filtered = filtered.filter(story => story.genre === targetGenre);
+      }
     }
 
     if (searchQuery.trim()) {
@@ -80,7 +82,7 @@ function StoriesContent() {
     }
 
     return sorted;
-  }, [allStories, genreFilter, sortFilter, typeFilter, searchQuery]);
+  }, [allStories, genreFilter, sortFilter, typeFilter, searchQuery, uniqueGenres]);
 
   const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
@@ -156,7 +158,7 @@ function StoriesContent() {
                             <SelectContent>
                                 <SelectItem value="all">Tous les genres</SelectItem>
                                 {uniqueGenres.map(genre => (
-                                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                                    <SelectItem key={genre.slug} value={genre.slug}>{genre.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

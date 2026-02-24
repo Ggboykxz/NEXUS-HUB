@@ -20,17 +20,19 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '../providers/language-provider';
+import { useGenres } from '../providers/genres-provider';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, limit, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, limit, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 
 export default function Header() {
   const { t } = useTranslation();
+  const { genres: uniqueGenres } = useGenres();
   const pathname = usePathname();
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -39,7 +41,6 @@ export default function Header() {
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [uniqueGenres, setUniqueGenres] = useState<{name: string, slug: string}[]>([]);
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
 
   const [hasMounted, setHasMounted] = useState(false);
@@ -57,25 +58,6 @@ export default function Header() {
       () => setDbStatus('connected'),
       () => setDbStatus('error')
     );
-
-    // Fetch genres
-    const fetchGenres = async () => {
-      try {
-        const q = query(collection(db, 'stories'), limit(20));
-        const snap = await getDocs(q);
-        const genreMap = new Map();
-        snap.forEach(doc => {
-          const data = doc.data();
-          if (data.genre && data.genreSlug) {
-            genreMap.set(data.genreSlug, { name: data.genre, slug: data.genreSlug });
-          }
-        });
-        setUniqueGenres(Array.from(genreMap.values()));
-      } catch (e) {
-        console.error("Error fetching genres:", e);
-      }
-    };
-    fetchGenres();
 
     // Listen to Auth changes
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
