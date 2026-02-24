@@ -18,7 +18,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     displayName: user.displayName || 'Nouveau Lecteur',
     photoURL: user.photoURL || 'https://picsum.photos/seed/default/200/200',
     role: 'reader',
-    afriCoins: 0, // Solde initial sécurisé
+    afriCoins: 0,
     bio: '',
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -29,6 +29,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
 
 /**
  * Fonction Callable : Validation et soumission d'une nouvelle œuvre.
+ * Sécurisée par App Check (CSRF) et authentification.
  */
 const StorySchema = z.object({
   title: z.string().min(3).max(100),
@@ -38,12 +39,17 @@ const StorySchema = z.object({
 });
 
 export const submitStory = functions.https.onCall(async (data, context) => {
-  // 1. Vérification de l'authentification
+  // 1. Protection CSRF via App Check
+  if (!context.app) {
+    throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
+  }
+
+  // 2. Vérification de l'authentification
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Vous devez être connecté.');
   }
 
-  // 2. Validation du schéma
+  // 3. Validation du schéma
   const validation = StorySchema.safeParse(data);
   if (!validation.success) {
     throw new functions.https.HttpsError('invalid-argument', 'Données de l\'œuvre invalides.');
@@ -52,14 +58,13 @@ export const submitStory = functions.https.onCall(async (data, context) => {
   const { title, description, genre, format } = validation.data;
   const artistId = context.auth.uid;
 
-  // 3. Vérification du rôle artiste
+  // 4. Vérification du rôle artiste
   const userDoc = await db.collection('users').doc(artistId).get();
   const userData = userDoc.data();
   if (!userData || !['artist_draft', 'artist_pro'].includes(userData.role)) {
     throw new functions.https.HttpsError('permission-denied', 'Seuls les artistes peuvent publier.');
   }
 
-  // 4. Création de l'œuvre
   const storyRef = db.collection('stories').doc();
   const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
@@ -86,9 +91,15 @@ export const submitStory = functions.https.onCall(async (data, context) => {
 });
 
 /**
- * Fonction Callable : Achat d'AfriCoins (Simulation de validation de paiement).
+ * Fonction Callable : Achat d'AfriCoins.
+ * Sécurisée par App Check (CSRF).
  */
 export const purchaseAfriCoins = functions.https.onCall(async (data, context) => {
+  // Protection CSRF
+  if (!context.app) {
+    throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
+  }
+
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Session expirée.');
   }
@@ -110,7 +121,6 @@ export const purchaseAfriCoins = functions.https.onCall(async (data, context) =>
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Enregistrement de la transaction
     const transRef = db.collection('transactions').doc();
     transaction.set(transRef, {
       userId: context.auth!.uid,
