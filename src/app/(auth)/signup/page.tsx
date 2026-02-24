@@ -60,6 +60,10 @@ export default function SignupPage() {
     setParticles(newParticles);
   }, []);
 
+  const setSessionCookie = () => {
+    document.cookie = "nexushub-session=active; path=/; max-age=86400; SameSite=Lax";
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -90,12 +94,14 @@ export default function SignupPage() {
         updatedAt: new Date().toISOString(),
       });
 
+      setSessionCookie();
       toast({
         title: "Bienvenue sur NexusHub !",
         description: "Votre compte a été créé avec succès.",
       });
 
       router.push('/');
+      router.refresh();
     } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
@@ -125,11 +131,13 @@ export default function SignupPage() {
 
     try {
       await signInWithPopup(auth, provider);
+      setSessionCookie();
       toast({
         title: `Connecté avec ${platform}`,
         description: "Bienvenue sur NexusHub !",
       });
       router.push('/');
+      router.refresh();
     } catch (error: any) {
       console.error(error);
       toast({

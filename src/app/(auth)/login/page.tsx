@@ -49,6 +49,11 @@ export default function LoginPage() {
     setParticles(newParticles);
   }, []);
 
+  const setSessionCookie = () => {
+    // Crée un cookie de session pour le middleware
+    document.cookie = "nexushub-session=active; path=/; max-age=86400; SameSite=Lax";
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,11 +66,13 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
+      setSessionCookie();
       toast({
         title: "Connexion réussie !",
         description: "Heureux de vous revoir parmi nous.",
       });
       router.push('/');
+      router.refresh();
     } catch (error: any) {
       toast({
         title: "Erreur de connexion",
@@ -95,11 +102,13 @@ export default function LoginPage() {
 
     try {
       await signInWithPopup(auth, provider);
+      setSessionCookie();
       toast({
         title: `Connecté avec ${platform}`,
         description: "Bienvenue sur NexusHub !",
       });
       router.push('/');
+      router.refresh();
     } catch (error: any) {
       console.error(error);
       toast({

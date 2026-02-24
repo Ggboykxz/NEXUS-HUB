@@ -99,7 +99,10 @@ export default function Header() {
 
   const handleLogout = async () => {
     await signOut(auth);
+    // Supprime le cookie de session pour le middleware
+    document.cookie = "nexushub-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push('/');
+    router.refresh();
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
