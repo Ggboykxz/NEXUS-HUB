@@ -1,6 +1,6 @@
 /**
  * @fileOverview Schéma de données complet pour NexusHub — Production
- * @version 2.2.0
+ * @version 2.4.0
  */
 
 import type { Timestamp } from 'firebase/firestore';
@@ -13,6 +13,7 @@ export interface ImageData {
   height: number;
   blurHash?: string;
   alt?: string;
+  variantLabel?: string; 
 }
 
 export interface SocialLinks {
@@ -51,19 +52,18 @@ export interface UserProfile {
   afriCoins: number;
   subscribersCount: number;
   
-  // Profiling Algorithmique
   readingStats: {
-    preferredGenres: Record<string, number>; // { 'afrofuturisme': 120 (min), 'mythologie': 45 }
-    culturalAffinity: string[]; // ['fang', 'yoruba', 'wolof']
+    preferredGenres: Record<string, number>; 
+    culturalAffinity: string[];
     lastReadRegion?: string;
     totalReadingTime: number;
   };
 
   readingStreak: {
     currentCount: number;
-    lastReadDate: string; // ISO
+    lastReadDate: string;
     longestStreak: number;
-    nextRewardAt: number; // 7, 30, 100
+    nextRewardAt: number;
   };
   
   isBanned: boolean;
@@ -96,12 +96,19 @@ export interface LibraryEntry {
   lastReadPageIndex: number;
   lastReadScrollPosition?: number;
   lastReadAt: Timestamp | string;
-  progress: number; // 0-100
+  progress: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  COLLECTION : stories/{storyId}
 // ═══════════════════════════════════════════════════════════════════════════
+
+export interface StoryArc {
+  id: string;
+  title: string;
+  order: number;
+  description?: string;
+}
 
 export interface Story {
   id: string;
@@ -112,6 +119,7 @@ export interface Story {
   artistName: string;
   artistSlug?: string;
   coverImage: ImageData;
+  coverVariants?: ImageData[]; 
   format: StoryFormat;
   genre: string;
   genreSlug: string;
@@ -121,7 +129,8 @@ export interface Story {
   views: number;
   likes: number;
   chapterCount: number;
-  region?: string; // 'Gabon', 'Nigeria', 'Sénégal'
+  region?: string;
+  arcs?: StoryArc[]; 
   updatedAt: Timestamp | string;
   chapters?: Chapter[];
 }
@@ -129,12 +138,18 @@ export interface Story {
 export interface Chapter {
   id: string;
   storyId: string;
+  arcId?: string; 
   slug: string;
   title: string;
   chapterNumber: number;
   pages: ImageData[];
   pageCount: number;
   isPremium: boolean;
+  isDraft: boolean;
+  version: string; 
+  status: ChapterStatus;
+  scheduledAt?: Timestamp | string; 
+  watermarkEnabled: boolean; 
   views: number;
   likes: number;
   publishedAt?: Timestamp | string;
@@ -154,11 +169,6 @@ export interface Comment {
   createdAt: Timestamp | string;
 }
 
-export interface PanelReaction {
-  pageIndex: number;
-  reactions: Record<string, number>; 
-}
-
 export interface Playlist {
   id: string;
   ownerId: string;
@@ -167,52 +177,11 @@ export interface Playlist {
   isPublic: boolean;
 }
 
-export interface Notification {
-  id: string;
-  userId: string;
-  type: string;
-  title: string;
-  body: string;
-  imageUrl?: string;
-  isRead: boolean;
-  createdAt: Timestamp | string;
-}
-
-export interface ComicPage {
-  id: string;
-  imageUrl: string;
-  description: string;
-  imageHint: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: ImageData;
-  category: string;
-  universe?: string;
-  printfulUrl?: string;
-  description: string;
-}
-
-export interface BlogPost {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  author: string;
-  date: string;
-  category: string;
-  coverImage: ImageData;
-  tags: string[];
-}
-
 // ─── HELPERS D'URLS ──────────────────────────────────────────────────────────
 
 export const getStoryUrl = (story: Pick<Story, 'format' | 'slug'>): string => {
   const isWebtoonFormat = story.format === 'Webtoon' || story.format === 'Roman Illustré';
-  return isWebtoonFormat ? `/webtoon/${story.slug}` : `/bd-africaine/${story.slug}`;
+  return isWebtoonFormat ? `/webtoon-hub/${story.slug}` : `/bd-africaine/${story.slug}`;
 };
 
 export const getChapterUrl = (

@@ -1,6 +1,7 @@
 /**
- * Ce fichier est converti en Layout pour résoudre le conflit de routage parallèle avec src/app/(app)/webtoon/[slug]/[chapterSlug]/page.tsx.
+ * Ce fichier est neutralisé pour éviter les conflits de routage.
+ * Le lecteur magique est géré dans src/app/(app)/webtoon-hub/[slug]/[chapterSlug]/page.tsx.
  */
-export default function WebtoonChapterRootLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function NeutralizedReader() {
+  return null;
 }

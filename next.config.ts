@@ -39,13 +39,18 @@ const nextConfig: NextConfig = {
   },
   /**
    * Redirections centralisées pour NexusHub.
-   * Gère la consolidation des routes legacy vers les routes officielles.
+   * Consolide les routes vers webtoon-hub pour éviter les erreurs de parallélisme.
    */
   async redirects() {
     return [
       {
         source: '/webtoons',
-        destination: '/webtoon',
+        destination: '/webtoon-hub',
+        permanent: true,
+      },
+      {
+        source: '/webtoon',
+        destination: '/webtoon-hub',
         permanent: true,
       },
       {

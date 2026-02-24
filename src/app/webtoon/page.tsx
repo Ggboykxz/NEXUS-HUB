@@ -1,7 +1,8 @@
 /**
- * Ce fichier est converti en Layout pour résoudre le conflit de routage parallèle avec src/app/(app)/webtoon/page.tsx.
- * En Next.js, un layout ne définit pas de route de page, ce qui élimine l'erreur "two parallel pages".
+ * Ce fichier est neutralisé pour éviter les conflits de routage avec (app)/webtoon-hub.
+ * La route canonique est désormais /webtoon-hub, gérée par src/app/(app)/webtoon-hub/page.tsx.
+ * Une redirection est en place dans next.config.ts.
  */
-export default function WebtoonRootLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function NeutralizedPage() {
+  return null;
 }
