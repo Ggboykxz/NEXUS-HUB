@@ -7,12 +7,19 @@ import { Button } from '@/components/ui/button';
 import { StoryCard } from '@/components/story-card';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import type { Story } from '@/lib/data';
-import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight, Zap } from 'lucide-react';
+import type { StoryFull as Story } from '@/lib/types';
+import { Play, Info, TrendingUp, Sparkles, Crown, Award, PenSquare, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { cn } from '@/lib/utils';
+
+interface SectionHeaderProps {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  colorClass?: string;
+}
 
 export default function HomePage() {
   const [featured, setFeatured] = useState<Story[]>([]);
@@ -28,7 +35,6 @@ export default function HomePage() {
       try {
         const storiesRef = collection(db, 'stories');
         
-        // Parallel fetching for performance
         const [popSnap, rankSnap, newSnap] = await Promise.all([
           getDocs(query(storiesRef, orderBy('views', 'desc'), limit(5))),
           getDocs(query(storiesRef, orderBy('likes', 'desc'), limit(5))),
@@ -43,7 +49,6 @@ export default function HomePage() {
         setTopRanked(rankData);
         setNewReleases(newData);
         
-        // Mocking Pro/Draft based on performance for MVP
         setProStories(popData.slice(0, 5));
         setDraftStories(newData.slice(0, 5));
         
@@ -60,7 +65,7 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  const SectionHeader = ({ title, icon: Icon, href, colorClass = "text-primary" }: any) => (
+  const SectionHeader = ({ title, icon: Icon, href, colorClass = "text-primary" }: SectionHeaderProps) => (
     <div className="flex justify-between items-center mb-6 border-b border-primary/10 pb-2">
       <div className="flex items-center gap-3">
         <Icon className={cn("h-6 w-6", colorClass)} />
@@ -96,7 +101,6 @@ export default function HomePage() {
       <main className="flex-1">
         <div className="flex flex-col gap-12 pb-20">
           
-          {/* Hero Section */}
           <section className="relative w-full pt-4 overflow-hidden px-4 md:px-8">
             <div className="container max-w-7xl mx-auto">
               <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
@@ -122,7 +126,7 @@ export default function HomePage() {
                         </p>
                         <div className="flex gap-4 pt-4">
                           <Button asChild size="lg" className="rounded-full font-bold px-8 gold-shimmer">
-                            <Link href={`/read/${featured[0].id}`}><Play className="mr-2 h-4 w-4 fill-current" /> Lire maintenant</Link>
+                            <Link href={`/webtoon/${featured[0].slug}/${featured[0].chapters[0]?.slug || ''}`}><Play className="mr-2 h-4 w-4 fill-current" /> Lire maintenant</Link>
                           </Button>
                           <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md">
                             <Link href={`/webtoon/${featured[0].slug}`}><Info className="mr-2 h-4 w-4" /> Détails</Link>
@@ -143,38 +147,31 @@ export default function HomePage() {
           </section>
 
           <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-20">
-            
-            {/* Tendances Section */}
             <section id="tendances">
               <SectionHeader title="Tendances Actuelles" icon={TrendingUp} href="/popular" />
               <StoryGrid data={popular} loading={loading} />
             </section>
 
-            {/* Elite du Hub Section */}
             <section id="elite">
               <SectionHeader title="Elite du Hub" icon={Crown} href="/rankings" colorClass="text-amber-500" />
               <StoryGrid data={topRanked} loading={loading} />
             </section>
 
-            {/* Sélection Pro Section */}
             <section id="pro">
               <SectionHeader title="Sélection NexusHub Pro" icon={Award} href="/pro-selection" colorClass="text-emerald-500" />
               <StoryGrid data={proStories} loading={loading} />
             </section>
 
-            {/* Exploration Draft Section */}
             <section id="draft">
               <SectionHeader title="Exploration NexusHub Draft" icon={PenSquare} href="/draft-exploration" colorClass="text-orange-400" />
               <StoryGrid data={draftStories} loading={loading} />
             </section>
 
-            {/* Nouveautés Section */}
             <section id="nouveautes">
               <SectionHeader title="Nouveautés" icon={Sparkles} href="/new-releases" colorClass="text-cyan-500" />
               <StoryGrid data={newReleases} loading={loading} />
             </section>
 
-            {/* Community CTA */}
             <section className="bg-stone-900 rounded-[2.5rem] p-12 text-center relative overflow-hidden border border-white/5 shadow-2xl">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]" />
               <div className="relative z-10 space-y-6">

@@ -26,15 +26,37 @@ import {
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import type { StoryFull, ChapterContent } from '@/lib/types';
+
+// #region Types
+
+interface ReaderHeaderProps {
+  story: StoryFull;
+  chapter: ChapterContent;
+  onModeChange: (mode: 'scroll' | 'pages') => void;
+  activeMode: string;
+  onBookmark: () => void;
+  isBookmarked: boolean;
+  progress: number;
+  onChapterChange: (slug: string) => void;
+}
+
+interface ReaderFooterProps {
+  story: StoryFull;
+  isLiked: boolean;
+  onLike: () => void;
+  commentsCount: number;
+  onShare: () => void;
+  onToggleComments: () => void;
+  isCommentsOpen: boolean;
+}
+
+// #endregion
 
 // #region Components
 
-/**
- * En-tête fixe avec numéro de chapitre
- * Ajusté avec top-14 pour se placer sous le header principal
- */
-function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: any) {
-  const chapterNumber = story.chapters.findIndex((c: any) => c.slug === chapter.slug) + 1;
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, isBookmarked, progress, onChapterChange }: ReaderHeaderProps) {
+  const chapterNumber = story.chapters.findIndex((c) => c.slug === chapter.slug) + 1;
 
   return (
     <nav className="fixed top-14 left-0 right-0 h-11 bg-background/95 border-b border-border z-40 flex items-center justify-between px-5 backdrop-blur-xl transition-all">
@@ -60,7 +82,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {story.chapters.map((chap: Chapter, idx: number) => (
+            {story.chapters.map((chap, idx) => (
               <SelectItem key={chap.id} value={chap.slug} className="text-[10px]">
                 Chapitre {idx + 1} : {chap.title}
               </SelectItem>
@@ -88,7 +110,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onBookmark, is
   );
 }
 
-function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen }: any) {
+function ReaderFooter({ story, isLiked, onLike, commentsCount, onShare, onToggleComments, isCommentsOpen }: ReaderFooterProps) {
   return (
     <div className={cn(
       "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-2xl border border-white/10 p-2 rounded-full shadow-2xl transition-all duration-500",
@@ -162,7 +184,6 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
       openAuthModal('poster votre commentaire');
       return;
     }
-    // Post comment logic
   };
 
   return (
@@ -182,9 +203,9 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
       <ScrollArea className="flex-1 p-6">
         <div className="space-y-8">
           {storyComments.length > 0 ? storyComments.map((comment) => (
-            <div key={comment.id} className="group animate-in fade-in slide-in-from-right-4 duration-500">
+            <div key={comment.id} className="group animate-in fade-in duration-500">
               <div className="flex items-start gap-4">
-                <Avatar className="h-10 w-10 border-2 border-white/5 group-hover:border-primary/30 transition-all">
+                <Avatar className="h-10 w-10 border-2 border-white/5">
                   <AvatarImage src={comment.authorAvatar.imageUrl} />
                   <AvatarFallback>{comment.authorName[0]}</AvatarFallback>
                 </Avatar>
@@ -194,7 +215,7 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
                     <Badge variant="outline" className="text-[8px] h-4 uppercase border-primary/20 text-primary">{comment.authorBadge || 'Lecteur'}</Badge>
                     <span className="text-[9px] text-stone-500 font-bold uppercase ml-auto">{comment.timestamp}</span>
                   </div>
-                  <div className="text-sm text-stone-400 leading-relaxed font-light bg-white/5 p-3 rounded-2xl rounded-tl-none border border-white/5">
+                  <div className="text-sm text-stone-400 leading-relaxed font-light bg-white/5 p-3 rounded-2xl border border-white/5">
                     {processComment(comment.content)}
                   </div>
                   <div className="flex items-center gap-4 mt-2">
@@ -218,11 +239,11 @@ function CommentsPanel({ storyId, chapterIndex, onClose }: { storyId: string, ch
         <div className="relative">
           <Textarea 
             placeholder="Écrivez avec bienveillance..." 
-            className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-sm text-white font-light focus-visible:ring-primary"
+            className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-sm text-white focus-visible:ring-primary"
           />
           <div className="absolute right-3 bottom-3 flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500"><Smile className="h-5 w-5" /></Button>
-            <Button onClick={handlePostComment} size="icon" className="h-8 w-8 rounded-xl bg-primary text-black gold-shimmer shadow-lg">
+            <Button onClick={handlePostComment} size="icon" className="h-8 w-8 rounded-xl bg-primary text-black shadow-lg">
               <SendHorizonal className="h-4 w-4" />
             </Button>
           </div>
@@ -246,7 +267,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   const chapter = story.chapters.find(c => c.slug === chapterSlug) || story.chapters[0];
   const artist = artists.find(a => a.id === story.artistId)!;
 
-  const [activeMode, setActiveMode] = useState('scroll');
+  const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -256,7 +277,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Synchronise progress with carousel in 'pages' mode
   useEffect(() => {
     if (!carouselApi) return;
     
@@ -310,42 +330,6 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
     router.push(getChapterUrl(story, newSlug));
   };
 
-  // BD Navigation handlers
-  const handlePagePrev = () => {
-    carouselApi?.scrollPrev();
-  };
-
-  const handlePageNext = () => {
-    carouselApi?.scrollNext();
-  };
-
-  // Custom click handler for BD images with side detection
-  const handleImageClick = (e: React.MouseEvent) => {
-    if (activeMode !== 'pages') return;
-    
-    // Check if it's a context menu (right click)
-    if (e.type === 'contextmenu') {
-      e.preventDefault();
-      handlePageNext();
-      return;
-    }
-
-    // Left click handling with side detection
-    if (e.button === 0) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left; // Click position relative to element
-      const width = rect.width;
-      
-      if (x < width / 2) {
-        // Clicked left side -> Previous
-        handlePagePrev();
-      } else {
-        // Clicked right side -> Next
-        handlePageNext();
-      }
-    }
-  };
-
   return (
     <div className="h-screen bg-[#050505] flex flex-col selection:bg-primary/30 overflow-hidden">
       <ReaderHeader 
@@ -372,10 +356,7 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
             <div className="mx-auto flex flex-col items-center py-8 max-w-[800px] px-0">
               <div className="w-full space-y-0">
                 {comicPages.map((page, index) => (
-                  <div 
-                    key={page.id} 
-                    className="relative w-full aspect-[2/3] mb-4 sm:mb-8"
-                  >
+                  <div key={page.id} className="relative w-full aspect-[2/3] mb-4 sm:mb-8">
                     <Image
                       src={page.imageUrl}
                       alt={page.description}
@@ -390,33 +371,15 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
               
               <div className="w-full max-w-[800px] py-32 px-6">
                 <div className="relative bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 md:p-16 text-center overflow-hidden shadow-[0_0_50px_rgba(212,168,67,0.1)]">
-                  <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
-                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -z-0" />
-                  
                   <div className="relative z-10 space-y-8 animate-in zoom-in duration-1000">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="bg-primary/10 p-4 rounded-full w-fit gold-shimmer">
+                      <div className="bg-primary/10 p-4 rounded-full w-fit">
                         <Zap className="h-10 w-10 text-primary" />
                       </div>
                       <h3 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant">Chapitre Terminé !</h3>
                       <p className="text-stone-400 font-light italic max-w-md mx-auto">
-                        "L'histoire ne fait que commencer. Votre soutien permet à {artist.name} de continuer cette légende."
+                        "L'histoire ne fait que commencer. Votre soutien permet à {artist.displayName || 'l\'artiste'} de continuer cette légende."
                       </p>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 py-8 border-y border-white/5">
-                      <div>
-                        <p className="text-2xl font-black text-white">12m</p>
-                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecture</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-black text-white">{(story.views / 1000).toFixed(0)}k</p>
-                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Lecteurs</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-black text-white">4.9</p>
-                        <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Note</p>
-                      </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
@@ -433,24 +396,12 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
               </div>
             </div>
           ) : (
-            /* BD Mode: One page at a time with swipe and click navigation */
             <div className="h-full w-full flex items-center justify-center py-4">
-              <Carousel 
-                setApi={setCarouselApi} 
-                className="w-full h-full max-w-4xl"
-                opts={{
-                  align: "center",
-                  loop: false
-                }}
-              >
+              <Carousel setApi={setCarouselApi} className="w-full h-full max-w-4xl">
                 <CarouselContent className="h-full">
                   {comicPages.map((page, index) => (
                     <CarouselItem key={page.id} className="h-full flex items-center justify-center p-4">
-                      <div 
-                        className="relative w-full h-full max-h-[85vh] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/10 cursor-pointer select-none"
-                        onClick={handleImageClick}
-                        onContextMenu={(e) => { e.preventDefault(); handleImageClick(e); }}
-                      >
+                      <div className="relative w-full h-full max-h-[85vh] aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/10">
                         <Image
                           src={page.imageUrl}
                           alt={page.description}
@@ -459,45 +410,10 @@ export default function ReaderPage(props: { params: Promise<{ slug: string, chap
                           data-ai-hint={page.imageHint}
                           priority={index === currentPage}
                         />
-                        <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-white/80 uppercase tracking-widest border border-white/10">
-                          Planche {index + 1} / {comicPages.length}
-                        </div>
-                        
-                        {/* Interactive tooltips for onboarding */}
-                        {index === 0 && (
-                          <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-8 opacity-0 hover:opacity-100 transition-opacity duration-500">
-                            <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
-                              Bord Gauche<br/>PRÉCÉDENT
-                            </div>
-                            <div className="bg-primary/20 backdrop-blur-sm p-4 rounded-xl border border-primary/30 text-white text-[10px] font-black uppercase text-center animate-pulse">
-                              Bord Droit<br/>SUIVANT
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                
-                {/* Navigation controls shown on desktop */}
-                <div className="hidden lg:block">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="absolute left-10 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 border-white/10 text-white hover:bg-primary hover:text-black transition-all"
-                    onClick={handlePagePrev}
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="absolute right-10 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 border-white/10 text-white hover:bg-primary hover:text-black transition-all"
-                    onClick={handlePageNext}
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </Button>
-                </div>
               </Carousel>
             </div>
           )}

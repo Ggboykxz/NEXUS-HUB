@@ -88,6 +88,13 @@ export interface ArtistProfile extends UserProfile {
   isMentor: boolean;
 }
 
+export interface ComicPage {
+  id: string;
+  imageUrl: string;
+  description: string;
+  imageHint: string;
+}
+
 export interface ForumThread {
   id: string;
   forumId: string;
