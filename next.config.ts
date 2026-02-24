@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  /**
+   * Redirections centralisées pour NexusHub.
+   * Gère la consolidation des routes legacy vers les routes officielles.
+   */
   async redirects() {
     return [
       {
