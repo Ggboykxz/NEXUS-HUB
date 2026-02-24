@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, PenSquare, ArrowRight, UploadCloud, BookOpen, Users, Globe, ChevronRight, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { BookOpen, Users, Globe, ChevronRight, CheckCircle2, UploadCloud, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
-import { auth } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SubmitPage() {
   const [step, setStep] = useState(1);
@@ -22,6 +24,15 @@ export default function SubmitPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
+  const router = useRouter();
+
+  // Form State
+  const [formData, setFormData] = useState({
+    title: '',
+    genre: '',
+    format: 'Webtoon' as any,
+    description: '',
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -30,20 +41,33 @@ export default function SubmitPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!isAuthenticated) {
       openAuthModal('lancer votre premier projet');
       return;
     }
     
     setIsCreating(true);
-    setTimeout(() => {
-      setIsCreating(false);
+    try {
+      const submitStoryFn = httpsCallable(functions, 'submitStory');
+      const result = await submitStoryFn(formData);
+      const { id } = result.data as { id: string };
+
       toast({
         title: "Œuvre créée avec succès !",
-        description: "Bienvenue dans votre nouvel univers. Redirection vers l'Atelier...",
+        description: "Validation serveur réussie. Bienvenue dans votre nouvel univers.",
       });
-    }, 2000);
+      
+      router.push(`/dashboard/creations/${id}`);
+    } catch (error: any) {
+      toast({
+        title: "Erreur lors de la création",
+        description: error.message || "Une erreur est survenue côté serveur.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const steps = [
@@ -57,7 +81,7 @@ export default function SubmitPage() {
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">Lancer un Nouveau Projet</h1>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          Prêt à partager votre vision avec le monde ? Remplissez les détails ci-dessous pour commencer votre aventure sur NexusHub.
+          Prêt à partager votre vision avec le monde ? Votre œuvre sera validée par nos services avant publication.
         </p>
       </div>
 
@@ -87,7 +111,7 @@ export default function SubmitPage() {
               {step === 3 && <Globe className="text-primary" />}
               {steps[step - 1].label}
             </CardTitle>
-            <CardDescription>Remplissez les détails essentiels de votre œuvre.</CardDescription>
+            <CardDescription>Les données saisies sont validées côté serveur pour votre sécurité.</CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6 min-h-[400px]">
@@ -95,20 +119,26 @@ export default function SubmitPage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
                   <Label htmlFor="title">Titre de l'œuvre</Label>
-                  <Input id="title" placeholder="Ex: Les Guerriers du Kasaï" className="h-12 text-lg" />
+                  <Input 
+                    id="title" 
+                    placeholder="Ex: Les Guerriers du Kasaï" 
+                    className="h-12 text-lg" 
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="genre">Genre Principal</Label>
-                    <Select>
+                    <Select onValueChange={(val) => setFormData({...formData, genre: val})}>
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Sélectionner un genre" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mythology">Mythologie</SelectItem>
-                        <SelectItem value="scifi">Afrofuturisme</SelectItem>
-                        <SelectItem value="history">Histoire</SelectItem>
-                        <SelectItem value="fantasy">Fantaisie</SelectItem>
+                        <SelectItem value="Mythologie">Mythologie</SelectItem>
+                        <SelectItem value="Afrofuturisme">Afrofuturisme</SelectItem>
+                        <SelectItem value="Histoire">Histoire</SelectItem>
+                        <SelectItem value="Fantaisie">Fantaisie</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -121,14 +151,19 @@ export default function SubmitPage() {
                       <SelectContent>
                         <SelectItem value="ongoing">En cours</SelectItem>
                         <SelectItem value="completed">Terminé</SelectItem>
-                        <SelectItem value="teaser">Teaser / À venir</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="synopsis">Synopsis (Multilingue recommandé)</Label>
-                  <Textarea id="synopsis" placeholder="Décrivez votre univers en quelques lignes..." className="min-h-[150px] text-base leading-relaxed" />
+                  <Label htmlFor="synopsis">Synopsis (Min. 10 caractères)</Label>
+                  <Textarea 
+                    id="synopsis" 
+                    placeholder="Décrivez votre univers..." 
+                    className="min-h-[150px] text-base" 
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  />
                 </div>
               </div>
             )}
@@ -138,35 +173,21 @@ export default function SubmitPage() {
                 <div className="space-y-2">
                   <Label>Format de Lecture</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {['Webtoon', 'BD', 'One-shot', 'Roman'].map((f) => (
+                    {['Webtoon', 'BD', 'Roman Illustré'].map((f) => (
                       <div key={f} className="relative group">
-                        <input type="radio" name="format" id={f} className="peer sr-only" />
+                        <input 
+                          type="radio" 
+                          name="format" 
+                          id={f} 
+                          className="peer sr-only" 
+                          checked={formData.format === f}
+                          onChange={() => setFormData({...formData, format: f})}
+                        />
                         <label htmlFor={f} className="flex flex-col items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-muted peer-checked:border-primary peer-checked:bg-primary/5">
                           <span className="font-bold text-sm">{f}</span>
                         </label>
                       </div>
                     ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <Label>Équipe Créative (Optionnel)</Label>
-                  <div className="space-y-3">
-                    <div className="flex gap-3">
-                      <Input placeholder="Email du collaborateur" className="flex-1" />
-                      <Select>
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue placeholder="Rôle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="scenarist">Scénariste</SelectItem>
-                          <SelectItem value="colorist">Coloriste</SelectItem>
-                          <SelectItem value="illustrator">Illustrateur</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline">Ajouter</Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground italic">Les collaborateurs recevront une invitation par email pour rejoindre le projet.</p>
                   </div>
                 </div>
               </div>
@@ -179,15 +200,10 @@ export default function SubmitPage() {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground group-hover:text-primary">Couverture</span>
                 </div>
                 <div className="max-w-md mx-auto space-y-4">
-                  <h3 className="text-xl font-bold">Presque terminé !</h3>
+                  <h3 className="text-xl font-bold">Prêt pour la validation serveur</h3>
                   <p className="text-sm text-muted-foreground">
-                    En publiant votre œuvre, vous acceptez les conditions d'utilisation de NexusHub. Votre œuvre sera d'abord publiée dans l'espace <strong>NexusHub Draft</strong>.
+                    En cliquant sur "Lancer le projet", notre service Cloud Function validera vos données et initialisera votre espace de création.
                   </p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Badge variant="secondary">Inclusion Multilingue</Badge>
-                    <Badge variant="secondary">Protection Droits d'Auteur</Badge>
-                    <Badge variant="secondary">Communauté Panafricaine</Badge>
-                  </div>
                 </div>
               </div>
             )}
@@ -209,33 +225,14 @@ export default function SubmitPage() {
             ) : (
               <Button 
                 onClick={handleCreate} 
-                disabled={isCreating}
+                disabled={isCreating || !formData.title || !formData.genre}
                 className="px-12 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
               >
-                {isCreating ? "Création en cours..." : "Lancer le projet"}
+                {isCreating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Validation...</> : "Lancer le projet"}
               </Button>
             )}
           </CardFooter>
         </Card>
-
-        <div className="mt-20 pt-12 border-t border-dashed">
-           <div className="flex flex-col md:flex-row items-center gap-12 opacity-60 hover:opacity-100 transition-opacity">
-              <div className="flex-1 space-y-4">
-                <h2 className="text-2xl font-bold font-display">Rappel des Parcours</h2>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="border-orange-500/50 text-orange-500">Draft</Badge>
-                  <p className="text-sm">Espace libre pour tous les créateurs. Bâtissez votre audience sans barrières.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="default" className="bg-emerald-500">Pro</Badge>
-                  <p className="text-sm">Sur invitation uniquement. Accès à la monétisation premium (AfriCoins) et visibilité accrue.</p>
-                </div>
-              </div>
-              <Button variant="link" asChild className="text-primary font-bold">
-                <Link href="/about">En savoir plus sur nos engagements <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-           </div>
-        </div>
       </div>
     </div>
   );
