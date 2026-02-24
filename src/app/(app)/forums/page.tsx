@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { forumThreads, artists, stories } from '@/lib/data';
+import { forumThreads, artists } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
@@ -19,7 +19,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Palette,
+  Users,
+  Trophy,
+  Newspaper,
+  Star,
+  MapPin,
+  Languages,
+  Wrench
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -38,27 +46,14 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-export default function ForumsPage() {
+export default function ForumsHubPage() {
   const { openAuthModal } = useAuthModal();
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('public');
-  const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [activeRegion, setActiveRegion] = useState('Toute l\'Afrique');
 
   useEffect(() => {
-    // Generate particles for the gold hero
-    const newParticles = [...Array(10)].map((_, i) => ({
-      id: i,
-      top: `${Math.random() * 100}%`,
-      left: `${Math.random() * 100}%`,
-      dur: `${5 + Math.random() * 5}s`,
-      del: `${Math.random() * 5}s`,
-      tx: `${Math.random() * 60 - 30}px`,
-      ty: `${Math.random() * -100}px`
-    }));
-    setParticles(newParticles);
-
-    // Listen to Auth changes and fetch role from Firestore
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -71,243 +66,170 @@ export default function ForumsPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleCreateTopic = () => {
-    if (!auth.currentUser) {
-      openAuthModal('créer une nouvelle discussion');
-      return;
-    }
-    // Simulation: redirect to create topic page
-  };
-
-  const filteredThreads = useMemo(() => {
-    let threads = forumThreads.filter(t => activeTab === 'premium' ? t.isPremium : !t.isPremium);
-    if (searchQuery.trim()) {
-      const lower = searchQuery.toLowerCase();
-      threads = threads.filter(t => t.title.toLowerCase().includes(lower) || t.author.toLowerCase().includes(lower));
-    }
-    return threads;
-  }, [activeTab, searchQuery]);
+  const sections = [
+    { id: 'salon', title: 'Salon de l\'Encre', icon: Palette, desc: 'Critiques constructives et retours techniques entre artistes.', color: 'text-primary' },
+    { id: 'marche', title: 'Marché des Talents', icon: Users, desc: 'Trouvez vos futurs co-créateurs (Scénaristes, Colos).', color: 'text-emerald-500' },
+    { id: 'defi', title: 'Défi Hebdomadaire', icon: Trophy, desc: 'Un prompt, une semaine, une communauté de créateurs.', color: 'text-amber-500' },
+    { id: 'actu', title: 'Actualités BD Afrique', icon: Newspaper, desc: 'Festivals, sorties et événements majeurs du continent.', color: 'text-cyan-500' },
+  ];
 
   return (
     <div className="flex flex-col bg-background min-h-screen">
-      {/* 1. HERO / EN-TÊTE DU FORUM */}
-      <section className="relative py-20 px-6 overflow-hidden border-b border-primary/10">
-        <div className="absolute inset-0 bg-stone-950">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
-          
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {particles.map((p) => (
-              <div 
-                key={p.id} 
-                className="particle bg-primary/30" 
-                style={{
-                  top: p.top,
-                  left: p.left,
-                  '--dur': p.dur,
-                  '--del': p.del,
-                  '--tx': p.tx,
-                  '--ty': p.ty
-                } as any} 
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="container relative z-10 max-w-5xl mx-auto text-center space-y-6">
-          <div className="space-y-4 animate-in fade-in slide-in-from-top-10 duration-1000">
-            <h1 className="text-4xl md:text-6xl font-display font-black leading-tight text-white gold-resplendant drop-shadow-[0_0_20px_rgba(212,168,67,0.4)]">
-              Forum NexusHub – Partagez Vos Passions Panafricaines
+      {/* 1. HERO REPENSI */}
+      <section className="relative py-16 px-6 overflow-hidden border-b border-primary/10 bg-stone-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
+        <div className="container relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
+          <div className="space-y-6 text-center md:text-left flex-1">
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full backdrop-blur-xl">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300">NexusHub Forums 2.0</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-display font-black text-white leading-tight tracking-tighter gold-resplendant">
+              L'Espace des <br/> Narrateurs Africains
             </h1>
-            <p className="text-lg md:text-xl text-stone-300 font-light max-w-3xl mx-auto leading-relaxed italic">
-              Discutez des histoires, théories et inspirations africaines. Respectez les règles : bienveillance, pas de harcèlement, et spoilers encadrés.
+            <p className="text-lg text-stone-400 font-light max-w-2xl leading-relaxed italic">
+              Échangez, collaborez et progressez. Rejoignez plus de 50 000 passionnés de la culture panafricaine.
             </p>
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4">
+              <Button onClick={() => openAuthModal('créer une discussion')} size="lg" className="rounded-full px-8 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
+                <PlusCircle className="mr-2 h-5 w-5" /> Nouveau Sujet
+              </Button>
+              <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10">
+                <Link href="#rules">Règles de Vie</Link>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 pt-4 animate-in fade-in duration-1000 delay-300">
-            {[
-              { icon: ShieldAlert, text: "Forum Public : Débats sans spoilers", color: "text-primary" },
-              { icon: Crown, text: "Forum Premium : Spéculations avancées", color: "text-amber-500" },
-              { icon: CheckCircle2, text: "IA de modération active", color: "text-emerald-500" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white/5 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-full">
-                <item.icon className={cn("h-4 w-4", item.color)} />
-                <span className="text-xs font-bold text-stone-200 tracking-tight">{item.text}</span>
+          <div className="grid grid-cols-2 gap-4 w-full md:w-auto shrink-0">
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-primary">124k</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Messages</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-emerald-500">8.2k</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Collaborations</p>
+            </div>
+            <div className="col-span-2 bg-primary/10 p-4 rounded-2xl border border-primary/20 flex items-center gap-4">
+              <div className="bg-primary/20 p-2 rounded-xl"><Star className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="text-xs font-bold text-white leading-tight">Système de Karma Actif</p>
+                <p className="text-[9px] text-stone-400 uppercase tracking-tighter">Gagnez des points en aidant la communauté</p>
               </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center gap-4 pt-8">
-            <Button 
-              onClick={() => setActiveTab('public')}
-              variant={activeTab === 'public' ? 'default' : 'outline'}
-              className={cn(
-                "rounded-full px-8 h-12 font-bold transition-all",
-                activeTab === 'public' ? "bg-primary text-black shadow-[0_0_20px_rgba(212,168,67,0.4)]" : "border-white/20 text-white"
-              )}
-            >
-              Forum Public
-            </Button>
-            <Button 
-              onClick={() => setActiveTab('premium')}
-              variant={activeTab === 'premium' ? 'default' : 'outline'}
-              className={cn(
-                "rounded-full px-8 h-12 font-bold transition-all group",
-                activeTab === 'premium' ? "bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)]" : "border-white/20 text-white"
-              )}
-            >
-              {!isPremiumUser && <Lock className="mr-2 h-4 w-4 text-amber-500 group-hover:animate-bounce" />}
-              Forum Premium
-            </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. BARRE DE NAVIGATION / FILTRES (STICKY) */}
-      <div className="sticky top-14 z-40 w-full border-b border-border/50 bg-background/95 backdrop-blur-md py-3 shadow-sm">
-        <div className="container max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Rechercher une discussion..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-10 rounded-full bg-muted/50 border-none"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-full gap-2">
-                  <Filter className="h-4 w-4" /> <span className="hidden sm:inline">Filtrer</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem>Plus Récent</DropdownMenuItem>
-                <DropdownMenuItem>Plus Populaire</DropdownMenuItem>
-                <DropdownMenuItem>Par Œuvre (Orisha)</DropdownMenuItem>
-                <DropdownMenuItem>Par Œuvre (Néo-Dakar)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <Button onClick={handleCreateTopic} className="w-full md:w-auto h-10 px-6 rounded-full font-bold shadow-lg shadow-primary/20 gold-shimmer">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Créer un Nouveau Sujet
-          </Button>
-        </div>
-      </div>
-
-      {/* 3. LISTE DES THREADS */}
-      <main className="container max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border/50 pb-6">
-            <div>
-              <h2 className="text-3xl font-bold font-display flex items-center gap-3">
-                {activeTab === 'public' ? (
-                  <>Forum Public – Débats Ouverts à Tous</>
-                ) : (
-                  <span className="flex items-center gap-3 text-amber-500">
-                    <Crown className="h-8 w-8" /> Forum Premium – Pour Abonnés Passionnés
-                  </span>
-                )}
-              </h2>
-              <p className="text-muted-foreground mt-2 max-w-2xl italic font-light">
-                {activeTab === 'public' 
-                  ? "Discussions générales sur les œuvres, inspirations ciné/world building, sans spoilers. Balises obligatoires pour contenu sensible."
-                  : "Spéculations profondes, théories wild, spoilers autorisés. Accès exclusif aux abonnés – soutenez vos artistes !"}
-              </p>
-            </div>
-            {activeTab === 'public' && (
-              <Badge variant="outline" className="gap-1.5 border-primary/20 text-primary font-bold">
-                <ShieldAlert className="h-3 w-3" /> Anti-Spoiler Actif
-              </Badge>
-            )}
-          </div>
-
-          <div className="relative">
-            {activeTab === 'premium' && !isPremiumUser && (
-              <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-md flex flex-col items-center justify-center text-center p-12 rounded-3xl border-2 border-dashed border-amber-500/20">
-                <div className="bg-amber-500/10 p-6 rounded-full mb-6">
-                  <Lock className="h-12 w-12 text-amber-500" />
+      {/* 2. SUB-FORUMS NAVIGATION */}
+      <section className="py-12 container max-w-7xl mx-auto px-6">
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          {sections.map((section) => (
+            <Card key={section.id} className="group hover:border-primary/30 transition-all duration-500 bg-card/50 cursor-pointer overflow-hidden border-border/50">
+              <CardContent className="p-6 space-y-4">
+                <div className={cn("p-3 rounded-2xl w-fit transition-transform group-hover:scale-110", section.color, "bg-current/10")}>
+                  <section.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-3xl font-bold font-display mb-4">Espace de Spéculation Réservé</h3>
-                <p className="text-muted-foreground max-w-md mb-8 leading-relaxed">
-                  Découvrez des discussions exclusives sur le futur de vos séries préférées. Spoilers autorisés ! Rejoignez la communauté Pro pour débloquer cet espace.
-                </p>
-                <Button onClick={() => openAuthModal('accéder au Forum Premium')} size="lg" className="rounded-full px-12 bg-amber-500 hover:bg-amber-600 text-black font-black shadow-xl shadow-amber-500/20">
-                  S'abonner pour 2,99€/mois
+                <div>
+                  <h3 className="text-lg font-black font-display tracking-tight group-hover:text-primary transition-colors">{section.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">{section.desc}</p>
+                </div>
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">12 nouveaux</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* 3. FILTERS & CONTENT */}
+        <div className="flex flex-col lg:flex-row gap-12">
+          <aside className="lg:w-1/4 space-y-10">
+            <div className="space-y-4">
+              <h4 className="text-[10px] uppercase font-black tracking-[0.3em] text-primary">Filtres de l'Espace</h4>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Chercher dans les débats..." className="pl-9 h-11 rounded-xl bg-muted/30 border-none text-xs" />
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-border/50 bg-background/50 hover:bg-muted text-xs font-bold">
+                      <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {activeRegion}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 rounded-xl shadow-2xl">
+                    {['Toute l\'Afrique', 'Gabon 🇬🇦', 'Sénégal 🇸🇳', 'Nigeria 🇳🇬', 'Côte d\'Ivoire 🇨🇮'].map(r => (
+                      <DropdownMenuItem key={r} onClick={() => setActiveRegion(r)} className="text-xs font-medium cursor-pointer rounded-lg">{r}</DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-border/50 bg-background/50 text-xs font-bold">
+                  <span className="flex items-center gap-2"><Languages className="h-4 w-4 text-emerald-500" /> Toutes les langues</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+                <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-border/50 bg-background/50 text-xs font-bold">
+                  <span className="flex items-center gap-2"><Wrench className="h-4 w-4 text-amber-500" /> Tous les outils</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </div>
-            )}
+            </div>
+
+            <Card className="border-none bg-stone-900 text-white p-6 rounded-[2rem] shadow-xl overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="h-20 w-20" /></div>
+              <h4 className="text-sm font-black uppercase text-primary mb-4 tracking-widest">Top Contributeurs</h4>
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8 border border-white/10"><AvatarImage src={`https://picsum.photos/seed/user${i}/100/100`} /></Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">User_{i}42</p>
+                      <p className="text-[9px] text-emerald-500 font-black uppercase">Karma : {5000 - i*1000}</p>
+                    </div>
+                    {i === 1 && <Badge className="bg-primary text-black border-none text-[8px] h-4">ORACLE</Badge>}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </aside>
+
+          <div className="lg:flex-1 space-y-6">
+            <div className="flex items-center justify-between mb-2">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="bg-muted/50 p-1 rounded-2xl h-12 mb-8">
+                  <TabsTrigger value="all" className="rounded-xl px-6 font-bold text-xs uppercase">Tous les sujets</TabsTrigger>
+                  <TabsTrigger value="trending" className="rounded-xl px-6 font-bold text-xs uppercase gap-2"><Flame className="h-4 w-4 text-orange-500" /> Tendances</TabsTrigger>
+                  <TabsTrigger value="premium" className="rounded-xl px-6 font-bold text-xs uppercase gap-2"><Crown className="h-4 w-4 text-amber-500" /> Premium</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             <div className="space-y-4">
-              {filteredThreads.map((thread) => {
+              {forumThreads.map((thread) => {
                 const authorInfo = artists.find(a => a.name === thread.author);
-                const isHot = thread.replies > 30;
-                
                 return (
                   <Link key={thread.id} href={`/forums/${thread.id}`} className="block group">
-                    <Card className={cn(
-                      "transition-all duration-300 hover:shadow-2xl hover:border-primary/30 bg-card/50",
-                      thread.isPremium ? "border-amber-500/20 shadow-amber-500/5" : "border-border/50"
-                    )}>
+                    <Card className="transition-all duration-300 hover:shadow-2xl hover:border-primary/30 bg-card/50 border-border/50 rounded-2xl">
                       <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row gap-6 items-start">
-                          <div className="hidden md:flex flex-col items-center gap-1 w-16 text-center">
-                            <Avatar className="h-12 w-12 border-2 border-background shadow-md ring-2 ring-primary/20 group-hover:ring-primary transition-all">
+                        <div className="flex gap-6 items-start">
+                          <div className="hidden md:flex flex-col items-center gap-1 w-16">
+                            <Avatar className="h-12 w-12 border shadow-md group-hover:ring-2 ring-primary transition-all">
                               <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                              <AvatarFallback>{thread.author.slice(0,2)}</AvatarFallback>
+                              <AvatarFallback className="font-bold">{thread.author.slice(0,2)}</AvatarFallback>
                             </Avatar>
-                            <span className="text-[8px] uppercase font-black tracking-widest text-primary mt-1">
-                              {authorInfo?.isMentor ? 'PRO' : 'LECTEUR'}
-                            </span>
+                            <span className="text-[8px] font-black text-primary uppercase mt-1">Karma: 1.2k</span>
                           </div>
-
-                          <div className="flex-1 space-y-2">
+                          <div className="flex-1 space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
-                              {isHot && (
-                                <Badge className="bg-orange-600 text-white border-none gap-1 px-2 py-0.5 text-[9px] uppercase font-black animate-pulse">
-                                  <Flame className="h-3 w-3" /> HOT
-                                </Badge>
-                              )}
-                              <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[9px] font-bold uppercase tracking-widest px-2">
-                                {thread.category}
-                              </Badge>
-                              {thread.isPremium && (
-                                <Badge className="bg-amber-500 text-black border-none gap-1 px-2 py-0.5 text-[9px] uppercase font-black">
-                                  <Crown className="h-3 w-3 fill-current" /> Premium
-                                </Badge>
-                              )}
+                              <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase px-2">{thread.category}</Badge>
+                              {thread.isPremium && <Badge className="bg-amber-500 text-black border-none text-[9px] font-black px-2 uppercase"><Crown className="h-3 w-3 mr-1 inline" /> Premium</Badge>}
                             </div>
-
-                            <h3 className="text-xl font-bold font-display group-hover:text-primary transition-colors leading-tight">
-                              {thread.title}
-                            </h3>
-                            
-                            <p className="text-sm text-muted-foreground line-clamp-1 font-light italic">
-                              "J'ai remarqué une chose étrange dans le dernier chapitre de Orisha, est-ce que quelqu'un d'autre a vu..."
-                            </p>
-
-                            <div className="flex items-center gap-4 pt-2">
-                              <div className="md:hidden flex items-center gap-2">
-                                <Avatar className="h-6 w-6 border">
-                                  <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                                  <AvatarFallback>{thread.author.slice(0,1)}</AvatarFallback>
-                                </Avatar>
-                                <span className="text-xs font-bold">{thread.author}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                <span>{thread.replies} réponses</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                                <Eye className="h-3.5 w-3.5" />
-                                <span>{thread.views} vues</span>
-                              </div>
-                              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-auto">
-                                Dernier post par {thread.lastPost.author} &bull; {thread.lastPost.time}
-                              </span>
+                            <h3 className="text-xl font-bold font-display group-hover:text-primary transition-colors leading-tight">{thread.title}</h3>
+                            <div className="flex items-center gap-4 text-muted-foreground text-xs pt-2 border-t border-border/30">
+                              <span className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> {thread.replies}</span>
+                              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5" /> {thread.views}</span>
+                              <span className="ml-auto text-[10px] font-bold italic">Dernier post par {thread.lastPost.author} &bull; {thread.lastPost.time}</span>
                             </div>
                           </div>
                         </div>
@@ -316,63 +238,43 @@ export default function ForumsPage() {
                   </Link>
                 );
               })}
-
-              {filteredThreads.length === 0 && (
-                <div className="text-center py-24 bg-muted/20 rounded-3xl border-2 border-dashed border-border/50">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                  <p className="text-muted-foreground italic">Aucune discussion ne correspond à votre recherche.</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* 4. SECTION RÈGLES ET MODÉRATION */}
-      <section className="container max-w-7xl mx-auto px-6 py-20 border-t border-border/50">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold font-display">Règles du Forum – Pour un Espace Sain</h2>
-            <div className="space-y-4">
+      {/* 4. RULES & MODERATION SECTION */}
+      <section id="rules" className="py-24 bg-stone-900 text-white overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]" />
+        <div className="container max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-10">
+          <div className="space-y-8">
+            <h2 className="text-4xl font-display font-black leading-tight text-white gold-resplendant">Code de Conduite <br/> NexusHub</h2>
+            <div className="space-y-6">
               {[
-                "Respect mutuel et bienveillance envers tous les membres.",
-                "Pas d'insultes, de discrimination ou de propos haineux.",
-                "Utilisation obligatoire des balises spoiler (<details>).",
-                "Interdiction de spam, de piratage ou de publicités non sollicitées.",
-                "Contenus sensibles encadrés par des avertissements clairs."
+                { icon: ShieldAlert, title: "Bienveillance Absolue", text: "Les critiques doivent être constructives. Le harcèlement est banni instantanément." },
+                { icon: AlertTriangle, title: "Respect des Spoilers", text: "Utilisez les balises spoiler pour ne pas gâcher l'immersion des autres lecteurs." },
+                { icon: CheckCircle2, title: "Propriété Intellectuelle", text: "Le plagiat est strictement interdit. Respectez les créations originales." },
               ].map((rule, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="bg-primary/10 p-1 rounded-full h-fit mt-1">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                <div key={i} className="flex gap-4">
+                  <div className="bg-white/10 p-3 rounded-2xl h-fit"><rule.icon className="h-6 w-6 text-primary" /></div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-1">{rule.title}</h4>
+                    <p className="text-stone-400 text-sm leading-relaxed">{rule.text}</p>
                   </div>
-                  <p className="text-muted-foreground leading-relaxed">{rule}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-primary/5 border border-primary/10 p-4 rounded-xl flex items-center gap-4">
-              <Sparkles className="h-8 w-8 text-primary shrink-0" />
-              <p className="text-xs font-medium text-foreground/80 leading-relaxed">
-                Notre intelligence artificielle analyse les messages en temps réel pour détecter les spoilers non signalés et les contenus inappropriés.
-              </p>
-            </div>
           </div>
-
-          <Card className="p-8 border-none bg-stone-900 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-0" />
-            <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-              <div className="bg-white/10 p-4 rounded-full">
-                <AlertTriangle className="h-10 w-10 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">Besoin de signaler un problème ?</h3>
-                <p className="text-stone-400 text-sm leading-relaxed">
-                  Si vous rencontrez un comportement inapproprié ou un spoiler non marqué, prévenez nos modérateurs immédiatement.
-                </p>
-              </div>
-              <Button onClick={() => openAuthModal('signaler un problème')} variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-black font-bold px-8 h-12 transition-all">
-                Signaler un Message <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+          <Card className="bg-white/5 border-white/10 p-8 rounded-[3rem] text-center space-y-6 relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+            <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto shadow-2xl">
+              <AlertTriangle className="h-10 w-10 text-primary" />
             </div>
+            <h3 className="text-2xl font-bold">Un problème ?</h3>
+            <p className="text-stone-400 text-sm italic">"Les Gardiens et les Sages veillent sur le Hub. Si vous rencontrez un comportement inapproprié, signalez-le."</p>
+            <Button variant="outline" className="w-full h-12 rounded-2xl border-white/20 text-white font-bold hover:bg-white/10">
+              Signaler un abus
+            </Button>
           </Card>
         </div>
       </section>

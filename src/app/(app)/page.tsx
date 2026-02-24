@@ -1,5 +1,7 @@
 /**
- * FICHIER DÉSACTIVÉ - ROUTAGE CONSOLIDÉ DANS src/app/page.tsx
- * Ne pas exporter de composant par défaut ici pour éviter les conflits Next.js.
+ * FICHIER DÉSACTIVÉ - ROUTAGE CONSOLIDÉ À LA RACINE src/app/page.tsx
+ * Évite les conflits de parallélisme dans Next.js 15.
  */
-export const dynamic = 'force-static';
+export default function Page() {
+  return null;
+}

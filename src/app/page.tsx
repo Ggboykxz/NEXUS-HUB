@@ -25,7 +25,7 @@ import {
   Banknote 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { useQuery } from '@tanstack/react-query';
