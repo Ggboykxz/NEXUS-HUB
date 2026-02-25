@@ -4,7 +4,7 @@ Ce document sert de guide de référence pour le développement de NexusHub afin
 
 ## 🚨 RÈGLES DE ROUTAGE (MISES À JOUR v4.2.0)
 - **LOGIQUE DE ROUTAGE HYBRIDE** :
-    - `src/app/page.tsx` : **Homepage unique**. Située à la racine. Doit inclure manuellement le Header et le Footer.
+    - `src/app/page.tsx` : **Homepage unique**. Située à la racine. Elle gère le rendu conditionnel (Landing vs Dashboard utilisateur). Doit inclure manuellement le Header et le Footer.
     - `src/app/(app)/webtoon-hub/page.tsx` : **Hub principal**. Situé dans le groupe `(app)` pour bénéficier du layout automatique.
 - **INTERDICTION STRICTE** : Ne JAMAIS recréer ou mentionner les doublons suivants dans les blocs `<changes>` :
     - `src/app/(app)/page.tsx` (Conflit avec la racine)
