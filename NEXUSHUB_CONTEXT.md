@@ -2,9 +2,9 @@
 
 Ce document sert de guide de référence pour le développement de NexusHub afin d'assurer la stabilité de l'architecture et le respect des choix techniques majeurs.
 
-## 🚨 RÈGLES DE ROUTAGE (MISES À JOUR v4.2.0)
+## 🚨 RÈGLES DE ROUTAGE (MISES À JOUR v4.3.0)
 - **LOGIQUE DE ROUTAGE HYBRIDE** :
-    - `src/app/page.tsx` : **Homepage unique**. Située à la racine. Elle gère le rendu conditionnel (Landing vs Dashboard utilisateur). Doit inclure manuellement le Header et le Footer.
+    - `src/app/page.tsx` : **Homepage unique**. Située à la racine. Elle gère le rendu conditionnel (Landing vs Dashboard utilisateur v4.3.0). Doit inclure manuellement le Header et le Footer.
     - `src/app/(app)/webtoon-hub/page.tsx` : **Hub principal**. Situé dans le groupe `(app)` pour bénéficier du layout automatique.
 - **INTERDICTION STRICTE** : Ne JAMAIS recréer ou mentionner les doublons suivants dans les blocs `<changes>` :
     - `src/app/(app)/page.tsx` (Conflit avec la racine)
@@ -24,10 +24,10 @@ Ce document sert de guide de référence pour le développement de NexusHub afin
 - **Schéma UserProfile** : Inclut `@slug` unique, rôles (Elite, Translator), stats de lecture et streak.
 - **IA** : Genkit 1.x pour l'AI Studio, le Studio de Traduction et l'Aide à la Lecture Augmentée.
 
-## 🌍 IDENTITÉ & VISION
-- **Focus** : Narration visuelle africaine.
+## 🌍 IDENTITÉ & VISION (v4.3.0)
+- **Focus** : Narration visuelle africaine par région.
 - **Multilingue** : Support étendu (Français, Anglais, Swahili, Hausa, Amharique, Arabe).
-- **Économie** : Système AfriCoins participatif.
+- **Économie** : Système AfriCoins participatif avec gamification en homepage.
 
 ---
 *Note : Ce fichier doit être consulté avant chaque modification structurelle importante.*
