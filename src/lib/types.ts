@@ -20,14 +20,14 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  photoURL?: string;
-  slug?: string;                    // @pseudo unique (ex: @allmight)
+  photoURL: string;
+  slug: string;                    // @pseudo unique (ex: @allmight)
   role: UserRole;
-  level: number;                    // Niveau d'expérience (emergent, rising, pro, elite)
-  bio?: string;
-  country?: string;                 // Code ISO (NG, SN, CI, GA, etc.)
+  level: number;                    // Expérience (1: emergent, 2: rising, 3: pro, 4: elite)
+  bio: string;
+  country: string;                 // Code ISO (NG, SN, CI, GA, etc.)
   languages: string[];              // ex: ['fr', 'en', 'wo', 'ha']
-  socialLinks?: {
+  socialLinks: {
     twitter?: string;
     instagram?: string;
     tiktok?: string;
@@ -68,19 +68,17 @@ export interface Story {
   id: string;
   slug: string;
   artistId: string;
-  artistName?: string;
-  artistSlug?: string;
+  artistName: string;
+  artistSlug: string;
   team?: Record<string, 'co_author' | 'colorist' | 'letterer' | 'translator'>;
   title: string;
   description: string;
   format: StoryFormat;
   status: StoryStatus;
   tier: StoryTier;
-  coverImage: string;               // URL directe
+  coverImage: string;               // URL directe Cloudinary/Firebase
   bannerImage?: string;
-  genres: string[];
-  genre?: string;                   // Rétrocompatibilité
-  genreSlug?: string;               // Rétrocompatibilité
+  genres: string[];                 // v4.2.0 : Passage en tableau
   tags: string[];
   isPublished: boolean;
   isBanned: boolean;
@@ -103,15 +101,14 @@ export interface Chapter {
   id: string;
   storyId: string;
   slug: string;
-  number: number;
-  chapterNumber?: number;
+  chapterNumber: number;
   title: string;
   status: ChapterStatus;
   releaseDate?: Timestamp | string;
   publishedAt?: Timestamp | string;
   views: number;
   likes: number;
-  pages: string[];                  // URLs directes
+  pages: string[];                  // URLs directes Storage
   isLocked: boolean;
   isPremium?: boolean;
   createdAt: Timestamp | string;
@@ -124,13 +121,13 @@ export interface Comment {
   storyId?: string;
   chapterId?: string;
   authorId: string;
-  authorName?: string;
+  authorName: string;
   authorAvatar?: string;
   content: string;
   likes: number;
   isHidden: boolean;
   isEdited: boolean;
-  pageIndex?: number;
+  pageIndex?: number;               // Pour commentaires contextuels sur une page
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
 }
@@ -166,10 +163,8 @@ export interface Thread {
   tags: string[];
   views: number;
   replies: number;
-  replyCount?: number;
   isPinned: boolean;
   isLocked: boolean;
-  isSolved?: boolean;
   isPremium: boolean;
   isHidden: boolean;
   lastPost: {
@@ -233,42 +228,7 @@ export interface Transaction {
   createdAt: Timestamp | string;
 }
 
-// ==================== AUTRES ====================
-export interface Product {
-  id: string;
-  artistId: string;
-  name: string;
-  description: string;
-  category: string;
-  price: number;
-  image: { imageUrl: string; imageHint?: string };
-  isAvailable: boolean;
-  universe?: string;
-  isCollectible?: boolean;
-  printfulUrl?: string;
-}
-
-export interface BlogPost {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  tags: string[];
-  coverImage: { imageUrl: string; imageHint?: string };
-}
-
-export interface ComicPage {
-  id: string;
-  storyId: string;
-  chapterId: string;
-  pageNumber: number;
-  imageUrl: string;
-}
-
+// ==================== LIBRARY ====================
 export interface LibraryEntry {
   storyId: string;
   addedAt: Timestamp | string;
@@ -277,7 +237,7 @@ export interface LibraryEntry {
   lastReadChapterTitle?: string;
   lastReadPageIndex?: number;
   lastReadAt?: Timestamp | string;
-  progress: number;
+  progress: number;                 // 0 à 100
   storyTitle: string;
   storyCover: string;
   isFavorite: boolean;
@@ -286,4 +246,4 @@ export interface LibraryEntry {
 // ==================== HELPERS ====================
 export const getStoryUrl = (storyId: string) => `/read/${storyId}`;
 export const getChapterUrl = (storyId: string, chapterNumber: number) => `/read/${storyId}/${chapterNumber}`;
-export const getUserUrl = (slug: string) => `/artiste/${slug}`;
+export const getUserUrl = (slug: string) => `/artiste/${slug.replace('@', '')}`;

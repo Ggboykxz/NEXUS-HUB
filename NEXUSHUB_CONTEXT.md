@@ -6,16 +6,16 @@ Ce document sert de guide de référence pour le développement de NexusHub afin
 - **HIÉRARCHIE DES LAYOUTS** :
     - `src/app/layout.tsx` : **Root Layout** (Technique). Contient `<html>`, `<body>` et les `Providers`. AUCUN Header/Footer ici.
     - `src/app/(app)/layout.tsx` : **App Layout** (Visuel). Contient le `Header` et le `Footer`.
-- **INTERDICTION STRICTE D'INCLUSION** : Ne JAMAIS inclure les fichiers suivants dans les blocs `<changes>` car ils sont redondants et causent des erreurs de "parallel pages". Leur suppression manuelle par l'utilisateur doit être respectée :
-    - `src/app/page.tsx` (Doublon de `src/app/(app)/page.tsx`)
-    - `src/app/webtoon-hub/page.tsx` (Doublon de `src/app/(app)/webtoon-hub/page.tsx`)
+- **INTERDICTION STRICTE D'INCLUSION** : Ne JAMAIS inclure les fichiers suivants dans les blocs `<changes>` car ils sont redondants et causent des erreurs de "parallel pages". L'utilisateur les a supprimés manuellement pour privilégier le groupe de routes `(app)` :
+    - `src/app/page.tsx`
+    - `src/app/webtoon-hub/page.tsx`
 - **STRUCTURE CENTRALISÉE** : Toute la logique de navigation et les pages publiques résident exclusivement dans le groupe de routes `src/app/(app)/`.
 - **LECTURE MAGIQUE** : Les routes de lecture sont consolidées sous `/read/[id]` ou `/webtoon-hub/[slug]/[chapter]`.
 
 ## 🛠 PILE TECHNIQUE & ARCHITECTURE (v4.2.0)
 - **Framework** : Next.js 15+ (App Router).
 - **Base de données** : Firestore. 
-    - Structure cible : `users/{uid}/library/{storyId}` pour les progressions et `users/{uid}/subscriptions/{artistId}` pour les abonnements.
+    - Structure : `users/{uid}/library/{storyId}` pour les progressions et `users/{uid}/subscriptions/{artistId}` pour les abonnements.
 - **Schéma UserProfile** : Inclut `@slug` unique, rôles (Elite, Translator), stats de lecture et streak.
 - **IA** : Genkit 1.x pour l'Atelier Éditorial, le Studio de Traduction et l'Aide à la Lecture.
 - **Mobile** : Support PWA complet (manifest.json, icons, service worker).
