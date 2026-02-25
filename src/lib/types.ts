@@ -67,7 +67,7 @@ export interface Story {
   format: StoryFormat;
   status: StoryStatus;
   tier: StoryTier;
-  coverImage: string;
+  coverImage: string;               // URL directe (Cloudinary/Storage)
   bannerImage?: string;
   genres: string[];
   tags: string[];
@@ -84,6 +84,10 @@ export interface Story {
   publishedAt?: Timestamp;
   updatedAt: Timestamp;
   region?: string;
+  sponsoredBy?: {
+    name: string;
+    link: string;
+  };
 }
 
 // ==================== CHAPTER ====================
@@ -97,7 +101,7 @@ export interface Chapter {
   releaseDate: Timestamp;
   views: number;
   likes: number;
-  pages: string[];                  // URLs directes Storage
+  pages: string[];                  // URLs Storage
   isLocked: boolean;
   isPremium?: boolean;
   createdAt: Timestamp;
@@ -114,7 +118,7 @@ export interface Comment {
   likes: number;
   isHidden: boolean;
   isEdited: boolean;
-  pageIndex?: number;               // Pour commentaires contextuels
+  pageIndex?: number;               // commentaire contextuel
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -143,16 +147,19 @@ export interface Forum {
 export interface Thread {
   id: string;
   authorId: string;
-  authorName: string;
   title: string;
   content: string;
-  category: string;
   views: number;
   replyCount: number;
   isPinned: boolean;
   isLocked: boolean;
-  isPremium: boolean;
   isHidden: boolean;
+  category: string;
+  isPremium: boolean;
+  lastPost: {
+    author: string;
+    time: string;
+  };
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -210,12 +217,45 @@ export interface Transaction {
   createdAt: Timestamp;
 }
 
+// ==================== AUTRES ====================
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  image: {
+    imageUrl: string;
+    imageHint: string;
+  };
+  universe?: string;
+  isCollectible?: boolean;
+  printfulUrl?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  author: string;
+  date: string;
+  category: string;
+  tags: string[];
+  coverImage: {
+    imageUrl: string;
+    imageHint: string;
+  };
+}
+
 export interface ComicPage {
   id: string;
   storyId: string;
   chapterId: string;
   pageNumber: number;
   imageUrl: string;
+  imageHint: string;
+  description: string;
 }
 
 // ==================== HELPERS ====================

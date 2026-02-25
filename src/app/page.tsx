@@ -11,13 +11,12 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import type { Story } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
-import { PwaInstallBanner } from '@/components/pwa/pwa-install-banner';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { cn } from '@/lib/utils';
 import { 
-  Play, TrendingUp, Sparkles, Trophy, Globe, Flame, 
-  Zap, Award, ChevronRight, BrainCircuit, Headphones, Film
+  Play, TrendingUp, Sparkles, Trophy, ChevronRight, 
+  BrainCircuit, Headphones, Film, Star, Flame, Gift
 } from 'lucide-react';
 
 const GENRES = [
@@ -51,7 +50,6 @@ export default function RootHomePage() {
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
       <Header />
-      <PwaInstallBanner />
 
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-transparent to-stone-950 z-10 pointer-events-none" />
@@ -77,7 +75,7 @@ export default function RootHomePage() {
             <div className="max-w-3xl">
               {featured ? (
                 <>
-                  <Badge className="bg-primary text-black mb-6 uppercase tracking-widest font-black text-[10px]">NexusHub Originals</Badge>
+                  <Badge className="bg-primary text-black mb-6 uppercase tracking-widest font-black text-[10px] px-3 py-1">NexusHub Originals</Badge>
                   <h1 className="text-5xl md:text-8xl font-display font-black text-white leading-[0.9] tracking-tight mb-6">{featured.title}</h1>
                   <p className="text-stone-300 text-lg md:text-xl font-light italic leading-relaxed mb-10 max-w-xl line-clamp-2">"{featured.description}"</p>
                   <div className="flex flex-wrap gap-4">
@@ -98,15 +96,34 @@ export default function RootHomePage() {
       </section>
 
       <div className="container max-w-7xl mx-auto px-6 lg:px-8 space-y-24 py-20">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { icon: Flame, title: "Streak de Lecture", text: "+2 🪙 / jour", color: "text-orange-500 bg-orange-500/10" },
+            { icon: Star, title: "Artiste Parrainé", text: "+20 🪙 / Pro", color: "text-amber-500 bg-amber-500/10" },
+            { icon: Gift, title: "Pub Récompensée", text: "+1 🪙 / pub", color: "text-emerald-500 bg-emerald-500/10" },
+            { icon: Trophy, title: "Challenges 24h", text: "Gagnez 1000€", color: "text-primary bg-primary/10" },
+          ].map((item, i) => (
+            <div key={i} className="bg-card/50 border border-border/50 rounded-[2rem] hover:border-primary/20 transition-all group overflow-hidden p-6 flex items-center gap-4">
+              <div className={cn("p-3 rounded-2xl transition-transform group-hover:scale-110", item.color)}>
+                <item.icon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{item.title}</p>
+                <p className="text-xl font-black text-foreground">{item.text}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+
         <section>
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
-              <h2 className="text-3xl font-display font-black">Tendances Actuelles</h2>
+              <h2 className="text-3xl font-display font-black text-white">Tendances Actuelles</h2>
             </div>
-            <Link href="/popular" className="text-primary text-xs font-black uppercase tracking-widest flex items-center gap-2">Tout voir <ChevronRight className="h-4 w-4" /></Link>
+            <Link href="/rankings" className="text-primary text-xs font-black uppercase tracking-widest flex items-center gap-2">Tout voir <ChevronRight className="h-4 w-4" /></Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {popular.slice(0, 5).map((story) => (
