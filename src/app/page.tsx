@@ -15,9 +15,24 @@ import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { cn } from '@/lib/utils';
 import { 
-  Play, TrendingUp, Sparkles, Trophy, ChevronRight, 
-  BrainCircuit, Headphones, Film, Star, Flame, Gift,
-  History, Bookmark, Users, Zap, LayoutGrid
+  Play, 
+  TrendingUp, 
+  Sparkles, 
+  Trophy, 
+  ChevronRight, 
+  BrainCircuit, 
+  Headphones, 
+  Film, 
+  Star, 
+  Flame, 
+  Gift,
+  History, 
+  Bookmark, 
+  Users, 
+  Zap, 
+  LayoutGrid,
+  Globe,
+  Coins
 } from 'lucide-react';
 
 const GENRES = [
@@ -265,7 +280,29 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                 </div>
             </div>
         </section>
+
+        {/* REJOIGNEZ LA RÉVOLUTION */}
+        <section className="py-24 border-t border-border/50 text-center space-y-12">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Rejoignez la Révolution</span>
+                </div>
+                <h2 className="text-4xl md:text-6xl font-display font-black leading-tight tracking-tighter">Votre talent mérite <br/> un public mondial</h2>
+                <p className="text-lg text-stone-400 font-light leading-relaxed italic">
+                    NexusHub n'est pas qu'une plateforme, c'est un tremplin. De la production propre à l'exportation mondial, nous bâtissons l'avenir de la BD africaine.
+                </p>
+            </div>
+
+            <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 gold-shimmer bg-primary text-black">
+                <Link href="/submit">Soumettre mon Projet</Link>
+            </Button>
+        </section>
       </div>
     </div>
   );
+}
+
+function PlayCircle(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
 }
