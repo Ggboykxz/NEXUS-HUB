@@ -21,12 +21,12 @@ export interface UserProfile {
   email: string;
   displayName: string;
   photoURL?: string;
-  slug?: string;                    // @pseudo unique
+  slug?: string;                    // @pseudo unique (ex: @allmight)
   role: UserRole;
-  level: number;
+  level: number;                    // Niveau d'expérience (emergent, rising, pro, elite)
   bio?: string;
-  country?: string;                 // code ISO (NG, SN, CI, etc.)
-  languages: string[];
+  country?: string;                 // Code ISO (NG, SN, CI, GA, etc.)
+  languages: string[];              // ex: ['fr', 'en', 'wo', 'ha']
   socialLinks?: {
     twitter?: string;
     instagram?: string;
@@ -68,7 +68,7 @@ export interface Story {
   id: string;
   slug: string;
   artistId: string;
-  artistName?: string;              // Pratique pour l'UI
+  artistName?: string;
   artistSlug?: string;
   team?: Record<string, 'co_author' | 'colorist' | 'letterer' | 'translator'>;
   title: string;
@@ -76,9 +76,9 @@ export interface Story {
   format: StoryFormat;
   status: StoryStatus;
   tier: StoryTier;
-  coverImage: string;               // URL directe (Firestore v4.2.0)
+  coverImage: string;               // URL directe
   bannerImage?: string;
-  genres: string[];                 // Liste de genres
+  genres: string[];
   genre?: string;                   // Rétrocompatibilité
   genreSlug?: string;               // Rétrocompatibilité
   tags: string[];
@@ -104,7 +104,7 @@ export interface Chapter {
   storyId: string;
   slug: string;
   number: number;
-  chapterNumber?: number;           // Compatibilité
+  chapterNumber?: number;
   title: string;
   status: ChapterStatus;
   releaseDate?: Timestamp | string;
@@ -112,8 +112,8 @@ export interface Chapter {
   views: number;
   likes: number;
   pages: string[];                  // URLs directes
-  isLocked: boolean;                // payant / premium
-  isPremium?: boolean;              // Compatibilité
+  isLocked: boolean;
+  isPremium?: boolean;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
 }
@@ -130,7 +130,7 @@ export interface Comment {
   likes: number;
   isHidden: boolean;
   isEdited: boolean;
-  pageIndex?: number;               // commentaire sur une page précise du webtoon
+  pageIndex?: number;
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
 }
