@@ -112,7 +112,6 @@ export default function Footer() {
                 </span>
              </div>
 
-             {/* Discrete Legal Links repeated for accessibility */}
              <div className="flex items-center gap-3 sm:border-l border-border/50 sm:pl-4">
                 <Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales</Link>
                 <span className="opacity-20">|</span>

@@ -32,7 +32,8 @@ import {
   Zap, 
   LayoutGrid,
   Globe,
-  Coins
+  Coins,
+  Mic2
 } from 'lucide-react';
 
 const GENRES = [
@@ -85,13 +86,9 @@ export default function RootHomePage() {
   );
 }
 
-/**
- * VUE CONNECTÉE : Orientée progression et personnalisation
- */
 function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | null, popular: Story[], isLoading: boolean }) {
   return (
     <div className="container max-w-7xl mx-auto px-6 py-12 space-y-16 animate-in fade-in duration-1000">
-      {/* 1. DASHBOARD SUMMARY */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 bg-gradient-to-br from-stone-900 to-black border border-white/5 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-5"><Sparkles className="h-48 w-48 text-primary" /></div>
@@ -121,7 +118,6 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
         </div>
       </section>
 
-      {/* 2. RECOMMANDATIONS IA */}
       <section className="space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -137,7 +133,6 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
         </div>
       </section>
 
-      {/* 3. MISES À JOUR ABONNEMENTS */}
       <section className="bg-white/[0.02] border border-white/5 rounded-[3rem] p-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-2 text-center md:text-left">
@@ -153,9 +148,6 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
   );
 }
 
-/**
- * VUE VISITEUR : Orientée découverte et conversion
- */
 function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }: any) {
   return (
     <div className="flex flex-col gap-24">
@@ -213,7 +205,6 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
       </section>
 
       <div className="container max-w-7xl mx-auto px-6 space-y-24">
-        {/* STATS / FEATURES */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Globe, title: "Panafricain", text: "Artistes de 15+ pays", color: "text-blue-500 bg-blue-500/10" },
@@ -233,7 +224,6 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
           ))}
         </section>
 
-        {/* TRENDING */}
         <section>
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Tendances Mondiales</h2>
@@ -246,7 +236,6 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
           </div>
         </section>
 
-        {/* GENRES */}
         <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {GENRES.map((genre) => (
             <Link key={genre.slug} href={`/genre/${genre.slug}`} className={cn('relative overflow-hidden rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-3 py-12 px-4 bg-gradient-to-b', genre.color, 'group hover:scale-105 transition-all shadow-xl')}>
@@ -256,7 +245,6 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
           ))}
         </section>
 
-        {/* AI STUDIO CTA */}
         <section className="p-12 rounded-[3.5rem] bg-stone-900 border border-primary/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><BrainCircuit className="h-64 w-64 text-primary" /></div>
             <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
@@ -281,7 +269,6 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
             </div>
         </section>
 
-        {/* REJOIGNEZ LA RÉVOLUTION */}
         <section className="py-24 border-t border-border/50 text-center space-y-12">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
@@ -290,7 +277,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                 </div>
                 <h2 className="text-4xl md:text-6xl font-display font-black leading-tight tracking-tighter">Votre talent mérite <br/> un public mondial</h2>
                 <p className="text-lg text-stone-400 font-light leading-relaxed italic">
-                    NexusHub n'est pas qu'une plateforme, c'est un tremplin. De la production propre à l'exportation mondial, nous bâtissons l'avenir de la BD africaine.
+                    NexusHub n'est pas qu'une plateforme, c'est un tremplin. De la production propre à l'exportation mondiale, nous bâtissons l'avenir de la BD africaine.
                 </p>
             </div>
 
