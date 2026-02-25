@@ -20,14 +20,14 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  photoURL: string;
-  slug: string;                    // @pseudo unique (ex: @allmight)
+  photoURL?: string;
+  slug?: string;                    // @pseudo unique
   role: UserRole;
-  level: number;                    // Expérience (1: emergent, 2: rising, 3: pro, 4: elite)
-  bio: string;
-  country: string;                 // Code ISO (NG, SN, CI, GA, etc.)
-  languages: string[];              // ex: ['fr', 'en', 'wo', 'ha']
-  socialLinks: {
+  level: number;
+  bio?: string;
+  country?: string;                 // code ISO (NG, SN, CI, etc.)
+  languages: string[];
+  socialLinks?: {
     twitter?: string;
     instagram?: string;
     tiktok?: string;
@@ -39,9 +39,9 @@ export interface UserProfile {
   isCertified: boolean;
   isBanned: boolean;
   isVerified: boolean;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
-  lastActive?: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastActive?: Timestamp;
   readingStats?: {
     preferredGenres: Record<string, number>;
     totalReadTime: number;          // minutes
@@ -51,15 +51,6 @@ export interface UserProfile {
     currentCount: number;
     lastReadDate: string;
     longestStreak: number;
-  };
-  preferences?: {
-    language: string;
-    theme: 'light' | 'dark' | 'system';
-    notifications: boolean;
-    privacy?: {
-      showCurrentReading: boolean;
-      showHistory: boolean;
-    };
   };
 }
 
@@ -76,9 +67,9 @@ export interface Story {
   format: StoryFormat;
   status: StoryStatus;
   tier: StoryTier;
-  coverImage: string;               // URL directe Cloudinary/Firebase
+  coverImage: string;
   bannerImage?: string;
-  genres: string[];                 // v4.2.0 : Passage en tableau
+  genres: string[];
   tags: string[];
   isPublished: boolean;
   isBanned: boolean;
@@ -89,11 +80,10 @@ export interface Story {
   subscriptions: number;
   chapterCount: number;
   rating: number;                   // 0.0 à 5.0
-  createdAt: Timestamp | string;
-  publishedAt?: Timestamp | string;
-  updatedAt: Timestamp | string;
-  availableLanguages?: string[];
-  sponsoredBy?: { name: string; logoUrl?: string };
+  createdAt: Timestamp;
+  publishedAt?: Timestamp;
+  updatedAt: Timestamp;
+  region?: string;
 }
 
 // ==================== CHAPTER ====================
@@ -101,25 +91,22 @@ export interface Chapter {
   id: string;
   storyId: string;
   slug: string;
-  chapterNumber: number;
+  number: number;
   title: string;
   status: ChapterStatus;
-  releaseDate?: Timestamp | string;
-  publishedAt?: Timestamp | string;
+  releaseDate: Timestamp;
   views: number;
   likes: number;
   pages: string[];                  // URLs directes Storage
   isLocked: boolean;
   isPremium?: boolean;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 // ==================== COMMENT ====================
 export interface Comment {
   id: string;
-  storyId?: string;
-  chapterId?: string;
   authorId: string;
   authorName: string;
   authorAvatar?: string;
@@ -127,9 +114,9 @@ export interface Comment {
   likes: number;
   isHidden: boolean;
   isEdited: boolean;
-  pageIndex?: number;               // Pour commentaires contextuels sur une page
-  createdAt: Timestamp | string;
-  updatedAt?: Timestamp | string;
+  pageIndex?: number;               // Pour commentaires contextuels
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // ==================== PLAYLIST ====================
@@ -141,8 +128,8 @@ export interface Playlist {
   isPublic: boolean;
   storyIds: string[];
   storyCount: number;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 // ==================== FORUM / THREAD / POST ====================
@@ -150,7 +137,7 @@ export interface Forum {
   id: string;
   title: string;
   isRestricted: boolean;
-  createdAt: Timestamp | string;
+  createdAt: Timestamp;
 }
 
 export interface Thread {
@@ -160,19 +147,14 @@ export interface Thread {
   title: string;
   content: string;
   category: string;
-  tags: string[];
   views: number;
-  replies: number;
+  replyCount: number;
   isPinned: boolean;
   isLocked: boolean;
   isPremium: boolean;
   isHidden: boolean;
-  lastPost: {
-    author: string;
-    time: string;
-  };
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Post {
@@ -182,8 +164,8 @@ export interface Post {
   likes: number;
   isHidden: boolean;
   isEdited: boolean;
-  createdAt: Timestamp | string;
-  updatedAt?: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // ==================== CONVERSATION & MESSAGE ====================
@@ -191,8 +173,8 @@ export interface Conversation {
   id: string;
   participants: string[];
   isGroup: boolean;
-  createdAt: Timestamp | string;
-  updatedAt: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Message {
@@ -201,8 +183,8 @@ export interface Message {
   type: MessageType;
   content: string;
   isDeleted: boolean;
-  createdAt: Timestamp | string;
-  updatedAt?: Timestamp | string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // ==================== NOTIFICATION ====================
@@ -213,9 +195,9 @@ export interface Notification {
   title: string;
   body: string;
   isRead: boolean;
-  readAt?: Timestamp | string;
+  readAt?: Timestamp;
   data?: any;
-  createdAt: Timestamp | string;
+  createdAt: Timestamp;
 }
 
 // ==================== TRANSACTION ====================
@@ -225,22 +207,15 @@ export interface Transaction {
   type: 'earn' | 'spend' | 'purchase' | 'donation';
   amount: number;
   description: string;
-  createdAt: Timestamp | string;
+  createdAt: Timestamp;
 }
 
-// ==================== LIBRARY ====================
-export interface LibraryEntry {
+export interface ComicPage {
+  id: string;
   storyId: string;
-  addedAt: Timestamp | string;
-  lastReadChapterId?: string;
-  lastReadChapterSlug?: string;
-  lastReadChapterTitle?: string;
-  lastReadPageIndex?: number;
-  lastReadAt?: Timestamp | string;
-  progress: number;                 // 0 à 100
-  storyTitle: string;
-  storyCover: string;
-  isFavorite: boolean;
+  chapterId: string;
+  pageNumber: number;
+  imageUrl: string;
 }
 
 // ==================== HELPERS ====================
