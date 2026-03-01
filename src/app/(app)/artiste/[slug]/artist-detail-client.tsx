@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star, History, Clock, Loader2, Coins } from 'lucide-react';
@@ -54,7 +54,30 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
   const [activities, setActivities] = useState<any[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
 
-  // 1. Monitor Auth State
+  // 1. Dynamic Banner Logic
+  const selectedGradient = useMemo(() => {
+    const gradients = [
+      { from: '#D4A843', to: '#000000' }, // Gold/Black
+      { from: '#3b82f6', to: '#6366f1' }, // Blue/Purple
+      { from: '#10b981', to: '#14b8a6' }, // Green/Teal
+      { from: '#ef4444', to: '#f97316' }, // Red/Orange
+      { from: '#6366f1', to: '#f43f5e' }, // Indigo/Rose
+      { from: '#f59e0b', to: '#78350f' }, // Amber/Brown
+    ];
+    const hash = artist.displayName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return gradients[hash % gradients.length];
+  }, [artist.displayName]);
+
+  const initials = useMemo(() => {
+    return artist.displayName
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  }, [artist.displayName]);
+
+  // 2. Monitor Auth State
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -63,7 +86,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsubscribeAuth();
   }, [artist.uid]);
 
-  // 2. Monitor Subscription Status
+  // 3. Monitor Subscription Status
   useEffect(() => {
     if (!currentUser || isOwnProfile) {
       setIsSubscribed(false);
@@ -80,7 +103,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsubscribeSubscription();
   }, [currentUser, artist.uid, isOwnProfile]);
 
-  // 3. Monitor Artist Document for real-time subscribersCount update
+  // 4. Monitor Artist Document for real-time subscribersCount update
   useEffect(() => {
     const artistRef = doc(db, 'users', artist.uid);
     const unsubscribeArtist = onSnapshot(artistRef, (docSnap) => {
@@ -93,7 +116,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsubscribeArtist();
   }, [artist.uid]);
 
-  // 4. Fetch Recent Activity (Chapters)
+  // 5. Fetch Recent Activity (Chapters)
   useEffect(() => {
     async function fetchRecentActivity() {
       if (artistStories.length === 0) {
@@ -118,7 +141,6 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
         const chaptersResults = await Promise.all(allChaptersPromises);
         const flattened = chaptersResults.flat();
         
-        // Sort all chapters by publishedAt desc
         const sorted = flattened.sort((a: any, b: any) => {
           const dateA = a.publishedAt?.toDate?.() || new Date(a.publishedAt);
           const dateB = b.publishedAt?.toDate?.() || new Date(b.publishedAt);
@@ -219,11 +241,9 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           throw "Solde d'AfriCoins insuffisant. Veuillez recharger votre compte.";
         }
 
-        // Update balances
         transaction.update(senderRef, { afriCoins: senderCoins - amount });
         transaction.update(artistRef, { afriCoins: increment(amount) });
         
-        // Add notification to artist
         transaction.set(notifRef, {
           type: 'donation',
           fromUserId: currentUser.uid,
@@ -265,8 +285,23 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
       <header className="relative py-24 bg-stone-950 overflow-hidden border-b border-white/5">
+        {/* Dynamic Banner Fallback */}
+        <div 
+          className="absolute inset-0 z-0 transition-all duration-1000 opacity-40"
+          style={{ background: `linear-gradient(135deg, ${selectedGradient.from}, ${selectedGradient.to})` }}
+        >
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none select-none">
+            <span className="text-[12rem] md:text-[20rem] font-display font-black text-white leading-none">
+              {initials}
+            </span>
+          </div>
+        </div>
+
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
-        <div className="absolute inset-0 opacity-20 blur-3xl pointer-events-none">
+        
+        {/* Photo Blur overlay */}
+        <div className="absolute inset-0 opacity-10 blur-3xl pointer-events-none">
           <Image src={artist.photoURL} alt="blur" fill className="object-cover" />
         </div>
 
