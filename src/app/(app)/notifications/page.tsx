@@ -21,7 +21,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (!user) {
         setNotifications([]);
@@ -29,7 +29,7 @@ export default function NotificationsPage() {
       }
     });
 
-    return () => unsubAuth();
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
@@ -38,16 +38,18 @@ export default function NotificationsPage() {
     const notifRef = collection(db, 'users', currentUser.uid, 'notifications');
     const q = query(notifRef, orderBy('createdAt', 'desc'), limit(30));
 
-    const unsub = onSnapshot(q, (snap) => {
+    const unsubscribeNotifications = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({
         id: d.id,
         ...d.data()
       }));
       setNotifications(data);
       setLoading(false);
+    }, (error) => {
+      console.error("Notifications listener error:", error);
     });
 
-    return () => unsub();
+    return () => unsubscribeNotifications();
   }, [currentUser]);
 
   const handleMarkAsRead = async (id: string) => {

@@ -32,7 +32,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { db, auth } from '@/lib/firebase';
 import { collection, limit, query, onSnapshot, doc, getDoc, where } from 'firebase/firestore';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,6 +48,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
   
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
@@ -62,28 +63,22 @@ export default function Header() {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
 
+    // DB Status Listener
     const storiesRef = collection(db, 'stories');
     const unsubscribeDb = onSnapshot(query(storiesRef, limit(1)), 
       () => setDbStatus('connected'),
       () => setDbStatus('error')
     );
 
+    // Auth State Listener
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
       if (user) {
         setIsLoggedIn(true);
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
         }
-
-        // Real-time listener for unread notifications
-        const notifRef = collection(db, 'users', user.uid, 'notifications');
-        const qNotif = query(notifRef, where('read', '==', false));
-        const unsubNotif = onSnapshot(qNotif, (snap) => {
-          setUnreadCount(snap.size);
-        });
-
-        return () => unsubNotif();
       } else {
         setIsLoggedIn(false);
         setUserProfile(null);
@@ -97,6 +92,25 @@ export default function Header() {
       unsubscribeAuth();
     };
   }, []);
+
+  // Separate Effect for real-time notifications to ensure proper cleanup on auth change
+  useEffect(() => {
+    if (!currentUser) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const notifRef = collection(db, 'users', currentUser.uid, 'notifications');
+    const qNotif = query(notifRef, where('read', '==', false));
+    
+    const unsubscribeNotifications = onSnapshot(qNotif, (snap) => {
+      setUnreadCount(snap.size);
+    }, (error) => {
+      console.error("Notifications listener error:", error);
+    });
+
+    return () => unsubscribeNotifications();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     await signOut(auth);

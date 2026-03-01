@@ -56,11 +56,11 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
 
   // 1. Monitor Auth State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsOwnProfile(user?.uid === artist.uid);
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, [artist.uid]);
 
   // 2. Monitor Subscription Status
@@ -71,22 +71,26 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     }
 
     const subRef = doc(db, 'users', currentUser.uid, 'subscriptions', artist.uid);
-    const unsub = onSnapshot(subRef, (docSnap) => {
+    const unsubscribeSubscription = onSnapshot(subRef, (docSnap) => {
       setIsSubscribed(docSnap.exists());
+    }, (error) => {
+      console.error("Subscription status listener error:", error);
     });
 
-    return () => unsub();
+    return () => unsubscribeSubscription();
   }, [currentUser, artist.uid, isOwnProfile]);
 
   // 3. Monitor Artist Document for real-time subscribersCount update
   useEffect(() => {
     const artistRef = doc(db, 'users', artist.uid);
-    const unsub = onSnapshot(artistRef, (docSnap) => {
+    const unsubscribeArtist = onSnapshot(artistRef, (docSnap) => {
       if (docSnap.exists()) {
         setLiveSubscribersCount(docSnap.data().subscribersCount || 0);
       }
+    }, (error) => {
+      console.error("Artist stats listener error:", error);
     });
-    return () => unsub();
+    return () => unsubscribeArtist();
   }, [artist.uid]);
 
   // 4. Fetch Recent Activity (Chapters)

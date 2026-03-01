@@ -45,10 +45,10 @@ export default function MessagesPage() {
 
   // 1. Auth State
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
-    return () => unsub();
+    return () => unsubscribeAuth();
   }, []);
 
   // 2. Fetch Contact List
@@ -71,7 +71,7 @@ export default function MessagesPage() {
       }
     }
     if (currentUser) fetchUsers();
-  }, [currentUser]);
+  }, [currentUser, selectedChat]);
 
   // 3. Real-time Messages Listener
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function MessagesPage() {
     const msgsRef = collection(db, 'conversations', convId, 'messages');
     const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(50));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -96,7 +96,7 @@ export default function MessagesPage() {
       console.error("Messages listener error:", error);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeMessages();
   }, [currentUser, selectedChat]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -301,7 +301,7 @@ export default function MessagesPage() {
             </div>
             <div>
                 <h3 className="text-3xl font-black font-display text-white mb-2 tracking-tight">Vos Conversations</h3>
-                <p className="text-stone-500 max-w-sm font-light italic leading-relaxed">
+                <p className="text-stone-500 max-sm font-light italic leading-relaxed">
                   Sélectionnez un membre de la communauté pour échanger sur vos récits favoris ou collaborer sur un projet.
                 </p>
             </div>
