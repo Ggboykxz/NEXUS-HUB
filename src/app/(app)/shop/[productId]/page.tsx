@@ -1,25 +1,45 @@
 'use client';
 
-import { products } from '@/lib/data';
+import { use } from 'react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, ExternalLink, ShieldCheck, Truck, RotateCcw, Heart, Share2, ArrowLeft } from 'lucide-react';
+import { ExternalLink, ShieldCheck, Truck, RotateCcw, Heart, Share2, ArrowLeft, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useTranslation } from '@/components/providers/language-provider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
-import { use } from 'react';
 import { auth } from '@/lib/firebase';
+import { useQuery } from '@tanstack/react-query';
+import type { Product } from '@/lib/types';
 
 export default function ProductDetailPage(props: { params: Promise<{ productId: string }> }) {
-  const { productId } = use(props);
+  const { productId } = use(props.params);
   const { t } = useTranslation();
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   
-  const product = products.find((p) => p.id === productId);
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product-detail', productId],
+    queryFn: async () => {
+      const docRef = doc(db, 'products', productId);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) return null;
+      return { id: snap.id, ...snap.data() } as Product;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase tracking-widest text-[10px]">Consultation de l'inventaire...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     notFound();
@@ -87,7 +107,7 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
               <div className="h-px flex-1 bg-border/50" />
           </div>
           
-          <h1 className="text-4xl lg:text-6xl font-bold font-display mb-6 leading-none">{product.name}</h1>
+          <h1 className="text-4xl lg:text-6xl font-bold font-display mb-6 leading-none text-white tracking-tighter">{product.name}</h1>
           
           <div className="flex items-center gap-6 mb-8">
               <p className="text-4xl font-black text-primary">
@@ -96,43 +116,43 @@ export default function ProductDetailPage(props: { params: Promise<{ productId: 
               <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1">En Stock</Badge>
           </div>
 
-          <p className="text-xl text-foreground/70 leading-relaxed mb-10 font-light italic border-l-4 border-primary/20 pl-6">
+          <p className="text-xl text-stone-400 leading-relaxed mb-10 font-light italic border-l-4 border-primary/20 pl-6">
             "{product.description}"
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch gap-4 mb-12">
-            <Button size="lg" className="flex-grow h-14 text-lg font-bold shadow-xl shadow-primary/20" onClick={handlePrintfulOrder}>
+            <Button size="lg" className="flex-grow h-14 text-lg font-bold shadow-xl shadow-primary/20 bg-primary text-black gold-shimmer" onClick={handlePrintfulOrder}>
               <ExternalLink className="mr-2 h-5 w-5" />
               Commander via Printful
             </Button>
-            <Button onClick={handleFavorite} variant="outline" size="icon" className="h-14 w-14 rounded-xl border-border/50 hover:text-destructive transition-colors">
+            <Button onClick={handleFavorite} variant="outline" size="icon" className="h-14 w-14 rounded-xl border-white/10 text-white hover:text-rose-500 transition-colors">
                 <Heart className="h-6 w-6" />
             </Button>
-            <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-border/50 hover:text-primary transition-colors">
+            <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-white/10 text-white hover:text-primary transition-colors">
                 <Share2 className="h-6 w-6" />
             </Button>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-6 pt-12 border-t border-border/50">
+          <div className="grid sm:grid-cols-3 gap-6 pt-12 border-t border-white/5">
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3">
                   <div className="bg-primary/10 p-3 rounded-xl"><Truck className="h-6 w-6 text-primary" /></div>
                   <div>
-                      <p className="font-bold text-sm">Livraison Rapide</p>
-                      <p className="text-xs text-muted-foreground">Expédié sous 3-5 jours.</p>
+                      <p className="font-bold text-sm text-white">Livraison Rapide</p>
+                      <p className="text-xs text-stone-500">Expédié sous 3-5 jours.</p>
                   </div>
               </div>
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3">
                   <div className="bg-primary/10 p-3 rounded-xl"><RotateCcw className="h-6 w-6 text-primary" /></div>
                   <div>
-                      <p className="font-bold text-sm">Retours Faciles</p>
-                      <p className="text-xs text-muted-foreground">Satisfait ou remboursé.</p>
+                      <p className="font-bold text-sm text-white">Retours Faciles</p>
+                      <p className="text-xs text-stone-500">Satisfait ou remboursé.</p>
                   </div>
               </div>
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-3">
                   <div className="bg-primary/10 p-3 rounded-xl"><ShieldCheck className="h-6 w-6 text-primary" /></div>
                   <div>
-                      <p className="font-bold text-sm">Paiement Sécurisé</p>
-                      <p className="text-xs text-muted-foreground">SSL & 3D Secure.</p>
+                      <p className="font-bold text-sm text-white">Paiement Sécurisé</p>
+                      <p className="text-xs text-stone-500">SSL & 3D Secure.</p>
                   </div>
               </div>
           </div>

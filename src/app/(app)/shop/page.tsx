@@ -1,12 +1,16 @@
 'use client';
 
-import { products } from '@/lib/data';
-import { ProductCard } from '@/components/product-card';
-import { Store, ShoppingBag, Shirt, Palette, Sparkles, Filter, Download, Zap, PackageOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { ProductCard } from '@/components/product-card';
+import { Store, Shirt, Palette, Sparkles, Download, PackageOpen, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import type { Product } from '@/lib/types';
+import Image from 'next/image';
 
 export default function ShopPage() {
   const [activeCategory, setActiveCategory] = useState<'Tous' | 'Vêtements' | 'E-books' | 'Art'>('Tous');
@@ -18,15 +22,26 @@ export default function ShopPage() {
     { name: 'Art', icon: Palette }
   ];
 
-  const filteredProducts = activeCategory === 'Tous' 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
+  const { data: fetchedProducts = [], isLoading } = useQuery({
+    queryKey: ['shop-products', activeCategory],
+    queryFn: async () => {
+      const productsRef = collection(db, 'products');
+      let q = query(productsRef);
+      
+      if (activeCategory !== 'Tous') {
+        q = query(productsRef, where('category', '==', activeCategory));
+      }
+      
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    }
+  });
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
       {/* 1. HERO BOUTIQUE 2.0 */}
       <header className="mb-16 relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
           <div className="space-y-6 text-center lg:text-left flex-1">
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
@@ -40,8 +55,8 @@ export default function ShopPage() {
               "Soutenez vos artistes en achetant des produits dérivés officiels. Impression à la demande via Printful, expédition mondiale sans stock."
             </p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
-              <Button size="lg" className="rounded-full px-8 font-black bg-primary text-black gold-shimmer">Explorer les E-books</Button>
-              <Button variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md">Vendre mon Merch</Button>
+              <Button size="lg" className="rounded-full px-8 font-black bg-primary text-black gold-shimmer h-12">Explorer les E-books</Button>
+              <Button variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-12 px-8">Vendre mon Merch</Button>
             </div>
           </div>
 
@@ -78,26 +93,31 @@ export default function ShopPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="relative group">
-            <ProductCard product={product} />
-            {product.universe && (
-                <Badge className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border-white/10 text-[10px] uppercase font-bold tracking-widest">
-                    {product.universe}
-                </Badge>
-            )}
-            {product.isCollectible && (
-                <Badge className="absolute top-4 right-4 bg-amber-500 text-black border-none text-[8px] font-black uppercase tracking-tighter px-2">
-                    <Zap className="h-3 w-3 mr-1 inline fill-current" /> Édition Collectionneur
-                </Badge>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {filteredProducts.length === 0 && (
-          <div className="text-center py-24 bg-muted/20 rounded-3xl border-2 border-dashed border-border">
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-stone-500 font-display font-black uppercase tracking-widest text-[10px]">Ouverture de la réserve...</p>
+        </div>
+      ) : fetchedProducts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {fetchedProducts.map((product) => (
+            <div key={product.id} className="relative group">
+              <ProductCard product={product} />
+              {product.universe && (
+                  <Badge className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border-white/10 text-[10px] uppercase font-bold tracking-widest">
+                      {product.universe}
+                  </Badge>
+              )}
+              {product.isCollectible && (
+                  <Badge className="absolute top-4 right-4 bg-amber-500 text-black border-none text-[8px] font-black uppercase tracking-tighter px-2">
+                      <Zap className="h-3 w-3 mr-1 inline fill-current" /> Édition Collectionneur
+                  </Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+          <div className="text-center py-24 bg-muted/20 rounded-3xl border-2 border-dashed border-border/50">
               <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
               <p className="text-muted-foreground italic">Bientôt de nouveaux produits dans cette catégorie !</p>
           </div>
