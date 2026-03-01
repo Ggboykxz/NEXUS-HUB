@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ShieldCheck, 
@@ -49,14 +49,19 @@ const SHOWCASE_IMAGES = [
   "https://res.cloudinary.com/demo/image/upload/v1/samples/stories/scifi-africa.jpg"
 ];
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Get callbackUrl and sanitize
+  const callbackUrl = searchParams.get('callbackUrl');
+  const redirectTo = (callbackUrl && callbackUrl.startsWith('/')) ? callbackUrl : '/';
 
   // Rotation des images de vitrine
   useEffect(() => {
@@ -88,7 +93,7 @@ export default function LoginPage() {
         title: "Connexion réussie !",
         description: "Heureux de vous revoir parmi nous.",
       });
-      router.push('/');
+      router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
       toast({
@@ -124,7 +129,7 @@ export default function LoginPage() {
         title: `Connecté avec ${platform}`,
         description: "Bienvenue sur NexusHub !",
       });
-      router.push('/');
+      router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
       console.error(error);
@@ -139,7 +144,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-stone-950">
+    <div className="flex min-h-screen bg-stone-950 w-full">
       {/* PANNEAU DE VITRINE (GAUCHE - MD+) */}
       <div className="hidden md:flex relative w-1/2 flex-col overflow-hidden border-r border-white/5">
         <div className="absolute inset-0 z-0">
@@ -334,5 +339,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-stone-950 flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
