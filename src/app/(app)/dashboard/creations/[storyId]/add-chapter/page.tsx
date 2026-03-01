@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
   Plus, 
   UploadCloud, 
@@ -20,7 +21,9 @@ import {
   CheckCircle2, 
   Layers,
   Sparkles,
-  Info
+  Info,
+  Crown,
+  Coins
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
@@ -67,6 +70,8 @@ export default function AddChapterPage(props: PageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [title, setTitle] = useState('');
+  const [isPremium, setIsPremium] = useState(false);
+  const [afriCoinsPrice, setAfriCoinsPrice] = useState(5);
   const [selectedImages, setSelectedImages] = useState<ImageFile[]>([]);
 
   useEffect(() => {
@@ -110,7 +115,6 @@ export default function AddChapterPage(props: PageProps) {
   const removeImage = (id: string) => {
     setSelectedImages(prev => {
       const filtered = prev.filter(img => img.id !== id);
-      // Clean up blob URLs to avoid memory leaks
       const removed = prev.find(img => img.id === id);
       if (removed) URL.revokeObjectURL(removed.preview);
       return filtered;
@@ -136,9 +140,8 @@ export default function AddChapterPage(props: PageProps) {
     try {
       const chapterNumber = (story?.chapterCount || 0) + 1;
       const chapterRef = collection(db, 'stories', storyId, 'chapters');
-      const newChapterDocRef = doc(chapterRef); // Pre-generate ID for storage path
+      const newChapterDocRef = doc(chapterRef);
       
-      // 1. Upload Images
       const pagesData = [];
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
@@ -146,8 +149,6 @@ export default function AddChapterPage(props: PageProps) {
         const storageRef = ref(storage, storagePath);
         
         const uploadTask = uploadBytesResumable(storageRef, img.file);
-        
-        // Tracking progress for UI if needed (simple await here for robustness)
         await uploadTask;
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         
@@ -158,7 +159,6 @@ export default function AddChapterPage(props: PageProps) {
         });
       }
 
-      // 2. Create Chapter Doc
       await setDoc(newChapterDocRef, {
         id: newChapterDocRef.id,
         storyId,
@@ -166,7 +166,8 @@ export default function AddChapterPage(props: PageProps) {
         chapterNumber,
         slug: `chapitre-${chapterNumber}`,
         pages: pagesData,
-        isPremium: false,
+        isPremium,
+        afriCoinsPrice: isPremium ? afriCoinsPrice : 0,
         isLocked: false,
         status: 'Publié',
         views: 0,
@@ -177,13 +178,11 @@ export default function AddChapterPage(props: PageProps) {
         releaseDate: serverTimestamp()
       });
 
-      // 3. Update parent story
       await updateDoc(doc(db, 'stories', storyId), {
         chapterCount: increment(1),
         updatedAt: serverTimestamp()
       });
 
-      // 4. Notification Fan-out (Distribute to subscribers)
       const subscribersQuery = query(
         collectionGroup(db, 'subscriptions'),
         where('artistId', '==', story?.artistId)
@@ -196,8 +195,6 @@ export default function AddChapterPage(props: PageProps) {
         let count = 0;
 
         for (const subDoc of subscribersSnap.docs) {
-          // In Nexushub, user subscription is stored at users/{uid}/subscriptions/{artistId}
-          // The parent of parent doc is the user document
           const subscriberId = subDoc.ref.parent.parent?.id;
           if (!subscriberId) continue;
 
@@ -219,7 +216,6 @@ export default function AddChapterPage(props: PageProps) {
           });
 
           count++;
-          // Firestore write batch limit is 500 operations
           if (count === 500) {
             await batch.commit();
             batch = writeBatch(db);
@@ -274,7 +270,7 @@ export default function AddChapterPage(props: PageProps) {
             disabled={isSubmitting || !title.trim() || selectedImages.length === 0}
             className="flex-1 md:flex-none rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black gold-shimmer px-10 shadow-xl shadow-emerald-500/20"
           >
-            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi en cours...</> : <><Sparkles className="mr-2 h-5 w-5" /> Publier l'Épisode</>}
+            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi...</> : <><Sparkles className="mr-2 h-5 w-5" /> Publier l'Épisode</>}
           </Button>
         </div>
       </div>
@@ -291,6 +287,36 @@ export default function AddChapterPage(props: PageProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
+              </div>
+
+              <div className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold text-white flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-primary" /> Chapitre Premium
+                    </Label>
+                    <p className="text-[10px] text-stone-500 uppercase font-bold tracking-tighter italic">Réservé aux membres payant en AfriCoins</p>
+                  </div>
+                  <Switch checked={isPremium} onCheckedChange={setIsPremium} />
+                </div>
+
+                {isPremium && (
+                  <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Prix en AfriCoins</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex-1">
+                        <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+                        <Input 
+                          type="number"
+                          value={afriCoinsPrice}
+                          onChange={(e) => setAfriCoinsPrice(parseInt(e.target.value) || 0)}
+                          className="h-14 pl-12 bg-black/40 border-primary/20 rounded-2xl text-xl font-black text-white"
+                        />
+                      </div>
+                      <Badge className="h-14 px-6 rounded-2xl bg-primary/10 text-primary border-primary/20 font-black text-sm">🪙 COINS</Badge>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -344,8 +370,18 @@ export default function AddChapterPage(props: PageProps) {
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-xs text-stone-500 font-bold uppercase">Type</span>
-                <Badge className="bg-emerald-500/10 text-emerald-500 border-none uppercase text-[8px] font-black">Gratuit</Badge>
+                {isPremium ? (
+                  <Badge className="bg-primary text-black border-none uppercase text-[8px] font-black">Premium</Badge>
+                ) : (
+                  <Badge className="bg-emerald-500/10 text-emerald-500 border-none uppercase text-[8px] font-black">Gratuit</Badge>
+                )}
               </div>
+              {isPremium && (
+                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                  <span className="text-xs text-stone-500 font-bold uppercase">Coût</span>
+                  <span className="text-xl font-black text-primary">{afriCoinsPrice} 🪙</span>
+                </div>
+              )}
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-xs text-stone-500 font-bold uppercase">Pages</span>
                 <span className="text-xl font-black text-white">{selectedImages.length}</span>
@@ -356,7 +392,7 @@ export default function AddChapterPage(props: PageProps) {
           <Card className="bg-primary/5 border border-primary/10 rounded-[2rem] p-8">
             <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest">Conseil de l'Atelier</h4>
             <p className="text-xs text-stone-400 leading-relaxed italic font-light">
-              "Assurez-vous que l'ordre des planches est correct. Les lecteurs apprécient une transition fluide entre les cases."
+              "Les chapitres Premium génèrent 80% des revenus des artistes Pro. Assurez-vous que la qualité visuelle justifie le soutien des fans."
             </p>
           </Card>
         </aside>
