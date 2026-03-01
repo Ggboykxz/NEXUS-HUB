@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -20,7 +20,9 @@ import Link from 'next/link';
 import { getOptimizedImage } from '@/lib/image-utils';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { Textarea } from '@/components/ui/textarea';
 
 // #region Page Components
 
@@ -89,30 +91,41 @@ function ProgressBar({ progress }: { progress: number }) {
   )
 }
 
-function ReaderSidebar({ story, artist }: { story: Story, artist: UserProfile | null }) {
+function ReaderSidebar({ story, artist, currentUser, openAuthModal }: { story: Story, artist: UserProfile | null, currentUser: any, openAuthModal: any }) {
   const [activeTab, setActiveTab] = useState('chapters');
+  const currentChapterId = story.chapters?.[0]?.id;
 
-  const TabButton = ({ id, label }: { id: string, label: string }) => (
+  const TabButton = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
     <Button
       variant="ghost"
       onClick={() => setActiveTab(id)}
       className={cn(
-        "flex-1 rounded-none border-b-2 h-12 text-[10px] font-black uppercase tracking-[0.2em]",
+        "flex-1 rounded-none border-b-2 h-12 text-[10px] font-black uppercase tracking-[0.2em] gap-2",
         activeTab === id ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted-foreground'
       )}
     >
-      {label}
+      <Icon className="h-3 w-3" />
+      <span className="hidden xl:inline">{label}</span>
     </Button>
   );
 
   return (
     <aside className="w-[320px] bg-stone-950 border-l border-white/5 h-[calc(100vh-56px)] sticky top-14 flex-shrink-0 hidden lg:flex flex-col shadow-2xl">
       <div className="flex border-b border-white/5 sticky top-0 bg-stone-950 z-10">
-        <TabButton id="chapters" label="Épisodes" />
-        <TabButton id="artist" label="Créateur" />
+        <TabButton id="chapters" label="Épisodes" icon={Layers} />
+        <TabButton id="comments" label="Avis" icon={MessageSquare} />
+        <TabButton id="artist" label="Créateur" icon={Award} />
       </div>
       <ScrollArea className="flex-1">
         {activeTab === 'chapters' && <ChaptersTab story={story} />}
+        {activeTab === 'comments' && (
+          <CommentsTab 
+            storyId={story.id} 
+            chapterId={currentChapterId || ''} 
+            currentUser={currentUser}
+            openAuthModal={openAuthModal}
+          />
+        )}
         {activeTab === 'artist' && <ArtistTab artist={artist} />}
       </ScrollArea>
     </aside>
@@ -231,6 +244,119 @@ function ArtistTab({ artist }: { artist: UserProfile | null }) {
   )
 }
 
+function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { storyId: string, chapterId: string, currentUser: any, openAuthModal: any }) {
+  const { toast } = useToast();
+  const [commentText, setCommentText] = useState('');
+  const queryClient = useQueryClient();
+
+  const { data: comments = [], isLoading } = useQuery({
+    queryKey: ['comments', storyId, chapterId],
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'stories', storyId, 'chapters', chapterId, 'comments'),
+        orderBy('createdAt', 'desc'),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    },
+    enabled: !!chapterId
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (text: string) => {
+      if (!currentUser) {
+        openAuthModal('poster un commentaire');
+        throw new Error('Auth required');
+      }
+      const ref = collection(db, 'stories', storyId, 'chapters', chapterId, 'comments');
+      await addDoc(ref, {
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || 'Anonyme',
+        authorAvatar: currentUser.photoURL || '',
+        content: text,
+        likes: 0,
+        isHidden: false,
+        isEdited: false,
+        createdAt: serverTimestamp()
+      });
+    },
+    onSuccess: () => {
+      setCommentText('');
+      queryClient.invalidateQueries({ queryKey: ['comments', storyId, chapterId] });
+      toast({ title: "Commentaire publié !" });
+    }
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const ref = doc(db, 'stories', storyId, 'chapters', chapterId, 'comments', commentId);
+      await updateDoc(ref, { likes: increment(1) });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', storyId, chapterId] });
+    }
+  });
+
+  return (
+    <div className="p-6 space-y-8">
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+          <MessageSquare className="h-4 w-4"/> Partagez votre avis
+        </h4>
+        <div className="space-y-3">
+          <Textarea 
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Qu'avez-vous pensé de cet épisode ?" 
+            className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-xs font-light"
+          />
+          <Button 
+            disabled={!commentText.trim() || submitMutation.isPending}
+            onClick={() => submitMutation.mutate(commentText)}
+            className="w-full h-10 rounded-xl font-black text-[10px] uppercase gold-shimmer"
+          >
+            {submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publier"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-stone-700" /></div>
+        ) : comments.length > 0 ? (
+          comments.map((c: any) => (
+            <div key={c.id} className="space-y-3 animate-in fade-in duration-500">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8 border border-white/10">
+                  <AvatarImage src={c.authorAvatar} />
+                  <AvatarFallback>{c.authorName.slice(0,1)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{c.authorName}</p>
+                  <p className="text-[8px] text-stone-500 uppercase font-black">Il y a un instant</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 gap-1 px-2 rounded-lg text-stone-500 hover:text-rose-500"
+                  onClick={() => likeMutation.mutate(c.id)}
+                >
+                  <Heart className="h-3 w-3" />
+                  <span className="text-[10px] font-bold">{c.likes}</span>
+                </Button>
+              </div>
+              <p className="text-xs text-stone-400 leading-relaxed pl-11">{c.content}</p>
+            </div>
+          ))
+        ) : (
+          <p className="text-center text-[10px] text-stone-600 italic py-8">Soyez le premier à commenter cet épisode !</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount }: any) {
   return (
     <div className="fixed top-1/2 -translate-y-1/2 right-6 lg:right-[340px] z-40 flex flex-col gap-3 group animate-in slide-in-from-right-4 duration-1000 delay-500">
@@ -256,6 +382,7 @@ function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, i
 export default function ReadPage(props: { params: Promise<{ storyId: string }> }) {
   const { storyId } = use(props.params);
   const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
@@ -286,6 +413,17 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
     queryFn: async () => {
       const snap = await getDoc(doc(db, 'users', story!.artistId));
       return snap.exists() ? (snap.data() as UserProfile) : null;
+    }
+  });
+
+  // Fetch comment count
+  const { data: commentsCount = 0 } = useQuery({
+    queryKey: ['comments-count', storyId, story?.chapters?.[0]?.id],
+    enabled: !!story?.chapters?.[0]?.id,
+    queryFn: async () => {
+      const q = query(collection(db, 'stories', storyId, 'chapters', story!.chapters![0].id, 'comments'));
+      const snap = await getDocs(q);
+      return snap.size;
     }
   });
 
@@ -418,7 +556,12 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
           </div>
         </main>
         
-        <ReaderSidebar story={story} artist={artist || null} />
+        <ReaderSidebar 
+          story={story} 
+          artist={artist || null} 
+          currentUser={currentUser}
+          openAuthModal={openAuthModal}
+        />
       </div>
 
       <FloatingTools 
@@ -428,7 +571,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         isBookmarked={isBookmarked}
         onShare={handleShare}
         onComment={() => {}}
-        commentsCount={0}
+        commentsCount={commentsCount}
       />
     </div>
   );
