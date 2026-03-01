@@ -16,11 +16,11 @@ import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { cn } from '@/lib/utils';
 import { 
-  Play, PlayCircle, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit, 
+  Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit, 
   Headphones, Film, Star, Flame, Gift, History, Bookmark, 
   Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin, 
   Activity, Timer, Languages, Map, MessageSquare, CheckCircle2,
-  ArrowUpRight, Heart, Share2
+  ArrowUpRight, Heart, Share2, PlayCircle
 } from 'lucide-react';
 
 const REGIONS = [
@@ -129,7 +129,7 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
                 </div>
               </div>
             </div>
-            <Button asChild className="rounded-full px-8 bg-white/5 border border-white/10 text-white hover:bg-primary hover:text-black">
+            <Button asChild variant="outline" className="rounded-full px-8 hover:bg-primary hover:text-black">
               <Link href="/read/1">Reprendre</Link>
             </Button>
           </div>
@@ -235,10 +235,10 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-4 pt-4">
-                    <Button asChild className="h-16 px-10 rounded-full font-black text-xl gold-shimmer bg-primary text-black shadow-2xl shadow-primary/30">
+                    <Button asChild size="lg" className="h-16 px-10 rounded-full font-black text-xl shadow-2xl shadow-primary/30">
                       <Link href={`/read/${featured.id}`}>Commencer l'Aventure</Link>
                     </Button>
-                    <Button asChild variant="outline" className="h-16 px-10 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
+                    <Button asChild variant="outline" size="lg" className="h-16 px-10 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
                       <Link href="/signup">S'inscrire Gratuitement</Link>
                     </Button>
                   </div>
@@ -326,7 +326,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                 </p>
               </div>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="rounded-full bg-primary text-black font-black px-10 h-14 gold-shimmer shadow-2xl">Participer au concours</Button>
+                <Button size="lg" className="rounded-full px-10 h-14 shadow-2xl">Participer au concours</Button>
                 <Button variant="outline" size="lg" className="rounded-full border-white/10 text-white font-bold h-14 px-8">Voir les Originals</Button>
               </div>
             </div>
@@ -381,7 +381,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
             </div>
 
             <div className="flex flex-col items-center gap-8">
-              <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 gold-shimmer bg-primary text-black">
+              <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 bg-primary text-black">
                   <Link href="/submit">Lancer mon Projet Maintenant</Link>
               </Button>
               
