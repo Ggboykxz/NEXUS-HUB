@@ -109,7 +109,14 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
           
           <div className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-6 flex flex-col md:flex-row items-center gap-6 hover:border-primary/20 transition-all group">
             <div className="relative h-32 w-24 rounded-2xl overflow-hidden shadow-2xl shrink-0">
-              <Image src={popular[1]?.coverImage || 'https://picsum.photos/seed/read/400/600'} alt="Story" fill className="object-cover group-hover:scale-110 transition-transform" />
+              <Image 
+                src={popular[1]?.coverImage?.imageUrl || 'https://picsum.photos/seed/read/400/600'} 
+                alt="Story" 
+                fill 
+                className="object-cover group-hover:scale-110 transition-transform" 
+                blurDataURL={popular[1]?.coverImage?.blurHash}
+                placeholder={popular[1]?.coverImage?.blurHash ? "blur" : "empty"}
+              />
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Play className="h-8 w-8 text-primary fill-current" />
               </div>
@@ -207,7 +214,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
           {featured && (
             <div className="absolute inset-0">
               <Image
-                src={featured.coverImage}
+                src={featured.coverImage.imageUrl}
                 alt={featured.title}
                 fill
                 className={cn(
@@ -215,6 +222,8 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                   heroLoaded ? 'opacity-35 scale-100' : 'opacity-0 scale-105'
                 )}
                 priority
+                placeholder="blur"
+                blurDataURL={featured.coverImage.blurHash}
                 onLoad={() => setHeroLoaded(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />

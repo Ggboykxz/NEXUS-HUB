@@ -82,7 +82,10 @@ export interface Story {
   format: StoryFormat;
   status: StoryStatus;
   tier: StoryTier;
-  coverImage: string;               // URL directe (Cloudinary/Storage)
+  coverImage: {
+    imageUrl: string;
+    blurHash?: string;
+  };
   bannerImage?: string;
   genre: string;                    // Principal
   genreSlug: string;

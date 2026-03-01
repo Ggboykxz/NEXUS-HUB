@@ -104,7 +104,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
   };
 
   const storyUrl = getStoryUrl(story.id);
-  const coverUrl = story.coverImage;
+  const coverUrl = story.coverImage.imageUrl;
 
   return (
     <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
@@ -117,7 +117,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
               className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
               sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
               placeholder="blur"
-              blurDataURL={DEFAULT_BLUR}
+              blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
             />
         </Link>
         
