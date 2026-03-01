@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Globe, Book, Twitter, Instagram, Facebook, Bell, Heart, Award, Eye, Star, PenSquare, Edit, CheckCircle2, ShieldCheck, Share2, LayoutGrid, Zap } from 'lucide-react';
+import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -22,12 +22,12 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import type { Story, UserProfile } from '@/lib/types';
 
 interface ArtistDetailClientProps {
@@ -41,7 +41,9 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [liveSubscribersCount, setLiveSubscribersCount] = useState(artist.subscribersCount || 0);
 
+  // 1. Monitor Auth State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -50,16 +52,78 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsubscribe();
   }, [artist.uid]);
 
-  const handleSubscribeClick = () => {
+  // 2. Monitor Subscription Status (Initial check + Real-time)
+  useEffect(() => {
+    if (!currentUser || isOwnProfile) {
+      setIsSubscribed(false);
+      return;
+    }
+
+    const subRef = doc(db, 'users', currentUser.uid, 'subscriptions', artist.uid);
+    const unsub = onSnapshot(subRef, (docSnap) => {
+      setIsSubscribed(docSnap.exists());
+    });
+
+    return () => unsub();
+  }, [currentUser, artist.uid, isOwnProfile]);
+
+  // 3. Monitor Artist Document for real-time subscribersCount update
+  useEffect(() => {
+    const artistRef = doc(db, 'users', artist.uid);
+    const unsub = onSnapshot(artistRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setLiveSubscribersCount(docSnap.data().subscribersCount || 0);
+      }
+    });
+    return () => unsub();
+  }, [artist.uid]);
+
+  const handleSubscribeClick = async () => {
     if (!currentUser) {
       openAuthModal('suivre vos artistes préférés');
       return;
     }
-    setIsSubscribed(!isSubscribed);
-    toast({
-      title: isSubscribed ? "Abonnement annulé" : "Abonné !",
-      description: `Vous ${isSubscribed ? "ne recevrez plus" : "recevrez désormais"} les notifications pour ${artist.displayName}.`,
-    });
+
+    if (isOwnProfile) return;
+
+    const subRef = doc(db, 'users', currentUser.uid, 'subscriptions', artist.uid);
+    const artistRef = doc(db, 'users', artist.uid);
+
+    try {
+      if (isSubscribed) {
+        // Unfollow
+        await deleteDoc(subRef);
+        await updateDoc(artistRef, {
+          subscribersCount: increment(-1)
+        });
+        toast({
+          title: "Abonnement annulé",
+          description: `Vous ne suivez plus ${artist.displayName}.`,
+        });
+      } else {
+        // Follow
+        await setDoc(subRef, {
+          artistId: artist.uid,
+          artistName: artist.displayName,
+          artistPhoto: artist.photoURL,
+          subscribedAt: serverTimestamp()
+        });
+        await updateDoc(artistRef, {
+          subscribersCount: increment(1)
+        });
+        toast({
+          title: "Abonné !",
+          description: `Vous suivez désormais ${artist.displayName}.`,
+        });
+      }
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour de l'abonnement.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDonation = () => {
@@ -195,7 +259,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           {[
             { label: "Vues Totales", val: formatStat(totalViews), icon: Eye, color: "text-primary" },
             { label: "Engagement", val: formatStat(totalLikes), icon: Heart, color: "text-rose-500" },
-            { label: "Fans Actifs", val: formatStat(artist.subscribersCount), icon: Star, color: "text-amber-500" },
+            { label: "Fans Actifs", val: formatStat(liveSubscribersCount), icon: Star, color: "text-amber-500" },
             { label: "Productions", val: totalWorks, icon: Book, color: "text-emerald-500" },
           ].map((stat, i) => (
             <Card key={i} className="border-white/5 bg-card/50 backdrop-blur-xl rounded-[2rem] overflow-hidden group hover:border-primary/20 transition-all">
