@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BookMarked, Heart, History, Clock, Library as LibraryIcon, 
   Play, Trash2, ArrowRight, Flame, Sparkles, Star, Loader2,
-  XCircle, Eraser, AlertTriangle
+  XCircle, Eraser, AlertTriangle, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -51,7 +51,7 @@ export default function LibraryPage() {
     return () => unsubscribe();
   }, []);
 
-  // --- FETCH PROGRESS (READING HISTORY) ---
+  // --- FETCH PROGRESS (READING HISTORY / EN COURS) ---
   const { data: progressList = [], isLoading: isLoadingLib } = useQuery({
     queryKey: ['library-progress', currentUser?.uid],
     enabled: !!currentUser,
@@ -213,33 +213,23 @@ export default function LibraryPage() {
         <div className="flex justify-center mb-16">
           <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl">
             <TabsTrigger value="progress" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-              <History className="h-4 w-4" /> Historique
+              <Play className="h-4 w-4" /> En cours
             </TabsTrigger>
             <TabsTrigger value="favorites" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
               <Heart className="h-4 w-4" /> Favoris
             </TabsTrigger>
-            <TabsTrigger value="following" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-              <BookMarked className="h-4 w-4" /> Abonnements
+            <TabsTrigger value="history" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              <History className="h-4 w-4" /> Historique
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* PROGRESS TAB (HISTORY) */}
+        {/* PROGRESS TAB (EN COURS) */}
         <TabsContent value="progress" className="space-y-10 animate-in fade-in duration-700">
           <div className="flex justify-between items-center px-2">
             <h3 className="text-xl font-display font-black text-white uppercase tracking-widest flex items-center gap-3">
-              <History className="h-5 w-5 text-primary" /> Lectures Récentes
+              <Play className="h-5 w-5 text-primary" /> Lectures en cours
             </h3>
-            <Button 
-              onClick={() => clearHistoryMutation.mutate()} 
-              disabled={clearHistoryMutation.isPending || progressList.length === 0}
-              variant="ghost" 
-              size="sm" 
-              className="text-stone-500 hover:text-orange-500 font-black text-[9px] uppercase tracking-[0.2em] gap-2"
-            >
-              {clearHistoryMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eraser className="h-3 w-3" />}
-              Nettoyer l'historique
-            </Button>
           </div>
 
           {progressList.length > 0 ? (
@@ -319,7 +309,12 @@ export default function LibraryPage() {
               })}
             </div>
           ) : (
-            <EmptyState message="Votre voyage n'a pas encore commencé. Les sables attendent vos pas." icon={History} />
+            <EmptyState 
+              message="Votre histoire commence ici" 
+              icon={BookOpen} 
+              buttonText="Explorer le catalogue"
+              href="/stories"
+            />
           )}
         </TabsContent>
 
@@ -346,7 +341,7 @@ export default function LibraryPage() {
                   </AlertDialogTrigger>
                   <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="text-center font-display font-black">Réinitialiser les Favoris ?</AlertDialogTitle>
+                      <AlertDialogTitle className="font-display font-black">Réinitialiser les Favoris ?</AlertDialogTitle>
                       <AlertDialogDescription className="text-center italic">"Toutes vos œuvres préférées seront décochées de votre sanctuaire."</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="sm:justify-center">
@@ -363,27 +358,76 @@ export default function LibraryPage() {
               </div>
             </>
           ) : (
-            <EmptyState message="Aucun favori pour le moment. Laissez votre cœur guider vos lectures." icon={Heart} />
+            <EmptyState 
+              message="Vos coups de cœur apparaîtront ici" 
+              icon={Heart} 
+              buttonText="Découvrir des œuvres"
+              href="/stories"
+            />
           )}
         </TabsContent>
 
-        <TabsContent value="following" className="animate-in fade-in duration-700">
-          <EmptyState message="Vous ne suivez aucun artiste. Soyez le premier à soutenir un créateur !" icon={Star} />
+        {/* HISTORY TAB */}
+        <TabsContent value="history" className="space-y-10 animate-in fade-in duration-700">
+          <div className="flex justify-between items-center px-2">
+            <h3 className="text-xl font-display font-black text-white uppercase tracking-widest flex items-center gap-3">
+              <History className="h-5 w-5 text-primary" /> Annales de lecture
+            </h3>
+          </div>
+          
+          {progressList.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+              {progressList.map((entry) => (
+                <div key={entry.storyId} className="space-y-2 group">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-white/5">
+                    <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform" />
+                    <Link href={`/read/${entry.storyId}`} className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Play className="h-10 w-10 text-primary" />
+                    </Link>
+                  </div>
+                  <h4 className="font-bold text-xs text-white truncate px-1">{entry.storyTitle}</h4>
+                  <p className="text-[10px] text-stone-500 px-1 italic">Terminé à {entry.progress}%</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState 
+              message="Votre voyage commence maintenant" 
+              icon={Clock} 
+              buttonText="Explorer le Catalogue"
+              href="/stories"
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function EmptyState({ message, icon: Icon }: { message: string, icon: any }) {
+function EmptyState({ 
+  message, 
+  icon: Icon, 
+  buttonText = "Explorer le Catalogue", 
+  href = "/stories" 
+}: { 
+  message: string, 
+  icon: any, 
+  buttonText?: string, 
+  href?: string 
+}) {
   return (
     <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5 animate-in zoom-in-95 duration-700 space-y-8">
-      <div className="mx-auto w-24 h-24 bg-white/5 rounded-full flex items-center justify-center opacity-20">
+      <div className="mx-auto w-24 h-24 bg-white/5 rounded-full flex items-center justify-center opacity-20 shadow-inner">
         <Icon className="h-10 w-10 text-stone-500" />
       </div>
-      <p className="text-stone-500 font-light italic mb-8 max-w-xs mx-auto leading-relaxed">{message}</p>
-      <Button asChild variant="outline" className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase text-xs tracking-widest transition-all">
-        <Link href="/stories">Explorer le Catalogue</Link>
+      <div className="space-y-2">
+        <p className="text-stone-400 font-display font-black text-xl uppercase tracking-tighter">{message}</p>
+        <p className="text-stone-600 text-sm italic font-light max-w-xs mx-auto leading-relaxed">
+          "Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin."
+        </p>
+      </div>
+      <Button asChild size="lg" className="rounded-full px-12 h-16 font-black text-xl bg-primary text-black gold-shimmer shadow-2xl shadow-primary/20">
+        <Link href={href}>{buttonText}</Link>
       </Button>
     </div>
   );
