@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star } from 'lucide-react';
+import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star, History, Clock, Loader2 } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -22,13 +22,16 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, collection, addDoc } from 'firebase/firestore';
-import type { Story, UserProfile } from '@/lib/types';
+import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import type { Story, UserProfile, Chapter } from '@/lib/types';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface ArtistDetailClientProps {
   artist: UserProfile;
@@ -42,6 +45,10 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [liveSubscribersCount, setLiveSubscribersCount] = useState(artist.subscribersCount || 0);
+  
+  // Activity State
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
 
   // 1. Monitor Auth State
   useEffect(() => {
@@ -52,7 +59,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsubscribe();
   }, [artist.uid]);
 
-  // 2. Monitor Subscription Status (Initial check + Real-time)
+  // 2. Monitor Subscription Status
   useEffect(() => {
     if (!currentUser || isOwnProfile) {
       setIsSubscribed(false);
@@ -78,6 +85,49 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     return () => unsub();
   }, [artist.uid]);
 
+  // 4. Fetch Recent Activity (Chapters)
+  useEffect(() => {
+    async function fetchRecentActivity() {
+      if (artistStories.length === 0) {
+        setLoadingActivity(false);
+        return;
+      }
+
+      try {
+        const allChaptersPromises = artistStories.map(async (story) => {
+          const chaptersRef = collection(db, 'stories', story.id, 'chapters');
+          const q = query(chaptersRef, orderBy('publishedAt', 'desc'), limit(10));
+          const snap = await getDocs(q);
+          return snap.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id,
+            storyTitle: story.title,
+            storyCover: story.coverImage.imageUrl,
+            storySlug: story.slug
+          }));
+        });
+
+        const chaptersResults = await Promise.all(allChaptersPromises);
+        const flattened = chaptersResults.flat();
+        
+        // Sort all chapters by publishedAt desc
+        const sorted = flattened.sort((a: any, b: any) => {
+          const dateA = a.publishedAt?.toDate?.() || new Date(a.publishedAt);
+          const dateB = b.publishedAt?.toDate?.() || new Date(b.publishedAt);
+          return dateB.getTime() - dateA.getTime();
+        }).slice(0, 10);
+
+        setActivities(sorted);
+      } catch (e) {
+        console.error("Error fetching activity:", e);
+      } finally {
+        setLoadingActivity(false);
+      }
+    }
+
+    fetchRecentActivity();
+  }, [artistStories]);
+
   const handleSubscribeClick = async () => {
     if (!currentUser) {
       openAuthModal('suivre vos artistes préférés');
@@ -91,7 +141,6 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
 
     try {
       if (isSubscribed) {
-        // Unfollow
         await deleteDoc(subRef);
         await updateDoc(artistRef, {
           subscribersCount: increment(-1)
@@ -101,7 +150,6 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           description: `Vous ne suivez plus ${artist.displayName}.`,
         });
       } else {
-        // Follow
         await setDoc(subRef, {
           artistId: artist.uid,
           artistName: artist.displayName,
@@ -112,7 +160,6 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           subscribersCount: increment(1)
         });
 
-        // Send Notification to Artist
         const notifRef = collection(db, 'users', artist.uid, 'notifications');
         await addDoc(notifRef, {
           type: 'new_follower',
@@ -163,11 +210,8 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
-      {/* 1. IMMERSIVE ARTIST HEADER */}
       <header className="relative py-24 bg-stone-950 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
-        
-        {/* Profile Background Blur */}
         <div className="absolute inset-0 opacity-20 blur-3xl pointer-events-none">
           <Image src={artist.photoURL} alt="blur" fill className="object-cover" />
         </div>
@@ -266,9 +310,7 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
         </div>
       </header>
 
-      {/* 2. ANALYTICS & PORTFOLIO */}
       <main className="container max-w-7xl mx-auto px-6 py-16 space-y-24">
-        {/* Stats Grid */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { label: "Vues Totales", val: formatStat(totalViews), icon: Eye, color: "text-primary" },
@@ -290,32 +332,78 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           ))}
         </section>
 
-        {/* Portfolio Section */}
-        <section className="space-y-12">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2.5 rounded-2xl">
-                <LayoutGrid className="h-6 w-6 text-primary" />
+        <Tabs defaultValue="portfolio" className="w-full">
+          <div className="flex justify-center mb-16">
+            <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-md w-full">
+              <TabsTrigger value="portfolio" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                <LayoutGrid className="h-4 w-4" /> Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                <History className="h-4 w-4" /> Activité
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="portfolio" className="space-y-12 animate-in fade-in duration-700">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+              {artistStories.map((story) => (
+                <StoryCard key={story.id} story={story} />
+              ))}
+            </div>
+
+            {artistStories.length === 0 && (
+              <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5">
+                <p className="text-stone-500 font-light italic">"Le créateur prépare ses premières planches..."</p>
               </div>
-              <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Portfolio de l'Artiste</h2>
-            </div>
-            <Badge variant="outline" className="border-white/10 text-stone-500 uppercase font-black text-[9px] px-4 h-8">{artistStories.length} Œuvres</Badge>
-          </div>
+            )}
+          </TabsContent>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-            {artistStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
-          </div>
+          <TabsContent value="activity" className="animate-in fade-in duration-700">
+            {loadingActivity ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-stone-500 font-bold uppercase text-[10px] tracking-widest">Consultation des annales...</p>
+              </div>
+            ) : activities.length > 0 ? (
+              <div className="max-w-3xl mx-auto space-y-6">
+                {activities.map((act) => {
+                  const date = act.publishedAt?.toDate ? act.publishedAt.toDate() : new Date(act.publishedAt);
+                  return (
+                    <div key={act.id} className="relative pl-8 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-white/10 group">
+                      <div className="absolute left-[-4px] top-2 h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))] z-10" />
+                      <Link href={`/read/${act.storyId}`} className="block">
+                        <Card className="bg-card/50 border-white/5 rounded-2xl p-5 hover:border-primary/30 transition-all flex items-center gap-6">
+                          <div className="relative h-16 w-12 rounded-lg overflow-hidden shrink-0 border border-white/5 shadow-lg">
+                            <Image src={act.storyCover} alt="Cover" fill className="object-cover group-hover:scale-110 transition-transform" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[9px] font-black uppercase text-primary tracking-widest">Nouvel Épisode</span>
+                              <span className="text-stone-600">&bull;</span>
+                              <span className="text-[9px] font-bold text-stone-500 uppercase">{formatDistanceToNow(date, { addSuffix: true, locale: fr })}</span>
+                            </div>
+                            <h4 className="text-lg font-bold text-white group-hover:text-primary transition-colors truncate">{act.storyTitle}</h4>
+                            <p className="text-xs text-stone-400 font-light italic">"Épisode {act.chapterNumber} : {act.title}"</p>
+                          </div>
+                          <div className="text-right hidden sm:block">
+                            <p className="text-xl font-black text-white">{formatStat(act.views)}</p>
+                            <p className="text-[8px] font-bold text-stone-600 uppercase tracking-widest">Lectures</p>
+                          </div>
+                        </Card>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5 space-y-4">
+                <History className="h-10 w-10 text-stone-700 mx-auto opacity-20" />
+                <p className="text-stone-500 font-light italic">"Aucune activité récente dans les archives de cet artiste."</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
-          {artistStories.length === 0 && (
-            <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5">
-              <p className="text-stone-500 font-light italic">"Le créateur prépare ses premières planches..."</p>
-            </div>
-          )}
-        </section>
-
-        {/* Academy Distinction */}
         {artist.isCertified && (
           <section className="p-12 rounded-[3.5rem] bg-stone-900 border border-emerald-500/20 relative overflow-hidden group shadow-2xl">
             <div className="absolute top-0 right-0 p-12 opacity-5"><Award className="h-64 w-64 text-emerald-500" /></div>
