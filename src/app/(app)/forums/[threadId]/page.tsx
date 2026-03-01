@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { forumThreads, artists } from '@/lib/data';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,21 +12,14 @@ import {
   ShieldAlert, 
   ThumbsUp, 
   Reply, 
-  Flag, 
-  Smile, 
   Share2, 
   Eye, 
-  CheckCircle2, 
   ArrowRight,
-  Flame,
-  Star,
-  Info,
-  ChevronDown,
   Bookmark,
-  Award,
   AlertTriangle,
   ThumbsDown,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -36,8 +28,19 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  doc, 
+  onSnapshot, 
+  collection, 
+  query, 
+  orderBy, 
+  addDoc, 
+  serverTimestamp, 
+  increment,
+  updateDoc 
+} from 'firebase/firestore';
 
 /**
  * Composant de protection de contenu (Spoiler).
@@ -76,50 +79,6 @@ function SpoilerBlock({ children }: { children: React.ReactNode }) {
   );
 }
 
-const mockReplies = [
-  {
-    id: 'r1',
-    author: 'Amina Diallo',
-    authorId: '2',
-    authorBadge: 'Artiste Pro',
-    authorRole: 'SAGE',
-    karma: 4500,
-    avatar: 'https://images.unsplash.com/photo-1602785139708-1442c75f6b28',
-    content: "Bien vu ! On a laissé des indices visuels très subtils pour les lecteurs les plus attentifs. Regardez bien la couleur des yeux dans le dernier panneau du Chapitre 12... c'est une technique de world building qu'on affectionne beaucoup sur NexusHub.",
-    timestamp: 'Il y a 1 jour',
-    likes: 45,
-    isArtist: true,
-    isSpoiler: false,
-    replies: [
-      {
-        id: 'r1-1',
-        author: 'ComicReaderX',
-        authorId: 'reader-2',
-        authorBadge: 'Super Fan',
-        authorRole: 'GARDIEN',
-        karma: 1200,
-        content: "Incroyable, l'artiste a répondu ! 😱 Je savais que ce détail était important. Ça change complètement ma vision de la prophétie.",
-        timestamp: 'Il y a 12h',
-        likes: 12,
-      }
-    ]
-  },
-  {
-    id: 'r2',
-    author: 'Theorist_Master',
-    authorId: 'reader-5',
-    authorBadge: 'Expert Lore',
-    authorRole: 'ORACLE',
-    karma: 8900,
-    avatar: 'https://picsum.photos/seed/oracle/100/100',
-    content: "Ma théorie sur la fin de l'arc : Shango ne va pas trahir le clan, il va se sacrifier pour restaurer l'équilibre des masques sacrés. C'est écrit dans les fresques du chapitre 2 !",
-    timestamp: 'Il y a 5h',
-    likes: 128,
-    isArtist: false,
-    isSpoiler: true
-  }
-];
-
 export default function ThreadDetailPage(props: { params: Promise<{ threadId: string }> }) {
   const { threadId } = use(props.params);
   const { toast } = useToast();
@@ -128,30 +87,94 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
   const [replyText, setReplyText] = useState('');
   const [isSpoilerActive, setIsSpoilerActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const thread = forumThreads.find((t) => t.id === threadId);
+  
+  const [thread, setThread] = useState<any>(null);
+  const [replies, setReplies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
     return () => unsubscribe();
   }, []);
 
-  if (!thread) notFound();
+  // 1. Listen to Thread Document
+  useEffect(() => {
+    const threadRef = doc(db, 'forumThreads', threadId);
+    const unsub = onSnapshot(threadRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setThread({ id: docSnap.id, ...docSnap.data() });
+        // Increment views (simulated simple logic)
+        updateDoc(threadRef, { views: increment(1) }).catch(() => {});
+      } else {
+        setThread(null);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [threadId]);
 
-  const authorInfo = artists.find(a => a.name === thread.author);
+  // 2. Listen to Replies Subcollection
+  useEffect(() => {
+    const repliesRef = collection(db, 'forumThreads', threadId, 'replies');
+    const q = query(repliesRef, orderBy('createdAt', 'asc'));
+    
+    const unsub = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setReplies(data);
+    });
+    return () => unsub();
+  }, [threadId]);
 
-  const handlePostReply = () => {
-    if (!auth.currentUser) {
+  const handlePostReply = async () => {
+    if (!currentUser) {
       openAuthModal('poster votre réponse');
       return;
     }
-    toast({ 
-      title: isSpoilerActive ? "Spoiler publié !" : "Réponse publiée !", 
-      description: "Votre message a été ajouté à la discussion." 
-    });
-    setReplyText('');
-    setIsSpoilerActive(false);
+
+    if (!replyText.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const repliesRef = collection(db, 'forumThreads', threadId, 'replies');
+      await addDoc(repliesRef, {
+        author: currentUser.displayName || 'Anonyme',
+        authorId: currentUser.uid,
+        authorPhoto: currentUser.photoURL || '',
+        content: replyText.trim(),
+        isSpoiler: isSpoilerActive,
+        likes: 0,
+        createdAt: serverTimestamp()
+      });
+
+      // Update reply count on main thread
+      const threadRef = doc(db, 'forumThreads', threadId);
+      await updateDoc(threadRef, { replies: increment(1) });
+
+      toast({ 
+        title: isSpoilerActive ? "Spoiler publié !" : "Réponse publiée !", 
+        description: "Votre message a été ajouté à la discussion." 
+      });
+      
+      setReplyText('');
+      setIsSpoilerActive(false);
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de publier votre réponse.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Ouverture du débat...</p>
+      </div>
+    );
+  }
+
+  if (!thread) notFound();
 
   return (
     <div className="flex flex-col bg-background min-h-screen">
@@ -172,20 +195,20 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
           <div className="flex flex-wrap items-center gap-6 pt-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary/30">
-                <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread.author.slice(0,2)}</AvatarFallback>
+                <AvatarImage src={thread.authorPhoto} />
+                <AvatarFallback className="bg-primary/5 text-primary font-bold">{thread.author?.slice(0,2)}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-white font-bold text-sm">Posté par <span className="text-primary">{thread.author}</span></p>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">Il y a 2h</span>
-                  <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] h-3.5 font-black uppercase">KARMA: 2.4k</Badge>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">Discussion active</span>
+                  <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] h-3.5 font-black uppercase">KARMA: {thread.authorKarma || '---'}</Badge>
                 </div>
               </div>
             </div>
             <div className="hidden sm:flex ml-auto items-center gap-4 text-stone-400 text-xs font-bold uppercase tracking-tighter">
-              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread.views} vues</span>
-              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread.replies} réponses</span>
+              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> {thread.views || 0} vues</span>
+              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-primary" /> {thread.replies || 0} réponses</span>
             </div>
           </div>
         </div>
@@ -211,11 +234,11 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
           <Card className="border-2 border-primary/20 bg-primary/[0.02] shadow-2xl relative overflow-hidden rounded-[2rem]">
             <CardContent className="space-y-6 pt-10">
               <div className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed font-light italic">
-                <p>Quelqu'un a des théories folles sur ce qui va se passer dans le prochain arc ? J'ai l'impression que la prophétie du chapitre 5 est sur le point de se réaliser. Si on regarde attentivement les symboles Adinkra sur les murs du temple...</p>
+                <p>{thread.content || "Chargement du contenu..."}</p>
               </div>
               <div className="flex items-center gap-4 pt-6 border-t border-primary/10">
                 <Button variant="ghost" size="sm" className="h-9 px-5 gap-2 rounded-full hover:bg-primary/10 hover:text-primary transition-all">
-                  <ThumbsUp className="h-4 w-4" /> <span className="text-xs font-black">124 Likes</span>
+                  <ThumbsUp className="h-4 w-4" /> <span className="text-xs font-black">Like</span>
                 </Button>
                 <Button onClick={() => setReplyText('@' + thread.author + ' ')} variant="ghost" size="sm" className="h-9 px-5 gap-2 rounded-full hover:bg-muted transition-all">
                   <Reply className="h-4 w-4" /> <span className="text-xs font-black">Répondre</span>
@@ -224,9 +247,9 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
             </CardContent>
           </Card>
 
-          {/* RÉPONSES AVEC KARMA ET RÔLES */}
+          {/* RÉPONSES RÉELLES DEPUIS FIRESTORE */}
           <div className="space-y-8 pl-0 md:pl-8 border-l-2 border-border/20">
-            {mockReplies.map((reply) => (
+            {replies.map((reply) => (
               <div key={reply.id} className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-700">
                 <Card className={cn(
                   "border-none bg-card/50 rounded-[2rem] shadow-lg transition-all hover:shadow-xl",
@@ -235,18 +258,19 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
                   <CardContent className="p-8">
                     <div className="flex items-start gap-5">
                       <div className="flex flex-col items-center gap-2 w-16 shrink-0">
-                        <Avatar className="h-12 w-12 border-2 border-white/5 shadow-xl"><AvatarImage src={reply.avatar} /></Avatar>
-                        <Badge className={cn(
-                          "border-none text-[7px] font-black h-4 px-2 uppercase tracking-tighter",
-                          reply.isArtist ? "bg-emerald-500 text-white" : "bg-primary/10 text-primary"
-                        )}>{reply.authorRole}</Badge>
+                        <Avatar className="h-12 w-12 border-2 border-white/5 shadow-xl">
+                          <AvatarImage src={reply.authorPhoto} />
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold">{reply.author?.slice(0,1)}</AvatarFallback>
+                        </Avatar>
+                        <Badge className="bg-primary/10 text-primary border-none text-[7px] font-black h-4 px-2 uppercase tracking-tighter">VOYAGEUR</Badge>
                       </div>
                       <div className="flex-1 space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className="font-black text-sm text-white">{reply.author}</span>
-                            <span className="text-[10px] text-stone-500 uppercase font-black tracking-widest">{reply.karma} Karma</span>
-                            <span className="text-[10px] text-stone-600 font-bold">&bull; {reply.timestamp}</span>
+                            <span className="text-[10px] text-stone-600 font-bold">
+                              &bull; {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString() : 'En cours...'}
+                            </span>
                           </div>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-600"><MoreHorizontal className="h-4 w-4" /></Button>
                         </div>
@@ -261,7 +285,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
 
                         <div className="flex items-center gap-4 pt-4 border-t border-white/5">
                           <Button variant="ghost" size="sm" className="h-8 px-3 gap-2 rounded-full hover:bg-primary/10 hover:text-primary transition-all">
-                            <ThumbsUp className="h-3.5 w-3.5" /> <span className="text-[10px] font-black">{reply.likes}</span>
+                            <ThumbsUp className="h-3.5 w-3.5" /> <span className="text-[10px] font-black">{reply.likes || 0}</span>
                           </Button>
                           <Button variant="ghost" size="sm" className="h-8 px-3 rounded-full hover:bg-muted transition-all">
                             <ThumbsDown className="h-3.5 w-3.5 text-stone-600" />
@@ -276,6 +300,12 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
                 </Card>
               </div>
             ))}
+
+            {replies.length === 0 && (
+              <div className="py-12 text-center text-stone-600 italic text-sm">
+                Aucune réponse pour le moment. Soyez le premier à éclairer ce débat !
+              </div>
+            )}
           </div>
         </div>
 
@@ -324,10 +354,10 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
 
                 <Button 
                   onClick={handlePostReply} 
-                  disabled={!replyText.trim()} 
+                  disabled={!replyText.trim() || isSubmitting} 
                   className="h-16 px-14 rounded-full font-black text-xl bg-primary text-black shadow-[0_0_40px_rgba(212,168,67,0.3)] gold-shimmer w-full sm:w-auto"
                 >
-                  Poster ma réponse
+                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Poster ma réponse"}
                 </Button>
               </div>
               
