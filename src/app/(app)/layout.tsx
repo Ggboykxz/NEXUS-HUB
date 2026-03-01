@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
+import { BackToTop } from '@/components/common/back-to-top';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -26,9 +27,9 @@ export default function AppLayout({
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Détection des pages de lecture : /webtoon/[slug]/[chapter] ou /bd-africaine/[slug]/[chapter]
+  // Détection des pages de lecture : /webtoon-hub/[slug]/[chapter] ou /bd-africaine/[slug]/[chapter]
   const segments = pathname.split('/').filter(Boolean);
-  const isReaderPage = segments.length >= 3 && (segments[0] === 'webtoon' || segments[0] === 'bd-africaine');
+  const isReaderPage = segments.length >= 3 && (segments[0] === 'webtoon' || segments[0] === 'bd-africaine' || segments[0] === 'webtoon-hub');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -51,6 +52,9 @@ export default function AppLayout({
         </div>
       </main>
       {!isReaderPage && <Footer />}
+      
+      {/* Bouton de retour au sommet */}
+      <BackToTop />
     </div>
   );
 }
