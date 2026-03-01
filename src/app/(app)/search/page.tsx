@@ -9,7 +9,7 @@ import {
   Search, Users, BookOpen, X, Sparkles, Mic, MicOff, 
   Filter, MapPin, Languages, Clock, Hash, Globe, 
   ChevronDown, SlidersHorizontal, CheckCircle2, History,
-  LayoutGrid, Star, Zap, Loader2, Waveform
+  LayoutGrid, Star, Zap, Loader2, Waveform, AlertCircle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,48 +49,81 @@ function SearchResultsContent() {
     theme: 'Tous'
   });
 
-  const { data: allStories = [], isLoading: loadingStories } = useQuery({
-    queryKey: ['search-all-stories'],
+  // MULTI-FIELD FIRESTORE SEARCH FOR STORIES
+  const { data: filteredStories = [], isLoading: loadingStories } = useQuery({
+    queryKey: ['search-stories-firestore', searchTerm, filters.status],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), limit(100));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-    }
-  });
+      const storiesRef = collection(db, 'stories');
+      
+      if (!searchTerm.trim()) {
+        // Default: Show popular if no search
+        const qDefault = query(storiesRef, where('isPublished', '==', true), limit(20));
+        const snap = await getDocs(qDefault);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+      }
 
-  const { data: allArtists = [], isLoading: loadingArtists } = useQuery({
-    queryKey: ['search-all-artists'],
-    queryFn: async () => {
-      const q = query(collection(db, 'users'), where('role', 'in', ['artist_draft', 'artist_pro']), limit(50));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile));
-    }
-  });
-
-  const filteredStories = useMemo(() => {
-    let results = allStories;
-    if (searchTerm.trim()) {
-      const lowerTerm = searchTerm.toLowerCase();
-      results = results.filter(s => 
-        s.title.toLowerCase().includes(lowerTerm) ||
-        s.description.toLowerCase().includes(lowerTerm) ||
-        s.genre.toLowerCase().includes(lowerTerm) ||
-        s.artistName?.toLowerCase().includes(lowerTerm) ||
-        s.tags.some(t => t.toLowerCase().includes(lowerTerm))
+      // 1. Prefix query on Title (Case sensitive in Firestore)
+      const qTitle = query(
+        storiesRef,
+        where('title', '>=', searchTerm),
+        where('title', '<=', searchTerm + ''),
+        limit(20)
       );
-    }
-    if (filters.status !== 'Tous') results = results.filter(s => s.status === filters.status);
-    return results;
-  }, [searchTerm, allStories, filters]);
 
-  const filteredArtists = useMemo(() => {
-    if (!searchTerm.trim()) return allArtists;
-    const lowerTerm = searchTerm.toLowerCase();
-    return allArtists.filter(a => 
-      a.displayName.toLowerCase().includes(lowerTerm) ||
-      a.bio?.toLowerCase().includes(lowerTerm)
-    );
-  }, [searchTerm, allArtists]);
+      // 2. Exact match on Genre Slug
+      const qGenre = query(
+        storiesRef,
+        where('genreSlug', '==', searchTerm.toLowerCase()),
+        limit(20)
+      );
+
+      // 3. Array contains match on Tags
+      const qTags = query(
+        storiesRef,
+        where('tags', 'array-contains', searchTerm.toLowerCase()),
+        limit(20)
+      );
+
+      const [snapTitle, snapGenre, snapTags] = await Promise.all([
+        getDocs(qTitle),
+        getDocs(qGenre),
+        getDocs(qTags)
+      ]);
+
+      // Merge and deduplicate results
+      const resultMap = new Map<string, Story>();
+      [...snapTitle.docs, ...snapGenre.docs, ...snapTags.docs].forEach(doc => {
+        const data = { id: doc.id, ...doc.data() } as Story;
+        // Client-side status filter since Firestore doesn't support OR between different fields easily
+        if (filters.status === 'Tous' || data.status === filters.status) {
+          resultMap.set(doc.id, data);
+        }
+      });
+
+      return Array.from(resultMap.values());
+    }
+  });
+
+  // ARTIST SEARCH
+  const { data: filteredArtists = [], isLoading: loadingArtists } = useQuery({
+    queryKey: ['search-artists-firestore', searchTerm],
+    queryFn: async () => {
+      const usersRef = collection(db, 'users');
+      const baseQuery = query(usersRef, where('role', 'in', ['artist_draft', 'artist_pro']), limit(50));
+      const snap = await getDocs(baseQuery);
+      
+      let results = snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile));
+      
+      if (searchTerm.trim()) {
+        const lowerTerm = searchTerm.toLowerCase();
+        results = results.filter(a => 
+          a.displayName.toLowerCase().includes(lowerTerm) ||
+          a.bio?.toLowerCase().includes(lowerTerm)
+        );
+      }
+      return results;
+    }
+  });
 
   const handleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -156,7 +189,7 @@ function SearchResultsContent() {
             <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
                   <Search className="h-4 w-4 text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nexus Search Engine v2.1</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nexus Search Engine v2.5</span>
                 </div>
                 <h1 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
                   Les Archives <br/><span className="gold-resplendant">du Hub</span>
@@ -188,7 +221,6 @@ function SearchResultsContent() {
                   </div>
               </form>
 
-              {/* Interim Transcript Display */}
               {isListening && interimTranscript && (
                 <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
@@ -221,7 +253,7 @@ function SearchResultsContent() {
       {/* 2. RESULTS & TABS */}
       <div className="space-y-10">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-2">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 w-full md:w-auto">
                 <Button 
                     onClick={() => setShowFilters(!showFilters)}
                     variant="outline" 
@@ -233,9 +265,33 @@ function SearchResultsContent() {
                     <SlidersHorizontal className="h-4 w-4" />
                     {showFilters ? 'Fermer Filtres' : 'Affiner la quête'}
                 </Button>
-                <div className="hidden sm:block text-[10px] uppercase font-black text-stone-600 tracking-widest">
-                  {filteredStories.length + filteredArtists.length} découvertes
-                </div>
+                
+                {showFilters && (
+                  <div className="animate-in slide-in-from-top-2 duration-300 p-6 bg-stone-900/50 border border-white/5 rounded-[2rem] space-y-6">
+                    <div className="flex items-center gap-3 text-amber-500 bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
+                      <AlertCircle className="h-5 w-5 shrink-0" />
+                      <p className="text-[10px] font-black uppercase tracking-widest leading-tight">
+                        Recherche avancée via Algolia disponible prochainement pour une expérience ultra-rapide et tolérante aux fautes.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase text-stone-500 ml-1">Statut</label>
+                        <Select value={filters.status} onValueChange={(val) => setFilters({...filters, status: val})}>
+                          <SelectTrigger className="h-10 bg-white/5 border-white/10 rounded-xl text-xs font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Tous">Tous les statuts</SelectItem>
+                            <SelectItem value="En cours">En cours</SelectItem>
+                            <SelectItem value="Terminé">Terminé</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="flex bg-muted/50 p-1 rounded-2xl border border-border/50 h-12 w-full md:w-auto">
@@ -246,36 +302,41 @@ function SearchResultsContent() {
         </div>
 
         <div className="min-h-[400px]">
-          {activeTab === 'all' && (
+          {loadingStories || loadingArtists ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Sondage des profondeurs...</p>
+            </div>
+          ) : (
             <div className="space-y-20 animate-in fade-in duration-700">
-              {filteredStories.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'stories') && filteredStories.length > 0 && (
                 <section className="space-y-10">
                   <div className="flex items-center justify-between px-2">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-xl"><BookOpen className="text-primary h-5 w-5" /></div>
                       <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Histoires Trouvées</h3>
                     </div>
-                    <Button variant="link" onClick={() => setActiveTab('stories')} className="text-primary font-black text-[10px] uppercase tracking-widest">Voir tout ({filteredStories.length})</Button>
+                    <Badge variant="outline" className="text-[9px] uppercase font-black border-white/10 text-stone-500 px-3">{filteredStories.length} résultats</Badge>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    {filteredStories.slice(0, 5).map(story => (
+                    {filteredStories.map(story => (
                       <StoryCard key={story.id} story={story} />
                     ))}
                   </div>
                 </section>
               )}
 
-              {filteredArtists.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'artists') && filteredArtists.length > 0 && (
                 <section className="space-y-10">
                   <div className="flex items-center justify-between px-2">
                     <div className="flex items-center gap-3">
                       <div className="bg-emerald-500/10 p-2 rounded-xl"><Users className="text-emerald-500 h-5 w-5" /></div>
                       <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Créateurs Associés</h3>
                     </div>
-                    <Button variant="link" onClick={() => setActiveTab('artists')} className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Voir tout ({filteredArtists.length})</Button>
+                    <Badge variant="outline" className="text-[9px] uppercase font-black border-white/10 text-stone-500 px-3">{filteredArtists.length} artistes</Badge>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredArtists.slice(0, 6).map(artist => (
+                    {filteredArtists.map(artist => (
                       <Link key={artist.uid} href={`/artiste/${artist.slug}`}>
                         <Card className="hover:border-primary/30 transition-all group overflow-hidden bg-white/[0.02] border-white/5 rounded-[2rem] p-6">
                           <div className="flex items-center gap-5">
@@ -299,13 +360,13 @@ function SearchResultsContent() {
                 </section>
               )}
 
-              {filteredStories.length === 0 && filteredArtists.length === 0 && !loadingStories && (
+              {filteredStories.length === 0 && filteredArtists.length === 0 && (
                 <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5">
                   <div className="bg-white/5 p-8 rounded-full w-fit mx-auto mb-8">
                       <Sparkles className="h-16 w-16 text-stone-700 animate-pulse" />
                   </div>
                   <h2 className="text-3xl font-bold font-display text-white mb-2">Les sables sont restés muets...</h2>
-                  <p className="text-stone-500 max-w-sm mx-auto mb-10 font-light italic">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Essayez d'autres mots-clés.</p>
+                  <p className="text-stone-500 max-w-sm mx-auto mb-10 font-light italic">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Essayez d'autres mots-clés ou vérifiez la casse.</p>
                   <Button 
                       variant="outline" 
                       className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase text-xs tracking-widest" 
