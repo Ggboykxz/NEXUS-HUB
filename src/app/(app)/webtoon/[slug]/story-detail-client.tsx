@@ -49,6 +49,9 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
   const [reportReason, setReportReason] = useState('Contenu offensant');
   const [isReporting, setIsReporting] = useState(false);
 
+  // New state for chapter visibility management
+  const [showAllChapters, setShowAllChapters] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -162,6 +165,9 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
       setIsReporting(false);
     }
   };
+
+  const displayedChapters = showAllChapters ? story.chapters : story.chapters?.slice(0, 10);
+  const hasMoreChapters = (story.chapters?.length || 0) > 10;
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20">
@@ -341,39 +347,54 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                   </div>
                 </Card>
 
-                <div className="space-y-3">
-                  {story.chapters?.map((chap, i) => (
-                    <Link key={chap.id} href={`/webtoon-hub/${story.slug}/${chap.slug}`} className="block group">
-                      <div className={cn(
-                        "flex items-center gap-6 p-6 rounded-3xl border transition-all hover:shadow-2xl hover:-translate-y-1",
-                        libraryEntry?.lastReadChapterId === chap.id 
-                          ? "bg-primary/5 border-primary/30" 
-                          : "bg-card/50 border-white/5 hover:border-primary/30"
-                      )}>
+                {/* Sticky container for chapters list on desktop */}
+                <div className="lg:sticky lg:top-20 lg:max-h-[60vh] lg:overflow-y-auto pr-2 hide-scrollbar">
+                  <div className="space-y-3">
+                    {displayedChapters?.map((chap, i) => (
+                      <Link key={chap.id} href={`/webtoon-hub/${story.slug}/${chap.slug}`} className="block group">
                         <div className={cn(
-                          "h-16 w-16 rounded-2xl flex items-center justify-center font-display font-black transition-all text-2xl",
+                          "flex items-center gap-6 p-6 rounded-3xl border transition-all hover:shadow-2xl hover:-translate-y-1",
                           libraryEntry?.lastReadChapterId === chap.id 
-                            ? "bg-primary text-black" 
-                            : "bg-white/5 text-stone-600 group-hover:text-primary group-hover:bg-primary/10"
+                            ? "bg-primary/5 border-primary/30" 
+                            : "bg-card/50 border-white/5 hover:border-primary/30"
                         )}>
-                          {chap.chapterNumber}
+                          <div className={cn(
+                            "h-16 w-16 rounded-2xl flex items-center justify-center font-display font-black transition-all text-2xl",
+                            libraryEntry?.lastReadChapterId === chap.id 
+                              ? "bg-primary text-black" 
+                              : "bg-white/5 text-stone-600 group-hover:text-primary group-hover:bg-primary/10"
+                          )}>
+                            {chap.chapterNumber}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">
+                              {chap.title}
+                              {libraryEntry?.lastReadChapterId === chap.id && (
+                                <span className="ml-3 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/30 px-2 py-0.5 rounded-full">Lecture actuelle</span>
+                              )}
+                            </h4>
+                            <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em] mt-1">Saison 1 &bull; Publié le 12 Fév.</p>
+                          </div>
+                          {chap.isPremium ? (
+                            <div className="bg-primary/10 p-3 rounded-full text-primary shadow-lg"><Crown className="h-5 w-5" /></div>
+                          ) : (
+                            <div className="bg-emerald-500/10 p-3 rounded-full text-emerald-500"><Check className="h-5 w-5" /></div>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">
-                            {chap.title}
-                            {libraryEntry?.lastReadChapterId === chap.id && <span className="ml-3 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/30 px-2 py-0.5 rounded-full">Lecture actuelle</span>}
-                          </h4>
-                          <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em] mt-1">Saison 1 &bull; Publié le 12 Fév.</p>
-                        </div>
-                        {chap.isPremium ? (
-                          <div className="bg-primary/10 p-3 rounded-full text-primary shadow-lg"><Crown className="h-5 w-5" /></div>
-                        ) : (
-                          <div className="bg-emerald-500/10 p-3 rounded-full text-emerald-500"><Check className="h-5 w-5" /></div>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
+
+                {hasMoreChapters && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setShowAllChapters(!showAllChapters)}
+                    className="w-full text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-primary transition-all mt-4 border border-dashed border-white/10 rounded-2xl h-14"
+                  >
+                    {showAllChapters ? "Réduire la liste" : `Tout afficher (${story.chapters?.length} épisodes)`}
+                  </Button>
+                )}
               </TabsContent>
             </Tabs>
           </section>
