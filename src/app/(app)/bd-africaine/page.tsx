@@ -1,46 +1,111 @@
+'use client';
+
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
-import { Book } from 'lucide-react';
+import { Book, Loader2, Sparkles, ChevronRight, Zap, Flame, LayoutGrid } from 'lucide-react';
 import type { Story } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-export const revalidate = 3600; // ISR
-
-export default async function BdAfricaineListingPage() {
-  const q = query(
-    collection(db, 'stories'), 
-    where('format', '==', 'BD'),
-    where('isPublished', '==', true),
-    where('isBanned', '==', false),
-    orderBy('updatedAt', 'desc')
-  );
-  
-  const snap = await getDocs(q);
-  const comics = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+export default function BdAfricaineListingPage() {
+  const { data: comics = [], isLoading } = useQuery({
+    queryKey: ['bd-africaine-listing'],
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'stories'), 
+        where('format', 'in', ['BD', 'One-shot']),
+        where('isPublished', '==', true),
+        orderBy('updatedAt', 'desc')
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+    }
+  });
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="bg-primary/10 p-3 rounded-full">
-            <Book className="w-10 h-10 text-primary" />
+    <div className="container max-w-7xl mx-auto px-6 py-12 flex-1 space-y-16">
+      {/* 1. IMMERSIVE HUB HEADER */}
+      <header className="relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+          <div className="space-y-6 text-center lg:text-left flex-1">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
+              <Book className="h-4 w-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Le 9ème Art Africain</span>
+            </div>
+            <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter leading-none">
+              L'Art du <br/><span className="gold-resplendant">9ème Continent</span>
+            </h1>
+            <p className="text-lg text-stone-400 font-light italic max-w-xl">
+              "L'expérience classique sublimée. Des pages fixes, des compositions de cases audacieuses et des récits complets qui marquent l'esprit."
+            </p>
+            <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
+              <Button className="rounded-full px-8 bg-primary text-black font-black gold-shimmer h-12">Derniers Albums</Button>
+              <Button variant="outline" className="rounded-full px-8 border-white/10 text-white font-bold h-12 hover:bg-white/5">Histoires Complètes</Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-primary">100%</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Cases & Bulles</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
+              <p className="text-3xl font-black text-emerald-500">HD</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Qualité</p>
+            </div>
+          </div>
         </div>
-        <h1 className="text-4xl font-bold font-display">Bandes Dessinées Africaines</h1>
-      </div>
-      <p className="text-lg text-muted-foreground mb-12">
-        Explorez notre catalogue de bandes dessinées traditionnelles. Des récits épiques présentés dans un format de lecture paginé classique.
-      </p>
+      </header>
 
-      {comics.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-          {comics.map((story) => (
-            <StoryCard key={story.id} story={story} />
-          ))}
+      {/* 2. LISTING GRID */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-stone-500 font-display font-bold uppercase text-[10px] tracking-widest animate-pulse">Consultation des manuscrits...</p>
         </div>
       ) : (
-        <div className="text-center py-24 border rounded-xl bg-card/50">
-            <p className="text-muted-foreground italic">Aucune bande dessinée n'est disponible pour le moment.</p>
+        <div className="space-y-10">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Archives de la BD</h2>
+            </div>
+            <Badge variant="outline" className="border-white/10 text-stone-500 text-[9px] uppercase font-black px-3">{comics.length} Œuvres</Badge>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {comics.map((story) => (
+              <StoryCard key={story.id} story={story} />
+            ))}
+          </div>
+
+          {comics.length === 0 && (
+            <div className="text-center py-32 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
+                <p className="text-stone-500 italic font-light">Aucune bande dessinée n'est encore référencée dans ces archives.</p>
+            </div>
+          )}
         </div>
       )}
+
+      {/* 3. CTA BOTTOM */}
+      <section className="py-24 border-t border-white/5 text-center space-y-8">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="bg-primary/10 p-4 rounded-3xl w-fit mx-auto mb-4">
+            <LayoutGrid className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-3xl font-display font-black text-white">Prêt pour une lecture épique ?</h2>
+          <p className="text-stone-400 font-light italic">"Soutenez les artistes africains et débloquez des récits fondateurs de notre culture."</p>
+          <Button asChild size="lg" className="rounded-full px-12 h-16 font-black text-xl bg-primary text-black gold-shimmer">
+            <Link href="/signup">Rejoindre la Communauté</Link>
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
