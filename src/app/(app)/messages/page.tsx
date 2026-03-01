@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,47 +14,54 @@ import {
 import Link from "next/link";
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, limit, getDocs, doc, getDoc } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  limit, 
+  getDocs, 
+  doc, 
+  getDoc, 
+  onSnapshot, 
+  orderBy, 
+  addDoc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MessagesPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('direct');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
+  const [isSending, setIsSubmitting] = useState(false);
+  const scrollEndRef = useRef<HTMLDivElement>(null);
 
-  // Simulation de chats d'équipe
-  const projectChats = [
-    { 
-      id: 'p1', 
-      type: 'project', 
-      name: 'Orisha Chronicles - Team', 
-      members: 4, 
-      lastMsg: 'Amina: Le lineart du Chap 14 est fini.',
-      photo: 'https://res.cloudinary.com/demo/image/upload/v1/samples/stories/orisha-chronicles.jpg'
-    },
-    { 
-      id: 'p2', 
-      type: 'project', 
-      name: 'Cyber-Reines - Prod', 
-      members: 3, 
-      lastMsg: 'Koffi: J\'ai mis à jour les palettes.',
-      photo: 'https://res.cloudinary.com/demo/image/upload/v1/samples/stories/scifi-africa.jpg'
-    }
-  ];
+  // 1. Auth State
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
 
+  // 2. Fetch Contact List
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const q = query(collection(db, 'users'), limit(10));
+        const q = query(collection(db, 'users'), limit(20));
         const querySnapshot = await getDocs(q);
-        const fetchedUsers = querySnapshot.docs.map(doc => ({
-          ...doc.data()
-        } as UserProfile));
+        const fetchedUsers = querySnapshot.docs
+          .map(doc => ({ ...doc.data() } as UserProfile))
+          .filter(u => u.uid !== auth.currentUser?.uid);
         setUsers(fetchedUsers);
-        if (fetchedUsers.length > 0) {
+        if (fetchedUsers.length > 0 && !selectedChat) {
           setSelectedChat(fetchedUsers[0]);
         }
       } catch (error) {
@@ -63,9 +70,62 @@ export default function MessagesPage() {
         setLoading(false);
       }
     }
+    if (currentUser) fetchUsers();
+  }, [currentUser]);
 
-    fetchUsers();
-  }, []);
+  // 3. Real-time Messages Listener
+  useEffect(() => {
+    if (!currentUser || !selectedChat) return;
+
+    // Generate a unique conversation ID for DM
+    const participants = [currentUser.uid, selectedChat.uid || selectedChat.id].sort();
+    const convId = participants.join('_');
+
+    const msgsRef = collection(db, 'conversations', convId, 'messages');
+    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(50));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setMessages(newMessages);
+      // Auto-scroll to bottom
+      setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }, (error) => {
+      console.error("Messages listener error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, selectedChat]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim() || !currentUser || !selectedChat || isSending) return;
+
+    setIsSubmitting(true);
+    try {
+      const participants = [currentUser.uid, selectedChat.uid || selectedChat.id].sort();
+      const convId = participants.join('_');
+      
+      const msgsRef = collection(db, 'conversations', convId, 'messages');
+      
+      await addDoc(msgsRef, {
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName || 'Voyageur',
+        text: messageText.trim(),
+        createdAt: serverTimestamp(),
+        read: false,
+        type: 'text'
+      });
+
+      setMessageText('');
+    } catch (error) {
+      toast({ title: "Erreur d'envoi", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -113,46 +173,24 @@ export default function MessagesPage() {
                   <div className="relative">
                     <Avatar className="h-12 w-12 border-2 border-white/5">
                       <AvatarImage src={user.photoURL} />
-                      <AvatarFallback>{user.displayName?.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{user.displayName?.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-stone-900" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-0.5">
                       <p className="font-bold text-white truncate text-sm">{user.displayName}</p>
-                      <span className="text-[9px] text-stone-500 font-bold uppercase">10:33</span>
+                      <span className="text-[9px] text-stone-500 font-bold uppercase">Maintenant</span>
                     </div>
-                    <p className="text-xs text-stone-400 truncate font-light italic">"Salut ! Tu as lu le dernier..."</p>
+                    <p className="text-xs text-stone-400 truncate font-light italic">"Canal de discussion actif"</p>
                   </div>
                 </div>
               ))
             ) : (
-              projectChats.map((chat) => (
-                <div 
-                  key={chat.id} 
-                  onClick={() => setSelectedChat(chat)}
-                  className={cn(
-                    "flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border-2 border-transparent",
-                    selectedChat?.id === chat.id ? "bg-emerald-500/10 border-emerald-500/20" : "hover:bg-white/5"
-                  )}
-                >
-                  <div className="relative">
-                    <Avatar className="h-12 w-12 border-2 border-white/5 rounded-xl overflow-hidden">
-                      <AvatarImage src={chat.photo} className="object-cover" />
-                      <AvatarFallback className="rounded-xl">P</AvatarFallback>
-                    </Avatar>
-                    <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[8px] px-1 h-4 border-stone-900 min-w-[16px] flex items-center justify-center">3</Badge>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <p className="font-black text-white truncate text-sm tracking-tight">{chat.name}</p>
-                    </div>
-                    <p className="text-xs text-stone-400 truncate font-medium flex items-center gap-1.5">
-                        <Users className="h-3 w-3 text-emerald-500" /> {chat.members} co-créateurs
-                    </p>
-                  </div>
-                </div>
-              ))
+              <div className="p-8 text-center space-y-4">
+                <Users className="h-10 w-10 text-stone-700 mx-auto opacity-20" />
+                <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest leading-relaxed">Les chats d'équipe arrivent bientôt avec NexusHub Elite.</p>
+              </div>
             )}
           </div>
         </ScrollArea>
@@ -165,17 +203,15 @@ export default function MessagesPage() {
             {/* Chat header */}
             <div className="p-4 px-8 border-b border-white/5 flex items-center justify-between bg-white/5 backdrop-blur-2xl">
               <div className="flex items-center gap-4">
-                <Avatar className={cn("h-11 w-11 border-2", selectedChat.type === 'project' ? "rounded-xl border-emerald-500/30" : "border-primary/30")}>
+                <Avatar className={cn("h-11 w-11 border-2 border-primary/30")}>
                   <AvatarImage src={selectedChat.photoURL || selectedChat.photo} className="object-cover" />
-                  <AvatarFallback>{(selectedChat.displayName || selectedChat.name)?.slice(0, 2)}</AvatarFallback>
+                  <AvatarFallback className="bg-primary/5 text-primary font-bold">{(selectedChat.displayName || selectedChat.name)?.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-black text-white tracking-tight">{selectedChat.displayName || selectedChat.name}</h3>
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <p className="text-[9px] text-stone-400 uppercase font-black tracking-[0.2em]">
-                        {selectedChat.type === 'project' ? 'Canal de Production Actif' : 'En ligne'}
-                    </p>
+                    <p className="text-[9px] text-stone-400 uppercase font-black tracking-[0.2em]">En ligne — Chat direct sécurisé</p>
                   </div>
                 </div>
               </div>
@@ -189,75 +225,74 @@ export default function MessagesPage() {
 
             {/* Chat messages */}
             <ScrollArea className="flex-1 p-8">
-              <div className="max-w-4xl mx-auto space-y-10">
-                <div className="flex justify-center">
-                  <Badge variant="secondary" className="bg-white/5 text-stone-500 text-[9px] px-4 rounded-full uppercase tracking-[0.3em] font-black border-white/5">Session Sécurisée</Badge>
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="flex justify-center mb-10">
+                  <Badge variant="secondary" className="bg-white/5 text-stone-500 text-[9px] px-4 rounded-full uppercase tracking-[0.3em] font-black border-white/5">Session de messagerie sécurisée</Badge>
                 </div>
 
-                {/* Simulated Project Conversation */}
-                {selectedChat.type === 'project' ? (
-                    <div className="space-y-8">
-                        <div className="flex justify-start gap-4 max-w-[85%]">
-                            <Avatar className="h-9 w-9 mt-1 border border-white/10"><AvatarImage src="https://picsum.photos/seed/amina/100/100" /></Avatar>
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Amina (Dessinatrice)</p>
-                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl rounded-tl-none shadow-sm text-stone-200">
-                                    <p className="text-sm leading-relaxed">Salut l'équipe ! J'ai terminé l'encrage des 5 premières pages. Koffi, tu peux commencer à poser les bases de couleurs ?</p>
-                                    <div className="mt-4 p-3 bg-black/40 rounded-xl border border-white/5 flex items-center gap-3">
-                                        <div className="h-10 w-10 bg-emerald-500/20 rounded-lg flex items-center justify-center"><Zap className="h-5 w-5 text-emerald-500" /></div>
-                                        <div className="flex-1">
-                                            <p className="text-[10px] font-bold text-white">Ch14_Lineart_v1.psd</p>
-                                            <p className="text-[8px] text-stone-500">12.4 MB &bull; Ajouté à l'Atelier</p>
-                                        </div>
-                                        <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black text-emerald-500">VOIR</Button>
-                                    </div>
-                                </div>
-                                <p className="text-[9px] text-stone-600 font-bold">10:30 AM</p>
-                            </div>
+                {messages.length > 0 ? messages.map((msg) => {
+                  const isMe = msg.senderId === currentUser?.uid;
+                  return (
+                    <div key={msg.id} className={cn(
+                      "flex gap-4 max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      isMe ? "ml-auto flex-row-reverse" : "mr-auto"
+                    )}>
+                      {!isMe && (
+                        <Avatar className="h-8 w-8 mt-1 border border-white/10 shrink-0">
+                          <AvatarImage src={selectedChat.photoURL} />
+                          <AvatarFallback>{selectedChat.displayName?.slice(0,1)}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div className={cn("space-y-1.5", isMe ? "text-right" : "text-left")}>
+                        <div className={cn(
+                          "p-4 rounded-2xl shadow-sm text-sm leading-relaxed",
+                          isMe 
+                            ? "bg-primary text-black font-medium rounded-tr-none" 
+                            : "bg-white/5 border border-white/5 text-stone-200 rounded-tl-none"
+                        )}>
+                          <p>{msg.text}</p>
                         </div>
-
-                        <div className="flex justify-end gap-4 ml-auto max-w-[85%]">
-                            <div className="space-y-2 text-right">
-                                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Vous (Scénariste)</p>
-                                <div className="bg-primary text-black p-4 rounded-2xl rounded-tr-none shadow-2xl font-medium">
-                                    <p className="text-sm leading-relaxed">Génial Amina ! Le rendu est super dynamique. J'ajoute les bulles de dialogue finales cet après-midi.</p>
-                                </div>
-                                <div className="flex justify-end items-center gap-1.5 mt-1.5">
-                                    <p className="text-[9px] text-stone-600 font-bold">10:35 AM</p>
-                                    <span className="text-primary"><Check className="h-3 w-3" /></span>
-                                </div>
-                            </div>
-                        </div>
+                        <p className="text-[8px] text-stone-600 font-bold uppercase">
+                          {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                        </p>
+                      </div>
                     </div>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center py-20 opacity-40">
-                        <Zap className="h-12 w-12 text-primary mb-4" />
-                        <p className="text-stone-500 italic text-sm">Début de votre conversation avec {selectedChat.displayName}...</p>
-                    </div>
+                  );
+                }) : (
+                  <div className="flex flex-col items-center justify-center py-20 opacity-40 text-center space-y-4">
+                    <MessageSquare className="h-12 w-12 text-primary" />
+                    <p className="text-stone-500 italic text-sm">Aucun message pour le moment.<br/>Engagez la conversation avec {selectedChat.displayName}.</p>
+                  </div>
                 )}
+                <div ref={scrollEndRef} />
               </div>
             </ScrollArea>
 
             {/* Chat input */}
-            <div className="p-6 md:p-8 bg-white/5 border-t border-white/5 backdrop-blur-3xl">
+            <form onSubmit={handleSendMessage} className="p-6 md:p-8 bg-white/5 border-t border-white/5 backdrop-blur-3xl">
               <div className="max-w-4xl mx-auto flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-12 w-12 bg-white/5"><Paperclip className="h-5 w-5" /></Button>
+                <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-12 w-12 bg-white/5"><Paperclip className="h-5 w-5" /></Button>
                 <div className="relative flex-1">
                   <Input 
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    placeholder="Écrivez un message à l'équipe..." 
+                    placeholder="Écrivez votre message..." 
                     className="pr-12 bg-white/5 border-white/10 rounded-2xl h-14 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-600" 
                   />
-                  <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 hover:text-white h-10 w-10">
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 hover:text-white h-10 w-10">
                     <Smile className="h-5 w-5" />
                   </Button>
                 </div>
-                <Button size="icon" className="rounded-2xl h-14 w-14 bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all active:scale-90">
-                  <SendHorizonal className="h-6 w-6 text-black" />
+                <Button 
+                  type="submit" 
+                  disabled={!messageText.trim() || isSending}
+                  size="icon" 
+                  className="rounded-2xl h-14 w-14 bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all active:scale-90"
+                >
+                  {isSending ? <Loader2 className="h-5 w-5 animate-spin text-black" /> : <SendHorizonal className="h-6 w-6 text-black" />}
                 </Button>
               </div>
-            </div>
+            </form>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-6">
@@ -267,7 +302,7 @@ export default function MessagesPage() {
             <div>
                 <h3 className="text-3xl font-black font-display text-white mb-2 tracking-tight">Vos Conversations</h3>
                 <p className="text-stone-500 max-w-sm font-light italic leading-relaxed">
-                  Sélectionnez un co-créateur ou un canal de projet pour coordonner votre prochaine production légendaire.
+                  Sélectionnez un membre de la communauté pour échanger sur vos récits favoris ou collaborer sur un projet.
                 </p>
             </div>
           </div>
