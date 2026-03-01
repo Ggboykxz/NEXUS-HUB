@@ -122,7 +122,7 @@ export interface Chapter {
   releaseDate: Timestamp | string;
   views: number;
   likes: number;
-  pages: string[];                  // URLs directes
+  pages: { imageUrl: string; width: number; height: number }[];
   isLocked: boolean;
   isPremium?: boolean;
   publishedAt: Timestamp | string;
@@ -212,8 +212,9 @@ export interface Product {
  */
 export const getStoryUrl = (story: { format: string, slug: string } | string) => {
   if (typeof story === 'string') return `/read/${story}`; // Fallback pour les anciens appels basés sur l'ID
-  if (story.format === 'BD') return `/bd-africaine/${story.slug}`;
-  return `/webtoon-hub/${story.slug}`;
+  if (typeof story === 'object' && story.format === 'BD') return `/bd-africaine/${story.slug}`;
+  if (typeof story === 'object') return `/webtoon-hub/${story.slug}`;
+  return '/';
 };
 
 export const getChapterUrl = (storySlug: string, chapterSlug: string) => `/webtoon-hub/${storySlug}/${chapterSlug}`;

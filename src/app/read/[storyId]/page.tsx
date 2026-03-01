@@ -517,10 +517,10 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
         <main className="flex-1 bg-black min-w-0">
           <div className="w-full max-w-[800px] mx-auto flex flex-col items-center">
-            {pages.length > 0 ? pages.map((pageUrl, index) => (
+            {pages.length > 0 ? pages.map((page, index) => (
               <div key={index} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000">
                 <Image
-                  src={getOptimizedImage(pageUrl, { width: 1000, quality: 90 })}
+                  src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
                   alt={`Page ${index + 1}`}
                   fill
                   className="object-contain md:object-cover"
