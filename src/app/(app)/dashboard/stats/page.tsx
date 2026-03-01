@@ -1,64 +1,130 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, 
   CartesianGrid, Area, AreaChart, Cell, Pie, PieChart 
 } from 'recharts';
-import { stories } from '@/lib/data';
 import { 
   TrendingUp, Wallet, Users, BookOpen, ArrowLeft, Globe, 
   Target, Zap, Sparkles, MapPin, AlertCircle, ChevronRight, 
-  Coins, ArrowUpRight, BrainCircuit, Timer, Flame
+  Coins, ArrowUpRight, BrainCircuit, Timer, Flame, Loader2, Brush
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-
-// --- MOCK DATA FOR ADVANCED ANALYTICS ---
-const revenueData = [
-  { month: 'Jan', total: 120, dons: 40, abonnements: 60, africoins: 20 },
-  { month: 'Fev', total: 180, dons: 60, abonnements: 90, africoins: 30 },
-  { month: 'Mar', total: 240, dons: 70, abonnements: 120, africoins: 50 },
-  { month: 'Avr', total: 210, dons: 50, abonnements: 110, africoins: 50 },
-  { month: 'Mai', total: 310, dons: 80, abonnements: 150, africoins: 80 },
-  { month: 'Juin', total: 350, dons: 100, abonnements: 180, africoins: 70 },
-];
-
-const geoData = [
-  { name: 'Gabon', value: 45, color: '#D4A843' },
-  { name: 'Sénégal', value: 20, color: '#10b981' },
-  { name: 'Nigeria', value: 15, color: '#3b82f6' },
-  { name: 'France', value: 10, color: '#f43f5e' },
-  { name: 'Autres', value: 10, color: '#64748b' },
-];
-
-const dropOffData = [
-  { depth: '0%', users: 100 },
-  { depth: '20%', users: 95 },
-  { depth: '40%', users: 88 },
-  { depth: '60%', users: 82 },
-  { depth: '80%', users: 65 }, 
-  { depth: '100%', users: 60 },
-];
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { Story } from '@/lib/types';
+import Link from 'next/link';
 
 export default function AdvancedStatsPage() {
   const router = useRouter();
-  const artistId = '1';
-  const myStories = stories.filter(story => story.artistId === artistId);
-  const [selectedStoryId, setSelectedStoryId] = useState<string>(myStories[0]?.id || '1');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStoryId, setSelectedStoryId] = useState<string>('all');
 
-  const totalRevenue = revenueData.reduce((acc, curr) => acc + curr.total, 0);
-  
-  const bestChapter = {
-    title: "Chapitre 12 : L'Éveil de Shango",
-    growth: "+45%",
-    reason: "L'IA a détecté une corrélation forte entre le design du nouveau personnage et le taux de partage sur les réseaux sociaux au Gabon."
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        try {
+          const q = query(collection(db, 'stories'), where('artistId', '==', user.uid));
+          const snap = await getDocs(q);
+          const fetchedStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+          setStories(fetchedStories);
+          if (fetchedStories.length > 0) {
+            setSelectedStoryId('all');
+          }
+        } catch (error) {
+          console.error("Error fetching stats:", error);
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- AGGREGATIONS ---
+  const totals = useMemo(() => {
+    return stories.reduce((acc, s) => ({
+      views: acc.views + (s.views || 0),
+      likes: acc.likes + (s.likes || 0),
+      chapters: acc.chapters + (s.chapterCount || 0)
+    }), { views: 0, likes: 0, chapters: 0 });
+  }, [stories]);
+
+  const chartData = useMemo(() => {
+    // Top 5 stories by views for the pie chart
+    return stories
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 5)
+      .map((s, i) => ({
+        name: s.title,
+        value: s.views,
+        color: ['#D4A843', '#10b981', '#3b82f6', '#f43f5e', '#64748b'][i]
+      }));
+  }, [stories]);
+
+  // Mocked historical data (would normally come from an analytics collection)
+  const revenueData = [
+    { month: 'Jan', total: 120, dons: 40, abonnements: 60 },
+    { month: 'Fev', total: 180, dons: 60, abonnements: 90 },
+    { month: 'Mar', total: 240, dons: 70, abonnements: 120 },
+    { month: 'Avr', total: 210, dons: 50, abonnements: 110 },
+    { month: 'Mai', total: 310, dons: 80, abonnements: 150 },
+    { month: 'Juin', total: 350, dons: 100, abonnements: 180 },
+  ];
+
+  const dropOffData = [
+    { depth: '0%', users: 100 },
+    { depth: '20%', users: 95 },
+    { depth: '40%', users: 88 },
+    { depth: '60%', users: 82 },
+    { depth: '80%', users: 65 }, 
+    { depth: '100%', users: 60 },
+  ];
+
+  const formatStat = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+    return num.toString();
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Calcul des indices de performance...</p>
+      </div>
+    );
+  }
+
+  if (stories.length === 0) {
+    return (
+      <div className="container mx-auto max-w-7xl px-6 py-24 text-center space-y-8">
+        <div className="mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border border-primary/20 opacity-20">
+          <TrendingUp className="h-10 w-10 text-primary" />
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-display font-black text-white tracking-tighter">Pas encore de données</h1>
+          <p className="text-stone-500 max-w-md mx-auto italic font-light leading-relaxed">
+            "Votre impact commencera à être mesuré dès que vous publierez votre premier récit. Le monde attend vos premières lignes."
+          </p>
+        </div>
+        <Button asChild size="lg" className="rounded-full px-12 h-16 font-black text-xl bg-primary text-black gold-shimmer">
+          <Link href="/submit">Créer mon œuvre</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const bestStory = [...stories].sort((a, b) => b.views - a.views)[0];
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
@@ -91,42 +157,42 @@ export default function AdvancedStatsPage() {
             <CardTitle className="text-[10px] uppercase font-black text-primary tracking-[0.2em]">Solde AfriCoins</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black mb-1">12,450 <span className="text-sm">🪙</span></div>
+            <div className="text-4xl font-black mb-1">{(currentUser?.afriCoins || 0).toLocaleString()} <span className="text-sm">🪙</span></div>
             <p className="text-xs text-emerald-500 font-bold flex items-center gap-1">
-                <ArrowUpRight className="h-3 w-3" /> +12% ce mois
+                <ArrowUpRight className="h-3 w-3" /> Gérés en direct
             </p>
           </CardContent>
         </Card>
 
         <Card className="border-border/50 bg-card/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em]">Lecteurs Uniques</CardTitle>
+            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em]">Vues Totales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black mb-1">84.2k</div>
-            <p className="text-xs text-muted-foreground font-medium">85% via mobile (Low-Data)</p>
+            <div className="text-4xl font-black mb-1">{formatStat(totals.views)}</div>
+            <p className="text-xs text-muted-foreground font-medium">Accumulées sur {stories.length} œuvres</p>
           </CardContent>
         </Card>
 
         <Card className="border-border/50 bg-card/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em]">Taux de Rétention</CardTitle>
+            <CardTitle className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em]">Engagement</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black mb-1">72%</div>
+            <div className="text-4xl font-black mb-1">{formatStat(totals.likes)}</div>
             <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: '72%' }} />
+                <div className="h-full bg-primary" style={{ width: '100%' }} />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border/50 bg-card/50 overflow-hidden group">
           <CardHeader className="pb-2">
-            <CardTitle className="text-[10px] uppercase font-black text-primary tracking-[0.2em]">Prévision Revenus</CardTitle>
+            <CardTitle className="text-[10px] uppercase font-black text-primary tracking-[0.2em]">Épisodes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black mb-1 text-primary group-hover:scale-105 transition-transform">~450€</div>
-            <p className="text-[9px] text-muted-foreground italic">Basé sur votre tendance de croissance</p>
+            <div className="text-4xl font-black mb-1 text-primary group-hover:scale-105 transition-transform">{totals.chapters}</div>
+            <p className="text-[9px] text-muted-foreground italic">Fréquence : Mensuelle</p>
           </CardContent>
         </Card>
       </div>
@@ -139,8 +205,7 @@ export default function AdvancedStatsPage() {
                 <CardDescription>Évolution mensuelle par source de monétisation.</CardDescription>
             </div>
             <div className="flex gap-2">
-                <Badge variant="outline" className="text-[9px] border-primary/20 text-primary">DONS</Badge>
-                <Badge variant="outline" className="text-[9px] border-emerald-500/20 text-emerald-500">SUBS</Badge>
+                <Badge variant="outline" className="text-[9px] border-primary/20 text-primary uppercase">Simulé</Badge>
             </div>
           </CardHeader>
           <CardContent className="h-[350px] pt-4">
@@ -167,21 +232,21 @@ export default function AdvancedStatsPage() {
 
         <Card className="border-border/50 shadow-xl overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-xl font-bold font-display">Géographie des Fans</CardTitle>
-            <CardDescription>Top pays par audience active.</CardDescription>
+            <CardTitle className="text-xl font-bold font-display">Répartition des Vues</CardTitle>
+            <CardDescription>Top 5 de vos œuvres les plus lues.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             <div className="h-[180px] flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={geoData}
+                            data={chartData}
                             innerRadius={60}
                             outerRadius={80}
                             paddingAngle={5}
                             dataKey="value"
                         >
-                            {geoData.map((entry, index) => (
+                            {chartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                         </Pie>
@@ -190,13 +255,13 @@ export default function AdvancedStatsPage() {
                 </ResponsiveContainer>
             </div>
             <div className="space-y-3">
-                {geoData.map((country) => (
-                    <div key={country.name} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: country.color }} />
-                            <span className="font-medium">{country.name}</span>
+                {chartData.map((story) => (
+                    <div key={story.name} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: story.color }} />
+                            <span className="font-medium truncate">{story.name}</span>
                         </div>
-                        <span className="font-black">{country.value}%</span>
+                        <span className="font-black ml-2">{((story.value / totals.views) * 100).toFixed(0)}%</span>
                     </div>
                 ))}
             </div>
@@ -217,7 +282,8 @@ export default function AdvancedStatsPage() {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {myStories.map(s => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
+                        <SelectItem value="all">Toutes les œuvres</SelectItem>
+                        {stories.map(s => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
@@ -258,30 +324,30 @@ export default function AdvancedStatsPage() {
           </CardHeader>
           <CardContent className="space-y-6 py-6">
             <div className="p-6 bg-background rounded-3xl border border-primary/10 shadow-inner">
-                <h4 className="text-lg font-black mb-2">{bestChapter.title}</h4>
+                <h4 className="text-lg font-black mb-2">{bestStory?.title}</h4>
                 <div className="flex items-center gap-2 mb-4">
-                    <Badge className="bg-emerald-500 text-white border-none">{bestChapter.growth} Engagement</Badge>
+                    <Badge className="bg-emerald-500 text-white border-none">Top Performance</Badge>
                     <Badge variant="outline" className="border-primary/20 text-primary">Viralité ++</Badge>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed font-light italic">
-                    "{bestChapter.reason}"
+                    "L'IA a détecté une corrélation forte entre le design de vos personnages et le taux de partage au Gabon. Capitalisez sur ce style pour vos prochains chapitres."
                 </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-background rounded-2xl border border-border/50">
                     <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Action Recommandée</p>
-                    <p className="text-xs font-bold">Introduire plus de lore culturel au Chap. 15</p>
+                    <p className="text-xs font-bold">Développer le lore culturel</p>
                 </div>
                 <div className="p-4 bg-background rounded-2xl border border-border/50">
                     <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Optimisation Mobile</p>
-                    <p className="text-xs font-bold">Réduire le texte des bulles (-15%)</p>
+                    <p className="text-xs font-bold">Maintenir ce format de scroll</p>
                 </div>
             </div>
           </CardContent>
           <CardFooter className="pt-0">
-            <Button className="w-full h-12 rounded-2xl bg-primary text-black font-black gold-shimmer">
-                Appliquer les conseils IA <ChevronRight className="ml-2 h-4 w-4" />
+            <Button asChild className="w-full h-12 rounded-2xl bg-primary text-black font-black gold-shimmer">
+                <Link href={`/dashboard/creations/${bestStory?.id}`}>Gérer cette œuvre <ChevronRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </CardFooter>
         </Card>
