@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, 
-  ChevronDown, CircleDollarSign, Brush, Library, PenSquare, 
+  ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, PenSquare, 
   MoreHorizontal, Database, Cloud, Zap, Flame, Mic, LayoutGrid,
-  Bell, Coins
+  Bell, Coins, Layers, Book, Clock, CheckCircle2, TrendingUp, Eye
 } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -24,17 +24,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { useTranslation } from '../providers/language-provider';
 import { useGenres } from '../providers/genres-provider';
-import { LanguageSwitcher } from './language-switcher';
-import { ThemeToggle } from './theme-toggle';
+import { db, auth } from '@/lib/firebase';
+import { collection, limit, query, onSnapshot, doc, getDoc, where, orderBy, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import type { UserProfile, Story } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { db, auth } from '@/lib/firebase';
-import { collection, limit, query, onSnapshot, doc, getDoc, where } from 'firebase/firestore';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import type { UserProfile } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -54,12 +55,21 @@ export default function Header() {
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [hasMounted, setHasMounted] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
+  // Fetch top 3 stories for Mega Menu
+  const { data: trendingStories = [] } = useQuery({
+    queryKey: ['mega-menu-trending'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(3));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+    },
+    staleTime: 1000 * 60 * 15, // Cache for 15 mins
+  });
+
   useEffect(() => {
-    setHasMounted(true);
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
 
@@ -93,7 +103,6 @@ export default function Header() {
     };
   }, []);
 
-  // Separate Effect for real-time notifications to ensure proper cleanup on auth change
   useEffect(() => {
     if (!currentUser) {
       setUnreadCount(0);
@@ -152,8 +161,9 @@ export default function Header() {
 
   const NavLinkRenderer = ({ link, className } : { link: NavLink, className?: string }) => {
     const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
+    const isBrowse = link.label === t('nav.browse');
     
-    if (link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
+    if (isBrowse || link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
         <DropdownMenu open={openDropdown === link.label} onOpenChange={(open) => setOpenDropdown(open ? link.label : null)}>
           <div 
@@ -168,35 +178,106 @@ export default function Header() {
           >
             <DropdownMenuTrigger
               className={cn(
-                'flex items-center gap-1 hover:text-primary focus:text-primary transition-colors text-[11px] uppercase font-black tracking-widest',
+                'flex items-center gap-1 hover:text-primary focus:text-primary transition-colors text-[11px] uppercase font-black tracking-widest outline-none',
                 isActive ? 'text-foreground' : 'text-foreground/60'
               )}
             >
               <span>{link.label}</span>
               <ChevronDown className="h-3 w-3 opacity-50" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 p-2 rounded-2xl border-primary/10 bg-card/95 backdrop-blur-xl shadow-2xl">
-              {link.isGenreDropdown && (
-                <>
-                  <DropdownMenuItem asChild className="rounded-xl h-10">
-                    <Link href="/stories" className="flex items-center gap-3 font-bold"><LayoutGrid className="h-4 w-4 text-primary" />{t('nav.browse')} Tout</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-primary/5" />
-                  <DropdownMenuLabel className="text-[9px] uppercase font-black text-muted-foreground px-3 pt-3 pb-1 tracking-[0.2em]">Genres Populaires</DropdownMenuLabel>
-                  <div className="grid grid-cols-1 gap-0.5">
-                    {uniqueGenres.slice(0, 8).map((genre) => (
-                      <DropdownMenuItem key={`header-genre-${genre.slug}`} asChild className="rounded-xl h-10">
-                        <Link href={`/genre/${genre.slug}`} className="font-medium">{genre.name}</Link>
-                      </DropdownMenuItem>
-                    ))}
+            
+            <DropdownMenuContent 
+              align="start" 
+              className={cn(
+                "p-0 rounded-[2rem] border-primary/10 bg-card/95 backdrop-blur-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300",
+                isBrowse ? "w-[600px]" : "w-56 p-2"
+              )}
+            >
+              {isBrowse ? (
+                <div className="flex h-full">
+                  {/* Left Column: Navigation */}
+                  <div className="w-1/2 p-6 border-r border-white/5 space-y-6">
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mb-4">Bibliothèque</p>
+                      {[
+                        { label: 'Webtoon Hub', href: '/webtoon-hub', icon: Layers, color: 'text-primary' },
+                        { label: 'BD Africaine', href: '/bd-africaine', icon: Book, color: 'text-emerald-500' },
+                        { label: 'Séries en Cours', href: '/ongoing', icon: Clock, color: 'text-blue-500' },
+                        { label: 'Séries Terminées', href: '/completed', icon: CheckCircle2, color: 'text-orange-500' },
+                      ].map((item) => (
+                        <DropdownMenuItem key={item.href} asChild className="rounded-xl h-12 focus:bg-primary/5 cursor-pointer">
+                          <Link href={item.href} className="flex items-center gap-4">
+                            <div className={cn("p-2 rounded-lg bg-white/5", item.color)}>
+                              <item.icon className="h-4 w-4" />
+                            </div>
+                            <span className="font-bold text-sm text-foreground">{item.label}</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                    <div className="pt-4 border-t border-white/5">
+                      <Button asChild variant="ghost" className="w-full justify-between h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-primary">
+                        <Link href="/stories">Voir tout le catalogue <ChevronRight className="h-3 w-3" /></Link>
+                      </Button>
+                    </div>
                   </div>
+
+                  {/* Right Column: Trending */}
+                  <div className="w-1/2 bg-white/[0.02] p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.2em]">Tendances</p>
+                      <TrendingUp className="h-3 w-3 text-stone-600" />
+                    </div>
+                    <div className="space-y-4">
+                      {trendingStories.map((story) => (
+                        <Link key={story.id} href={`/webtoon-hub/${story.slug}`} className="flex items-center gap-4 group/item transition-all hover:translate-x-1">
+                          <div className="relative h-16 w-12 rounded-lg overflow-hidden border border-white/10 shadow-lg shrink-0">
+                            <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-white truncate group-hover/item:text-primary transition-colors">{story.title}</h4>
+                            <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">{story.genre}</p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Eye className="h-2.5 w-2.5 text-stone-600" />
+                              <span className="text-[8px] font-black text-stone-600">{(story.views / 1000).toFixed(1)}K</span>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="pt-2">
+                      <Card className="bg-primary/5 border border-primary/10 p-4 rounded-2xl">
+                        <p className="text-[9px] text-primary font-black uppercase leading-tight">Recommandation IA</p>
+                        <p className="text-[10px] text-stone-400 italic mt-1 font-light">"Basé sur vos lectures récentes."</p>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {link.isGenreDropdown && (
+                    <>
+                      <DropdownMenuItem asChild className="rounded-xl h-10">
+                        <Link href="/stories" className="flex items-center gap-3 font-bold"><LayoutGrid className="h-4 w-4 text-primary" />{t('nav.browse')} Tout</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-primary/5" />
+                      <DropdownMenuLabel className="text-[9px] uppercase font-black text-muted-foreground px-3 pt-3 pb-1 tracking-[0.2em]">Genres Populaires</DropdownMenuLabel>
+                      <div className="grid grid-cols-1 gap-0.5">
+                        {uniqueGenres.slice(0, 8).map((genre) => (
+                          <DropdownMenuItem key={`header-genre-${genre.slug}`} asChild className="rounded-xl h-10">
+                            <Link href={`/genre/${genre.slug}`} className="font-medium">{genre.name}</Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {link.subLinks?.map((sub) => (
+                    <DropdownMenuItem key={`sublink-${sub.href}`} asChild className="rounded-xl h-10">
+                      <Link href={sub.href} className="font-medium">{sub.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
                 </>
               )}
-              {link.subLinks?.map((sub) => (
-                <DropdownMenuItem key={`sublink-${sub.href}`} asChild className="rounded-xl h-10">
-                  <Link href={sub.href} className="font-medium">{sub.label}</Link>
-                </DropdownMenuItem>
-              ))}
             </DropdownMenuContent>
           </div>
         </DropdownMenu>
