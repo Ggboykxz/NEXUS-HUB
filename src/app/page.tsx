@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { 
   Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit, 
@@ -60,7 +61,7 @@ export default function RootHomePage() {
       <Header />
 
       {currentUser ? (
-        <UserHomeView profile={userProfile} currentUser={currentUser} popular={popular} />
+        <UserHomeView profile={userProfile} currentUser={currentUser} popular={popular} isLoadingPopular={isLoading} />
       ) : (
         <LandingView popular={popular} isLoading={isLoading} heroLoaded={heroLoaded} setHeroLoaded={setHeroLoaded} />
       )}
@@ -70,10 +71,34 @@ export default function RootHomePage() {
   );
 }
 
+// ==================== COMPOSANTS SKELETON ====================
+function StoryGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-[3/4] w-full bg-stone-800 rounded-xl" />
+          <Skeleton className="h-4 w-3/4 bg-stone-800" />
+          <Skeleton className="h-3 w-1/2 bg-stone-800/50" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SectionTitleSkeleton() {
+  return (
+    <div className="space-y-2 mb-8">
+      <Skeleton className="h-8 w-48 bg-stone-800" />
+      <Skeleton className="h-4 w-32 bg-stone-800/50" />
+    </div>
+  );
+}
+
 // ==================== VUE UTILISATEUR CONNECTÉ ====================
-function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile | null, currentUser: any, popular: Story[] }) {
+function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { profile: UserProfile | null, currentUser: any, popular: Story[], isLoadingPopular: boolean }) {
   
-  const { data: library = [] } = useQuery({
+  const { data: library = [], isLoading: isLoadingLibrary } = useQuery({
     queryKey: ['user-library-home', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
@@ -87,7 +112,7 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
     }
   });
 
-  const { data: followedUpdates = [] } = useQuery({
+  const { data: followedUpdates = [], isLoading: isLoadingFollowed } = useQuery({
     queryKey: ['user-followed-updates', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
@@ -132,9 +157,14 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
           </div>
           <Badge variant="outline" className="border-primary/20 text-primary text-[8px] font-black uppercase px-3">Algorithme Nexus v4</Badge>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {popular.slice(0, 5).map(s => <StoryCard key={s.id} story={s} />)}
-        </div>
+        
+        {isLoadingPopular ? (
+          <StoryGridSkeleton />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {popular.slice(0, 5).map(s => <StoryCard key={s.id} story={s} />)}
+          </div>
+        )}
       </section>
 
       <section className="space-y-8">
@@ -148,7 +178,20 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
           <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</Link>
         </div>
 
-        {library.length > 0 ? (
+        {isLoadingLibrary ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-5 flex items-center gap-5">
+                <Skeleton className="h-24 w-16 rounded-xl bg-stone-800 shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-4 w-3/4 bg-stone-800" />
+                  <Skeleton className="h-2 w-full bg-stone-800" />
+                  <Skeleton className="h-6 w-full bg-stone-800 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : library.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {library.map((entry) => (
               <div key={entry.storyId} className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-5 flex items-center gap-5 hover:border-primary/20 transition-all group shadow-xl">
@@ -189,16 +232,20 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
           <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3">NOUVEAU</Badge>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {followedUpdates.map(s => (
-            <div key={s.id} className="relative group">
-              <StoryCard story={s} />
-              <div className="absolute -top-2 -right-2 bg-rose-600 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-stone-950 animate-bounce">
-                NOUVEAU
+        {isLoadingFollowed ? (
+          <StoryGridSkeleton />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {followedUpdates.map(s => (
+              <div key={s.id} className="relative group">
+                <StoryCard story={s} />
+                <div className="absolute -top-2 -right-2 bg-rose-600 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-stone-950 animate-bounce">
+                  NOUVEAU
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="p-10 rounded-[3rem] bg-stone-900 border border-white/5 relative overflow-hidden shadow-2xl">
@@ -239,7 +286,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
     if (popular.length === 0) return;
     const interval = setInterval(() => {
       setHeroLoaded(false);
-      setHeroIndex((prev) => (prev + 1) % Math.min(5, popular.length));
+      setHeroIndex((prev: number) => (prev + 1) % Math.min(5, popular.length));
     }, 8000);
     return () => clearInterval(interval);
   }, [popular.length, setHeroLoaded]);
@@ -252,7 +299,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-transparent to-stone-950 z-10 pointer-events-none" />
         <div className="relative w-full min-h-[85vh] flex items-end">
-          {featured && (
+          {featured ? (
             <div className="absolute inset-0 transition-opacity duration-1000">
               <Image
                 key={featured.id}
@@ -264,10 +311,13 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                   heroLoaded ? 'opacity-35 scale-100' : 'opacity-0 scale-105'
                 )}
                 priority
-                placeholder="blur"
-                blurDataURL={featured.coverImage.blurHash}
                 onLoad={() => setHeroLoaded(true)}
               />
+              <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
+            </div>
+          ) : (
+            <div className="absolute inset-0">
+              <Skeleton className="w-full h-full bg-stone-900 rounded-none animate-pulse" />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
             </div>
           )}
@@ -298,8 +348,13 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="h-24 w-full bg-stone-800 animate-pulse rounded-2xl" />
-                  <div className="h-12 w-3/4 bg-stone-800 animate-pulse rounded-2xl" />
+                  <Skeleton className="h-4 w-24 bg-stone-800" />
+                  <Skeleton className="h-20 w-full bg-stone-800" />
+                  <Skeleton className="h-20 w-3/4 bg-stone-800" />
+                  <div className="flex gap-4 pt-4">
+                    <Skeleton className="h-14 w-48 rounded-full bg-stone-800" />
+                    <Skeleton className="h-14 w-48 rounded-full bg-stone-800" />
+                  </div>
                 </div>
               )}
             </div>
@@ -307,7 +362,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
 
           {/* INDICATEURS HERO */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
-            {[...Array(Math.min(5, popular.length))].map((_, i) => (
+            {[...Array(Math.min(5, popular.length || 5))].map((_, i) => (
               <button
                 key={i}
                 onClick={() => { setHeroLoaded(false); setHeroIndex(i); }}
@@ -365,11 +420,16 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             </div>
             <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline">Voir tout le classement <ChevronRight className="h-3 w-3" /></Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {isLoading ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-xl" />) : popular.slice(0, 5).map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
-          </div>
+          
+          {isLoading ? (
+            <StoryGridSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {popular.slice(0, 5).map((story) => (
+                <StoryCard key={story.id} story={story} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="bg-stone-900 border border-primary/20 rounded-[3.5rem] p-12 relative overflow-hidden group shadow-2xl">
@@ -398,7 +458,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                 <p className="text-3xl font-black text-primary">5 000€</p>
                 <p className="text-[9px] text-stone-500 uppercase font-black">Grand Prix Cash</p>
               </Card>
-              <Card className="bg-white/5 border-white/5 p-6 rounded-[2rem] text-center space-y-2">
+              <Card className="bg-white/5 border-white/10 p-6 rounded-[2rem] text-center space-y-2">
                 <p className="text-3xl font-black text-emerald-500">50k 🪙</p>
                 <p className="text-[9px] text-stone-500 uppercase font-black">Bonus AfriCoins</p>
               </Card>
