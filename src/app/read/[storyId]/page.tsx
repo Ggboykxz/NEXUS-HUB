@@ -1,25 +1,24 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, CalendarDays, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Plus
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { getOptimizedImage } from '@/lib/image-utils';
-import type { Story, UserProfile, Chapter, Comment } from '@/lib/types';
+import type { Story, UserProfile, Chapter } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 
 // #region Page Components
@@ -31,7 +30,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
         <Link href="/" className="font-display font-black text-lg tracking-tighter text-foreground gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
         <div className="w-px h-5 bg-border hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href={`/webtoon/${story.slug}`} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px]">{story.title}</Link>
+          <Link href={`/webtoon-hub/${story.slug}`} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px]">{story.title}</Link>
           <ChevronRight className="h-4 w-4 hidden sm:block" />
           <span className="text-primary font-semibold whitespace-nowrap">Ep. {chapter?.chapterNumber || 1}</span>
         </div>
@@ -123,11 +122,11 @@ function ChaptersTab({ story }: { story: Story }) {
   return (
     <div className="p-6 space-y-8">
       <div className="flex gap-4 items-start pb-6 border-b border-white/5">
-        <Link href={`/webtoon/${story.slug}`} className="shrink-0">
+        <Link href={`/webtoon-hub/${story.slug}`} className="shrink-0">
             <Image src={story.coverImage.imageUrl} alt={story.title} width={64} height={96} className="rounded-xl object-cover shadow-lg border border-white/10 hover:border-primary transition-all" />
         </Link>
         <div className="min-w-0">
-          <Link href={`/webtoon/${story.slug}`}>
+          <Link href={`/webtoon-hub/${story.slug}`}>
             <h3 className="font-display font-black text-sm text-white mb-1 hover:text-primary transition-colors truncate">{story.title}</h3>
           </Link>
           <p className="text-[10px] text-primary font-black uppercase tracking-widest flex items-center gap-1.5 mb-3">
@@ -255,11 +254,13 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   const { storyId } = use(props.params);
   const { toast } = useToast();
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Firestore Data Fetching via React Query
   const { data: story, isLoading: loadingStory } = useQuery<Story>({
@@ -269,7 +270,6 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       if (!snap.exists()) throw new Error('Not Found');
       const data = snap.data();
       
-      // Fetch Chapters Subcollection
       const chaptersSnap = await getDocs(query(collection(db, 'stories', storyId, 'chapters'), orderBy('chapterNumber', 'asc')));
       const chapters = chaptersSnap.docs.map(d => ({ id: d.id, ...d.data() } as Chapter));
       
@@ -287,17 +287,53 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   });
 
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
-      const doc = document.documentElement;
+      const docHeight = document.documentElement.scrollHeight;
+      const windowHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
-      const totalHeight = doc.scrollHeight - window.innerHeight;
+      const totalHeight = docHeight - windowHeight;
       const scrollPercentage = totalHeight > 0 ? (scrollPosition / totalHeight) * 100 : 0;
+      
       setScrollProgress(scrollPercentage);
+
+      // Debounced save to Firestore
+      if (currentUser && story) {
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        
+        debounceTimer.current = setTimeout(async () => {
+          const currentChapter = story.chapters?.[0];
+          if (!currentChapter) return;
+
+          try {
+            await setDoc(doc(db, 'users', currentUser.uid, 'library', storyId), {
+              storyId: storyId,
+              storyTitle: story.title,
+              storyCover: story.coverImage.imageUrl,
+              lastReadChapterId: currentChapter.id,
+              lastReadChapterTitle: currentChapter.title,
+              lastReadChapterSlug: currentChapter.slug,
+              lastReadScrollPosition: scrollPosition,
+              progress: Math.round(scrollPercentage),
+              lastReadAt: serverTimestamp()
+            }, { merge: true });
+          } catch (e) {
+            console.error("Error saving reading progress:", e);
+          }
+        }, 2000);
+      }
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [currentUser, story, storyId]);
 
   if (loadingStory) {
     return (
@@ -310,7 +346,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
 
   if (!story) notFound();
   
-  const currentChapter = story.chapters?.[0]; // Par défaut premier chapitre
+  const currentChapter = story.chapters?.[0];
   const pages = currentChapter?.pages || [];
 
   const handleShare = () => {
@@ -359,7 +395,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
                 <h2 className="text-3xl font-display font-black text-white">Le chapitre est en cours de création</h2>
                 <p className="text-stone-500 italic max-w-sm mx-auto">"L'artiste prépare ses prochaines planches. Revenez bientôt pour la suite de l'aventure."</p>
                 <Button asChild variant="outline" className="rounded-full px-8 border-white/10 text-white">
-                  <Link href={`/webtoon/${story.slug}`}>Retour à l'œuvre</Link>
+                  <Link href={`/webtoon-hub/${story.slug}`}>Retour à l'œuvre</Link>
                 </Button>
               </div>
             )}
