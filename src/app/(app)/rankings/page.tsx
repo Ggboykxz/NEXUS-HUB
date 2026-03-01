@@ -122,8 +122,27 @@ function PodiumCard({ story, rank, metric }: { story: Story, rank: number, metri
 }
 
 function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
+  const [visibleCount, setVisibleCount] = useState(7); // Show podium + 7 items initially
   const top3 = stories.slice(0, 3);
   const others = stories.slice(3);
+  const visibleOthers = others.slice(0, visibleCount);
+
+  // Implement Infinite Scroll logic
+  useEffect(() => {
+    if (visibleCount >= others.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        // Load 10 more
+        setVisibleCount(prev => Math.min(prev + 10, others.length));
+      }
+    }, { threshold: 0.1, rootMargin: '100px' });
+
+    const sentinel = document.getElementById(`sentinel-${metric}`);
+    if (sentinel) observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [visibleCount, others.length, metric]);
 
   return (
     <div className="space-y-20 animate-in fade-in duration-1000">
@@ -138,9 +157,9 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
         </section>
       )}
 
-      {/* OTHERS LIST (4-20) */}
+      {/* OTHERS LIST (4-50) */}
       <div className="grid gap-6">
-        {others.map((story, index) => {
+        {visibleOthers.map((story, index) => {
           const storyUrl = getStoryUrl(story);
           const rank = index + 4;
 
@@ -213,6 +232,14 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
           );
         })}
       </div>
+
+      {/* INFINITE SCROLL SENTINEL */}
+      {visibleCount < others.length && (
+        <div id={`sentinel-${metric}`} className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+          <p className="text-[10px] text-stone-600 font-black uppercase tracking-[0.3em]">Ouverture des archives...</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -222,6 +249,7 @@ function ArtistRankingList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [visibleCount, setVisibleCount] = useState(10); // Show 10 artists initially
 
   useEffect(() => {
     return onAuthStateChanged(auth, (user) => setCurrentUser(user));
@@ -234,13 +262,31 @@ function ArtistRankingList() {
         collection(db, 'users'),
         where('role', 'in', ['artist_pro', 'artist_draft']),
         orderBy('subscribersCount', 'desc'),
-        limit(20)
+        limit(50)
       );
       const snap = await getDocs(q);
       return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
     },
     staleTime: 10 * 60 * 1000,
   });
+
+  const visibleArtists = artists.slice(0, visibleCount);
+
+  // Implement Infinite Scroll logic for Artists
+  useEffect(() => {
+    if (visibleCount >= artists.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => Math.min(prev + 10, artists.length));
+      }
+    }, { threshold: 0.1, rootMargin: '100px' });
+
+    const sentinel = document.getElementById('sentinel-artists');
+    if (sentinel) observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [visibleCount, artists.length]);
 
   const followMutation = useMutation({
     mutationFn: async ({ artistId, isFollowing }: { artistId: string, isFollowing: boolean }) => {
@@ -293,7 +339,7 @@ function ArtistRankingList() {
 
   return (
     <div className="grid gap-4 animate-in fade-in duration-700">
-      {artists.map((artist, index) => {
+      {visibleArtists.map((artist, index) => {
         const rank = index + 1;
         return (
           <Card key={artist.uid} className="bg-stone-900/30 border-white/5 rounded-3xl p-6 hover:border-primary/20 transition-all group">
@@ -337,6 +383,14 @@ function ArtistRankingList() {
           </Card>
         );
       })}
+
+      {/* INFINITE SCROLL SENTINEL FOR ARTISTS */}
+      {visibleCount < artists.length && (
+        <div id="sentinel-artists" className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+          <p className="text-[10px] text-stone-600 font-black uppercase tracking-[0.3em]">Appel des maîtres...</p>
+        </div>
+      )}
     </div>
   );
 }
