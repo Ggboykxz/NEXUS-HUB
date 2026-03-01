@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Story } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, limit, startAfter, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
 import { useGenres } from '@/components/providers/genres-provider';
+import { useQuery } from '@tanstack/react-query';
 
 function StoryGridSkeleton({ count = 10 }) {
   return (
@@ -40,77 +41,30 @@ function StoriesContent() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Pagination State
-  const [stories, setStories] = useState<Story[]>([]);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const PAGE_SIZE = 20;
-
-  const fetchStories = useCallback(async (isNextPage = false) => {
-    if (!isNextPage) {
-      setIsLoading(true);
-      setLastDoc(null);
-    } else {
-      setIsLoadingMore(true);
-    }
-
-    try {
+  const { data: stories = [], isLoading } = useQuery({
+    queryKey: ['stories-list', genreFilter, typeFilter, sortFilter],
+    queryFn: async () => {
       const storiesRef = collection(db, 'stories');
       let constraints: any[] = [where('isPublished', '==', true)];
 
-      // Apply Type Filter
       if (typeFilter === 'public') constraints.push(where('isPremium', '==', false));
       if (typeFilter === 'premium') constraints.push(where('isPremium', '==', true));
-      
-      // Apply Genre Filter
-      if (genreFilter !== 'all') {
-        constraints.push(where('genreSlug', '==', genreFilter));
-      }
+      if (genreFilter !== 'all') constraints.push(where('genreSlug', '==', genreFilter));
 
-      // Sort logic
       let orderField = 'views';
       if (sortFilter === 'newest') orderField = 'updatedAt';
       if (sortFilter === 'likes') orderField = 'likes';
       
       constraints.push(orderBy(orderField, 'desc'));
-
-      // Cursor for pagination
-      if (isNextPage && lastDoc) {
-        constraints.push(startAfter(lastDoc));
-      }
-
-      constraints.push(limit(PAGE_SIZE));
+      constraints.push(limit(40));
 
       const q = query(storiesRef, ...constraints);
       const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+  });
 
-      const fetchedStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
-      
-      if (isNextPage) {
-        setStories(prev => [...prev, ...fetchedStories]);
-      } else {
-        setStories(fetchedStories);
-      }
-
-      setLastDoc(snap.docs[snap.docs.length - 1] || null);
-      setHasMore(snap.docs.length === PAGE_SIZE);
-    } catch (error) {
-      console.error("Error fetching stories from Firestore:", error);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [genreFilter, typeFilter, sortFilter, lastDoc]);
-
-  // Reset pagination and fetch on filter changes
-  useEffect(() => {
-    fetchStories(false);
-  }, [genreFilter, typeFilter, sortFilter]);
-
-  // Client-side search within current results or for initial search
   const displayedStories = useMemo(() => {
     if (!searchQuery.trim()) return stories;
     const lowerTerm = searchQuery.toLowerCase();
@@ -122,7 +76,7 @@ function StoriesContent() {
 
   const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
-  if (isLoading && stories.length === 0) {
+  if (isLoading) {
     return (
       <div className="space-y-10">
         <StoryGridSkeleton count={10} />
@@ -227,36 +181,11 @@ function StoriesContent() {
       </div>
 
       {displayedStories.length > 0 ? (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12 animate-in fade-in duration-700">
-            {displayedStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
-          </div>
-          
-          {hasMore && (
-            <div className="mt-16 flex justify-center">
-              <Button 
-                onClick={() => fetchStories(true)} 
-                disabled={isLoadingMore}
-                variant="outline"
-                className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase tracking-widest gap-3 shadow-xl transition-all"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Chargement...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-5 w-5" />
-                    Charger plus de récits
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12 animate-in fade-in duration-700">
+          {displayedStories.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
       ) : (
         <div className="text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />

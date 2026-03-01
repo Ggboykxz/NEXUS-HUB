@@ -54,6 +54,7 @@ export default function RootHomePage() {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   return (
@@ -157,7 +158,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </button>
 
             <div className="relative z-10 space-y-10">
-              <div className="space-y-4 text-center md:text-left">
+              <div className="space-y-4 text-center md:text-left max-w-xl">
                 <Badge className="bg-primary text-black uppercase text-[10px] font-black tracking-widest px-4 py-1">NOUVEAU VOYAGEUR</Badge>
                 <h2 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter">Bienvenue au Hub, {profile?.displayName} !</h2>
                 <p className="text-stone-400 text-lg font-light italic max-w-2xl mx-auto md:mx-0">

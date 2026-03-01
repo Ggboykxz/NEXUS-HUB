@@ -238,7 +238,8 @@ function ArtistRankingList() {
       );
       const snap = await getDocs(q);
       return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-    }
+    },
+    staleTime: 10 * 60 * 1000,
   });
 
   const followMutation = useMutation({
@@ -344,23 +345,15 @@ export default function RankingsPage() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'popular';
   
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchAll() {
-      try {
-        const q = query(collection(db, 'stories'), limit(50));
-        const snap = await getDocs(q);
-        setStories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story)));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAll();
-  }, []);
+  const { data: stories = [], isLoading } = useQuery<Story[]>({
+    queryKey: ['rankings-stories'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), limit(50));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
   const popular = useMemo(() => [...stories].sort((a, b) => b.views - a.views), [stories]);
   const trending = useMemo(() => [...stories].sort((a, b) => b.likes - a.likes), [stories]);
@@ -368,7 +361,6 @@ export default function RankingsPage() {
 
   return (
     <div className="container max-w-7xl mx-auto px-6 py-12 space-y-16">
-      {/* 1. ELITE HEADER */}
       <header className="relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
@@ -395,8 +387,7 @@ export default function RankingsPage() {
         </div>
       </header>
 
-      {/* 2. RANKINGS TABS */}
-      {loading ? (
+      {isLoading ? (
         <div className="space-y-6">
           {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
         </div>
