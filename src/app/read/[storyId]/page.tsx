@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize, X, Palette, Sun
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,7 @@ import { getStoryUrl } from '@/lib/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,12 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 // #region Page Components
 
@@ -485,6 +492,10 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   
+  // Custom Reader Settings
+  const [readerBg, setReaderBg] = useState('#0a0a0a');
+  const [brightness, setBrightness] = useState(100);
+  
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -512,6 +523,35 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   });
 
   const currentChapter = story?.chapters?.[0];
+
+  // Load preferences
+  useEffect(() => {
+    const savedBg = localStorage.getItem('reader-bg');
+    const savedBrightness = localStorage.getItem('reader-brightness');
+    if (savedBg) setReaderBg(savedBg);
+    if (savedBrightness) setBrightness(parseInt(savedBrightness));
+  }, []);
+
+  const handleUpdateReaderSettings = async (type: 'bg' | 'brightness', value: any) => {
+    if (type === 'bg') {
+      setReaderBg(value);
+      localStorage.setItem('reader-bg', value);
+    } else {
+      setBrightness(value);
+      localStorage.setItem('reader-brightness', value.toString());
+    }
+
+    if (currentUser) {
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userRef, {
+          [`preferences.reader.${type === 'bg' ? 'background' : 'brightness'}`]: value
+        });
+      } catch (e) {
+        console.error("Error saving preferences to Firestore", e);
+      }
+    }
+  };
 
   const { data: isUnlocked, isLoading: checkingUnlock } = useQuery({
     queryKey: ['check-unlock', currentUser?.uid, currentChapter?.id],
@@ -728,7 +768,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   };
 
   return (
-    <div className="bg-stone-950 min-h-screen selection:bg-primary/20">
+    <div className="min-h-screen selection:bg-primary/20" style={{ backgroundColor: readerBg }}>
       <ProgressBar progress={scrollProgress} isVisible={isHeaderVisible} />
       
       <ReaderHeader 
@@ -736,7 +776,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         chapter={currentChapter}
         activeMode={activeMode}
         onModeChange={setActiveMode}
-        onSettingsToggle={() => setShowSettings(!showSettings)}
+        onSettingsToggle={() => setShowSettings(true)}
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
         isFullscreen={isFullscreen}
@@ -745,7 +785,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       />
       
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
-        <main className="flex-1 bg-black min-w-0">
+        <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
           <div className="w-full max-w-[800px] mx-auto flex flex-col items-center">
             {isLocked ? (
               <div className="py-48 px-6 text-center space-y-10 animate-in fade-in zoom-in-95 duration-700">
@@ -787,7 +827,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
             ) : (
               <>
                 {pages.length > 0 ? pages.map((page, index) => (
-                  <div key={index} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000">
+                  <div key={index} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000" style={{ filter: `brightness(${brightness}%)` }}>
                     <Image
                       src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
                       alt={`Page ${index + 1}`}
@@ -845,6 +885,83 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         commentsCount={commentsCount}
         isVisible={isHeaderVisible}
       />
+
+      {/* SETTINGS PANEL */}
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent side="right" className="bg-stone-900 border-white/5 text-white p-8 rounded-l-[3rem] w-full sm:max-w-md">
+          <SheetHeader className="mb-10">
+            <SheetTitle className="text-2xl font-display font-black text-white flex items-center gap-3">
+              <Settings className="h-6 w-6 text-primary" /> Réglages de Lecture
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-12">
+            {/* Background Selection */}
+            <div className="space-y-6">
+              <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 flex items-center gap-2">
+                <Palette className="h-3.5 w-3.5" /> Fond de lecture
+              </Label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'noir', color: '#0a0a0a', label: 'Noir' },
+                  { id: 'sepia', color: '#1a1208', label: 'Sépia' },
+                  { id: 'gris', color: '#1a1a1a', label: 'Gris' }
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => handleUpdateReaderSettings('bg', opt.color)}
+                    className={cn(
+                      "group flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all",
+                      readerBg === opt.color ? "border-primary bg-primary/10" : "border-white/5 bg-white/5 hover:bg-white/10"
+                    )}
+                  >
+                    <div className="h-8 w-8 rounded-full border border-white/10 shadow-lg" style={{ backgroundColor: opt.color }} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Brightness Slider */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 flex items-center gap-2">
+                  <Sun className="h-3.5 w-3.5" /> Luminosité
+                </Label>
+                <span className="text-xs font-black text-primary">{brightness}%</span>
+              </div>
+              <div className="px-2">
+                <Slider 
+                  min={70} 
+                  max={100} 
+                  step={1} 
+                  value={[brightness]} 
+                  onValueChange={(val) => handleUpdateReaderSettings('brightness', val[0])}
+                  className="py-4"
+                />
+              </div>
+              <p className="text-[9px] text-stone-600 italic leading-relaxed text-center px-4">
+                "Réduisez la luminosité pour soulager vos yeux lors des lectures nocturnes."
+              </p>
+            </div>
+
+            <Separator className="bg-white/5" />
+
+            <div className="space-y-4 pt-4">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-full uppercase text-[8px] font-black w-full justify-center">
+                Préférences synchronisées avec le Hub
+              </Badge>
+            </div>
+          </div>
+
+          <Button 
+            onClick={() => setShowSettings(false)}
+            className="absolute bottom-8 left-8 right-8 h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase text-xs hover:bg-white/10"
+          >
+            Fermer les réglages
+          </Button>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
