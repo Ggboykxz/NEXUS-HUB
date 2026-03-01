@@ -98,13 +98,13 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
     return () => unsubscribe();
   }, []);
 
-  // 1. Listen to Thread Document
+  // 1. Écoute du document Thread (Sujet principal)
   useEffect(() => {
     const threadRef = doc(db, 'forumThreads', threadId);
     const unsub = onSnapshot(threadRef, (docSnap) => {
       if (docSnap.exists()) {
         setThread({ id: docSnap.id, ...docSnap.data() });
-        // Increment views (simulated simple logic)
+        // Incrémentation des vues lors de l'accès
         updateDoc(threadRef, { views: increment(1) }).catch(() => {});
       } else {
         setThread(null);
@@ -114,7 +114,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
     return () => unsub();
   }, [threadId]);
 
-  // 2. Listen to Replies Subcollection
+  // 2. Écoute de la sous-collection de réponses (Replies)
   useEffect(() => {
     const repliesRef = collection(db, 'forumThreads', threadId, 'replies');
     const q = query(repliesRef, orderBy('createdAt', 'asc'));
@@ -147,7 +147,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
         createdAt: serverTimestamp()
       });
 
-      // Update reply count on main thread
+      // Mise à jour du compteur de réponses sur le sujet principal
       const threadRef = doc(db, 'forumThreads', threadId);
       await updateDoc(threadRef, { replies: increment(1) });
 
