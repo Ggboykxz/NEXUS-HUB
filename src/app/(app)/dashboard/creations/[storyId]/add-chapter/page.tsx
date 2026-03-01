@@ -25,7 +25,21 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { 
+  doc, 
+  getDoc, 
+  collection, 
+  addDoc, 
+  serverTimestamp, 
+  updateDoc, 
+  increment, 
+  setDoc, 
+  writeBatch, 
+  collectionGroup, 
+  query, 
+  where, 
+  getDocs 
+} from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -168,6 +182,55 @@ export default function AddChapterPage(props: PageProps) {
         chapterCount: increment(1),
         updatedAt: serverTimestamp()
       });
+
+      // 4. Notification Fan-out (Distribute to subscribers)
+      const subscribersQuery = query(
+        collectionGroup(db, 'subscriptions'),
+        where('artistId', '==', story?.artistId)
+      );
+      
+      const subscribersSnap = await getDocs(subscribersQuery);
+      
+      if (!subscribersSnap.empty) {
+        let batch = writeBatch(db);
+        let count = 0;
+
+        for (const subDoc of subscribersSnap.docs) {
+          // In Nexushub, user subscription is stored at users/{uid}/subscriptions/{artistId}
+          // The parent of parent doc is the user document
+          const subscriberId = subDoc.ref.parent.parent?.id;
+          if (!subscriberId) continue;
+
+          const notifRef = doc(collection(db, 'users', subscriberId, 'notifications'));
+          batch.set(notifRef, {
+            type: 'chapter',
+            storyId: storyId,
+            storyTitle: story?.title,
+            chapterTitle: title,
+            chapterNumber: chapterNumber,
+            artistId: story?.artistId,
+            artistName: story?.artistName,
+            fromDisplayName: story?.artistName,
+            fromPhoto: currentUser?.photoURL || '',
+            message: `vient de publier l'épisode ${chapterNumber} de "${story?.title}"`,
+            link: `/read/${storyId}`,
+            read: false,
+            createdAt: serverTimestamp()
+          });
+
+          count++;
+          // Firestore write batch limit is 500 operations
+          if (count === 500) {
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+          }
+        }
+
+        if (count > 0) {
+          await batch.commit();
+        }
+      }
 
       toast({ title: "Épisode publié !", description: `Le chapitre ${chapterNumber} est maintenant en ligne.` });
       router.push(`/dashboard/creations/${storyId}`);
