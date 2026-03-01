@@ -64,7 +64,7 @@ export default function RootHomePage() {
       {currentUser ? (
         <UserHomeView profile={userProfile} currentUser={currentUser} popular={popular} />
       ) : (
-        <LandingView featured={featured} popular={popular} isLoading={isLoading} heroLoaded={heroLoaded} setHeroLoaded={setHeroLoaded} />
+        <LandingView popular={popular} isLoading={isLoading} heroLoaded={heroLoaded} setHeroLoaded={setHeroLoaded} />
       )}
 
       <Footer />
@@ -95,8 +95,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
     queryKey: ['user-followed-updates', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
-      // In production, we would fetch sub-collection 'subscriptions' and then filter stories
-      // Here we just fetch latest published stories as a fallback
       const q = query(
         collection(db, 'stories'),
         orderBy('updatedAt', 'desc'),
@@ -244,16 +242,30 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
 }
 
 // ==================== VUE LANDING (VISITEURS) ====================
-function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }: any) {
+function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    if (popular.length === 0) return;
+    const interval = setInterval(() => {
+      setHeroLoaded(false);
+      setHeroIndex((prev) => (prev + 1) % Math.min(5, popular.length));
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [popular.length, setHeroLoaded]);
+
+  const featured = popular[heroIndex];
+
   return (
     <div className="flex flex-col gap-24">
-      {/* 1. HERO EXCLUSIF */}
+      {/* 1. HERO EXCLUSIF ROTATIF */}
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-transparent to-stone-950 z-10 pointer-events-none" />
         <div className="relative w-full min-h-[85vh] flex items-end">
           {featured && (
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 transition-opacity duration-1000">
               <Image
+                key={featured.id}
                 src={featured.coverImage.imageUrl}
                 alt={featured.title}
                 fill
@@ -270,20 +282,22 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
             </div>
           )}
 
-          <div className="relative z-20 container max-w-7xl mx-auto px-6 pb-20">
+          <div className="relative z-20 container max-w-7xl mx-auto px-6 pb-24">
             <div className="max-w-3xl space-y-8">
               {featured ? (
-                <>
+                <div key={featured.id} className="animate-in fade-in slide-in-from-left-8 duration-1000">
                   <div className="space-y-4">
                     <Badge className="bg-primary text-black mb-2 uppercase tracking-widest font-black text-[10px] px-4 py-1">Exclusivité NexusHub</Badge>
                     <h1 className="text-5xl md:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter mb-6">
-                      L'Art <br/> Africain <br/> <span className="gold-resplendant">Réinventé.</span>
+                      {featured.title.split(' ').map((word: string, i: number) => (
+                        <span key={i} className={i === 1 ? "gold-resplendant block" : "block"}>{word} </span>
+                      ))}
                     </h1>
                     <p className="text-stone-300 text-lg md:text-2xl font-light italic leading-relaxed max-w-xl">
-                      "Plongez dans des mondes où les mythes ancestraux rencontrent le futur technologique."
+                      "{featured.description}"
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-4 pt-4">
+                  <div className="flex flex-wrap gap-4 pt-8">
                     <Button asChild size="lg" className="h-16 px-10 rounded-full font-black text-xl shadow-2xl shadow-primary/30">
                       <Link href={`/read/${featured.id}`}>Commencer l'Aventure</Link>
                     </Button>
@@ -291,7 +305,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                       <Link href="/signup">S'inscrire Gratuitement</Link>
                     </Button>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="space-y-6">
                   <div className="h-24 w-full bg-stone-800 animate-pulse rounded-2xl" />
@@ -299,6 +313,21 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                 </div>
               )}
             </div>
+          </div>
+
+          {/* INDICATEURS HERO */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
+            {[...Array(Math.min(5, popular.length))].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setHeroLoaded(false); setHeroIndex(i); }}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-700",
+                  heroIndex === i ? "bg-primary w-10 shadow-[0_0_15px_hsl(var(--primary))]" : "bg-white/20 w-4 hover:bg-white/40"
+                )}
+                aria-label={`Slide ${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -351,7 +380,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
             <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline">Voir tout le classement <ChevronRight className="h-3 w-3" /></Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {popular.slice(0, 5).map((story) => (
+            {isLoading ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-xl" />) : popular.slice(0, 5).map((story) => (
               <StoryCard key={story.id} story={story} />
             ))}
           </div>
