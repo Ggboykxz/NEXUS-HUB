@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, where, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, where, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, getDoc } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
@@ -47,47 +47,118 @@ function RankingRowSkeleton() {
   );
 }
 
-function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
-  const formatStat = (num: number): string => {
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
-    return num.toString();
-  };
+const formatStat = (num: number): string => {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}k`;
+  return num.toString();
+};
+
+function PodiumCard({ story, rank, metric }: { story: Story, rank: number, metric: 'views' | 'likes' | 'updatedAt' }) {
+  const storyUrl = getStoryUrl(story);
+  
+  const styles = {
+    1: {
+      container: "md:order-2 h-full z-20 pb-12",
+      card: "border-primary/40 bg-primary/10 shadow-[0_0_50px_rgba(212,168,67,0.2)]",
+      badge: "bg-primary text-black",
+      icon: <Crown className="h-8 w-8 text-primary animate-[spin_4s_linear_infinite]" />,
+      cover: "w-40 md:w-48"
+    },
+    2: {
+      container: "md:order-1 h-[90%] z-10",
+      card: "border-stone-400/20 bg-stone-400/5",
+      badge: "bg-stone-400 text-black",
+      icon: <Trophy className="h-6 w-6 text-stone-400" />,
+      cover: "w-32 md:w-40"
+    },
+    3: {
+      container: "md:order-3 h-[85%] z-10",
+      card: "border-amber-700/20 bg-amber-700/5",
+      badge: "bg-amber-700 text-white",
+      icon: <Award className="h-6 w-6 text-amber-700" />,
+      cover: "w-28 md:w-36"
+    }
+  }[rank as 1|2|3];
 
   return (
-    <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {stories.map((story, index) => {
-        const storyUrl = getStoryUrl(story);
-        const rank = index + 1;
-        const isTop3 = rank <= 3;
+    <div className={cn("flex flex-col items-center gap-4 transition-all duration-700", styles.container)}>
+      <div className="flex flex-col items-center -space-y-4">
+        <div className="relative z-10">
+          {styles.icon}
+        </div>
+        <Link href={storyUrl} className="block group">
+          <div className={cn(
+            "relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 group-hover:scale-105 border-4 border-stone-900 group-hover:border-primary/50",
+            styles.cover
+          )}>
+            <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+              <Badge className={cn("font-black text-xs px-4 py-1", styles.badge)}>#{rank}</Badge>
+            </div>
+          </div>
+        </Link>
+      </div>
 
-        return (
-          <div key={story.id} className="relative">
-            <Card className={cn(
-                "group relative overflow-hidden transition-all duration-500 hover:shadow-2xl rounded-[2rem]",
-                isTop3 ? "border-primary/20 bg-primary/[0.03]" : "border-white/5 bg-card/50"
-            )}>
-              {isTop3 && <div className="absolute top-0 left-0 w-1 h-full bg-primary" />}
-              
+      <Card className={cn("w-full rounded-[2.5rem] p-6 text-center space-y-2 border-2", styles.card)}>
+        <h3 className="font-display font-black text-lg md:text-xl text-white truncate px-2">{story.title}</h3>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-stone-500">par {story.artistName}</p>
+        <div className="pt-3 flex items-center justify-center gap-2">
+          {metric === 'views' ? (
+            <div className="flex items-center gap-1.5 text-primary">
+              <Eye className="h-4 w-4" />
+              <span className="font-black text-sm">{formatStat(story.views)}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-rose-500">
+              <Heart className="h-4 w-4" />
+              <span className="font-black text-sm">{formatStat(story.likes)}</span>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
+  const top3 = stories.slice(0, 3);
+  const others = stories.slice(3);
+
+  return (
+    <div className="space-y-20 animate-in fade-in duration-1000">
+      {/* PODIUM SECTION */}
+      {top3.length > 0 && (
+        <section className="pt-12">
+          <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-8 md:gap-4 max-w-6xl mx-auto px-4">
+            {top3[1] && <PodiumCard story={top3[1]} rank={2} metric={metric} />}
+            {top3[0] && <PodiumCard story={top3[0]} rank={1} metric={metric} />}
+            {top3[2] && <PodiumCard story={top3[2]} rank={3} metric={metric} />}
+          </div>
+        </section>
+      )}
+
+      {/* OTHERS LIST (4-20) */}
+      <div className="grid gap-6">
+        {others.map((story, index) => {
+          const storyUrl = getStoryUrl(story);
+          const rank = index + 4;
+
+          return (
+            <Card key={story.id} className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl rounded-[2rem] border-white/5 bg-card/50">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row items-stretch">
-                  <div className={cn(
-                    "flex flex-col items-center justify-center p-8 md:w-28 text-center border-b md:border-b-0 md:border-r border-white/5 transition-colors",
-                    rank === 1 ? "bg-primary/10 text-primary" : 
-                    rank === 2 ? "bg-stone-300/10 text-stone-400" :
-                    rank === 3 ? "bg-amber-600/10 text-amber-600" : "bg-white/[0.02] text-stone-600"
-                  )}>
-                    <span className="text-5xl font-display font-black tracking-tighter">#{rank}</span>
-                    {rank === 1 && <Trophy className="h-6 w-6 mt-2 animate-bounce" />}
+                  <div className="flex flex-col items-center justify-center p-8 md:w-28 text-center border-b md:border-b-0 md:border-r border-white/5 bg-white/[0.02] text-stone-600 group-hover:text-stone-400 transition-colors">
+                    <span className="text-4xl font-display font-black tracking-tighter">#{rank}</span>
                   </div>
 
-                  <div className="flex flex-1 p-8 gap-8 items-center">
+                  <div className="flex flex-1 p-6 md:p-8 gap-8 items-center">
                     <Link href={storyUrl} className="shrink-0 relative">
-                        <div className="relative w-24 md:w-36 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl transition-all duration-700 group-hover:scale-105 group-hover:shadow-primary/10">
+                        <div className="relative w-20 md:w-32 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl transition-all duration-700 group-hover:scale-105 group-hover:shadow-primary/10">
                             <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" />
                             {story.isPremium && (
-                                <div className="absolute top-2 right-2 bg-primary p-1.5 rounded-lg shadow-xl">
-                                    <Crown className="h-4 w-4 text-black fill-current" />
+                                <div className="absolute top-2 right-2 bg-primary p-1 rounded-lg shadow-xl">
+                                    <Crown className="h-3 w-3 text-black fill-current" />
                                 </div>
                             )}
                         </div>
@@ -95,49 +166,43 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
 
                     <div className="flex-grow min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
-                            <Badge variant="secondary" className="bg-white/5 text-stone-400 border-none text-[9px] uppercase font-black tracking-widest px-3">
+                            <Badge variant="secondary" className="bg-white/5 text-stone-400 border-none text-[8px] uppercase font-black tracking-widest px-2">
                                 {story.genre}
                             </Badge>
-                            <Badge variant="outline" className="text-[9px] uppercase tracking-widest border-primary/20 text-primary font-black px-3">
+                            <Badge variant="outline" className="text-[8px] uppercase tracking-widest border-primary/20 text-primary font-black px-2">
                                 {story.format}
                             </Badge>
                         </div>
 
                         <div>
                           <Link href={storyUrl}>
-                              <h3 className="text-3xl md:text-4xl font-display font-black group-hover:text-primary transition-colors leading-none mb-2 truncate text-white">
+                              <h3 className="text-2xl md:text-3xl font-display font-black group-hover:text-primary transition-colors leading-none mb-2 truncate text-white">
                                   {story.title}
                               </h3>
                           </Link>
-                          <p className="text-stone-500 font-bold uppercase text-[10px] tracking-[0.2em]">par {story.artistName}</p>
+                          <p className="text-stone-500 font-bold uppercase text-[9px] tracking-[0.2em]">par {story.artistName}</p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-8 pt-2">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2 rounded-xl">
-                                    <Eye className={cn("h-5 w-5", metric === 'views' ? "text-primary" : "text-stone-600")} />
-                                </div>
+                        <div className="flex flex-wrap items-center gap-6 pt-2">
+                            <div className="flex items-center gap-2">
+                                <Eye className={cn("h-4 w-4", metric === 'views' ? "text-primary" : "text-stone-600")} />
                                 <div className="leading-tight">
-                                  <p className="text-lg font-black text-white">{formatStat(story.views)}</p>
-                                  <p className="text-[8px] uppercase font-bold text-stone-600 tracking-widest">Lectures</p>
+                                  <p className="text-base font-black text-white">{formatStat(story.views)}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="bg-rose-500/10 p-2 rounded-xl">
-                                    <Heart className={cn("h-5 w-5", metric === 'likes' ? "text-rose-500" : "text-stone-600")} />
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <Heart className={cn("h-4 w-4", metric === 'likes' ? "text-rose-500" : "text-stone-600")} />
                                 <div className="leading-tight">
-                                  <p className="text-lg font-black text-white">{formatStat(story.likes)}</p>
-                                  <p className="text-[8px] uppercase font-bold text-stone-600 tracking-widest">Favoris</p>
+                                  <p className="text-base font-black text-white">{formatStat(story.likes)}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="hidden lg:flex flex-col items-end gap-4 ml-auto">
-                        <Button asChild size="lg" className="rounded-full px-10 gap-3 font-black h-14 shadow-2xl transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-primary hover:text-black">
+                        <Button asChild size="lg" className="rounded-full px-8 gap-3 font-black h-12 shadow-2xl transition-all active:scale-95 bg-white/5 border border-white/10 text-white hover:bg-primary hover:text-black">
                             <Link href={storyUrl}>
-                                Lire l'Épisode <ChevronRight className="h-5 w-5" />
+                                Lire l'Épisode <ChevronRight className="h-4 w-4" />
                             </Link>
                         </Button>
                     </div>
@@ -145,9 +210,9 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
                 </div>
               </CardContent>
             </Card>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
