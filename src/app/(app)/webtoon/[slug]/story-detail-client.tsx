@@ -19,6 +19,7 @@ import { StoryCard } from '@/components/story-card';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
 
 interface StoryDetailClientProps {
@@ -32,19 +33,69 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
   const { openAuthModal } = useAuthModal();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoadingFavorite, setIsLoadingFavorite] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
     return () => unsubscribe();
   }, []);
 
-  const handleFavorite = () => {
+  // Monitor favorite status from Firestore
+  useEffect(() => {
+    if (!currentUser || !story.id) {
+      setIsFavorite(false);
+      setIsLoadingFavorite(false);
+      return;
+    }
+
+    const likeRef = doc(db, 'stories', story.id, 'likes', currentUser.uid);
+    const unsub = onSnapshot(likeRef, (docSnap) => {
+      setIsFavorite(docSnap.exists());
+      setIsLoadingFavorite(false);
+    });
+
+    return () => unsub();
+  }, [currentUser, story.id]);
+
+  const handleFavorite = async () => {
     if (!currentUser) {
       openAuthModal('ajouter cette œuvre à vos favoris');
       return;
     }
-    setIsFavorite(!isFavorite);
-    toast({ title: isFavorite ? "Retiré des favoris" : "Ajouté aux favoris !" });
+
+    const likeRef = doc(db, 'stories', story.id, 'likes', currentUser.uid);
+    const storyRef = doc(db, 'stories', story.id);
+
+    try {
+      if (isFavorite) {
+        // UNLIKE logic
+        await deleteDoc(likeRef);
+        await updateDoc(storyRef, {
+          likes: increment(-1)
+        });
+        toast({ title: "Retiré des favoris" });
+      } else {
+        // LIKE logic
+        await setDoc(likeRef, {
+          userId: currentUser.uid,
+          userName: currentUser.displayName || 'Voyageur',
+          likedAt: serverTimestamp()
+        });
+        await updateDoc(storyRef, {
+          likes: increment(1)
+        });
+        toast({ title: "Ajouté aux favoris !" });
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast({ 
+        title: "Erreur", 
+        description: "Impossible de mettre à jour vos favoris.",
+        variant: "destructive" 
+      });
+    }
   };
 
   return (
@@ -53,7 +104,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
       <header className="relative h-[65vh] md:h-[75vh] overflow-hidden">
         {/* Blurred Background */}
         <div className="absolute inset-0">
-          <Image src={story.coverImage} alt="bg" fill className="object-cover opacity-20 blur-3xl scale-110" priority />
+          <Image src={story.coverImage.imageUrl} alt="bg" fill className="object-cover opacity-20 blur-3xl scale-110" priority />
           <div className="absolute inset-0 bg-stone-950/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
@@ -62,7 +113,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
           <div className="flex flex-col md:flex-row gap-12 items-end">
             {/* Main Cover */}
             <div className="relative aspect-[3/4] w-56 md:w-80 rounded-[2.5rem] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.5)] border-8 border-background shrink-0 -mb-8 md:-mb-24 animate-in slide-in-from-bottom-12 duration-1000">
-              <Image src={story.coverImage} alt={story.title} fill className="object-cover" priority />
+              <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" priority />
               {story.isPremium && (
                 <div className="absolute top-6 right-6 bg-primary text-black p-2 rounded-xl shadow-2xl">
                   <Crown className="h-6 w-6 fill-current" />
@@ -101,8 +152,16 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                   <Link href={`/webtoon-hub/${story.slug}/chapitre-1`}><Play className="mr-3 h-6 w-6 fill-current" /> Commencer la Quête</Link>
                 </Button>
                 <div className="flex items-center gap-3">
-                  <Button onClick={handleFavorite} variant="outline" size="icon" className={cn("h-16 w-16 rounded-full border-white/10 text-white hover:bg-rose-500/10 hover:text-rose-500 transition-all backdrop-blur-md", isFavorite && "bg-rose-500/10 text-rose-500 border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)]")}>
-                    <Heart className={cn("h-7 w-7", isFavorite && "fill-current")} />
+                  <Button 
+                    onClick={handleFavorite} 
+                    variant="outline" 
+                    size="icon" 
+                    className={cn(
+                      "h-16 w-16 rounded-full border-white/10 text-white hover:bg-rose-500/10 hover:text-rose-500 transition-all backdrop-blur-md", 
+                      isFavorite && "bg-rose-500/10 text-rose-500 border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)]"
+                    )}
+                  >
+                    <Heart className={cn("h-7 w-7 transition-all duration-300", isFavorite && "fill-current scale-110")} />
                   </Button>
                   <Button variant="outline" size="icon" className="h-16 w-16 rounded-full border-white/10 text-white hover:bg-white/10 backdrop-blur-md">
                     <Share2 className="h-7 w-7" />
