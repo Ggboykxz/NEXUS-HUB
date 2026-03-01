@@ -1,12 +1,19 @@
-
 'use client';
 
-import WebtoonChapterPage from '../../../webtoon-hub/[slug]/[chapterSlug]/page';
+import { use } from 'react';
+import MagicalReaderPage from '../../../webtoon-hub/[slug]/[chapterSlug]/page';
 
 /**
- * Réutilise le Lecteur Magique consolidé pour les BD Africaines.
- * Unifie l'expérience de lecture sous une interface unique.
+ * Page de lecture spécifique pour la BD Africaine.
+ * Force le mode 'pages' par défaut pour respecter le format classique.
  */
 export default function BdAfricaineReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
-  return <WebtoonChapterPage params={props.params} />;
+  const params = use(props.params);
+  
+  return (
+    <MagicalReaderPage 
+      params={Promise.resolve(params)} 
+      defaultMode="pages" 
+    />
+  );
 }

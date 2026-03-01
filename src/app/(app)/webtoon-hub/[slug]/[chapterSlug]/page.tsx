@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, MessageSquare, SlidersHorizontal, X, ChevronRight, Heart, Share2, 
   Sparkles, Flame, AlertCircle, Coins, Info, Languages, History, BrainCircuit,
-  Maximize2, Eye, Database, BatteryMedium, Wand2, BookOpen, Headphones, Music, Volume2, VolumeX
+  Maximize2, Eye, Database, BatteryMedium, Wand2, BookOpen, Headphones, Music, Volume2, VolumeX,
+  Layout
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -32,10 +33,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
 
-export default function MagicalReaderPage(props: { params: Promise<{ slug: string, chapterSlug: string }> }) {
-  const { slug, chapterSlug } = use(props.params);
+interface MagicalReaderProps {
+  params: Promise<{ slug: string, chapterSlug: string }>;
+  defaultMode?: 'scroll' | 'pages';
+}
+
+export default function MagicalReaderPage({ params: paramsPromise, defaultMode = 'scroll' }: MagicalReaderProps) {
+  const { slug, chapterSlug } = use(paramsPromise);
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   
@@ -44,6 +49,7 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
 
   const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Épisode', slug: '1', chapterNumber: 1 } as any;
   
+  const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>(defaultMode);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'comments' | 'ai'>('comments');
@@ -54,15 +60,15 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
   // Reading Settings
   const [isLowData, setIsLowData] = useState(false);
   const [isBatterySaver, setIsBatterySaver] = useState(false);
-  const [isEyeProtection, setIsEyeProtection] = useState(false);
+  const [isDoublePage, setIsDoublePage] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   
-  // Audio Mode (Webtoon Sonore)
+  // Audio Mode
   const [isAudioMode, setIsAudioMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   
-  // Augmented Reading State
+  // AI State
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
@@ -90,7 +96,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     setProgress(currentProgress);
   }, []);
 
-  // AI ACTIONS
   const handleGetSummary = async () => {
     if (!currentUser) { openAuthModal('obtenir un résumé IA'); return; }
     setIsSummaryOpen(true);
@@ -121,8 +126,7 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
     <div className={cn(
       "h-screen flex flex-col overflow-hidden text-stone-200 transition-all duration-1000",
       isFocusMode ? "bg-black cursor-none" : "bg-stone-950",
-      isBatterySaver && "battery-saver",
-      isEyeProtection && "sepia-[0.3] brightness-90"
+      isBatterySaver && "battery-saver"
     )}>
       {/* HEADER NAVIGATION */}
       <nav className={cn(
@@ -143,6 +147,10 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
+          <div className="hidden sm:flex bg-white/5 rounded-xl p-0.5 mr-2">
+            <Button onClick={() => setActiveMode('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-[8px] font-black uppercase px-3 rounded-lg">Webtoon</Button>
+            <Button onClick={() => setActiveMode('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-[8px] font-black uppercase px-3 rounded-lg">BD</Button>
+          </div>
           <Button onClick={handleToggleAudio} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isAudioMode ? "text-primary bg-primary/10" : "text-stone-500")}>
             <Headphones className="h-4 w-4" />
           </Button>
@@ -168,9 +176,19 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
             isSidebarOpen ? "lg:mr-[400px]" : "w-full"
           )}
         >
-          <div className="mx-auto flex flex-col items-center max-w-[800px] py-14">
+          <div className={cn(
+            "mx-auto py-14",
+            activeMode === 'scroll' ? "max-w-[800px] flex flex-col items-center" : "max-w-7xl px-6",
+            (activeMode === 'pages' && isDoublePage) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "flex flex-col items-center"
+          )}>
             {comicPages.map((page, index) => (
-              <div key={page.id} className="relative w-full aspect-[2/3] group cursor-pointer">
+              <div 
+                key={page.id} 
+                className={cn(
+                  "relative w-full aspect-[2/3] group cursor-pointer",
+                  activeMode === 'pages' && "shadow-2xl border border-white/5 rounded-lg overflow-hidden mb-8"
+                )}
+              >
                 <Image
                   src={getOptimizedImage(page.imageUrl, { 
                     width: 1000, 
@@ -182,43 +200,21 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                   className="object-contain md:object-cover"
                   priority={index < 2}
                 />
-                
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute top-6 right-6 flex flex-col gap-2">
-                    <Button size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-primary hover:text-black">
-                      <Languages className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" className="bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-emerald-500 hover:text-black">
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
               </div>
             ))}
             
-            <SponsoredPanel />
-
-            <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
-              <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
-                <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
-                <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
+            <div className="col-span-full">
+              <SponsoredPanel />
+              <div className="py-32 text-center space-y-8 max-w-lg mx-auto">
+                <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
+                  <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
+                  <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
+                </div>
+                <Button size="lg" className="w-full rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl">Épisode Suivant <ChevronRight className="ml-2 h-5 w-5" /></Button>
               </div>
-              <Button size="lg" className="w-full rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl">Épisode Suivant <ChevronRight className="ml-2 h-5 w-5" /></Button>
             </div>
           </div>
         </main>
-
-        {isAudioMode && (
-          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-black/80 backdrop-blur-xl border border-primary/20 rounded-full p-2 flex items-center gap-4 px-6 shadow-2xl">
-              <Music className="h-4 w-4 text-primary animate-pulse" />
-              <p className="text-[10px] font-black uppercase text-stone-300 tracking-widest whitespace-nowrap">Audio Dramatisé : Chap. {chapter.chapterNumber}</p>
-              <Button onClick={() => setIsMuted(!isMuted)} variant="ghost" size="icon" className="text-primary hover:bg-primary/10 rounded-full h-8 w-8">
-                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        )}
 
         <aside className={cn(
           "fixed top-14 bottom-0 left-0 w-full lg:w-[320px] bg-stone-950/95 backdrop-blur-3xl border-r border-white/5 z-40 transition-transform duration-500",
@@ -234,6 +230,12 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
                 <Label className="text-sm font-bold text-white flex items-center gap-2"><Eye className="h-4 w-4 text-primary" /> Mode Focus</Label>
                 <Switch checked={isFocusMode} onCheckedChange={setIsFocusMode} />
               </div>
+              {activeMode === 'pages' && (
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-bold text-white flex items-center gap-2"><Layout className="h-4 w-4 text-amber-500" /> Double Page</Label>
+                  <Switch checked={isDoublePage} onCheckedChange={setIsDoublePage} />
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-bold text-white flex items-center gap-2"><Database className="h-4 w-4 text-cyan-500" /> Mode Low-Data</Label>
                 <Switch checked={isLowData} onCheckedChange={setIsLowData} />
@@ -252,18 +254,10 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         )}>
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div className="flex gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-              <Button 
-                onClick={() => setSidebarTab('ai')} 
-                variant="default"
-                size="sm" 
-                className="rounded-lg text-[10px] font-black uppercase tracking-widest h-8"
-              >
-                IA Lore
-              </Button>
+              <Button variant="default" size="sm" className="rounded-lg text-[10px] font-black uppercase tracking-widest h-8">IA Lore</Button>
             </div>
             <Button onClick={() => setIsSidebarOpen(false)} variant="ghost" size="icon" className="text-stone-500"><X className="h-5 w-5" /></Button>
           </div>
-
           <div className="flex-1 overflow-y-auto h-[calc(100%-60px)]">
             <ScrollArea className="h-full p-6">
               <div className="space-y-6">
@@ -281,7 +275,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
         <DialogContent className="bg-stone-900 border-primary/20 text-white rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><History className="text-primary h-5 w-5" /> Résumé de rattrapage</DialogTitle>
-            <DialogDescription className="text-stone-400">Généré par l'IA Nexus pour vous remettre dans le bain.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {summaryLoading ? (
@@ -292,12 +285,6 @@ export default function MagicalReaderPage(props: { params: Promise<{ slug: strin
           </div>
         </DialogContent>
       </Dialog>
-
-      <RewardedAdModal 
-        isOpen={isAdModalOpen} 
-        onClose={() => setIsAdModalOpen(false)} 
-        onReward={() => {}} 
-      />
     </div>
   );
 }
