@@ -6,7 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, Coins, Zap, Globe, Loader2, 
   ShieldCheck, Smartphone, CreditCard, Bitcoin, Check,
-  UserCircle, Eye, History, Users, Crown, Star
+  UserCircle, Eye, History, Users, Crown, Star,
+  Banknote, Landmark, Wallet, ArrowUpRight, ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,10 +17,13 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { UserProfile } from '@/lib/types';
@@ -46,6 +51,21 @@ export default function SettingsPage() {
     return () => unsubscribe();
   }, []);
 
+  // Fetch Payouts History (Artist only)
+  const { data: payouts = [], isLoading: loadingPayouts } = useQuery({
+    queryKey: ['payouts-history', profile?.uid],
+    enabled: !!profile?.uid && profile.role?.startsWith('artist'),
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'users', profile!.uid, 'payouts'),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    }
+  });
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.uid) return;
@@ -56,7 +76,10 @@ export default function SettingsPage() {
         displayName: profile.displayName,
         bio: profile.bio,
         photoURL: profile.photoURL,
-        preferences: profile.preferences
+        preferences: profile.preferences,
+        // Revenue settings are saved within the same doc for simplicity or can be nested
+        paymentMethod: (profile as any).paymentMethod || {},
+        payoutThreshold: (profile as any).payoutThreshold || 20
       });
       toast({ title: "Paramètres enregistrés !", description: "Vos préférences ont été mises à jour." });
     } catch (error) {
@@ -82,6 +105,8 @@ export default function SettingsPage() {
     );
   }
 
+  const isArtist = profile.role?.startsWith('artist');
+
   const paymentMethods = [
     { id: 'momo', name: 'Mobile Money', icon: Smartphone, countries: 'MTN, Orange, Wave, M-Pesa' },
     { id: 'card', name: 'Carte Bancaire', icon: CreditCard, countries: 'Visa, Mastercard (Flutterwave)' },
@@ -97,18 +122,22 @@ export default function SettingsPage() {
           </div>
           <div>
             <h1 className="text-4xl font-bold font-display tracking-tight">Configuration</h1>
-            <p className="text-stone-500 font-light italic">Identité numérique et économie AfriCoins.</p>
+            <p className="text-stone-500 font-light italic">Identité numérique et économie du Hub.</p>
           </div>
         </div>
         <Button onClick={handleUpdateProfile} className="rounded-full px-10 h-12 font-black shadow-xl shadow-primary/20 bg-primary text-black gold-shimmer">
-          Enregistrer
+          Enregistrer les modifications
         </Button>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-2xl h-auto mb-10 border border-border/50">
+        <TabsList className={cn(
+          "grid w-full bg-muted/50 p-1 rounded-2xl h-auto mb-10 border border-border/50",
+          isArtist ? "grid-cols-4" : "grid-cols-3"
+        )}>
           <TabsTrigger value="profile" className="rounded-xl py-3 font-bold text-xs uppercase">Profil</TabsTrigger>
           <TabsTrigger value="africoins" className="rounded-xl py-3 font-bold text-xs uppercase">AfriCoins</TabsTrigger>
+          {isArtist && <TabsTrigger value="revenues" className="rounded-xl py-3 font-bold text-xs uppercase gap-2"><Banknote className="h-3.5 w-3.5" /> Revenus</TabsTrigger>}
           <TabsTrigger value="privacy" className="rounded-xl py-3 font-bold text-xs uppercase">Vie Privée</TabsTrigger>
         </TabsList>
         
@@ -145,6 +174,192 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isArtist && (
+          <TabsContent value="revenues" className="space-y-8 animate-in fade-in duration-500">
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="border-none bg-stone-900 text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 pb-4">
+                  <CardTitle className="text-2xl font-display font-black text-primary">Mode de Paiement</CardTitle>
+                  <CardDescription className="text-stone-400">Configurez la réception de vos gains.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 pt-0 space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Type de Compte</Label>
+                      <Select 
+                        value={(profile as any).paymentMethod?.type || 'momo'} 
+                        onValueChange={(val) => setProfile({
+                          ...profile, 
+                          paymentMethod: { ...(profile as any).paymentMethod, type: val } 
+                        } as any)}
+                      >
+                        <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-stone-900 border-white/10">
+                          <SelectItem value="momo">Mobile Money (Afrique)</SelectItem>
+                          <SelectItem value="iban">Virement Bancaire (IBAN)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {(profile as any).paymentMethod?.type === 'iban' ? (
+                      <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                        <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">IBAN du compte</Label>
+                        <Input 
+                          placeholder="FR76 3000..." 
+                          value={(profile as any).paymentMethod?.iban || ''}
+                          onChange={(e) => setProfile({
+                            ...profile, 
+                            paymentMethod: { ...(profile as any).paymentMethod, iban: e.target.value } 
+                          } as any)}
+                          className="h-12 bg-white/5 border-white/10 rounded-xl"
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Opérateur</Label>
+                          <Select 
+                            value={(profile as any).paymentMethod?.provider || 'Airtel'} 
+                            onValueChange={(val) => setProfile({
+                              ...profile, 
+                              paymentMethod: { ...(profile as any).paymentMethod, provider: val } 
+                            } as any)}
+                          >
+                            <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-stone-900 border-white/10">
+                              <SelectItem value="Airtel">Airtel Money</SelectItem>
+                              <SelectItem value="Orange">Orange Money</SelectItem>
+                              <SelectItem value="Moov">Moov Money</SelectItem>
+                              <SelectItem value="Wave">Wave</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Numéro de téléphone</Label>
+                          <Input 
+                            placeholder="+241 07..." 
+                            value={(profile as any).paymentMethod?.phone || ''}
+                            onChange={(e) => setProfile({
+                              ...profile, 
+                              paymentMethod: { ...(profile as any).paymentMethod, phone: e.target.value } 
+                            } as any)}
+                            className="h-12 bg-white/5 border-white/10 rounded-xl"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 pt-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Seuil de virement automatique</Label>
+                        <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">Min. 20€</Badge>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Input 
+                          type="number" 
+                          value={(profile as any).payoutThreshold || 20}
+                          onChange={(e) => setProfile({ ...profile, payoutThreshold: parseInt(e.target.value) || 20 } as any)}
+                          className="h-12 bg-white/5 border-white/10 rounded-xl text-lg font-black"
+                        />
+                        <span className="text-xl font-black text-white">€</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none bg-stone-950 text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 pb-4">
+                  <div className="flex items-center gap-3 text-emerald-500 mb-2">
+                    <ShieldCheck className="h-6 w-6" />
+                    <CardTitle className="text-xl font-display font-black">Sécurité des Gains</CardTitle>
+                  </div>
+                  <CardDescription className="text-stone-400 italic">
+                    "Vos revenus sont protégés par le Nexus Core. Les virements sont effectués automatiquement chaque mois dès que le seuil est atteint."
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 pt-0 space-y-6">
+                  <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Solde Actuel</span>
+                      <span className="text-2xl font-black text-primary">{profile.afriCoins} 🪙</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-stone-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: '45%' }} />
+                    </div>
+                    <p className="text-[9px] text-stone-500 text-center uppercase font-bold">45% avant le prochain virement</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-white/5 bg-card shadow-2xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="p-8 border-b border-white/5">
+                <CardTitle className="text-2xl font-display font-black flex items-center gap-3">
+                  <History className="h-6 w-6 text-primary" /> Historique des Virements
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow className="hover:bg-transparent border-white/5">
+                        <TableHead className="px-8 text-[10px] font-black uppercase tracking-widest">Date</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Méthode</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Montant</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">Statut</TableHead>
+                        <TableHead className="px-8"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loadingPayouts ? (
+                        [1, 2].map(i => (
+                          <TableRow key={i} className="animate-pulse border-white/5">
+                            <TableCell colSpan={5} className="px-8 py-6"><div className="h-4 bg-muted rounded w-full" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : payouts.length > 0 ? payouts.map((p: any) => (
+                        <TableRow key={p.id} className="border-white/5 group hover:bg-muted/20 transition-colors">
+                          <TableCell className="px-8 font-medium text-xs">
+                            {p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString() : 'En attente'}
+                          </TableCell>
+                          <TableCell className="text-xs uppercase font-bold text-stone-500">
+                            {p.method}
+                          </TableCell>
+                          <TableCell className="font-black text-sm text-emerald-500">
+                            {p.amount}€
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn(
+                              "text-[8px] uppercase font-black border-none",
+                              p.status === 'completed' ? "bg-emerald-500/10 text-emerald-500" : "bg-orange-500/10 text-orange-500"
+                            )}>
+                              {p.status === 'completed' ? 'Viré' : 'En cours'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-8 text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 group-hover:text-primary"><ChevronRight className="h-4 w-4" /></Button>
+                          </TableCell>
+                        </TableRow>
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="py-20 text-center text-stone-500 italic text-sm">
+                            "Aucun virement n'a encore été effectué pour le moment."
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="africoins" className="space-y-8 animate-in fade-in duration-500">
           <Card className="border-none bg-stone-950 text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
