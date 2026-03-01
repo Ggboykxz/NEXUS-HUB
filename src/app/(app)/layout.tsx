@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 /**
  * Layout pour les pages principales de l'application.
  * Masque dynamiquement le footer sur les pages de lecture pour l'immersion.
+ * Ajoute une transition fluide lors de l'entrée sur chaque page.
  */
 export default function AppLayout({
   children,
@@ -23,7 +24,9 @@ export default function AppLayout({
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1">
-        {children}
+        <div className="animate-in fade-in duration-300 slide-in-from-bottom-2">
+          {children}
+        </div>
       </main>
       {!isReaderPage && <Footer />}
     </div>
