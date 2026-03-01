@@ -495,6 +495,11 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   // Custom Reader Settings
   const [readerBg, setReaderBg] = useState('#0a0a0a');
   const [brightness, setBrightness] = useState(100);
+
+  // Swipe Detection
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const [swipeIndicator, setSwipeIndicator] = useState<'prev' | 'next' | null>(null);
   
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -744,6 +749,43 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
     }
   };
 
+  // #region TOUCH SWIPE DETECTION
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (activeMode !== 'pages') return;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (activeMode !== 'pages' || touchStartX.current === null) return;
+    touchEndX.current = e.changedTouches[0].clientX;
+    
+    const deltaX = touchEndX.current - touchStartX.current;
+    
+    if (deltaX > 80) {
+      // Swipe Right = Previous
+      handlePrevChapter();
+    } else if (deltaX < -80) {
+      // Swipe Left = Next
+      handleNextChapter();
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleNextChapter = () => {
+    setSwipeIndicator('next');
+    setTimeout(() => setSwipeIndicator(null), 1500);
+    toast({ title: "Navigation tactile", description: "Chargement du chapitre suivant..." });
+  };
+
+  const handlePrevChapter = () => {
+    setSwipeIndicator('prev');
+    setTimeout(() => setSwipeIndicator(null), 1500);
+    toast({ title: "Navigation tactile", description: "Retour au chapitre précédent..." });
+  };
+  // #endregion
+
   if (loadingStory) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 gap-6">
@@ -768,7 +810,12 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   };
 
   return (
-    <div className="min-h-screen selection:bg-primary/20" style={{ backgroundColor: readerBg }}>
+    <div 
+      className="min-h-screen selection:bg-primary/20 relative" 
+      style={{ backgroundColor: readerBg }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <ProgressBar progress={scrollProgress} isVisible={isHeaderVisible} />
       
       <ReaderHeader 
@@ -783,6 +830,15 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         onToggleFullscreen={toggleFullscreen}
         isVisible={isHeaderVisible}
       />
+
+      {/* SWIPE INDICATOR OVERLAY */}
+      {swipeIndicator && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none px-6">
+          <div className="bg-primary text-black px-8 py-4 rounded-3xl font-black text-xl shadow-[0_0_50px_rgba(212,168,67,0.4)] border-4 border-black/10 animate-in zoom-in fade-in duration-300">
+            {swipeIndicator === 'prev' ? '← Ch. Précédent' : 'Ch. Suivant →'}
+          </div>
+        </div>
+      )}
       
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
         <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
