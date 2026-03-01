@@ -1,33 +1,30 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { forumThreads, artists } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
-  MessageSquare, 
   PlusCircle, 
-  Crown, 
-  ShieldAlert, 
-  Lock, 
-  ArrowRight, 
-  Eye, 
-  MessageCircle, 
+  ChevronDown, 
   Search, 
   Flame, 
-  Filter,
-  CheckCircle2,
+  Star, 
+  MessageSquare, 
+  Eye, 
+  ArrowRight, 
+  Sparkles, 
+  Palette, 
+  Users, 
+  Trophy, 
+  Newspaper, 
+  Crown, 
+  ShieldAlert, 
   AlertTriangle,
-  ChevronDown,
-  Sparkles,
-  Palette,
-  Users,
-  Trophy,
-  Newspaper,
-  Star,
+  CheckCircle2,
   MapPin,
   Languages,
-  Wrench
+  Wrench,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -44,12 +41,13 @@ import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ForumsHubPage() {
   const { openAuthModal } = useAuthModal();
   const [isPremiumUser, setIsPremiumUser] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [activeRegion, setActiveRegion] = useState('Toute l\'Afrique');
 
@@ -66,6 +64,20 @@ export default function ForumsHubPage() {
     return () => unsubscribe();
   }, []);
 
+  // REAL FIRESTORE QUERY
+  const { data: threads = [], isLoading } = useQuery({
+    queryKey: ['forum-threads-list'],
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'forumThreads'),
+        orderBy('createdAt', 'desc'),
+        limit(30)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    }
+  });
+
   const sections = [
     { id: 'salon', title: 'Salon de l\'Encre', icon: Palette, desc: 'Critiques constructives et retours techniques entre artistes.', color: 'text-primary' },
     { id: 'marche', title: 'Marché des Talents', icon: Users, desc: 'Trouvez vos futurs co-créateurs (Scénaristes, Colos).', color: 'text-emerald-500' },
@@ -75,7 +87,7 @@ export default function ForumsHubPage() {
 
   return (
     <div className="flex flex-col bg-background min-h-screen">
-      {/* 1. HERO REPENSI */}
+      {/* 1. HERO SECTION */}
       <section className="relative py-16 px-6 overflow-hidden border-b border-primary/10 bg-stone-950">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
         <div className="container relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
@@ -134,7 +146,7 @@ export default function ForumsHubPage() {
                   <p className="text-xs text-muted-foreground leading-relaxed mt-1">{section.desc}</p>
                 </div>
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">12 nouveaux</span>
+                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Voir section</span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
                 </div>
               </CardContent>
@@ -165,14 +177,6 @@ export default function ForumsHubPage() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-border/50 bg-background/50 text-xs font-bold">
-                  <span className="flex items-center gap-2"><Languages className="h-4 w-4 text-emerald-500" /> Toutes les langues</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-                <Button variant="outline" className="w-full justify-between h-11 rounded-xl border-border/50 bg-background/50 text-xs font-bold">
-                  <span className="flex items-center gap-2"><Wrench className="h-4 w-4 text-amber-500" /> Tous les outils</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
               </div>
             </div>
 
@@ -182,9 +186,12 @@ export default function ForumsHubPage() {
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 border border-white/10"><AvatarImage src={`https://picsum.photos/seed/user${i}/100/100`} /></Avatar>
+                    <Avatar className="h-8 w-8 border border-white/10">
+                      <AvatarImage src={`https://picsum.photos/seed/user${i}/100/100`} />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">User_{i}42</p>
+                      <p className="text-xs font-bold truncate">Voyageur_{i}</p>
                       <p className="text-[9px] text-emerald-500 font-black uppercase">Karma : {5000 - i*1000}</p>
                     </div>
                     {i === 1 && <Badge className="bg-primary text-black border-none text-[8px] h-4">ORACLE</Badge>}
@@ -206,19 +213,31 @@ export default function ForumsHubPage() {
             </div>
 
             <div className="space-y-4">
-              {forumThreads.map((thread) => {
-                const authorInfo = artists.find(a => a.name === thread.author);
-                return (
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <Card key={i} className="bg-card/50 border-border/50 rounded-2xl p-6">
+                    <div className="flex gap-6 items-start">
+                      <Skeleton className="h-12 w-12 rounded-full hidden md:block" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-3 w-full" />
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : threads.length > 0 ? (
+                threads.map((thread) => (
                   <Link key={thread.id} href={`/forums/${thread.id}`} className="block group">
                     <Card className="transition-all duration-300 hover:shadow-2xl hover:border-primary/30 bg-card/50 border-border/50 rounded-2xl">
                       <CardContent className="p-6">
                         <div className="flex gap-6 items-start">
                           <div className="hidden md:flex flex-col items-center gap-1 w-16">
                             <Avatar className="h-12 w-12 border shadow-md group-hover:ring-2 ring-primary transition-all">
-                              <AvatarImage src={authorInfo?.avatar.imageUrl} />
-                              <AvatarFallback className="font-bold">{thread.author.slice(0,2)}</AvatarFallback>
+                              <AvatarImage src={thread.authorPhoto} />
+                              <AvatarFallback className="font-bold">{thread.author?.slice(0,2)}</AvatarFallback>
                             </Avatar>
-                            <span className="text-[8px] font-black text-primary uppercase mt-1">Karma: 1.2k</span>
+                            <span className="text-[8px] font-black text-primary uppercase mt-1">Karma: {thread.authorKarma || '---'}</span>
                           </div>
                           <div className="flex-1 space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
@@ -227,23 +246,27 @@ export default function ForumsHubPage() {
                             </div>
                             <h3 className="text-xl font-bold font-display group-hover:text-primary transition-colors leading-tight">{thread.title}</h3>
                             <div className="flex items-center gap-4 text-muted-foreground text-xs pt-2 border-t border-border/30">
-                              <span className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> {thread.replies}</span>
-                              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5" /> {thread.views}</span>
-                              <span className="ml-auto text-[10px] font-bold italic">Dernier post par {thread.lastPost.author} &bull; {thread.lastPost.time}</span>
+                              <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5" /> {thread.replies || 0}</span>
+                              <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5" /> {thread.views || 0}</span>
+                              <span className="ml-auto text-[10px] font-bold italic">Posté par {thread.author} &bull; {thread.createdAt?.toDate ? thread.createdAt.toDate().toLocaleDateString() : 'Récemment'}</span>
                             </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </Link>
-                );
-              })}
+                ))
+              ) : (
+                <div className="text-center py-20 bg-muted/10 rounded-2xl border-2 border-dashed">
+                  <p className="text-stone-500 italic">"Les sables du forum sont calmes... Soyez le premier à lancer un débat !"</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. RULES & MODERATION SECTION */}
+      {/* 4. RULES SECTION */}
       <section id="rules" className="py-24 bg-stone-900 text-white overflow-hidden relative">
         <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]" />
         <div className="container max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-10">
