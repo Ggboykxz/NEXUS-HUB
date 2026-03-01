@@ -7,7 +7,7 @@ import {
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, 
   ChevronDown, CircleDollarSign, Brush, Library, PenSquare, 
   MoreHorizontal, Database, Cloud, Zap, Flame, Mic, LayoutGrid,
-  Bell
+  Bell, Coins
 } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -239,16 +239,27 @@ export default function Header() {
               </Button>
 
               {isLoggedIn && (
-                <Link href="/notifications" className="relative">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-full">
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 h-3.5 min-w-[14px] px-1 bg-destructive text-white text-[8px] font-black rounded-full flex items-center justify-center animate-in zoom-in duration-300 border-2 border-background">
-                        {unreadCount > 9 ? '9+' : unreadCount}
+                <>
+                  <Link href="/notifications" className="relative">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-full">
+                      <Bell className="h-4 w-4" />
+                      {unreadCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 h-3.5 min-w-[14px] px-1 bg-destructive text-white text-[8px] font-black rounded-full flex items-center justify-center animate-in zoom-in duration-300 border-2 border-background">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </Link>
+
+                  <Link href="/africoins">
+                    <div className="hidden sm:flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-colors">
+                      <Coins className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-[11px] font-black text-primary">
+                        {userProfile?.afriCoins || 0} 🪙
                       </span>
-                    )}
-                  </Button>
-                </Link>
+                    </div>
+                  </Link>
+                </>
               )}
 
               {!isLoggedIn ? (
