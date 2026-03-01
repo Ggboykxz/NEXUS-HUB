@@ -24,7 +24,9 @@ import {
   onSnapshot, 
   orderBy, 
   addDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  setDoc,
+  deleteField
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
@@ -41,7 +43,9 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSubmitting] = useState(false);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const scrollEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Auth State
   useEffect(() => {
@@ -73,14 +77,14 @@ export default function MessagesPage() {
     if (currentUser) fetchUsers();
   }, [currentUser, selectedChat]);
 
-  // 3. Real-time Messages Listener
+  // 3. Real-time Messages & Typing Listener
   useEffect(() => {
     if (!currentUser || !selectedChat) return;
 
-    // Generate a unique conversation ID for DM
     const participants = [currentUser.uid, selectedChat.uid || selectedChat.id].sort();
     const convId = participants.join('_');
 
+    // Messages Listener
     const msgsRef = collection(db, 'conversations', convId, 'messages');
     const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(50));
 
@@ -90,14 +94,70 @@ export default function MessagesPage() {
         ...doc.data()
       }));
       setMessages(newMessages);
-      // Auto-scroll to bottom
       setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    }, (error) => {
-      console.error("Messages listener error:", error);
     });
 
-    return () => unsubscribeMessages();
+    // Typing Indicator Listener
+    const typingRef = doc(db, 'typing', convId);
+    const unsubscribeTyping = onSnapshot(typingRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        const otherUid = selectedChat.uid || selectedChat.id;
+        const otherUserTimestamp = data[otherUid];
+
+        if (otherUserTimestamp) {
+          const now = new Date().getTime();
+          const typingDate = otherUserTimestamp.toDate ? otherUserTimestamp.toDate().getTime() : now;
+          // Si le timestamp a moins de 5 secondes, l'utilisateur écrit
+          if (now - typingDate < 5000) {
+            setIsOtherUserTyping(true);
+          } else {
+            setIsOtherUserTyping(false);
+          }
+        } else {
+          setIsOtherUserTyping(false);
+        }
+      } else {
+        setIsOtherUserTyping(false);
+      }
+    });
+
+    return () => {
+      unsubscribeMessages();
+      unsubscribeTyping();
+    };
   }, [currentUser, selectedChat]);
+
+  // Handle Typing Status update in Firestore
+  const updateTypingStatus = async (isTyping: boolean) => {
+    if (!currentUser || !selectedChat) return;
+    const participants = [currentUser.uid, selectedChat.uid || selectedChat.id].sort();
+    const convId = participants.join('_');
+    const typingRef = doc(db, 'typing', convId);
+
+    try {
+      await setDoc(typingRef, {
+        [currentUser.uid]: isTyping ? serverTimestamp() : deleteField()
+      }, { merge: true });
+    } catch (e) {
+      console.error("Error updating typing status", e);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageText(e.target.value);
+    
+    // Update typing status
+    updateTypingStatus(true);
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    // Set new timeout to clear typing status after 5s of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      updateTypingStatus(false);
+    }, 5000);
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +179,10 @@ export default function MessagesPage() {
         type: 'text'
       });
 
+      // Clear typing status immediately on send
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      await updateTypingStatus(false);
+      
       setMessageText('');
     } catch (error) {
       toast({ title: "Erreur d'envoi", variant: "destructive" });
@@ -268,6 +332,20 @@ export default function MessagesPage() {
               </div>
             </ScrollArea>
 
+            {/* Typing Indicator */}
+            {isOtherUserTyping && (
+              <div className="px-8 py-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest italic">
+                  <div className="flex gap-1">
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce" />
+                  </div>
+                  {selectedChat.displayName} est en train d'écrire...
+                </div>
+              </div>
+            )}
+
             {/* Chat input */}
             <form onSubmit={handleSendMessage} className="p-6 md:p-8 bg-white/5 border-t border-white/5 backdrop-blur-3xl">
               <div className="max-w-4xl mx-auto flex items-center gap-4">
@@ -275,7 +353,7 @@ export default function MessagesPage() {
                 <div className="relative flex-1">
                   <Input 
                     value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
+                    onChange={handleInputChange}
                     placeholder="Écrivez votre message..." 
                     className="pr-12 bg-white/5 border-white/10 rounded-2xl h-14 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-600" 
                   />
