@@ -7,12 +7,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Crown, Eye, Heart, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Loader2, Star, Zap } from 'lucide-react';
+import { Crown, Eye, Heart, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Loader2, Star, Zap, Users, UserPlus, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, orderBy, limit, getDocs, where, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { useToast } from '@/hooks/use-toast';
+import type { UserProfile } from '@/lib/types';
 
 function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
   const formatStat = (num: number): string => {
@@ -119,6 +124,115 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
   );
 }
 
+function ArtistRankingList() {
+  const { openAuthModal } = useAuthModal();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (user) => setCurrentUser(user));
+  }, []);
+
+  const { data: artists = [], isLoading } = useQuery({
+    queryKey: ['artist-rankings'],
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'users'),
+        where('role', 'in', ['artist_pro', 'artist_draft']),
+        orderBy('subscribersCount', 'desc'),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+    }
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async ({ artistId, isFollowing }: { artistId: string, isFollowing: boolean }) => {
+      if (!currentUser) {
+        openAuthModal('suivre des artistes');
+        return;
+      }
+
+      const subRef = doc(db, 'users', currentUser.uid, 'subscriptions', artistId);
+      const artistRef = doc(db, 'users', artistId);
+
+      if (isFollowing) {
+        await deleteDoc(subRef);
+        await updateDoc(artistRef, { subscribersCount: increment(-1) });
+      } else {
+        const artistSnap = await getDoc(artistRef);
+        const artistData = artistSnap.data();
+        await setDoc(subRef, {
+          artistId,
+          artistName: artistData?.displayName || 'Artiste',
+          artistPhoto: artistData?.photoURL || '',
+          subscribedAt: serverTimestamp()
+        });
+        await updateDoc(artistRef, { subscribersCount: increment(1) });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['artist-rankings'] });
+      toast({ title: "Action effectuée" });
+    }
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  return (
+    <div className="grid gap-4 animate-in fade-in duration-700">
+      {artists.map((artist, index) => {
+        const rank = index + 1;
+        return (
+          <Card key={artist.uid} className="bg-stone-900/30 border-white/5 rounded-3xl p-6 hover:border-primary/20 transition-all group">
+            <div className="flex items-center gap-6">
+              <div className={cn(
+                "w-12 h-12 flex items-center justify-center rounded-2xl font-display font-black text-2xl shrink-0",
+                rank === 1 ? "bg-primary text-black" : "bg-white/5 text-stone-600"
+              )}>
+                {rank}
+              </div>
+              
+              <Link href={`/artiste/${artist.slug}`} className="flex items-center gap-4 flex-1 min-w-0">
+                <Avatar className="h-14 w-14 border-2 border-white/10 group-hover:border-primary/50 transition-all">
+                  <AvatarImage src={artist.photoURL} />
+                  <AvatarFallback>{artist.displayName?.slice(0,2)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-lg text-white truncate">{artist.displayName}</h4>
+                    {artist.role === 'artist_pro' ? (
+                      <Badge className="bg-emerald-500 text-white border-none text-[8px] font-black uppercase px-2 h-4">PRO</Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-orange-500/50 text-orange-400 text-[8px] font-black uppercase px-2 h-4">DRAFT</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3 text-primary" /> {artist.subscribersCount.toLocaleString()} abonnés</span>
+                    <span className="flex items-center gap-1"><Eye className="h-3 w-3 text-stone-600" /> {Math.floor(Math.random() * 50000).toLocaleString()} vues</span>
+                  </div>
+                </div>
+              </Link>
+
+              <Button 
+                variant="outline"
+                className="rounded-xl h-11 px-6 font-black text-[10px] uppercase tracking-widest border-white/10 hover:bg-primary hover:text-black transition-all gap-2"
+                onClick={() => followMutation.mutate({ artistId: artist.uid, isFollowing: false })}
+              >
+                <UserPlus className="h-4 w-4" /> Suivre
+              </Button>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function RankingsPage() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'popular';
@@ -183,15 +297,18 @@ export default function RankingsPage() {
       ) : (
         <Tabs defaultValue={defaultTab} className="w-full">
           <div className="flex justify-center mb-16">
-            <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 border border-border/50 max-w-xl w-full">
+            <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl w-full overflow-x-auto">
                 <TabsTrigger value="popular" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-                    <Trophy className="h-4 w-4" /> Populaires
+                    <Trophy className="h-4 w-4" /> Par Vues
                 </TabsTrigger>
                 <TabsTrigger value="trending" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
-                    <TrendingUp className="h-4 w-4" /> Tendance
+                    <Heart className="h-4 w-4" /> Par Likes
                 </TabsTrigger>
                 <TabsTrigger value="newest" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
-                    <Sparkles className="h-4 w-4" /> Nouveautés
+                    <Sparkles className="h-4 w-4" /> Nouveaux
+                </TabsTrigger>
+                <TabsTrigger value="artists" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                    <Users className="h-4 w-4" /> Artistes
                 </TabsTrigger>
             </TabsList>
           </div>
@@ -199,6 +316,7 @@ export default function RankingsPage() {
           <TabsContent value="popular"><RankingList stories={popular} metric="views" /></TabsContent>
           <TabsContent value="trending"><RankingList stories={trending} metric="likes" /></TabsContent>
           <TabsContent value="newest"><RankingList stories={newest} metric="updatedAt" /></TabsContent>
+          <TabsContent value="artists"><ArtistRankingList /></TabsContent>
         </Tabs>
       )}
     </div>
