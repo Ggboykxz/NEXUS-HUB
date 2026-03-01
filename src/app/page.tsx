@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
-import type { Story, UserProfile } from '@/lib/types';
+import type { Story, UserProfile, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
 import Header from '@/components/common/header';
@@ -20,7 +20,7 @@ import {
   Headphones, Film, Star, Flame, Gift, History, Bookmark, 
   Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin, 
   Activity, Timer, Languages, Map, MessageSquare, CheckCircle2,
-  ArrowUpRight, Heart, Share2, PlayCircle
+  ArrowUpRight, Heart, Share2, PlayCircle, Clock, BookOpen, UserCheck
 } from 'lucide-react';
 
 const REGIONS = [
@@ -62,7 +62,7 @@ export default function RootHomePage() {
       <Header />
 
       {currentUser ? (
-        <UserHomeView profile={userProfile} popular={popular} isLoading={isLoading} />
+        <UserHomeView profile={userProfile} currentUser={currentUser} popular={popular} />
       ) : (
         <LandingView featured={featured} popular={popular} isLoading={isLoading} heroLoaded={heroLoaded} setHeroLoaded={setHeroLoaded} />
       )}
@@ -73,11 +73,44 @@ export default function RootHomePage() {
 }
 
 // ==================== VUE UTILISATEUR CONNECTÉ ====================
-function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | null, popular: Story[], isLoading: boolean }) {
+function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile | null, currentUser: any, popular: Story[] }) {
+  
+  // 1. Fetch Library Progress (Last 3)
+  const { data: library = [] } = useQuery({
+    queryKey: ['user-library-home', currentUser?.uid],
+    enabled: !!currentUser,
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'users', currentUser.uid, 'library'),
+        orderBy('lastReadAt', 'desc'),
+        limit(3)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as LibraryEntry);
+    }
+  });
+
+  // 2. Fetch Followed Artists Updates (Simplified for prototype)
+  const { data: followedUpdates = [] } = useQuery({
+    queryKey: ['user-followed-updates', currentUser?.uid],
+    enabled: !!currentUser,
+    queryFn: async () => {
+      // In production, we would fetch sub-collection 'subscriptions' and then filter stories
+      // Here we just fetch latest published stories as a fallback
+      const q = query(
+        collection(db, 'stories'),
+        orderBy('updatedAt', 'desc'),
+        limit(5)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+    }
+  });
+
   return (
-    <div className="container max-w-7xl mx-auto px-6 py-8 space-y-16 animate-in fade-in duration-1000">
+    <div className="container max-w-7xl mx-auto px-6 py-8 space-y-20 animate-in fade-in duration-1000">
       
-      {/* 1. AFRI-COINS DAILY BANNER */}
+      {/* AFRI-COINS DAILY BANNER */}
       <section className="bg-primary/10 border border-primary/20 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-primary/5">
         <div className="flex items-center gap-4">
           <div className="bg-primary/20 p-2 rounded-xl animate-pulse">
@@ -97,68 +130,9 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
         </div>
       </section>
 
-      {/* 2. REPRENDRE LA LECTURE */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-display font-black text-white flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" /> En cours de lecture
-            </h2>
-            <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Tout voir</Link>
-          </div>
-          
-          <div className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-6 flex flex-col md:flex-row items-center gap-6 hover:border-primary/20 transition-all group">
-            <div className="relative h-32 w-24 rounded-2xl overflow-hidden shadow-2xl shrink-0">
-              <Image 
-                src={popular[1]?.coverImage?.imageUrl || 'https://picsum.photos/seed/read/400/600'} 
-                alt="Story" 
-                fill 
-                className="object-cover group-hover:scale-110 transition-transform" 
-                blurDataURL={popular[1]?.coverImage?.blurHash}
-                placeholder={popular[1]?.coverImage?.blurHash ? "blur" : "empty"}
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Play className="h-8 w-8 text-primary fill-current" />
-              </div>
-            </div>
-            <div className="flex-1 space-y-4 w-full">
-              <div>
-                <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{popular[1]?.title || "Chroniques d'Orisha"}</h3>
-                <p className="text-xs text-stone-500 font-bold uppercase tracking-tighter mt-1">Dernière lecture : Chapitre 14</p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-black uppercase text-stone-600">
-                  <span>Progression</span>
-                  <span>75%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: '75%' }} />
-                </div>
-              </div>
-            </div>
-            <Button asChild variant="outline" className="rounded-full px-8 hover:bg-primary hover:text-black">
-              <Link href="/read/1">Reprendre</Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* STREAK CARD */}
-        <div className="bg-stone-900 border border-primary/20 rounded-[2.5rem] p-8 flex flex-col justify-center items-center text-center space-y-4 shadow-xl relative overflow-hidden group">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-          <div className="bg-primary/10 p-4 rounded-3xl relative z-10">
-            <Flame className="h-10 w-10 text-orange-500 animate-bounce" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-5xl font-black text-white tracking-tighter">{profile?.readingStreak?.currentCount || 0} Jours</p>
-            <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary">Série de lecture active</p>
-          </div>
-          <p className="text-[10px] text-stone-500 font-bold italic relative z-10">Gardez le feu sacré allumé !</p>
-        </div>
-      </section>
-
-      {/* 3. POUR TOI (IA RECOMMANDATIONS) */}
+      {/* POUR TOI (IA RECOMMANDATIONS) */}
       <section className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
               <BrainCircuit className="h-5 w-5 text-primary" />
@@ -168,12 +142,78 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
           <Badge variant="outline" className="border-primary/20 text-primary text-[8px] font-black uppercase px-3">Algorithme Nexus v4</Badge>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {popular.slice(2, 7).map(s => <StoryCard key={s.id} story={s} />)}
+          {popular.slice(0, 5).map(s => <StoryCard key={s.id} story={s} />)}
         </div>
       </section>
 
-      {/* 4. CLUBS DE LECTURE ACTIFS */}
-      <section className="p-10 rounded-[3rem] bg-stone-900 border border-white/5 relative overflow-hidden">
+      {/* CONTINUER LA LECTURE (3 ITEMS) */}
+      <section className="space-y-8">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-orange-500/10">
+              <History className="h-5 w-5 text-orange-500" />
+            </div>
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
+          </div>
+          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</Link>
+        </div>
+
+        {library.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {library.map((entry) => (
+              <div key={entry.storyId} className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-5 flex items-center gap-5 hover:border-primary/20 transition-all group shadow-xl">
+                <div className="relative h-24 w-16 rounded-xl overflow-hidden shadow-lg shrink-0">
+                  <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play className="h-6 w-6 text-primary fill-current" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <h3 className="text-sm font-bold text-white truncate">{entry.storyTitle}</h3>
+                  <p className="text-[9px] text-stone-500 font-bold uppercase tracking-widest">Épisode {entry.lastReadChapterTitle}</p>
+                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${entry.progress}%` }} />
+                  </div>
+                  <Button asChild size="sm" variant="ghost" className="h-7 w-full rounded-lg text-[9px] font-black uppercase bg-white/5 hover:bg-primary hover:text-black">
+                    <Link href={`/read/${entry.storyId}`}>Lire</Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/10">
+            <p className="text-stone-500 italic text-sm">"Vos lectures récentes apparaîtront ici."</p>
+          </div>
+        )}
+      </section>
+
+      {/* SUIVIS RÉCENTS (NOUVEAUX CHAPITRES) */}
+      <section className="space-y-8">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500/10">
+              <UserCheck className="h-5 w-5 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Suivis récents</h2>
+          </div>
+          <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3">NOUVEAU</Badge>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {followedUpdates.map(s => (
+            <div key={s.id} className="relative group">
+              <StoryCard story={s} />
+              <div className="absolute -top-2 -right-2 bg-rose-600 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-stone-950 animate-bounce">
+                NOUVEAU
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CLUBS DE LECTURE ACTIFS */}
+      <section className="p-10 rounded-[3rem] bg-stone-900 border border-white/5 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 p-8 opacity-5"><Users className="h-48 w-48 text-emerald-500" /></div>
         <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
           <div className="space-y-4 text-center md:text-left max-w-xl">
@@ -182,15 +222,15 @@ function UserHomeView({ profile, popular, isLoading }: { profile: UserProfile | 
             <p className="text-stone-400 italic">"Ne lisez plus jamais seul. Participez aux débats enflammés sur vos séries préférées avec des milliers de passionnés."</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto">
-            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer">
-              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
+            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
               <div>
                 <p className="text-xs font-bold text-white">Le Sanctuaire d'Orisha</p>
                 <p className="text-[9px] text-stone-500 uppercase font-black">1 245 membres en direct</p>
               </div>
             </Card>
-            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer">
-              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center"><Activity className="h-5 w-5 text-primary" /></div>
+            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
+              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform"><Activity className="h-5 w-5 text-primary" /></div>
               <div>
                 <p className="text-xs font-bold text-white">Cyber-Reines Fans</p>
                 <p className="text-[9px] text-stone-500 uppercase font-black">850 débats aujourd'hui</p>
@@ -383,7 +423,7 @@ function LandingView({ featured, popular, isLoading, heroLoaded, setHeroLoaded }
                     <Globe className="h-4 w-4 text-primary" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Rejoignez la Révolution</span>
                 </div>
-                <h2 className="text-4xl md:text-6xl font-display font-black leading-tight tracking-tighter">Vivez de votre talent</h2>
+                <h2 className="text-4xl md:text-6xl font-display font-black leading-tight tracking-tighter">Votre talent mérite <br/> un public mondial</h2>
                 <p className="text-lg text-stone-400 font-light leading-relaxed italic">
                     "Plus de 12 000€ ont été reversés à nos artistes Pro le mois dernier via les AfriCoins et les dons directs. Pas de frais cachés, juste votre art."
                 </p>
