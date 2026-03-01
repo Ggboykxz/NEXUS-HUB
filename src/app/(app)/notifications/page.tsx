@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { 
   Bell, Check, Clock, Heart, MessageSquare, Star, 
   Trash2, Award, Loader2, Sparkles, BookOpen, 
-  Users, Coins, Settings, Info, CheckCircle2 
+  Users, Coins, Settings, Info, CheckCircle2,
+  AlertTriangle, Eraser
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,17 @@ import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from 'date-fns'
 import { fr } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type NotifFilter = 'all' | 'chapters' | 'social' | 'africoins' | 'system';
 
@@ -133,6 +145,21 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!currentUser || notifications.length === 0) return;
+    try {
+      const batch = writeBatch(db);
+      notifications.forEach(n => {
+        const ref = doc(db, 'users', currentUser.uid, 'notifications', n.id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+      toast({ title: "Boîte de réception vidée" });
+    } catch (e) {
+      toast({ title: "Erreur lors de la suppression", variant: "destructive" });
+    }
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'chapter':
@@ -170,15 +197,40 @@ export default function NotificationsPage() {
             </div>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleMarkAllAsRead}
-          disabled={filteredNotifications.filter(n => !n.read).length === 0}
-          className="rounded-full border-white/10 hover:bg-primary/10 hover:text-primary transition-all font-bold text-xs"
-        >
-          <CheckCircle2 className="mr-2 h-4 w-4" /> Tout marquer comme lu
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleMarkAllAsRead}
+            disabled={filteredNotifications.filter(n => !n.read).length === 0}
+            className="rounded-full border-white/10 hover:bg-primary/10 hover:text-primary transition-all font-bold text-xs"
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Tout marquer lu
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                disabled={notifications.length === 0}
+                className="rounded-full text-stone-500 hover:text-rose-500 hover:bg-rose-500/10 font-bold text-xs"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Tout effacer
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-display font-black">Vider les archives ?</AlertDialogTitle>
+                <AlertDialogDescription className="text-stone-400 italic">"Toutes vos notifications seront supprimées définitivement. Cette action est irréversible."</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white">Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearAll} className="rounded-xl bg-rose-600 font-black">Confirmer</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* FILTER TABS */}
@@ -269,15 +321,29 @@ export default function NotificationsPage() {
                                   <Check className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-stone-600 hover:text-rose-500 rounded-full h-10 w-10 bg-white/5" 
-                                onClick={() => handleDelete(notif.id)}
-                                title="Supprimer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-stone-600 hover:text-rose-500 rounded-full h-10 w-10 bg-white/5" 
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="font-display font-black">Supprimer cette notification ?</AlertDialogTitle>
+                                    <AlertDialogDescription className="italic">Cette action est irréversible.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white">Annuler</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(notif.id)} className="rounded-xl bg-rose-600 font-black">Confirmer</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </CardContent>
                         </Card>

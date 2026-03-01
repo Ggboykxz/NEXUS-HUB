@@ -17,19 +17,35 @@ import {
   Loader2, 
   ChevronRight,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Story } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function CreationsDashboardPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -53,6 +69,19 @@ export default function CreationsDashboardPage() {
     }
   });
 
+  const deleteStoryMutation = useMutation({
+    mutationFn: async (storyId: string) => {
+      await deleteDoc(doc(db, 'stories', storyId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-creations'] });
+      toast({ title: "Légende supprimée", description: "L'œuvre a été retirée des archives." });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible de supprimer l'œuvre.", variant: "destructive" });
+    }
+  });
+
   if (authLoading || fetchingStories) {
     return (
       <div className="container mx-auto max-w-7xl px-6 py-32 flex flex-col items-center justify-center gap-4">
@@ -62,7 +91,7 @@ export default function CreationsDashboardPage() {
     );
   }
 
-  if (!currentUser) return null; // Le middleware gère la redirection
+  if (!currentUser) return null;
 
   return (
     <div className="container mx-auto max-w-7xl px-6 py-12 space-y-12">
@@ -124,6 +153,36 @@ export default function CreationsDashboardPage() {
                     ) : (
                       <Badge className="bg-amber-500 text-black border-none text-[8px] font-black uppercase px-3 shadow-lg">Brouillon</Badge>
                     )}
+                  </div>
+
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon" className="h-10 w-10 rounded-xl bg-rose-600/80 backdrop-blur-md border border-white/10 hover:bg-rose-600">
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+                        <AlertDialogHeader>
+                          <div className="mx-auto bg-rose-500/10 p-3 rounded-2xl w-fit mb-4">
+                            <AlertTriangle className="h-6 w-6 text-rose-500" />
+                          </div>
+                          <AlertDialogTitle className="text-center font-display font-black">Supprimer "{story.title}" ?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-center italic text-stone-400">
+                            "Cette action effacera définitivement l'œuvre, tous ses chapitres et ses statistiques. Les légendes perdues ne reviennent jamais."
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="sm:justify-center gap-3">
+                          <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white">Conserver le récit</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteStoryMutation.mutate(story.id)}
+                            className="rounded-xl bg-rose-600 font-black h-12 px-8"
+                          >
+                            Confirmer la suppression
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
 

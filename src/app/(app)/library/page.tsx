@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BookMarked, Heart, History, Clock, Library as LibraryIcon, 
   Play, Trash2, ArrowRight, Flame, Sparkles, Star, Loader2,
-  XCircle, Eraser
+  XCircle, Eraser, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -25,6 +25,17 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function LibraryPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -262,9 +273,34 @@ export default function LibraryPage() {
                           <Button asChild size="lg" className="rounded-full font-black px-10 bg-primary text-black gold-shimmer h-12 shadow-xl shadow-primary/20">
                             <Link href={`/read/${entry.storyId}`}>Reprendre <ArrowRight className="ml-2 h-5 w-5" /></Link>
                           </Button>
-                          <Button onClick={() => removeProgressMutation.mutate(entry.storyId)} variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
-                            <Trash2 className="h-5 w-5" />
-                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
+                                <Trash2 className="h-5 w-5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+                              <AlertDialogHeader>
+                                <div className="mx-auto bg-rose-500/10 p-3 rounded-2xl w-fit mb-4">
+                                  <AlertTriangle className="h-6 w-6 text-rose-500" />
+                                </div>
+                                <AlertDialogTitle className="text-center text-xl font-display font-black uppercase tracking-tight">Retirer de la bibliothèque ?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-center text-stone-400 italic">
+                                  "Votre progression sur cette œuvre sera perdue dans les sables du temps. Êtes-vous certain de vouloir continuer ?"
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="sm:justify-center gap-3 mt-6">
+                                <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 h-12 px-8">Annuler</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => removeProgressMutation.mutate(entry.storyId)}
+                                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black h-12 px-8"
+                                >
+                                  Confirmer le retrait
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
 
@@ -295,16 +331,30 @@ export default function LibraryPage() {
                 <h3 className="text-xl font-display font-black text-white uppercase tracking-widest flex items-center gap-3">
                   <Star className="h-5 w-5 text-primary" /> Sélection Sacrée
                 </h3>
-                <Button 
-                  onClick={() => clearFavoritesMutation.mutate()} 
-                  disabled={clearFavoritesMutation.isPending}
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-stone-500 hover:text-rose-500 font-black text-[9px] uppercase tracking-[0.2em] gap-2"
-                >
-                  {clearFavoritesMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
-                  Vider les favoris
-                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      disabled={clearFavoritesMutation.isPending}
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-stone-500 hover:text-rose-500 font-black text-[9px] uppercase tracking-[0.2em] gap-2"
+                    >
+                      {clearFavoritesMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                      Vider les favoris
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-center font-display font-black">Réinitialiser les Favoris ?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-center italic">"Toutes vos œuvres préférées seront décochées de votre sanctuaire."</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center">
+                      <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white">Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => clearFavoritesMutation.mutate()} className="rounded-xl bg-rose-600 text-white font-black">Tout vider</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
                 {favoriteStories.map((story) => (
