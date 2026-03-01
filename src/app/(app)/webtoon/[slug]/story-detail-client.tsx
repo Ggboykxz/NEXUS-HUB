@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -85,7 +86,9 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
     };
   }, [currentUser, story.id]);
 
-  const handleFavorite = async () => {
+  const handleFavorite = async (showToast: boolean | React.MouseEvent = true) => {
+    const shouldShowToast = typeof showToast === 'boolean' ? showToast : true;
+    
     if (!currentUser) {
       openAuthModal('ajouter cette œuvre à vos favoris');
       return;
@@ -100,7 +103,13 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
         await updateDoc(storyRef, {
           likes: increment(-1)
         });
-        toast({ title: "Retiré des favoris" });
+        if (shouldShowToast) {
+          toast({ 
+            title: "Retiré des favoris",
+            action: <ToastAction altText="Annuler" onClick={() => handleFavorite(false)}>Annuler</ToastAction>,
+            duration: 5000
+          });
+        }
       } else {
         await setDoc(likeRef, {
           userId: currentUser.uid,
@@ -110,7 +119,13 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
         await updateDoc(storyRef, {
           likes: increment(1)
         });
-        toast({ title: "Ajouté aux favoris !" });
+        if (shouldShowToast) {
+          toast({ 
+            title: "Ajouté aux favoris !",
+            action: <ToastAction altText="Annuler" onClick={() => handleFavorite(false)}>Annuler</ToastAction>,
+            duration: 5000
+          });
+        }
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);

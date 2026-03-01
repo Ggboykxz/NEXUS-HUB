@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star, History, Clock, Loader2, Coins } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -158,7 +159,9 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     fetchRecentActivity();
   }, [artistStories]);
 
-  const handleSubscribeClick = async () => {
+  const handleSubscribeClick = async (showToast: boolean | React.MouseEvent = true) => {
+    const shouldShowToast = typeof showToast === 'boolean' ? showToast : true;
+    
     if (!currentUser) {
       openAuthModal('suivre vos artistes préférés');
       return;
@@ -175,10 +178,14 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
         await updateDoc(artistRef, {
           subscribersCount: increment(-1)
         });
-        toast({
-          title: "Abonnement annulé",
-          description: `Vous ne suivez plus ${artist.displayName}.`,
-        });
+        if (shouldShowToast) {
+          toast({
+            title: "Abonnement annulé",
+            description: `Vous ne suivez plus ${artist.displayName}.`,
+            action: <ToastAction altText="Annuler" onClick={() => handleSubscribeClick(false)}>Annuler</ToastAction>,
+            duration: 5000
+          });
+        }
       } else {
         await setDoc(subRef, {
           artistId: artist.uid,
@@ -202,10 +209,14 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
           createdAt: serverTimestamp()
         });
 
-        toast({
-          title: "Abonné !",
-          description: `Vous suivez désormais ${artist.displayName}.`,
-        });
+        if (shouldShowToast) {
+          toast({
+            title: "Abonné !",
+            description: `Vous suivez désormais ${artist.displayName}.`,
+            action: <ToastAction altText="Annuler" onClick={() => handleSubscribeClick(false)}>Annuler</ToastAction>,
+            duration: 5000
+          });
+        }
       }
     } catch (error) {
       console.error("Subscription error:", error);
