@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight, PenSquare, Loader2 } from "lucide-react";
+import { Sparkles, Zap, Users, Award, ChevronDown, CheckCircle2, ShieldCheck, Globe, Coins, LayoutGrid, Eye, EyeOff, ArrowRight, PenSquare, Loader2, Brush, BookOpen } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ import {
   FacebookAuthProvider, 
   OAuthProvider 
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -45,6 +45,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -74,6 +76,33 @@ export default function SignupPage() {
       acceptTerms: false,
     },
   });
+
+  const checkUserRoleAndRedirect = async (uid: string) => {
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (!userDoc.exists() || !userDoc.data()?.role) {
+      setPendingUid(uid);
+      setShowRoleSelection(true);
+      
+      // Initialize basic doc if it doesn't exist
+      if (!userDoc.exists()) {
+        const user = auth.currentUser;
+        await setDoc(doc(db, 'users', uid), {
+          uid: uid,
+          email: user?.email,
+          displayName: user?.displayName || 'Nouveau Voyageur',
+          photoURL: user?.photoURL || '',
+          afriCoins: 0,
+          bio: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      }
+    } else {
+      setSessionCookie();
+      router.push('/');
+      router.refresh();
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -130,14 +159,8 @@ export default function SignupPage() {
     }
 
     try {
-      await signInWithPopup(auth, provider);
-      setSessionCookie();
-      toast({
-        title: `Connecté avec ${platform}`,
-        description: "Bienvenue sur NexusHub !",
-      });
-      router.push('/');
-      router.refresh();
+      const userCredential = await signInWithPopup(auth, provider!);
+      await checkUserRoleAndRedirect(userCredential.user.uid);
     } catch (error: any) {
       console.error(error);
       toast({
@@ -149,6 +172,92 @@ export default function SignupPage() {
       setIsSocialLoading(null);
     }
   };
+
+  const handleRoleChoice = async (role: 'reader' | 'artist_draft') => {
+    if (!pendingUid) return;
+    setIsLoading(true);
+    try {
+      await updateDoc(doc(db, 'users', pendingUid), { 
+        role,
+        updatedAt: new Date().toISOString()
+      });
+      setSessionCookie();
+      toast({
+        title: role === 'reader' ? "Destinée : Lecteur" : "Destinée : Artiste",
+        description: "Votre profil a été configuré. Bienvenue au Hub !",
+      });
+      router.push('/');
+      router.refresh();
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de configurer le rôle.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (showRoleSelection) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950 p-6 animate-in fade-in zoom-in-95 duration-700">
+        <div className="max-w-4xl w-full space-y-12">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+              <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant tracking-tighter">Choisissez votre Destinée</h2>
+            <p className="text-stone-400 text-lg md:text-xl font-light italic leading-relaxed">
+              "Le Hub s'adapte à votre vision. Comment souhaitez-vous marquer l'histoire ?"
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Card 1: Artist */}
+            <button 
+              disabled={isLoading}
+              onClick={() => handleRoleChoice('artist_draft')}
+              className="group relative p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all duration-500 text-center space-y-6 overflow-hidden shadow-2xl"
+            >
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                <Brush className="h-12 w-12 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-display font-black text-white">Je suis Artiste</h3>
+                <p className="text-stone-500 text-sm italic font-light">"Je veux créer, publier mes récits et bâtir mon propre univers."</p>
+              </div>
+              <div className="pt-4">
+                <Badge className="bg-primary text-black font-black uppercase text-[10px] px-6 py-1 shadow-lg">Accès Atelier Pro</Badge>
+              </div>
+            </button>
+
+            {/* Card 2: Reader */}
+            <button 
+              disabled={isLoading}
+              onClick={() => handleRoleChoice('reader')}
+              className="group relative p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-emerald-500 transition-all duration-500 text-center space-y-6 overflow-hidden shadow-2xl"
+            >
+              <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="mx-auto w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                <BookOpen className="h-12 w-12 text-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-display font-black text-white">Je suis Lecteur</h3>
+                <p className="text-stone-500 text-sm italic font-light">"Je veux explorer les récits, suivre mes auteurs favoris et soutenir l'art."</p>
+              </div>
+              <div className="pt-4">
+                <Badge className="bg-emerald-500 text-white font-black uppercase text-[10px] px-6 py-1 shadow-lg">Accès Bibliothèque</Badge>
+              </div>
+            </button>
+          </div>
+
+          {isLoading && (
+            <div className="flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-stone-950">
@@ -226,12 +335,10 @@ export default function SignupPage() {
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <button 
                 disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Google')}
-                className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
+                className="h-11 md:h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 flex items-center justify-center group overflow-hidden relative shadow-xl transition-all active:scale-95"
               >
                 {isSocialLoading === 'Google' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
@@ -240,13 +347,11 @@ export default function SignupPage() {
                     Continuer avec Google
                   </>
                 )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
+              </button>
+              <button 
                 disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Facebook')}
-                className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
+                className="h-11 md:h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 flex items-center justify-center group overflow-hidden relative shadow-xl transition-all active:scale-95"
               >
                 {isSocialLoading === 'Facebook' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
@@ -255,13 +360,11 @@ export default function SignupPage() {
                     Continuer avec Facebook
                   </>
                 )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
+              </button>
+              <button 
                 disabled={!!isSocialLoading}
                 onClick={() => handleSocialLogin('Apple')}
-                className="h-11 md:h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 group overflow-hidden relative"
+                className="h-11 md:h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 flex items-center justify-center group overflow-hidden relative shadow-xl transition-all active:scale-95"
               >
                 {isSocialLoading === 'Apple' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
@@ -270,7 +373,7 @@ export default function SignupPage() {
                     Continuer avec Apple
                   </>
                 )}
-              </Button>
+              </button>
             </div>
 
             <div className="flex items-center gap-3 py-1 md:py-2">
@@ -290,12 +393,13 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl rounded-2xl animate-in fade-in slide-in-from-right-10 duration-1000">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-lg md:text-xl font-display font-bold">Créer un compte</CardTitle>
-              <CardDescription className="text-[10px] md:text-xs">Remplissez les informations ci-dessous.</CardDescription>
+          <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl rounded-2xl animate-in fade-in slide-in-from-right-10 duration-1000 overflow-hidden">
+            <div className="h-1.5 w-full bg-primary" />
+            <CardHeader className="text-center pb-2 pt-6">
+              <CardTitle className="text-lg md:text-xl font-display font-bold text-white">Créer un compte</CardTitle>
+              <CardDescription className="text-[10px] md:text-xs">Initialisez votre présence dans le Hub.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 md:space-y-4">
                   <FormField
@@ -303,9 +407,9 @@ export default function SignupPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Pseudo Unique</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Pseudo Unique</FormLabel>
                         <FormControl>
-                          <Input placeholder="VotrePseudo" {...field} className="bg-white/5 border-white/10 h-9 md:h-10 rounded-lg focus:border-primary transition-all text-xs md:text-sm" />
+                          <Input placeholder="L'Aventurier" {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl focus:border-primary transition-all text-xs md:text-sm text-white" />
                         </FormControl>
                         <FormMessage className="text-[9px] md:text-[10px]" />
                       </FormItem>
@@ -316,9 +420,9 @@ export default function SignupPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Email</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="nom@exemple.com" {...field} className="bg-white/5 border-white/10 h-9 md:h-10 rounded-lg focus:border-primary transition-all text-xs md:text-sm" />
+                          <Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl focus:border-primary transition-all text-xs md:text-sm text-white" />
                         </FormControl>
                         <FormMessage className="text-[9px] md:text-[10px]" />
                       </FormItem>
@@ -329,22 +433,22 @@ export default function SignupPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Mot de passe</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Mot de passe</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input 
                               type={showPassword ? "text" : "password"} 
                               {...field} 
-                              className="bg-white/5 border-white/10 h-9 md:h-10 rounded-lg pr-10 focus:border-primary transition-all text-xs md:text-sm" 
+                              className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl pr-10 focus:border-primary transition-all text-xs md:text-sm text-white" 
                             />
                             <Button 
                               type="button" 
                               variant="ghost" 
                               size="icon" 
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-stone-500 hover:text-white"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-stone-500 hover:text-white"
                               onClick={() => setShowPassword(!showPassword)}
                             >
-                              {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>
                           </div>
                         </FormControl>
@@ -357,7 +461,7 @@ export default function SignupPage() {
                     name="accountType"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs">Je rejoins en tant que...</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Je rejoins en tant que...</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -365,7 +469,7 @@ export default function SignupPage() {
                             className="grid grid-cols-3 gap-2"
                           >
                             {[
-                              { value: "reader", label: "Lecteur", icon: Globe },
+                              { value: "reader", label: "Lecteur", icon: BookOpen },
                               { value: "artist_draft", label: "Draft", icon: PenSquare },
                               { value: "artist_pro", label: "Pro", icon: Award },
                             ].map((item) => (
@@ -376,12 +480,12 @@ export default function SignupPage() {
                                 <label
                                   htmlFor={item.value}
                                   className={cn(
-                                    "flex-1 flex flex-col items-center justify-center p-1.5 md:p-2 rounded-lg border-2 border-white/10 cursor-pointer transition-all hover:bg-white/5",
-                                    field.value === item.value ? "border-primary bg-primary/10 text-primary" : "text-stone-400"
+                                    "flex-1 flex flex-col items-center justify-center p-2 md:p-3 rounded-xl border-2 border-white/10 cursor-pointer transition-all hover:bg-white/5",
+                                    field.value === item.value ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,168,67,0.2)]" : "text-stone-400 grayscale hover:grayscale-0"
                                   )}
                                 >
-                                  <item.icon className="h-3.5 w-3.5 md:h-4 md:w-4 mb-1" />
-                                  <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-tight">{item.label}</span>
+                                  <item.icon className="h-4 w-4 md:h-5 md:w-5 mb-1.5" />
+                                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{item.label}</span>
                                 </label>
                               </FormItem>
                             ))}
@@ -396,38 +500,37 @@ export default function SignupPage() {
                     control={form.control}
                     name="acceptTerms"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-2 space-y-0 rounded-lg border border-white/5 p-2 md:p-3 bg-white/5">
+                      <FormItem className="flex flex-row items-start space-x-2 space-y-0 rounded-xl border border-white/5 p-3 bg-white/5">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            className="mt-0.5 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-black h-3 w-3 md:h-3.5 md:w-3.5"
+                            className="mt-0.5 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-black h-3.5 w-3.5"
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="text-[9px] md:text-[10px] text-stone-400 font-light">
-                            J'accepte les <Link href="/legal/terms" className="text-primary hover:underline">Conditions</Link> et la <Link href="/legal/privacy" className="text-primary hover:underline">Politique</Link>.
+                          <FormLabel className="text-[9px] md:text-[10px] text-stone-400 font-light leading-snug">
+                            J'accepte les <Link href="/legal/terms" className="text-primary font-bold hover:underline">Conditions</Link> et la <Link href="/legal/privacy" className="text-primary font-bold hover:underline">Politique de Confidentialité</Link>.
                           </FormLabel>
                         </div>
                       </FormItem>
                     )}
                   />
 
-                  <Button type="submit" disabled={isLoading} className="w-full h-11 md:h-12 rounded-xl font-black text-sm md:text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_15px_rgba(212,168,67,0.25)] transition-all active:scale-95 group overflow-hidden relative">
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                  <Button type="submit" disabled={isLoading} className="w-full h-12 md:h-14 rounded-xl font-black text-sm md:text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)] transition-all active:scale-95 group overflow-hidden relative mt-2 gold-shimmer">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                       <>
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                        S'inscrire Gratuitement
+                        S'inscrire au Hub
                       </>
                     )}
                   </Button>
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex flex-col border-t border-white/5 pt-3 md:pt-4 mt-1 md:mt-2">
-              <div className="text-center text-[10px] md:text-xs text-stone-400">
+            <CardFooter className="flex flex-col border-t border-white/5 py-6 bg-white/5">
+              <div className="text-center text-[10px] md:text-xs text-stone-400 font-medium">
                 Déjà un compte ?{" "}
-                <Link href="/login" className="font-bold text-primary hover:text-primary/80 transition-colors">
+                <Link href="/login" className="font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-widest">
                   Se connecter
                 </Link>
               </div>
@@ -442,7 +545,7 @@ export default function SignupPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 md:mb-12 space-y-2 md:space-y-3">
             <h2 className="text-2xl md:text-4xl font-display font-bold text-white drop-shadow-[0_0_10px_rgba(212,168,67,0.2)]">Pourquoi Rejoindre NexusHub ?</h2>
-            <p className="text-stone-400 text-xs md:text-sm max-w-xl mx-auto">Le premier hub créatif panafricain pour les passionnés de narration visuelle.</p>
+            <p className="text-stone-400 text-xs md:text-sm max-w-xl mx-auto italic font-light">Le premier hub créatif panafricain pour les passionnés de narration visuelle.</p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -472,13 +575,13 @@ export default function SignupPage() {
                 color: "bg-emerald-500/10 text-emerald-500" 
               },
             ].map((item, i) => (
-              <Card key={i} className="bg-white/5 border-white/10 hover:border-primary/30 transition-all duration-500 group rounded-xl md:rounded-2xl">
-                <CardContent className="p-4 md:p-6 space-y-2 md:space-y-3">
-                  <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500", item.color)}>
-                    <item.icon className="h-5 w-5 md:h-6 md:w-6" />
+              <Card key={i} className="bg-stone-900 border-white/5 hover:border-primary/30 transition-all duration-500 group rounded-[2rem] overflow-hidden shadow-xl">
+                <CardContent className="p-6 md:p-8 space-y-4">
+                  <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-inner", item.color)}>
+                    <item.icon className="h-6 w-6 md:h-7 md:w-7" />
                   </div>
-                  <h3 className="text-sm md:text-lg font-bold text-white">{item.title}</h3>
-                  <p className="text-stone-400 text-[9px] md:text-xs leading-relaxed line-clamp-2">{item.desc}</p>
+                  <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-tight">{item.title}</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed line-clamp-3 italic font-light">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
