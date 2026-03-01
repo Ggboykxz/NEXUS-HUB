@@ -55,6 +55,10 @@ export default function Header() {
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Animation State for AfriCoins
+  const [isCoinFlashing, setIsCoinFlashing] = useState(false);
+  const prevCoinsRef = useRef<number | undefined>(undefined);
+
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
@@ -66,21 +70,19 @@ export default function Header() {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
     },
-    staleTime: 1000 * 60 * 15, // Cache for 15 mins
+    staleTime: 1000 * 60 * 15,
   });
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
 
-    // DB Status Listener
     const storiesRef = collection(db, 'stories');
     const unsubscribeDb = onSnapshot(query(storiesRef, limit(1)), 
       () => setDbStatus('connected'),
       () => setDbStatus('error')
     );
 
-    // Auth State Listener
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -102,6 +104,18 @@ export default function Header() {
       unsubscribeAuth();
     };
   }, []);
+
+  // Track AfriCoins changes for animation
+  useEffect(() => {
+    if (userProfile?.afriCoins !== undefined) {
+      if (prevCoinsRef.current !== undefined && userProfile.afriCoins > prevCoinsRef.current) {
+        setIsCoinFlashing(true);
+        const timer = setTimeout(() => setIsCoinFlashing(false), 1000);
+        return () => clearTimeout(timer);
+      }
+      prevCoinsRef.current = userProfile.afriCoins;
+    }
+  }, [userProfile?.afriCoins]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -195,7 +209,6 @@ export default function Header() {
             >
               {isBrowse ? (
                 <div className="flex h-full">
-                  {/* Left Column: Navigation */}
                   <div className="w-1/2 p-6 border-r border-white/5 space-y-6">
                     <div className="space-y-4">
                       <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mb-4">Bibliothèque</p>
@@ -222,7 +235,6 @@ export default function Header() {
                     </div>
                   </div>
 
-                  {/* Right Column: Trending */}
                   <div className="w-1/2 bg-white/[0.02] p-6 space-y-6">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.2em]">Tendances</p>
@@ -347,9 +359,15 @@ export default function Header() {
                   </Link>
 
                   <Link href="/africoins">
-                    <div className="hidden sm:flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-colors">
-                      <Coins className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-[11px] font-black text-primary">
+                    <div className={cn(
+                      "hidden sm:flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5 cursor-pointer hover:bg-primary/20 transition-all",
+                      isCoinFlashing && "animate-bounce border-primary shadow-[0_0_15px_rgba(212,168,67,0.5)] bg-primary/20"
+                    )}>
+                      <Coins className={cn("h-3.5 w-3.5 text-primary transition-colors", isCoinFlashing && "text-yellow-400")} />
+                      <span className={cn(
+                        "text-[11px] font-black text-primary transition-colors",
+                        isCoinFlashing && "text-yellow-400"
+                      )}>
                         {userProfile?.afriCoins || 0} 🪙
                       </span>
                     </div>
