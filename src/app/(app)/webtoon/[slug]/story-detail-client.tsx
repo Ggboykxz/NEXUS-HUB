@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Play, Heart, MessageSquare, Share2, Star, Eye, Clock, 
   ChevronRight, Award, Zap, Crown, Flame, Plus, Check, Info,
-  TrendingUp, CircleDollarSign, Headphones, Music, Share
+  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,8 +19,18 @@ import { StoryCard } from '@/components/story-card';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, collection, addDoc } from 'firebase/firestore';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface StoryDetailClientProps {
   story: Story;
@@ -34,6 +44,10 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(true);
+  
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('Contenu offensant');
+  const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -95,6 +109,32 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
         description: "Impossible de mettre à jour vos favoris.",
         variant: "destructive" 
       });
+    }
+  };
+
+  const handleReportStory = async () => {
+    if (!currentUser) {
+      openAuthModal('signaler une œuvre');
+      return;
+    }
+
+    setIsReporting(true);
+    try {
+      await addDoc(collection(db, 'reports'), {
+        type: 'story',
+        targetId: story.id,
+        targetTitle: story.title,
+        reporterId: currentUser.uid,
+        reason: reportReason,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      toast({ title: "Signalement envoyé", description: "Nos modérateurs vont examiner cette œuvre." });
+      setIsReportDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Erreur lors du signalement", variant: "destructive" });
+    } finally {
+      setIsReporting(false);
     }
   };
 
@@ -166,6 +206,39 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                   <Button variant="outline" size="icon" className="h-16 w-16 rounded-full border-white/10 text-white hover:bg-white/10 backdrop-blur-md">
                     <Share2 className="h-7 w-7" />
                   </Button>
+                  <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-16 w-16 rounded-full border-white/10 text-white hover:bg-orange-500/10 hover:text-orange-500 backdrop-blur-md">
+                        <Flag className="h-7 w-7" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-stone-900 border-white/5 text-white rounded-[2rem]">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-orange-500" /> Signaler l'œuvre</DialogTitle>
+                        <DialogDescription className="text-stone-400 italic">
+                          "Aidez-nous à préserver la qualité de NexusHub en signalant tout contenu problématique."
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-6 space-y-4">
+                        <Select value={reportReason} onValueChange={setReportReason}>
+                          <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-stone-900 border-white/10">
+                            <SelectItem value="Contenu offensant">Contenu offensant</SelectItem>
+                            <SelectItem value="Plagiat">Plagiat</SelectItem>
+                            <SelectItem value="Spam / Publicité">Spam / Publicité</SelectItem>
+                            <SelectItem value="Autre">Autre</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleReportStory} disabled={isReporting} className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                          {isReporting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer le signalement"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>

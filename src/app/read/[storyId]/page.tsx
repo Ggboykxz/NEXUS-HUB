@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,15 @@ import { getStoryUrl } from '@/lib/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // #region Page Components
 
@@ -252,6 +261,9 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
   const { toast } = useToast();
   const [commentText, setCommentText] = useState('');
   const queryClient = useQueryClient();
+  const [reportCommentId, setReportCommentId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('Autre');
+  const [isReporting, setIsReporting] = useState(false);
 
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['comments', storyId, chapterId],
@@ -302,6 +314,34 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
     }
   });
 
+  const handleReport = async () => {
+    if (!currentUser) {
+      openAuthModal('signaler un contenu');
+      return;
+    }
+    if (!reportCommentId) return;
+
+    setIsReporting(true);
+    try {
+      await addDoc(collection(db, 'reports'), {
+        type: 'comment',
+        targetId: reportCommentId,
+        storyId,
+        chapterId,
+        reporterId: currentUser.uid,
+        reason: reportReason,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      toast({ title: "Signalement envoyé", description: "Merci d'aider à garder le Hub bienveillant." });
+      setReportCommentId(null);
+    } catch (e) {
+      toast({ title: "Erreur lors du signalement", variant: "destructive" });
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-8">
       <div className="space-y-4">
@@ -340,15 +380,48 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
                   <p className="text-xs font-bold text-white truncate">{c.authorName}</p>
                   <p className="text-[8px] text-stone-500 uppercase font-black">Il y a un instant</p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 gap-1 px-2 rounded-lg text-stone-500 hover:text-rose-500"
-                  onClick={() => likeMutation.mutate(c.id)}
-                >
-                  <Heart className="h-3 w-3" />
-                  <span className="text-[10px] font-bold">{c.likes}</span>
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 gap-1 px-2 rounded-lg text-stone-500 hover:text-rose-500"
+                    onClick={() => likeMutation.mutate(c.id)}
+                  >
+                    <Heart className="h-3 w-3" />
+                    <span className="text-[10px] font-bold">{c.likes}</span>
+                  </Button>
+                  <Dialog open={reportCommentId === c.id} onOpenChange={(open) => !open && setReportCommentId(null)}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => setReportCommentId(c.id)} variant="ghost" size="icon" className="h-7 w-7 text-stone-600 hover:text-orange-500 rounded-lg">
+                        <Flag className="h-3 w-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-stone-900 border-white/5 text-white rounded-[2rem]">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-orange-500" /> Signaler ce message</DialogTitle>
+                        <DialogDescription className="text-stone-400">Pourquoi souhaitez-vous signaler ce commentaire ?</DialogDescription>
+                      </DialogHeader>
+                      <div className="py-6 space-y-4">
+                        <Select value={reportReason} onValueChange={setReportReason}>
+                          <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-stone-900 border-white/10">
+                            <SelectItem value="Harcèlement">Harcèlement</SelectItem>
+                            <SelectItem value="Spam">Spam</SelectItem>
+                            <SelectItem value="Contenu offensant">Contenu offensant</SelectItem>
+                            <SelectItem value="Autre">Autre</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleReport} disabled={isReporting} className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                          {isReporting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Envoyer le signalement"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
               <p className="text-xs text-stone-400 leading-relaxed pl-11">{c.content}</p>
             </div>
