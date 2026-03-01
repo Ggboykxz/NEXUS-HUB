@@ -1,22 +1,34 @@
-'use client';
-
-import { use } from 'react';
-import { stories } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
 import { Sparkles } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import type { Story } from '@/lib/types';
 
-export default function GenrePage({ params: propsParams }: { params: { genre: string } }) {
-  const params = use(propsParams);
-  const genreName = decodeURIComponent(params.genre);
+export const revalidate = 3600;
+
+interface PageProps {
+  params: Promise<{ genre: string }>;
+}
+
+export default async function GenrePage({ params }: PageProps) {
+  const { genre } = await params;
+  const genreName = decodeURIComponent(genre);
   
-  const genreStories = stories.filter(s => 
-    s.genre === genreName || s.tags.includes(genreName)
+  const q = query(
+    collection(db, 'stories'),
+    where('genre', '==', genreName),
+    where('isPublished', '==', true),
+    orderBy('views', 'desc')
   );
 
-  if (genreStories.length === 0) {
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
     notFound();
   }
+
+  const genreStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
