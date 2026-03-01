@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useMemo, Suspense, useEffect } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { stories, artists, type Story, type UserProfile } from '@/lib/types';
+import { type Story, type UserProfile } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
 import { Input } from '@/components/ui/input';
 import { 
   Search, Users, BookOpen, X, Sparkles, Mic, MicOff, 
   Filter, MapPin, Languages, Clock, Hash, Globe, 
-  ChevronDown, SlidersHorizontal, CheckCircle2, History
+  ChevronDown, SlidersHorizontal, CheckCircle2, History,
+  LayoutGrid, Star, Zap
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +20,6 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
@@ -49,7 +48,6 @@ function SearchResultsContent() {
     theme: 'Tous'
   });
 
-  // Fetch all stories for local smart filtering (Simulation semantic)
   const { data: allStories = [], isLoading: loadingStories } = useQuery({
     queryKey: ['search-all-stories'],
     queryFn: async () => {
@@ -59,7 +57,6 @@ function SearchResultsContent() {
     }
   });
 
-  // Fetch all artists
   const { data: allArtists = [], isLoading: loadingArtists } = useQuery({
     queryKey: ['search-all-artists'],
     queryFn: async () => {
@@ -71,8 +68,6 @@ function SearchResultsContent() {
 
   const filteredStories = useMemo(() => {
     let results = allStories;
-
-    // Search term matching (Title, Description, Tags - "Semantic" simulation)
     if (searchTerm.trim()) {
       const lowerTerm = searchTerm.toLowerCase();
       results = results.filter(s => 
@@ -83,11 +78,7 @@ function SearchResultsContent() {
         s.tags.some(t => t.toLowerCase().includes(lowerTerm))
       );
     }
-
-    // Advanced Filters
     if (filters.status !== 'Tous') results = results.filter(s => s.status === filters.status);
-    if (filters.country !== 'Tous') results = results.filter(s => s.region === filters.country);
-    
     return results;
   }, [searchTerm, allStories, filters]);
 
@@ -101,37 +92,16 @@ function SearchResultsContent() {
   }, [searchTerm, allArtists]);
 
   const handleVoiceSearch = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast({ 
-        title: "Recherche vocale non supportée", 
-        description: "Votre navigateur ne supporte pas la reconnaissance vocale.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
     recognition.lang = 'fr-FR';
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      toast({ title: "NexusHub à l'écoute...", description: "Parlez maintenant pour chercher une œuvre." });
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
       setSearchState(transcript);
       router.push(`/search?q=${encodeURIComponent(transcript)}`);
-      setIsListening(false);
     };
-
-    recognition.onerror = () => {
-      setIsListening(false);
-      toast({ title: "Erreur vocale", description: "Désolé, je n'ai pas pu comprendre votre demande.", variant: "destructive" });
-    };
-
     recognition.onend = () => setIsListening(false);
     recognition.start();
   };
@@ -141,52 +111,39 @@ function SearchResultsContent() {
     router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
   };
 
-  const handleQuickFilter = (tag: string) => {
-    setSearchState(tag);
-    router.push(`/search?q=${encodeURIComponent(tag)}`);
-  };
-
   return (
-    <div className="space-y-10">
-      {/* 1. HERO SEARCH WITH VOICE */}
-      <section className="relative py-12 px-6 rounded-[2.5rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-        
-        <div className="max-w-3xl mx-auto text-center relative z-10 space-y-8">
-            <div className="space-y-2">
-                <Badge variant="outline" className="border-primary/20 text-primary uppercase tracking-[0.3em] font-black text-[9px] px-4">Système de Recherche Intelligent</Badge>
-                <h1 className="text-3xl md:text-5xl font-bold font-display text-white gold-resplendant">Découvrez votre prochain coup de cœur</h1>
+    <div className="space-y-16">
+      {/* 1. NEXUS ARCHIVES HEADER */}
+      <section className="relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
+        <div className="max-w-3xl mx-auto text-center relative z-10 space-y-10">
+            <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
+                  <Search className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nexus Search Engine v2.0</span>
+                </div>
+                <h1 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
+                  Les Archives <br/><span className="gold-resplendant">du Hub</span>
+                </h1>
             </div>
 
-            <form onSubmit={handleSearch} className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-primary h-6 w-6 pointer-events-none group-focus-within:scale-110 transition-transform">
+            <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-600 h-6 w-6 pointer-events-none group-focus-within:text-primary transition-all">
                     <Search className="h-6 w-6" />
                 </div>
                 <Input 
                     value={searchTerm}
                     onChange={(e) => setSearchState(e.target.value)}
-                    placeholder="Titre, thèmes (ex: aventure savane), auteur..."
-                    className="h-16 pl-14 pr-28 text-xl rounded-full border-white/10 focus:border-primary shadow-2xl bg-white/5 backdrop-blur-xl text-white font-light placeholder:text-stone-600 transition-all"
+                    placeholder="Titre, auteur, mythologie..."
+                    className="h-16 pl-16 pr-28 text-xl rounded-full border-white/10 focus:border-primary shadow-2xl bg-white/5 backdrop-blur-xl text-white font-light placeholder:text-stone-700 transition-all"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    {searchTerm && (
-                        <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => {setSearchState(''); router.push('/search')}}
-                            className="text-stone-500 hover:text-white rounded-full"
-                        >
-                            <X className="h-5 w-5" />
-                        </Button>
-                    )}
                     <Button 
                         type="button" 
                         onClick={handleVoiceSearch}
                         className={cn(
                             "h-11 w-11 rounded-full shadow-lg transition-all",
-                            isListening ? "bg-red-500 hover:bg-red-600 animate-pulse" : "bg-primary text-black hover:bg-primary/90"
+                            isListening ? "bg-rose-600 animate-pulse" : "bg-primary text-black hover:bg-primary/90"
                         )}
                     >
                         {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -194,303 +151,141 @@ function SearchResultsContent() {
                 </div>
             </form>
 
-            <div className="flex flex-wrap justify-center gap-2">
-                <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest self-center mr-2">Tendances Africaines :</span>
-                {['Mythologie', 'Afrofuturisme', 'Action', 'Cyberpunk', 'Empire Mandingue'].map(tag => (
+            <div className="flex flex-wrap justify-center gap-3">
+                {['Mythologie', 'Action', 'Afrofuturisme', 'Romance', 'Elite'].map(tag => (
                     <Badge 
                         key={tag} 
                         variant="secondary" 
-                        className="px-4 py-1.5 cursor-pointer bg-white/5 text-stone-300 hover:bg-primary hover:text-black transition-all rounded-full border border-white/5 font-bold text-[10px]"
-                        onClick={() => handleQuickFilter(tag)}
+                        className="px-5 py-2 cursor-pointer bg-white/5 text-stone-400 hover:bg-primary hover:text-black transition-all rounded-full border border-white/5 font-bold text-[10px] uppercase tracking-widest"
+                        onClick={() => { setSearchState(tag); router.push(`/search?q=${tag}`) }}
                     >
                         #{tag}
                     </Badge>
                 ))}
             </div>
         </div>
-      </section>
+      </header>
 
-      {/* 2. ADVANCED FILTERS PANEL */}
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+      {/* 2. RESULTS & TABS */}
+      <div className="space-y-10">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-2">
             <div className="flex items-center gap-4">
                 <Button 
                     onClick={() => setShowFilters(!showFilters)}
                     variant="outline" 
                     className={cn(
-                        "rounded-full gap-2 border-primary/20 text-xs font-black uppercase tracking-widest h-10 px-6",
+                        "rounded-full gap-3 border-white/10 text-[10px] font-black uppercase tracking-[0.2em] h-12 px-8",
                         showFilters && "bg-primary text-black"
                     )}
                 >
                     <SlidersHorizontal className="h-4 w-4" />
-                    {showFilters ? 'Masquer Filtres' : 'Filtres Avancés'}
+                    {showFilters ? 'Fermer Filtres' : 'Affiner la quête'}
                 </Button>
-                <div className="h-8 w-px bg-border/50 hidden md:block" />
-                <p className="text-muted-foreground text-xs font-medium">
-                    {filteredStories.length} œuvres trouvées
-                </p>
+                <div className="hidden sm:block text-[10px] uppercase font-black text-stone-600 tracking-widest">
+                  {filteredStories.length + filteredArtists.length} découvertes
+                </div>
             </div>
 
-            <div className="flex bg-muted/50 p-1 rounded-2xl border border-border/50">
-                <Button 
-                    variant={activeTab === 'all' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setActiveTab('all')}
-                    className="rounded-xl h-9 text-[10px] font-black uppercase tracking-tighter"
-                >
-                    Tout
-                </Button>
-                <Button 
-                    variant={activeTab === 'stories' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setActiveTab('stories')}
-                    className="rounded-xl h-9 gap-2 text-[10px] font-black uppercase tracking-tighter"
-                >
-                    <BookOpen className="h-3.5 w-3.5" /> Œuvres
-                </Button>
-                <Button 
-                    variant={activeTab === 'artists' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setActiveTab('artists')}
-                    className="rounded-xl h-9 gap-2 text-[10px] font-black uppercase tracking-tighter"
-                >
-                    <Users className="h-3.5 w-3.5" /> Créateurs
-                </Button>
+            <div className="flex bg-muted/50 p-1 rounded-2xl border border-border/50 h-12 w-full md:w-auto">
+                <Button variant={activeTab === 'all' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('all')} className="rounded-xl flex-1 md:flex-none px-8 font-black text-[10px] uppercase tracking-widest">Tout</Button>
+                <Button variant={activeTab === 'stories' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('stories')} className="rounded-xl flex-1 md:flex-none px-8 font-black text-[10px] uppercase tracking-widest gap-2"><BookOpen className="h-3.5 w-3.5" /> Œuvres</Button>
+                <Button variant={activeTab === 'artists' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('artists')} className="rounded-xl flex-1 md:flex-none px-8 font-black text-[10px] uppercase tracking-widest gap-2"><Users className="h-3.5 w-3.5" /> Artistes</Button>
             </div>
         </div>
 
-        {showFilters && (
-            <Card className="border-primary/10 bg-muted/20 animate-in slide-in-from-top-4 duration-500">
-                <CardContent className="p-6 grid grid-cols-2 md:grid-cols-5 gap-6">
-                    <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Pays d'origine</Label>
-                        <Select value={filters.country} onValueChange={(val) => setFilters({...filters, country: val})}>
-                            <SelectTrigger className="h-9 rounded-xl bg-background border-none shadow-sm text-xs font-bold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Tous">Tous</SelectItem>
-                                <SelectItem value="Gabon">Gabon 🇬🇦</SelectItem>
-                                <SelectItem value="Sénégal">Sénégal 🇸🇳</SelectItem>
-                                <SelectItem value="Nigeria">Nigeria 🇳🇬</SelectItem>
-                                <SelectItem value="Côte d'Ivoire">C. d'Ivoire 🇨🇮</SelectItem>
-                            </SelectContent>
-                        </Select>
+        <div className="min-h-[400px]">
+          {activeTab === 'all' && (
+            <div className="space-y-20 animate-in fade-in duration-700">
+              {filteredStories.length > 0 && (
+                <section className="space-y-10">
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-xl"><BookOpen className="text-primary h-5 w-5" /></div>
+                      <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Histoires Trouvées</h3>
                     </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-1.5"><Languages className="h-3 w-3" /> Langue</Label>
-                        <Select value={filters.language} onValueChange={(val) => setFilters({...filters, language: val})}>
-                            <SelectTrigger className="h-9 rounded-xl bg-background border-none shadow-sm text-xs font-bold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Toutes">Toutes</SelectItem>
-                                <SelectItem value="Français">Français</SelectItem>
-                                <SelectItem value="Swahili">Swahili</SelectItem>
-                                <SelectItem value="Wolof">Wolof</SelectItem>
-                                <SelectItem value="Yoruba">Yoruba</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-1.5"><History className="h-3 w-3" /> Statut</Label>
-                        <Select value={filters.status} onValueChange={(val) => setFilters({...filters, status: val})}>
-                            <SelectTrigger className="h-9 rounded-xl bg-background border-none shadow-sm text-xs font-bold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Tous">Tous</SelectItem>
-                                <SelectItem value="En cours">En cours</SelectItem>
-                                <SelectItem value="Terminé">Terminé</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-1.5"><Clock className="h-3 w-3" /> Longueur</Label>
-                        <Select value={filters.length} onValueChange={(val) => setFilters({...filters, length: val})}>
-                            <SelectTrigger className="h-9 rounded-xl bg-background border-none shadow-sm text-xs font-bold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Toutes">Toutes</SelectItem>
-                                <SelectItem value="One-Shot">One-Shot</SelectItem>
-                                <SelectItem value="Courte (1-10)">Courte</SelectItem>
-                                <SelectItem value="Moyenne (10-50)">Moyenne</SelectItem>
-                                <SelectItem value="Épique (50+)">Épique</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground flex items-center gap-1.5"><Hash className="h-3 w-3" /> Thème</Label>
-                        <Select value={filters.theme} onValueChange={(val) => setFilters({...filters, theme: val})}>
-                            <SelectTrigger className="h-9 rounded-xl bg-background border-none shadow-sm text-xs font-bold">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Tous">Tous</SelectItem>
-                                <SelectItem value="Mythologie">Mythologie</SelectItem>
-                                <SelectItem value="Action">Action</SelectItem>
-                                <SelectItem value="Romance">Romance</SelectItem>
-                                <SelectItem value="Histoire">Histoire</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
-        )}
-      </div>
-
-      {/* 3. RESULTS DISPLAY */}
-      <div className="min-h-[400px]">
-        {activeTab === 'all' && (
-          <div className="space-y-16 animate-in fade-in duration-500">
-            {filteredStories.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-lg"><BookOpen className="text-primary h-5 w-5" /></div>
-                    <h3 className="text-2xl font-display font-black">Œuvres</h3>
+                    <Button variant="link" onClick={() => setActiveTab('stories')} className="text-primary font-black text-[10px] uppercase tracking-widest">Voir tout ({filteredStories.length})</Button>
                   </div>
-                  <Button variant="link" onClick={() => setActiveTab('stories')} className="text-primary font-bold text-xs uppercase tracking-widest">Voir tout ({filteredStories.length})</Button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                  {filteredStories.slice(0, 5).map(story => (
-                    <StoryCard key={story.id} story={story} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {filteredArtists.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-emerald-500/10 p-2 rounded-lg"><Users className="text-emerald-500 h-5 w-5" /></div>
-                    <h3 className="text-2xl font-display font-black">Créateurs</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    {filteredStories.slice(0, 5).map(story => (
+                      <StoryCard key={story.id} story={story} />
+                    ))}
                   </div>
-                  <Button variant="link" onClick={() => setActiveTab('artists')} className="text-emerald-500 font-bold text-xs uppercase tracking-widest">Voir tout ({filteredArtists.length})</Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredArtists.slice(0, 6).map(artist => (
-                    <Link key={artist.uid} href={`/artiste/${artist.slug}`}>
-                      <Card className="hover:border-primary/50 transition-all group overflow-hidden bg-muted/20 border-none rounded-2xl">
-                        <CardContent className="p-6 flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                            <AvatarImage src={artist.photoURL} alt={artist.displayName} />
-                            <AvatarFallback className="bg-primary/5 text-primary font-bold">{artist.displayName.slice(0,1)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate font-display">{artist.displayName}</h3>
-                            <p className="text-xs text-muted-foreground line-clamp-1 mb-2 font-light italic">{artist.bio || "Explorateur de récits."}</p>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[8px] uppercase font-black border-stone-700">{artist.subscribersCount.toLocaleString()} fans</Badge>
-                                {artist.role?.includes('pro') && <Badge className="bg-emerald-500 text-white border-none text-[8px] h-4 font-black">PRO</Badge>}
+                </section>
+              )}
+
+              {filteredArtists.length > 0 && (
+                <section className="space-y-10">
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-emerald-500/10 p-2 rounded-xl"><Users className="text-emerald-500 h-5 w-5" /></div>
+                      <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Créateurs Associés</h3>
+                    </div>
+                    <Button variant="link" onClick={() => setActiveTab('artists')} className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Voir tout ({filteredArtists.length})</Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredArtists.slice(0, 6).map(artist => (
+                      <Link key={artist.uid} href={`/artiste/${artist.slug}`}>
+                        <Card className="hover:border-primary/30 transition-all group overflow-hidden bg-white/[0.02] border-white/5 rounded-[2rem] p-6">
+                          <div className="flex items-center gap-5">
+                            <Avatar className="h-20 w-20 border-4 border-white/5 group-hover:ring-4 ring-primary/20 transition-all shadow-xl">
+                              <AvatarImage src={artist.photoURL} alt={artist.displayName} />
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{artist.displayName.slice(0,1)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-xl group-hover:text-primary transition-colors truncate font-display text-white">{artist.displayName}</h3>
+                              <p className="text-xs text-stone-500 line-clamp-1 mb-3 font-light italic">"{artist.bio || "Explorateur de récits."}"</p>
+                              <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[8px] uppercase font-black border-white/10 text-stone-400 px-2 py-0.5">{artist.subscribersCount.toLocaleString()} fans</Badge>
+                                  {artist.role?.includes('pro') && <Badge className="bg-emerald-500 text-white border-none text-[8px] h-4 font-black px-2 py-0.5">PRO</Badge>}
+                              </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            {filteredStories.length === 0 && filteredArtists.length === 0 && !loadingStories && (
-              <div className="text-center py-32 bg-muted/10 rounded-[3rem] border-2 border-dashed border-border/50">
-                <div className="bg-muted p-6 rounded-full w-fit mx-auto mb-6">
-                    <Sparkles className="h-12 w-12 text-muted-foreground opacity-20" />
+              {filteredStories.length === 0 && filteredArtists.length === 0 && !loadingStories && (
+                <div className="text-center py-32 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5">
+                  <div className="bg-white/5 p-8 rounded-full w-fit mx-auto mb-8">
+                      <Sparkles className="h-16 w-16 text-stone-700 animate-pulse" />
+                  </div>
+                  <h2 className="text-3xl font-bold font-display text-white mb-2">Les sables sont restés muets...</h2>
+                  <p className="text-stone-500 max-w-sm mx-auto mb-10 font-light italic">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Essayez d'autres mots-clés.</p>
+                  <Button 
+                      variant="outline" 
+                      className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase text-xs tracking-widest" 
+                      onClick={() => {setSearchState(''); router.push('/search')}}
+                  >
+                      Réinitialiser la Quête
+                  </Button>
                 </div>
-                <h2 className="text-2xl font-bold font-display mb-2">Les sables sont restés muets...</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-light italic">Essayez d'autres mots-clés ou utilisez la recherche vocale pour explorer le Hub.</p>
-                <Button 
-                    variant="outline" 
-                    className="rounded-full px-10 h-12 border-primary text-primary hover:bg-primary hover:text-black font-black" 
-                    onClick={() => {setSearchState(''); router.push('/search')}}
-                >
-                    Réinitialiser tout
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {(activeTab === 'stories' || activeTab === 'artists') && (
-            <div className="animate-in fade-in duration-500">
-                {activeTab === 'stories' ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        {filteredStories.map(story => <StoryCard key={story.id} story={story} />)}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredArtists.map(artist => (
-                            <Link key={artist.uid} href={`/artiste/${artist.slug}`}>
-                                <Card className="hover:border-primary/50 transition-all group bg-muted/20 border-none rounded-2xl">
-                                    <CardContent className="p-6 flex items-center gap-4">
-                                        <Avatar className="h-20 w-20 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                                            <AvatarImage src={artist.photoURL} alt={artist.displayName} />
-                                            <AvatarFallback>{artist.displayName.slice(0,1)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-bold text-xl group-hover:text-primary transition-colors truncate font-display">{artist.displayName}</h3>
-                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3 font-light italic">{artist.bio}</p>
-                                            <div className="flex gap-2">
-                                                <Badge variant="outline" className="text-[8px] uppercase font-black">{artist.subscribersCount.toLocaleString()} fans</Badge>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+              )}
             </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// #region Helper UI
-function Label({ children, className }: any) {
-    return <label className={cn("text-xs font-bold text-foreground", className)}>{children}</label>;
+function MicOff(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>;
 }
 
-const Select = ({ value, onValueChange, children }: any) => {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between h-9 text-xs font-bold rounded-xl border-border/50 bg-background/50 hover:bg-muted">
-                    {value} <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 rounded-xl p-1 border-primary/10 shadow-2xl">
-                {children}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-};
-
-const SelectContent = ({ children }: any) => <>{children}</>;
-const SelectItem = ({ value, children, onClick }: any) => (
-    <DropdownMenuItem className="rounded-lg h-9 text-xs font-medium cursor-pointer" onClick={() => (window as any)._onValChange(value)}>
-        {children}
-    </DropdownMenuItem>
-);
-const SelectTrigger = ({ children, className }: any) => <div className={className}>{children}</div>;
-const SelectValue = ({ children }: any) => <>{children}</>;
-// #endregion
+function Label({ children, className }: any) {
+    return <label className={cn("text-[9px] font-black uppercase tracking-widest text-stone-500", className)}>{children}</label>;
+}
 
 export default function SearchPage() {
   return (
-    <div className="container mx-auto max-w-7xl px-6 py-12">
+    <div className="container max-w-7xl mx-auto px-6 py-12">
       <Suspense fallback={
-        <div className="h-96 flex flex-col items-center justify-center gap-4">
-            <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground font-display font-bold animate-pulse uppercase tracking-widest text-[10px]">Ouverture des archives Nexus...</p>
+        <div className="h-96 flex flex-col items-center justify-center gap-6">
+            <div className="h-16 w-16 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(212,168,67,0.3)]" />
+            <p className="text-stone-500 font-display font-black animate-pulse uppercase tracking-[0.3em] text-[10px]">Consultation des archives Nexus...</p>
         </div>
       }>
         <SearchResultsContent />
