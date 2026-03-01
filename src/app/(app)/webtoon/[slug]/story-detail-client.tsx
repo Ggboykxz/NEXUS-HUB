@@ -8,19 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Play, Heart, MessageSquare, Share2, Star, Eye, Clock, 
   ChevronRight, Award, Zap, Crown, Flame, Plus, Check, Info,
-  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle
+  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle, Loader2
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { StoryCard } from '@/components/story-card';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, collection, addDoc } from 'firebase/firestore';
-import type { Story, UserProfile, Chapter } from '@/lib/types';
+import { doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, collection, addDoc } from 'firebase/firestore';
+import type { Story, UserProfile, Chapter, LibraryEntry } from '@/lib/types';
+import { getStoryUrl } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +42,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
   const { openAuthModal } = useAuthModal();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isLoadingFavorite, setIsLoadingFavorite] = useState(true);
+  const [libraryEntry, setLibraryEntry] = useState<LibraryEntry | null>(null);
   
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState('Contenu offensant');
@@ -56,21 +55,34 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
     return () => unsubscribe();
   }, []);
 
-  // Monitor favorite status from Firestore
+  // Monitor favorite and library status from Firestore
   useEffect(() => {
     if (!currentUser || !story.id) {
       setIsFavorite(false);
-      setIsLoadingFavorite(false);
+      setLibraryEntry(null);
       return;
     }
 
+    // 1. Listen to Likes/Favorites
     const likeRef = doc(db, 'stories', story.id, 'likes', currentUser.uid);
-    const unsub = onSnapshot(likeRef, (docSnap) => {
+    const unsubFav = onSnapshot(likeRef, (docSnap) => {
       setIsFavorite(docSnap.exists());
-      setIsLoadingFavorite(false);
     });
 
-    return () => unsub();
+    // 2. Listen to Library/Progress
+    const libraryRef = doc(db, 'users', currentUser.uid, 'library', story.id);
+    const unsubLib = onSnapshot(libraryRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setLibraryEntry(docSnap.data() as LibraryEntry);
+      } else {
+        setLibraryEntry(null);
+      }
+    });
+
+    return () => {
+      unsubFav();
+      unsubLib();
+    };
   }, [currentUser, story.id]);
 
   const handleFavorite = async () => {
@@ -84,14 +96,12 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
 
     try {
       if (isFavorite) {
-        // UNLIKE logic
         await deleteDoc(likeRef);
         await updateDoc(storyRef, {
           likes: increment(-1)
         });
         toast({ title: "Retiré des favoris" });
       } else {
-        // LIKE logic
         await setDoc(likeRef, {
           userId: currentUser.uid,
           userName: currentUser.displayName || 'Voyageur',
@@ -154,11 +164,28 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
             {/* Main Cover */}
             <div className="relative aspect-[3/4] w-56 md:w-80 rounded-[2.5rem] overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.5)] border-8 border-background shrink-0 -mb-8 md:-mb-24 animate-in slide-in-from-bottom-12 duration-1000">
               <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" priority />
-              {story.isPremium && (
-                <div className="absolute top-6 right-6 bg-primary text-black p-2 rounded-xl shadow-2xl">
-                  <Crown className="h-6 w-6 fill-current" />
+              
+              {/* Progress Bar overlay */}
+              {libraryEntry && libraryEntry.progress > 0 && (
+                <div className="absolute bottom-0 left-0 w-full h-2 bg-black/40 z-20">
+                  <div 
+                    className="h-full bg-primary shadow-[0_0_15px_hsl(var(--primary))]" 
+                    style={{ width: `${libraryEntry.progress}%` }} 
+                  />
                 </div>
               )}
+
+              {/* Badges overlay */}
+              <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
+                {story.isPremium && (
+                  <div className="bg-primary text-black p-2 rounded-xl shadow-2xl">
+                    <Crown className="h-6 w-6 fill-current" />
+                  </div>
+                )}
+                {libraryEntry && libraryEntry.progress === 100 && (
+                  <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black uppercase px-3 py-1 shadow-2xl">✓ Terminé</Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex-1 space-y-8 pb-4 md:pb-12 animate-in fade-in slide-in-from-left-12 duration-1000 delay-200">
@@ -177,7 +204,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                   <Link href={`/artiste/${artist.slug}`} className="flex items-center gap-4 group w-fit bg-white/5 backdrop-blur-xl border border-white/10 p-2 pr-6 rounded-full hover:bg-white/10 transition-all">
                     <Avatar className="h-10 w-10 border-2 border-primary/30 group-hover:ring-4 ring-primary/20 transition-all">
                       <AvatarImage src={artist.photoURL} />
-                      <AvatarFallback className="bg-primary/5 text-primary font-black">{artist.displayName.slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary font-black">{artist.displayName.slice(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest leading-none">Auteur de légende</p>
@@ -189,7 +216,12 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
 
               <div className="flex flex-wrap gap-4 items-center">
                 <Button asChild size="lg" className="rounded-full px-12 h-16 font-black text-xl gold-shimmer shadow-[0_0_40px_rgba(212,168,67,0.4)] bg-primary text-black">
-                  <Link href={`/webtoon-hub/${story.slug}/chapitre-1`}><Play className="mr-3 h-6 w-6 fill-current" /> Commencer la Quête</Link>
+                  <Link href={`/webtoon-hub/${story.slug}/${libraryEntry?.lastReadChapterSlug || 'chapitre-1'}`}>
+                    <Play className="mr-3 h-6 w-6 fill-current" /> 
+                    {libraryEntry ? (
+                      libraryEntry.progress === 100 ? "Relire la Quête" : `Reprendre — Ep. ${libraryEntry.lastReadChapterTitle}`
+                    ) : "Commencer la Quête"}
+                  </Link>
                 </Button>
                 <div className="flex items-center gap-3">
                   <Button 
@@ -280,7 +312,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
               <TabsContent value="chapters" className="space-y-4 animate-in fade-in duration-700">
                 {/* Fast Lane */}
                 <Card className="bg-amber-500/10 border-amber-500/20 rounded-[2rem] overflow-hidden mb-8 group hover:border-amber-500/40 transition-all">
-                  <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
                       <div className="bg-amber-500 p-4 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-pulse">
                         <Zap className="h-8 w-8 text-black fill-current" />
@@ -291,18 +323,31 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                       </div>
                     </div>
                     <Button className="rounded-full bg-amber-500 text-black font-black hover:bg-amber-600 px-10 h-12 shadow-xl group-hover:scale-105 transition-transform">Débloquer (5 🪙)</Button>
-                  </CardContent>
+                  </div>
                 </Card>
 
                 <div className="space-y-3">
                   {story.chapters?.map((chap, i) => (
                     <Link key={chap.id} href={`/webtoon-hub/${story.slug}/${chap.slug}`} className="block group">
-                      <div className="flex items-center gap-6 p-6 rounded-3xl bg-card/50 border border-white/5 hover:border-primary/30 transition-all hover:shadow-2xl hover:-translate-y-1">
-                        <div className="h-16 w-16 bg-white/5 rounded-2xl flex items-center justify-center font-display font-black text-stone-600 group-hover:text-primary group-hover:bg-primary/10 transition-all text-2xl">
+                      <div className={cn(
+                        "flex items-center gap-6 p-6 rounded-3xl border transition-all hover:shadow-2xl hover:-translate-y-1",
+                        libraryEntry?.lastReadChapterId === chap.id 
+                          ? "bg-primary/5 border-primary/30" 
+                          : "bg-card/50 border-white/5 hover:border-primary/30"
+                      )}>
+                        <div className={cn(
+                          "h-16 w-16 rounded-2xl flex items-center justify-center font-display font-black transition-all text-2xl",
+                          libraryEntry?.lastReadChapterId === chap.id 
+                            ? "bg-primary text-black" 
+                            : "bg-white/5 text-stone-600 group-hover:text-primary group-hover:bg-primary/10"
+                        )}>
                           {chap.chapterNumber}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">{chap.title}</h4>
+                          <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">
+                            {chap.title}
+                            {libraryEntry?.lastReadChapterId === chap.id && <span className="ml-3 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/30 px-2 py-0.5 rounded-full">Lecture actuelle</span>}
+                          </h4>
                           <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em] mt-1">Saison 1 &bull; Publié le 12 Fév.</p>
                         </div>
                         {chap.isPremium ? (
@@ -322,7 +367,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
         {/* SIDEBAR */}
         <aside className="space-y-12">
           {/* Season Pass */}
-          <Card className="border-none bg-stone-900 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+          <div className="border-none bg-stone-900 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000"><CircleDollarSign className="h-32 w-32 text-primary" /></div>
             <div className="relative z-10 space-y-8">
               <div className="space-y-2">
@@ -334,7 +379,7 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
                 <p className="text-center text-[10px] text-stone-600 uppercase font-black tracking-[0.3em]">Économie de 30% par épisode</p>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-4">
