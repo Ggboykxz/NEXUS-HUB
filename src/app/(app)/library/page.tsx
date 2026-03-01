@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BookMarked, Heart, History, Clock, Library as LibraryIcon, 
   Play, Trash2, ArrowRight, Flame, Sparkles, Star, Loader2,
-  XCircle
+  XCircle, Eraser
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   collection, query, orderBy, getDocs, doc, deleteDoc, 
-  where, documentId, writeBatch 
+  where, documentId, writeBatch, limit 
 } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LibraryEntry, Story } from '@/lib/types';
@@ -23,6 +23,8 @@ import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function LibraryPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -43,7 +45,11 @@ export default function LibraryPage() {
     queryKey: ['library-progress', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
-      const q = query(collection(db, 'users', currentUser!.uid, 'library'), orderBy('lastReadAt', 'desc'));
+      const q = query(
+        collection(db, 'users', currentUser!.uid, 'library'), 
+        orderBy('lastReadAt', 'desc'),
+        limit(50)
+      );
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ ...d.data() } as LibraryEntry));
     }
@@ -60,7 +66,6 @@ export default function LibraryPage() {
 
       if (favIds.length === 0) return [];
 
-      // Firestore limit for 'in' queries is 30. For simplicity, we take the first 30.
       const chunks = [];
       for (let i = 0; i < favIds.length; i += 30) {
         chunks.push(favIds.slice(i, i + 30));
@@ -83,7 +88,36 @@ export default function LibraryPage() {
     mutationFn: async (storyId: string) => {
       await deleteDoc(doc(db, 'users', currentUser!.uid, 'library', storyId));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library-progress'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-progress'] });
+      toast({ title: "Entrée supprimée" });
+    }
+  });
+
+  const clearHistoryMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser) return;
+      const libRef = collection(db, 'users', currentUser.uid, 'library');
+      const q = query(libRef, where('progress', '<', 5));
+      const snap = await getDocs(q);
+      
+      if (snap.empty) {
+        toast({ title: "Historique propre", description: "Aucune lecture peu avancée à supprimer." });
+        return;
+      }
+
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      
+      return snap.size;
+    },
+    onSuccess: (count) => {
+      if (count && count > 0) {
+        queryClient.invalidateQueries({ queryKey: ['library-progress'] });
+        toast({ title: "Historique nettoyé", description: `${count} entrées supprimées.` });
+      }
+    }
   });
 
   const clearFavoritesMutation = useMutation({
@@ -153,7 +187,7 @@ export default function LibraryPage() {
           <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
               <p className="text-3xl font-black text-primary">{progressList.length + favoriteStories.length}</p>
-              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Épopées Suivies</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Épopées listées</p>
             </div>
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
               <p className="text-3xl font-black text-emerald-500">{favoriteStories.length}</p>
@@ -168,7 +202,7 @@ export default function LibraryPage() {
         <div className="flex justify-center mb-16">
           <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl">
             <TabsTrigger value="progress" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-              <History className="h-4 w-4" /> En cours
+              <History className="h-4 w-4" /> Historique
             </TabsTrigger>
             <TabsTrigger value="favorites" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
               <Heart className="h-4 w-4" /> Favoris
@@ -179,54 +213,74 @@ export default function LibraryPage() {
           </TabsList>
         </div>
 
-        {/* PROGRESS TAB */}
-        <TabsContent value="progress" className="space-y-6 animate-in fade-in duration-700">
+        {/* PROGRESS TAB (HISTORY) */}
+        <TabsContent value="progress" className="space-y-10 animate-in fade-in duration-700">
+          <div className="flex justify-between items-center px-2">
+            <h3 className="text-xl font-display font-black text-white uppercase tracking-widest flex items-center gap-3">
+              <History className="h-5 w-5 text-primary" /> Lectures Récentes
+            </h3>
+            <Button 
+              onClick={() => clearHistoryMutation.mutate()} 
+              disabled={clearHistoryMutation.isPending || progressList.length === 0}
+              variant="ghost" 
+              size="sm" 
+              className="text-stone-500 hover:text-orange-500 font-black text-[9px] uppercase tracking-[0.2em] gap-2"
+            >
+              {clearHistoryMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eraser className="h-3 w-3" />}
+              Nettoyer l'historique
+            </Button>
+          </div>
+
           {progressList.length > 0 ? (
             <div className="grid grid-cols-1 gap-6">
-              {progressList.map((entry) => (
-                <div key={entry.storyId} className="group relative bg-stone-900/50 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 hover:border-primary/30 transition-all hover:shadow-2xl">
-                  <div className="relative h-40 w-28 rounded-2xl overflow-hidden shadow-2xl shrink-0 border-2 border-white/5">
-                    <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Play className="h-10 w-10 text-primary fill-current" />
+              {progressList.map((entry) => {
+                const date = entry.lastReadAt ? (entry.lastReadAt as any).toDate?.() || new Date(entry.lastReadAt as string) : new Date();
+                return (
+                  <div key={entry.storyId} className="group relative bg-stone-900/50 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 hover:border-primary/30 transition-all hover:shadow-2xl">
+                    <div className="relative h-40 w-28 rounded-2xl overflow-hidden shadow-2xl shrink-0 border-2 border-white/5">
+                      <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Play className="h-10 w-10 text-primary fill-current" />
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex-1 w-full min-w-0 space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-3xl font-display font-black text-white group-hover:text-primary transition-colors tracking-tight">{entry.storyTitle}</h3>
-                        <div className="flex items-center gap-3 mt-2">
-                          <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[8px] font-black uppercase px-3 tracking-widest">
-                            Chapitre {entry.lastReadChapterTitle}
-                          </Badge>
-                          <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tighter">
-                            {entry.lastReadAt ? formatDistanceToNow(new Date((entry.lastReadAt as any).toDate?.() || entry.lastReadAt), { addSuffix: true, locale: fr }) : 'Récemment'}
-                          </span>
+                    
+                    <div className="flex-1 w-full min-w-0 space-y-6">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-3xl font-display font-black text-white group-hover:text-primary transition-colors tracking-tight">{entry.storyTitle}</h3>
+                          <div className="flex items-center gap-3 mt-2">
+                            <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[8px] font-black uppercase px-3 tracking-widest">
+                              Dernier chapitre : Ch.{entry.lastReadChapterTitle}
+                            </Badge>
+                            <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tighter flex items-center gap-1.5">
+                              <Clock className="h-3 w-3" />
+                              {formatDistanceToNow(date, { addSuffix: true, locale: fr })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button asChild size="lg" className="rounded-full font-black px-10 bg-primary text-black gold-shimmer h-12 shadow-xl shadow-primary/20">
+                            <Link href={`/read/${entry.storyId}`}>Reprendre <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                          </Button>
+                          <Button onClick={() => removeProgressMutation.mutate(entry.storyId)} variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Button asChild size="lg" className="rounded-full font-black px-10 bg-primary text-black gold-shimmer h-12 shadow-xl shadow-primary/20">
-                          <Link href={`/read/${entry.storyId}`}>Reprendre <ArrowRight className="ml-2 h-5 w-5" /></Link>
-                        </Button>
-                        <Button onClick={() => removeProgressMutation.mutate(entry.storyId)} variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
-                        <span className="text-stone-500">Progression Globale</span>
-                        <span className="text-primary gold-resplendant">{entry.progress}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                        <div className="h-full bg-gradient-to-r from-primary/50 to-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)] transition-all duration-1000" style={{ width: `${entry.progress}%` }} />
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
+                          <span className="text-stone-500">Progression Globale</span>
+                          <span className="text-primary gold-resplendant">{entry.progress}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                          <div className="h-full bg-gradient-to-r from-primary/50 to-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)] transition-all duration-1000" style={{ width: `${entry.progress}%` }} />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <EmptyState message="Votre voyage n'a pas encore commencé. Les sables attendent vos pas." icon={History} />
