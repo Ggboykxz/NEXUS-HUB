@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,10 +35,13 @@ import {
 
 // #region Page Components
 
-function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
+function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked, isFullscreen, onToggleFullscreen, isVisible }: any) {
   const storyUrl = getStoryUrl(story);
   return (
-    <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl transition-transform duration-300",
+      !isVisible && "-translate-y-full"
+    )}>
       <div className="flex items-center gap-4 flex-1">
         <Link href="/" className="font-display font-black text-lg tracking-tighter text-foreground gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
         <div className="w-px h-5 bg-border hidden md:block" />
@@ -75,6 +78,11 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
             < Book className="h-3 w-3" /> BD
           </Button>
         </div>
+        
+        <Button onClick={onToggleFullscreen} size="icon" variant="ghost" className="h-9 w-9 rounded-full hover:bg-muted text-stone-500">
+          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+        </Button>
+
         <Button onClick={onBookmark} size="sm" variant="outline" className={cn("h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5 transition-all", isBookmarked && "bg-primary/10 border-primary text-primary")}>
           <Bookmark className={cn("h-3.5 w-3.5", isBookmarked && "fill-current")} />
           <span className="hidden md:inline">{isBookmarked ? 'Sauvegardé' : 'Sauvegarder'}</span>
@@ -87,9 +95,12 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
   );
 }
 
-function ProgressBar({ progress }: { progress: number }) {
+function ProgressBar({ progress, isVisible }: { progress: number, isVisible: boolean }) {
   return (
-    <div className="fixed top-14 left-0 right-0 h-0.5 bg-foreground/5 z-50">
+    <div className={cn(
+      "fixed top-14 left-0 right-0 h-0.5 bg-foreground/5 z-50 transition-transform duration-300",
+      !isVisible && "top-0 translate-y-0"
+    )}>
       <div
         className="h-full bg-gradient-to-r from-primary/50 via-primary to-accent transition-all duration-75 ease-linear"
         style={{ width: `${progress}%` }}
@@ -434,9 +445,12 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
   );
 }
 
-function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount }: any) {
+function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount, isVisible }: any) {
   return (
-    <div className="fixed top-1/2 -translate-y-1/2 right-6 lg:right-[340px] z-40 flex flex-col gap-3 group animate-in slide-in-from-right-4 duration-1000 delay-500">
+    <div className={cn(
+      "fixed top-1/2 -translate-y-1/2 right-6 lg:right-[340px] z-40 flex flex-col gap-3 group transition-all duration-500",
+      !isVisible ? "translate-x-20 opacity-0" : "translate-x-0 opacity-100"
+    )}>
       <Button onClick={onLike} variant="outline" size="icon" className={cn("h-12 w-12 rounded-full border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl transition-all hover:scale-110", isLiked && "text-rose-500 border-rose-500/50 bg-rose-500/10")}>
         <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
       </Button>
@@ -468,6 +482,10 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  
+  const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const { data: story, isLoading: loadingStory } = useQuery<Story>({
@@ -628,12 +646,20 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
 
   useEffect(() => {
     const handleScroll = () => {
+      const scrollPosition = window.scrollY;
       const docHeight = document.documentElement.scrollHeight;
       const windowHeight = window.innerHeight;
-      const scrollPosition = window.scrollY;
       const totalHeight = docHeight - windowHeight;
       const scrollPercentage = totalHeight > 0 ? (scrollPosition / totalHeight) * 100 : 0;
+      
       setScrollProgress(scrollPercentage);
+
+      // Mode Cinéma Logic (Show/Hide Header)
+      if (Math.abs(scrollPosition - lastScrollY.current) > 5) {
+        setIsHeaderVisible(scrollPosition < lastScrollY.current || scrollPosition < 100);
+        lastScrollY.current = scrollPosition;
+      }
+
       if (currentUser && story && currentChapter) {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(async () => {
@@ -654,8 +680,29 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       }
     };
     window.addEventListener('scroll', handleScroll);
-    return () => { window.removeEventListener('scroll', handleScroll); if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+    
+    // Sync fullscreen state with browser exit
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => { 
+      window.removeEventListener('scroll', handleScroll); 
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current); 
+    };
   }, [currentUser, story, currentChapter, storyId]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   if (loadingStory) {
     return (
@@ -682,7 +729,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
 
   return (
     <div className="bg-stone-950 min-h-screen selection:bg-primary/20">
-      <ProgressBar progress={scrollProgress} />
+      <ProgressBar progress={scrollProgress} isVisible={isHeaderVisible} />
       
       <ReaderHeader 
         story={story} 
@@ -692,6 +739,9 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         onSettingsToggle={() => setShowSettings(!showSettings)}
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+        isVisible={isHeaderVisible}
       />
       
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
@@ -793,6 +843,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         onShare={handleShare}
         onComment={() => {}}
         commentsCount={commentsCount}
+        isVisible={isHeaderVisible}
       />
     </div>
   );
