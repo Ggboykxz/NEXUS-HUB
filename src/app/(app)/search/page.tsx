@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { type Story, type UserProfile } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
@@ -9,7 +9,7 @@ import {
   Search, Users, BookOpen, X, Sparkles, Mic, MicOff, 
   Filter, MapPin, Languages, Clock, Hash, Globe, 
   ChevronDown, SlidersHorizontal, CheckCircle2, History,
-  LayoutGrid, Star, Zap
+  LayoutGrid, Star, Zap, Loader2, Waveform
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ function SearchResultsContent() {
   const [searchTerm, setSearchState] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState('all');
   const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // --- FILTERS STATE ---
@@ -93,16 +94,51 @@ function SearchResultsContent() {
 
   const handleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      toast({
+        title: "Recherche vocale non supportée",
+        description: "Votre navigateur ne supporte pas l'API de reconnaissance vocale.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'fr-FR';
-    recognition.onstart = () => setIsListening(true);
-    recognition.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setSearchState(transcript);
-      router.push(`/search?q=${encodeURIComponent(transcript)}`);
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimTranscript('');
     };
-    recognition.onend = () => setIsListening(false);
+
+    recognition.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          const finalResult = e.results[i][0].transcript;
+          setSearchState(finalResult);
+          router.push(`/search?q=${encodeURIComponent(finalResult)}`);
+        } else {
+          interim += e.results[i][0].transcript;
+        }
+      }
+      setInterimTranscript(interim);
+    };
+
+    recognition.onerror = (e: any) => {
+      console.error(e);
+      setIsListening(false);
+      setInterimTranscript('');
+      toast({ title: "Erreur de reconnaissance", variant: "destructive" });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript('');
+    };
+
     recognition.start();
   };
 
@@ -120,36 +156,52 @@ function SearchResultsContent() {
             <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
                   <Search className="h-4 w-4 text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nexus Search Engine v2.0</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nexus Search Engine v2.1</span>
                 </div>
                 <h1 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter leading-none">
                   Les Archives <br/><span className="gold-resplendant">du Hub</span>
                 </h1>
             </div>
 
-            <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto">
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-600 h-6 w-6 pointer-events-none group-focus-within:text-primary transition-all">
-                    <Search className="h-6 w-6" />
+            <div className="space-y-4">
+              <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-600 h-6 w-6 pointer-events-none group-focus-within:text-primary transition-all">
+                      <Search className="h-6 w-6" />
+                  </div>
+                  <Input 
+                      value={searchTerm}
+                      onChange={(e) => setSearchState(e.target.value)}
+                      placeholder="Titre, auteur, mythologie..."
+                      className="h-16 pl-16 pr-28 text-xl rounded-full border-white/10 focus:border-primary shadow-2xl bg-white/5 backdrop-blur-xl text-white font-light placeholder:text-stone-700 transition-all"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <Button 
+                          type="button" 
+                          onClick={handleVoiceSearch}
+                          className={cn(
+                              "h-11 w-11 rounded-full shadow-lg transition-all",
+                              isListening ? "bg-rose-600 animate-pulse" : "bg-primary text-black hover:bg-primary/90"
+                          )}
+                      >
+                          {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                      </Button>
+                  </div>
+              </form>
+
+              {/* Interim Transcript Display */}
+              {isListening && interimTranscript && (
+                <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                    </div>
+                    <p className="text-sm text-primary font-medium italic text-left leading-tight line-clamp-2">
+                      "{interimTranscript}..."
+                    </p>
+                  </div>
                 </div>
-                <Input 
-                    value={searchTerm}
-                    onChange={(e) => setSearchState(e.target.value)}
-                    placeholder="Titre, auteur, mythologie..."
-                    className="h-16 pl-16 pr-28 text-xl rounded-full border-white/10 focus:border-primary shadow-2xl bg-white/5 backdrop-blur-xl text-white font-light placeholder:text-stone-700 transition-all"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <Button 
-                        type="button" 
-                        onClick={handleVoiceSearch}
-                        className={cn(
-                            "h-11 w-11 rounded-full shadow-lg transition-all",
-                            isListening ? "bg-rose-600 animate-pulse" : "bg-primary text-black hover:bg-primary/90"
-                        )}
-                    >
-                        {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                    </Button>
-                </div>
-            </form>
+              )}
+            </div>
 
             <div className="flex flex-wrap justify-center gap-3">
                 {['Mythologie', 'Action', 'Afrofuturisme', 'Romance', 'Elite'].map(tag => (
@@ -164,7 +216,7 @@ function SearchResultsContent() {
                 ))}
             </div>
         </div>
-      </header>
+      </section>
 
       {/* 2. RESULTS & TABS */}
       <div className="space-y-10">
@@ -273,10 +325,6 @@ function SearchResultsContent() {
 
 function MicOff(props: any) {
   return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>;
-}
-
-function Label({ children, className }: any) {
-    return <label className={cn("text-[9px] font-black uppercase tracking-widest text-stone-500", className)}>{children}</label>;
 }
 
 export default function SearchPage() {
