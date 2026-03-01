@@ -53,6 +53,16 @@ const nextConfig: NextConfig = {
         destination: '/bd-africaine',
         permanent: true,
       },
+      {
+        source: '/cercles',
+        destination: '/clubs',
+        permanent: true,
+      },
+      {
+        source: '/cercles/:path*',
+        destination: '/clubs/:path*',
+        permanent: true,
+      },
     ];
   },
 };
