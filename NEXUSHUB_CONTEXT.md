@@ -29,5 +29,14 @@ Ce document sert de guide de référence pour le développement de NexusHub afin
 - **Multilingue** : Support étendu (Français, Anglais, Swahili, Hausa, Amharique, Arabe).
 - **Économie** : Système AfriCoins participatif avec gamification en homepage.
 
+## 📊 INDEX FIRESTORE REQUIS
+Les index composites suivants sont indispensables pour le fonctionnement des requêtes de l'application :
+- **stories** : `isPublished` (ASC), `views` (DESC) — Classements populaires.
+- **stories** : `isPublished` (ASC), `updatedAt` (DESC) — Nouveautés.
+- **stories** : `artistId` (ASC), `updatedAt` (DESC) — Portfolio artiste.
+- **stories** : `format` (ASC), `isPublished` (ASC), `updatedAt` (DESC) — Listing par format (Webtoon/BD).
+- **stories** : `genreSlug` (ASC), `isPublished` (ASC), `views` (DESC) — Navigation par genre.
+- **users/{uid}/notifications** : `read` (ASC), `createdAt` (DESC) — Centre de notifications.
+
 ---
 *Note : Ce fichier doit être consulté avant chaque modification structurelle importante.*
