@@ -1,23 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import { artists } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Award, Mic, Calendar, Trophy, Sparkles, Video, PlayCircle, 
-  Users, Search, BrainCircuit, Star, ChevronRight, CheckCircle2, 
-  MessageSquare, LayoutGrid, Clock, Zap
+  Award, PlayCircle, Video, Users, BrainCircuit, 
+  ChevronRight, CheckCircle2, Zap, Clock, Star, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import type { UserProfile } from '@/lib/types';
 
 export default function MentorshipPage() {
   const [activeTab, setActiveTab] = useState<'matching' | 'masterclasses' | 'live'>('matching');
-  const mentors = artists.filter(artist => artist.isMentor);
+
+  // Fetch real mentors from Firestore
+  const { data: mentors = [], isLoading: loadingMentors } = useQuery<UserProfile[]>({
+    queryKey: ['mentors-list'],
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'users'),
+        where('isMentor', '==', true),
+        where('role', '==', 'artist_pro')
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+    }
+  });
 
   const masterclasses = [
     {
@@ -58,27 +73,33 @@ export default function MentorshipPage() {
       {/* Tabs Navigation */}
       <div className="flex justify-center mb-12">
         <div className="bg-muted/50 p-1 rounded-2xl border border-border/50 flex flex-wrap justify-center gap-1">
-          <Button 
-            variant={activeTab === 'matching' ? 'default' : 'ghost'} 
+          <button 
             onClick={() => setActiveTab('matching')}
-            className="rounded-xl px-6 gap-2 font-bold text-xs"
+            className={cn(
+              "rounded-xl px-6 py-2 gap-2 font-bold text-xs flex items-center transition-all",
+              activeTab === 'matching' ? "bg-primary text-black" : "hover:bg-primary/10 text-muted-foreground"
+            )}
           >
             <BrainCircuit className="h-4 w-4" /> Matching IA
-          </Button>
-          <Button 
-            variant={activeTab === 'masterclasses' ? 'default' : 'ghost'} 
+          </button>
+          <button 
             onClick={() => setActiveTab('masterclasses')}
-            className="rounded-xl px-6 gap-2 font-bold text-xs"
+            className={cn(
+              "rounded-xl px-6 py-2 gap-2 font-bold text-xs flex items-center transition-all",
+              activeTab === 'masterclasses' ? "bg-primary text-black" : "hover:bg-primary/10 text-muted-foreground"
+            )}
           >
             <PlayCircle className="h-4 w-4" /> Masterclasses
-          </Button>
-          <Button 
-            variant={activeTab === 'live' ? 'default' : 'ghost'} 
+          </button>
+          <button 
             onClick={() => setActiveTab('live')}
-            className="rounded-xl px-6 gap-2 font-bold text-xs"
+            className={cn(
+              "rounded-xl px-6 py-2 gap-2 font-bold text-xs flex items-center transition-all",
+              activeTab === 'live' ? "bg-primary text-black" : "hover:bg-primary/10 text-muted-foreground"
+            )}
           >
             <Video className="h-4 w-4" /> Ateliers Live
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -111,34 +132,46 @@ export default function MentorshipPage() {
               <h3 className="text-xl font-display font-bold flex items-center gap-2 px-2">
                 <Users className="h-5 w-5 text-primary" /> Mentors Disponibles
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {mentors.map((mentor) => (
-                  <Link key={mentor.id} href={`/artiste/${mentor.id}`}>
-                    <Card className="group hover:border-primary/30 transition-all duration-500 bg-card/50 rounded-2xl overflow-hidden border-border/50">
-                      <CardContent className="p-6 flex items-center gap-4">
-                        <div className="relative">
-                          <Avatar className="h-20 w-20 border-2 border-primary/20 ring-4 ring-transparent group-hover:ring-primary/10 transition-all">
-                            <AvatarImage src={mentor.avatar.imageUrl} alt={mentor.name} />
-                            <AvatarFallback>{mentor.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <Badge className="absolute -bottom-1 -right-1 bg-emerald-500 text-white border-2 border-background p-1"><CheckCircle2 className="h-3 w-3" /></Badge>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-lg truncate font-display">{mentor.name}</h4>
-                            <Badge variant="outline" className="text-[8px] uppercase border-emerald-500/30 text-emerald-500">Certifié</Badge>
+              
+              {loadingMentors ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="text-stone-500 font-bold uppercase text-[10px] tracking-widest">Appel des maîtres...</p>
+                </div>
+              ) : mentors.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {mentors.map((mentor) => (
+                    <Link key={mentor.uid} href={`/artiste/${mentor.slug}`}>
+                      <Card className="group hover:border-primary/30 transition-all duration-500 bg-card/50 rounded-2xl overflow-hidden border-border/50">
+                        <CardContent className="p-6 flex items-center gap-4">
+                          <div className="relative">
+                            <Avatar className="h-20 w-20 border-2 border-primary/20 ring-4 ring-transparent group-hover:ring-primary/10 transition-all">
+                              <AvatarImage src={mentor.photoURL} alt={mentor.displayName} />
+                              <AvatarFallback>{mentor.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <Badge className="absolute -bottom-1 -right-1 bg-emerald-500 text-white border-2 border-background p-1"><CheckCircle2 className="h-3 w-3" /></Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2 font-light italic mb-3">"{mentor.bio}"</p>
-                          <div className="flex gap-2">
-                            <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase">Action</Badge>
-                            <Badge className="bg-cyan-500/10 text-cyan-500 border-none text-[9px] font-black uppercase">Lore</Badge>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-lg truncate font-display">{mentor.displayName}</h4>
+                              <Badge variant="outline" className="text-[8px] uppercase border-emerald-500/30 text-emerald-500">Certifié</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 font-light italic mb-3">"{mentor.bio || "Mentor expert NexusHub."}"</p>
+                            <div className="flex gap-2">
+                              <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase">Action</Badge>
+                              <Badge className="bg-cyan-500/10 text-cyan-500 border-none text-[9px] font-black uppercase">Lore</Badge>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20 border-2 border-dashed rounded-[2rem] border-white/5">
+                  <p className="text-stone-500 italic">"Aucun mentor n'est disponible pour le moment. Revenez bientôt."</p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -193,7 +226,7 @@ export default function MentorshipPage() {
                 </div>
                 <div className="flex gap-4">
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-center flex-1">
-                    <MessageSquare className="h-6 w-6 text-primary mx-auto mb-2" />
+                    <Star className="h-6 w-6 text-primary mx-auto mb-2" />
                     <p className="text-[10px] font-black text-white uppercase">Q&A Live</p>
                   </div>
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-center flex-1">
