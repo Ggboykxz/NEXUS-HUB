@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story, UserProfile, Playlist } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Clock, Handshake } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Clock, Handshake, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +28,7 @@ interface StoryCardProps {
   story: Story;
   className?: string;
   showUpdateDate?: boolean;
+  progress?: number;
 }
 
 const DEFAULT_BLUR = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
@@ -38,7 +39,7 @@ const formatStat = (num: number): string => {
   return num.toString();
 };
 
-export function StoryCard({ story, className }: StoryCardProps) {
+export function StoryCard({ story, className, progress }: StoryCardProps) {
   const [relativeDate, setRelativeDate] = useState('');
   const [artistInfo, setArtistInfo] = useState<UserProfile | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
@@ -146,6 +147,23 @@ export function StoryCard({ story, className }: StoryCardProps) {
           <Badge variant="default" className="absolute top-2 right-2 z-20 gap-1 px-1 py-0.5 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[7px] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
             <Crown className="h-2 w-2" />
             PREMIUM
+          </Badge>
+        )}
+
+        {/* Reading Progress Bar */}
+        {progress !== undefined && progress > 0 && progress < 100 && (
+          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-black/40 z-20 transition-opacity duration-300 group-hover:opacity-0">
+            <div 
+              className="h-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+        )}
+
+        {/* Completion Badge */}
+        {progress === 100 && (
+          <Badge className="absolute bottom-2 right-2 z-20 bg-emerald-500 text-white border-none text-[8px] font-black uppercase px-2 py-0.5 shadow-lg transition-opacity duration-300 group-hover:opacity-0">
+            ✓ Terminé
           </Badge>
         )}
         
