@@ -9,7 +9,7 @@ import {
   Search, Users, BookOpen, X, Sparkles, Mic, MicOff, 
   Filter, MapPin, Languages, Clock, Hash, Globe, 
   ChevronDown, SlidersHorizontal, CheckCircle2, History,
-  LayoutGrid, Star, Zap, Loader2, Waveform, AlertCircle
+  LayoutGrid, Star, Zap, Loader2, Waveform, AlertCircle, Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,35 @@ function SearchResultsContent() {
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  // --- PERSISTENCE LOGIC ---
+  useEffect(() => {
+    const saved = localStorage.getItem('nexushub-search-history');
+    if (saved) {
+      try {
+        setSearchHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse search history", e);
+      }
+    }
+  }, []);
+
+  const addToHistory = (term: string) => {
+    if (!term.trim()) return;
+    const cleanTerm = term.trim();
+    setSearchHistory(prev => {
+      const newHistory = [cleanTerm, ...prev.filter(h => h.toLowerCase() !== cleanTerm.toLowerCase())].slice(0, 10);
+      localStorage.setItem('nexushub-search-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('nexushub-search-history');
+    toast({ title: "Historique effacé" });
+  };
 
   // --- FILTERS STATE ---
   const [filters, setFilters] = useState({
@@ -56,13 +85,11 @@ function SearchResultsContent() {
       const storiesRef = collection(db, 'stories');
       
       if (!searchTerm.trim()) {
-        // Default: Show popular if no search
         const qDefault = query(storiesRef, where('isPublished', '==', true), limit(20));
         const snap = await getDocs(qDefault);
         return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
       }
 
-      // 1. Prefix query on Title (Case sensitive in Firestore)
       const qTitle = query(
         storiesRef,
         where('title', '>=', searchTerm),
@@ -70,14 +97,12 @@ function SearchResultsContent() {
         limit(20)
       );
 
-      // 2. Exact match on Genre Slug
       const qGenre = query(
         storiesRef,
         where('genreSlug', '==', searchTerm.toLowerCase()),
         limit(20)
       );
 
-      // 3. Array contains match on Tags
       const qTags = query(
         storiesRef,
         where('tags', 'array-contains', searchTerm.toLowerCase()),
@@ -90,11 +115,9 @@ function SearchResultsContent() {
         getDocs(qTags)
       ]);
 
-      // Merge and deduplicate results
       const resultMap = new Map<string, Story>();
       [...snapTitle.docs, ...snapGenre.docs, ...snapTags.docs].forEach(doc => {
         const data = { id: doc.id, ...doc.data() } as Story;
-        // Client-side status filter since Firestore doesn't support OR between different fields easily
         if (filters.status === 'Tous' || data.status === filters.status) {
           resultMap.set(doc.id, data);
         }
@@ -126,7 +149,7 @@ function SearchResultsContent() {
   });
 
   const handleVoiceSearch = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitRecognition;
     if (!SpeechRecognition) {
       toast({
         title: "Recherche vocale non supportée",
@@ -152,6 +175,7 @@ function SearchResultsContent() {
         if (e.results[i].isFinal) {
           const finalResult = e.results[i][0].transcript;
           setSearchState(finalResult);
+          addToHistory(finalResult);
           router.push(`/search?q=${encodeURIComponent(finalResult)}`);
         } else {
           interim += e.results[i][0].transcript;
@@ -177,7 +201,16 @@ function SearchResultsContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+    if (searchTerm.trim()) {
+      addToHistory(searchTerm);
+      router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+    }
+  };
+
+  const handleHistoryClick = (term: string) => {
+    setSearchState(term);
+    addToHistory(term);
+    router.push(`/search?q=${encodeURIComponent(term)}`);
   };
 
   return (
@@ -196,7 +229,7 @@ function SearchResultsContent() {
                 </h1>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-600 h-6 w-6 pointer-events-none group-focus-within:text-primary transition-all">
                       <Search className="h-6 w-6" />
@@ -221,6 +254,34 @@ function SearchResultsContent() {
                   </div>
               </form>
 
+              {/* SEARCH HISTORY */}
+              {searchHistory.length > 0 && !searchTerm && (
+                <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in duration-500">
+                  <div className="flex items-center justify-between px-2">
+                    <h4 className="text-[10px] font-black uppercase text-stone-500 tracking-widest flex items-center gap-2">
+                      <History className="h-3 w-3" /> Recherches Récentes
+                    </h4>
+                    <button 
+                      onClick={clearHistory}
+                      className="text-[9px] font-bold text-rose-500 hover:text-rose-400 uppercase tracking-tighter flex items-center gap-1 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" /> Effacer l'historique
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {searchHistory.map((term, i) => (
+                      <button
+                        key={`${term}-${i}`}
+                        onClick={() => handleHistoryClick(term)}
+                        className="px-4 py-2 bg-white/5 hover:bg-primary/10 hover:text-primary border border-white/5 hover:border-primary/20 rounded-xl text-xs font-medium text-stone-400 transition-all"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {isListening && interimTranscript && (
                 <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
@@ -241,7 +302,7 @@ function SearchResultsContent() {
                         key={tag} 
                         variant="secondary" 
                         className="px-5 py-2 cursor-pointer bg-white/5 text-stone-400 hover:bg-primary hover:text-black transition-all rounded-full border border-white/5 font-bold text-[10px] uppercase tracking-widest"
-                        onClick={() => { setSearchState(tag); router.push(`/search?q=${tag}`) }}
+                        onClick={() => { setSearchState(tag); addToHistory(tag); router.push(`/search?q=${tag}`) }}
                     >
                         #{tag}
                     </Badge>
