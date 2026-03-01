@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +8,107 @@ import {
   Languages, Award, Coins, Heart, MessageSquare, 
   ChevronRight, Sparkles, Star, Globe, History, 
   ShieldCheck, ArrowRight, Zap, Flame, LayoutGrid,
-  CheckCircle2, BookOpen, Users, Building2
+  CheckCircle2, BookOpen, Users, Building2, Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { auth, db } from '@/lib/firebase';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useAuthModal } from '@/components/providers/auth-modal-provider';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function TranslatorsProgramPage() {
+  const { toast } = useToast();
+  const { openAuthModal } = useAuthModal();
+  
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form State
+  const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
+  const [experience, setExperience] = useState('Débutant');
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) setUserProfile(snap.data());
+      }
+      setLoadingProfile(false);
+    });
+    return unsub;
+  }, []);
+
+  const handleApplyClick = () => {
+    if (!currentUser) {
+      openAuthModal('postuler au programme de traduction');
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  const toggleLanguage = (lang: string) => {
+    setSelectedLangs(prev => 
+      prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (selectedLangs.length === 0) {
+      toast({ title: "Sélection requise", description: "Choisissez au moins une langue cible.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        isTranslator: true,
+        translatorLanguages: selectedLangs,
+        translatorLevel: 'contributeur',
+        translatorExperience: experience,
+        updatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: "Candidature validée !",
+        description: "Vous êtes désormais membre du programme des traducteurs.",
+      });
+      setIsDialogOpen(false);
+      // Update local state to reflect changes without refresh
+      setUserProfile((prev: any) => ({ ...prev, isTranslator: true }));
+    } catch (e: any) {
+      toast({ title: "Erreur", description: "Impossible de valider votre candidature.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const tiers = [
     {
       title: "🌱 Contributeur",
@@ -38,6 +133,14 @@ export default function TranslatorsProgramPage() {
     }
   ];
 
+  const availableLangs = [
+    { id: 'en', label: 'Anglais (EN)' },
+    { id: 'sw', label: 'Swahili (SW)' },
+    { id: 'ha', label: 'Hausa (HA)' },
+    { id: 'am', label: 'Amharique (AM)' },
+    { id: 'ar', label: 'Arabe (AR)' },
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* 1. HERO SECTION */}
@@ -52,7 +155,18 @@ export default function TranslatorsProgramPage() {
             "NexusHub est le pont entre les cultures. Rejoignez notre programme de traducteurs certifiés, aidez les artistes à s'exporter et soyez rémunéré en AfriCoins pour chaque bulle traduite."
           </p>
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <Button size="lg" className="rounded-full px-12 h-16 font-black text-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/20">Postuler au Programme</Button>
+            <Button 
+              onClick={handleApplyClick}
+              size="lg" 
+              className={cn(
+                "rounded-full px-12 h-16 font-black text-xl shadow-2xl transition-all",
+                userProfile?.isTranslator 
+                  ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30 cursor-default" 
+                  : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+              )}
+            >
+              {loadingProfile ? <Loader2 className="animate-spin h-6 w-6" /> : userProfile?.isTranslator ? "Vous êtes Traducteur" : "Postuler au Programme"}
+            </Button>
             <Button variant="outline" size="lg" className="rounded-full border-white/20 text-white font-bold h-16 px-10 hover:bg-white/10 backdrop-blur-md">Comment ça marche ?</Button>
           </div>
         </div>
@@ -156,6 +270,69 @@ export default function TranslatorsProgramPage() {
           ))}
         </div>
       </section>
+
+      {/* CANDIDATURE DIALOG */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-stone-900 border-white/5 text-white rounded-[2.5rem] p-10 max-w-lg">
+          <DialogHeader className="text-center space-y-4">
+            <div className="mx-auto bg-emerald-500/10 p-4 rounded-full w-fit">
+              <Languages className="h-8 w-8 text-emerald-500" />
+            </div>
+            <DialogTitle className="text-3xl font-display font-black gold-resplendant">Candidature Traducteur</DialogTitle>
+            <DialogDescription className="text-stone-400 italic">"Aidez-nous à porter les voix de l'Afrique au-delà des frontières."</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8 py-6">
+            <div className="space-y-4">
+              <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Langue Source</Label>
+              <div className="h-12 flex items-center px-4 bg-white/5 border border-white/10 rounded-xl font-bold text-sm text-stone-300">
+                <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-500" /> Français (FR)
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Langues Cibles (FR → ...)</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {availableLangs.map((lang) => (
+                  <div key={lang.id} className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                    <Checkbox 
+                      id={lang.id} 
+                      checked={selectedLangs.includes(lang.id)}
+                      onCheckedChange={() => toggleLanguage(lang.id)}
+                      className="border-white/20 data-[state=checked]:bg-emerald-500" 
+                    />
+                    <label htmlFor={lang.id} className="text-xs font-bold cursor-pointer">{lang.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Niveau d'Expérience</Label>
+              <Select value={experience} onValueChange={setExperience}>
+                <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-stone-900 border-white/10">
+                  <SelectItem value="Débutant">Débutant (Passionné)</SelectItem>
+                  <SelectItem value="Intermédiaire">Intermédiaire (Étudiant / Pratiquant)</SelectItem>
+                  <SelectItem value="Expert">Expert (Professionnel / Natif)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting || selectedLangs.length === 0}
+              className="w-full h-14 rounded-xl bg-emerald-500 text-black font-black text-lg gold-shimmer shadow-xl shadow-emerald-500/20"
+            >
+              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Envoyer ma Candidature"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
