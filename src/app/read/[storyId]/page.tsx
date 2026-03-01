@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc, runTransaction } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize, X, Palette, Sun
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize, X, Palette, Sun, HelpCircle, Keyboard
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -77,7 +77,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end">
-        <div className="hidden sm:flex bg-white/5 border border-white/10 rounded-xl p-0.5">
+        <div className="hidden sm:flex bg-white/5 border border-white/10 rounded-xl p-0.5 mr-2">
           <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className={cn("h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg", activeMode === 'scroll' ? "bg-primary text-black" : "text-stone-400 hover:text-white")}>
             <Layers className="h-3 w-3" /> Webtoon
           </Button>
@@ -118,8 +118,7 @@ function ProgressBar({ progress, isVisible }: { progress: number, isVisible: boo
   )
 }
 
-function ReaderSidebar({ story, artist, currentUser, openAuthModal }: { story: Story, artist: UserProfile | null, currentUser: any, openAuthModal: any }) {
-  const [activeTab, setActiveTab] = useState('chapters');
+function ReaderSidebar({ story, artist, currentUser, openAuthModal, activeTab, setActiveTab }: { story: Story, artist: UserProfile | null, currentUser: any, openAuthModal: any, activeTab: string, setActiveTab: (t: string) => void }) {
   const currentChapterId = story.chapters?.[0]?.id;
 
   const TabButton = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
@@ -410,7 +409,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
                   </Button>
                   <Dialog open={reportCommentId === c.id} onOpenChange={(open) => !open && setReportCommentId(null)}>
                     <DialogTrigger asChild>
-                      <Button onClick={() => setReportCommentId(c.id)} variant="ghost" size="icon" className="h-7 w-7 text-stone-600 hover:text-orange-500 rounded-lg">
+                      <Button onClick={() => setReportCommentId(c.id)} variant="ghost" size="icon" className="h-7 7-7 text-stone-600 hover:text-orange-500 rounded-lg">
                         <Flag className="h-3 w-3" />
                       </Button>
                     </DialogTrigger>
@@ -491,6 +490,9 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState('chapters');
+  const [showShortcutsHelp, setShowHelp] = useState(false);
   
   // Custom Reader Settings
   const [readerBg, setReaderBg] = useState('#0a0a0a');
@@ -528,6 +530,73 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
   });
 
   const currentChapter = story?.chapters?.[0];
+
+  const handleNextChapter = useCallback(() => {
+    setSwipeIndicator('next');
+    setTimeout(() => setSwipeIndicator(null), 1500);
+    toast({ title: "Navigation", description: "Chargement du chapitre suivant..." });
+  }, [toast]);
+
+  const handlePrevChapter = useCallback(() => {
+    setSwipeIndicator('prev');
+    setTimeout(() => setSwipeIndicator(null), 1500);
+    toast({ title: "Navigation", description: "Retour au chapitre précédent..." });
+  }, [toast]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorer si l'utilisateur tape dans un champ de texte
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'arrowright':
+        case ' ':
+          e.preventDefault();
+          handleNextChapter();
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          handlePrevChapter();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'c':
+          e.preventDefault();
+          setSidebarOpen(prev => !prev);
+          setSidebarTab('comments');
+          break;
+        case 'm':
+          e.preventDefault();
+          setActiveMode(prev => prev === 'scroll' ? 'pages' : 'scroll');
+          toast({ title: "Mode de lecture", description: `Passage en mode ${activeMode === 'scroll' ? 'BD (Pages)' : 'Webtoon (Scroll)'}` });
+          break;
+        case 'escape':
+          if (showSettings) setShowSettings(false);
+          if (document.fullscreenElement) document.exitFullscreen();
+          break;
+        case '?':
+          e.preventDefault();
+          setShowHelp(true);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNextChapter, handlePrevChapter, toggleFullscreen, activeMode, showSettings, toast]);
 
   // Load preferences
   useEffect(() => {
@@ -739,16 +808,6 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
     };
   }, [currentUser, story, currentChapter, storyId]);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
   // #region TOUCH SWIPE DETECTION
   const handleTouchStart = (e: React.TouchEvent) => {
     if (activeMode !== 'pages') return;
@@ -762,27 +821,13 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
     const deltaX = touchEndX.current - touchStartX.current;
     
     if (deltaX > 80) {
-      // Swipe Right = Previous
       handlePrevChapter();
     } else if (deltaX < -80) {
-      // Swipe Left = Next
       handleNextChapter();
     }
 
     touchStartX.current = null;
     touchEndX.current = null;
-  };
-
-  const handleNextChapter = () => {
-    setSwipeIndicator('next');
-    setTimeout(() => setSwipeIndicator(null), 1500);
-    toast({ title: "Navigation tactile", description: "Chargement du chapitre suivant..." });
-  };
-
-  const handlePrevChapter = () => {
-    setSwipeIndicator('prev');
-    setTimeout(() => setSwipeIndicator(null), 1500);
-    toast({ title: "Navigation tactile", description: "Retour au chapitre précédent..." });
   };
   // #endregion
 
@@ -913,7 +958,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
                       <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Épisode Terminé</h2>
                       <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
                     </div>
-                    <Button size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl shadow-primary/20 bg-primary text-black">
+                    <Button onClick={handleNextChapter} size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl shadow-primary/20 bg-primary text-black">
                       Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
                     </Button>
                   </div>
@@ -923,12 +968,16 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
           </div>
         </main>
         
-        <ReaderSidebar 
-          story={story} 
-          artist={artist || null} 
-          currentUser={currentUser}
-          openAuthModal={openAuthModal}
-        />
+        {sidebarOpen && (
+          <ReaderSidebar 
+            story={story} 
+            artist={artist || null} 
+            currentUser={currentUser}
+            openAuthModal={openAuthModal}
+            activeTab={sidebarTab}
+            setActiveTab={setSidebarTab}
+          />
+        )}
       </div>
 
       <FloatingTools 
@@ -937,7 +986,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         onBookmark={handleBookmark}
         isBookmarked={isBookmarked}
         onShare={handleShare}
-        onComment={() => {}}
+        onComment={() => { setSidebarOpen(true); setSidebarTab('comments'); }}
         commentsCount={commentsCount}
         isVisible={isHeaderVisible}
       />
@@ -945,10 +994,13 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       {/* SETTINGS PANEL */}
       <Sheet open={showSettings} onOpenChange={setShowSettings}>
         <SheetContent side="right" className="bg-stone-900 border-white/5 text-white p-8 rounded-l-[3rem] w-full sm:max-w-md">
-          <SheetHeader className="mb-10">
+          <SheetHeader className="mb-10 flex flex-row items-center justify-between">
             <SheetTitle className="text-2xl font-display font-black text-white flex items-center gap-3">
-              <Settings className="h-6 w-6 text-primary" /> Réglages de Lecture
+              <Settings className="h-6 w-6 text-primary" /> Réglages
             </SheetTitle>
+            <Button onClick={() => setShowHelp(true)} variant="ghost" size="icon" className="h-10 w-10 rounded-full text-stone-500 hover:text-primary transition-all">
+              <HelpCircle className="h-6 w-6" />
+            </Button>
           </SheetHeader>
 
           <div className="space-y-12">
@@ -996,17 +1048,14 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
                   className="py-4"
                 />
               </div>
-              <p className="text-[9px] text-stone-600 italic leading-relaxed text-center px-4">
-                "Réduisez la luminosité pour soulager vos yeux lors des lectures nocturnes."
-              </p>
             </div>
 
             <Separator className="bg-white/5" />
 
             <div className="space-y-4 pt-4">
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none px-4 py-1.5 rounded-full uppercase text-[8px] font-black w-full justify-center">
-                Préférences synchronisées avec le Hub
-              </Badge>
+              <Button onClick={() => setShowHelp(true)} variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 text-white gap-2 font-bold text-xs">
+                <Keyboard className="h-4 w-4" /> Guide des Raccourcis
+              </Button>
             </div>
           </div>
 
@@ -1018,6 +1067,40 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
           </Button>
         </SheetContent>
       </Sheet>
+
+      {/* KEYBOARD SHORTCUTS HELP */}
+      <Dialog open={showShortcutsHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="bg-stone-900 border-white/10 text-white rounded-[2rem] max-w-md p-8">
+          <DialogHeader className="text-center mb-6">
+            <div className="bg-primary/10 p-3 rounded-2xl w-fit mx-auto mb-4">
+              <Keyboard className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl font-display font-black gold-resplendant">Maîtrise du Clavier</DialogTitle>
+            <DialogDescription className="text-stone-400 italic">"Naviguez dans le Hub à la vitesse de la pensée."</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {[
+              { key: '→ / Espace', action: 'Chapitre Suivant' },
+              { key: '←', action: 'Chapitre Précédent' },
+              { key: 'F', action: 'Mode Plein Écran' },
+              { key: 'M', action: 'Changer Mode (Webtoon/BD)' },
+              { key: 'C', action: 'Ouvrir Commentaires' },
+              { key: '?', action: 'Afficher ce guide' },
+              { key: 'Échap', action: 'Fermer / Quitter' }
+            ].map((s, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                <span className="text-stone-400 text-xs font-medium">{s.action}</span>
+                <Badge variant="secondary" className="bg-stone-800 text-primary border-none font-mono font-black text-[10px] px-2.5">{s.key}</Badge>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="mt-8">
+            <Button onClick={() => setShowHelp(false)} className="w-full h-12 rounded-xl bg-primary text-black font-black">Compris !</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
