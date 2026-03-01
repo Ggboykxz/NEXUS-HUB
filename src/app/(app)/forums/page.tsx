@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -22,9 +22,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   MapPin,
-  Languages,
-  Wrench,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -41,30 +40,53 @@ import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ForumsHubPage() {
   const { openAuthModal } = useAuthModal();
-  const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [activeRegion, setActiveRegion] = useState('Toute l\'Afrique');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form State
+  const [newThread, setNewThread] = useState({
+    title: '',
+    category: 'Salon de l\'Encre',
+    content: '',
+    isSpoiler: false
+  });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const userData = userDoc.data();
-        setIsPremiumUser(userData?.role?.includes('artist') || userData?.role === 'premium_reader');
-      } else {
-        setIsPremiumUser(false);
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
     });
     return () => unsubscribe();
   }, []);
 
-  // REAL FIRESTORE QUERY
   const { data: threads = [], isLoading } = useQuery({
     queryKey: ['forum-threads-list'],
     queryFn: async () => {
@@ -77,6 +99,48 @@ export default function ForumsHubPage() {
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
     }
   });
+
+  const handleCreateThread = async () => {
+    if (!currentUser) {
+      openAuthModal('créer un sujet');
+      return;
+    }
+
+    if (!newThread.title.trim() || !newThread.content.trim()) {
+      toast({ title: "Données manquantes", description: "Veuillez remplir tous les champs.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const threadRef = await addDoc(collection(db, 'forumThreads'), {
+        title: newThread.title.trim(),
+        category: newThread.category,
+        content: newThread.content.trim(),
+        isSpoiler: newThread.isSpoiler,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || 'Voyageur Anonyme',
+        authorPhoto: currentUser.photoURL || '',
+        authorKarma: 0,
+        views: 0,
+        replies: 0,
+        isPinned: false,
+        isPremium: false,
+        createdAt: serverTimestamp()
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['forum-threads-list'] });
+      setIsCreateOpen(false);
+      setNewThread({ title: '', category: 'Salon de l\'Encre', content: '', isSpoiler: false });
+      
+      toast({ title: "Sujet publié !", description: "Votre discussion est maintenant en ligne." });
+      router.push(`/forums/${threadRef.id}`);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: "Impossible de publier le sujet.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const sections = [
     { id: 'salon', title: 'Salon de l\'Encre', icon: Palette, desc: 'Critiques constructives et retours techniques entre artistes.', color: 'text-primary' },
@@ -103,9 +167,78 @@ export default function ForumsHubPage() {
               Échangez, collaborez et progressez. Rejoignez plus de 50 000 passionnés de la culture panafricaine.
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4">
-              <Button onClick={() => openAuthModal('créer une discussion')} size="lg" className="rounded-full px-8 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
-                <PlusCircle className="mr-2 h-5 w-5" /> Nouveau Sujet
-              </Button>
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => !currentUser && openAuthModal('créer une discussion')} size="lg" className="rounded-full px-8 font-black shadow-xl shadow-primary/20 gold-shimmer bg-primary text-black">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Nouveau Sujet
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-stone-900 border-white/5 text-white rounded-[2.5rem] p-10 max-w-2xl">
+                  <DialogHeader className="text-center space-y-4">
+                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                      <MessageSquare className="h-8 w-8 text-primary" />
+                    </div>
+                    <DialogTitle className="text-3xl font-display font-black gold-resplendant">Lancer un Débat</DialogTitle>
+                    <DialogDescription className="text-stone-400 italic">"Votre parole éclaire la communauté. Soyez bienveillant."</DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-6 py-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Titre de la discussion</Label>
+                      <Input 
+                        value={newThread.title} 
+                        onChange={(e) => setNewThread({...newThread, title: e.target.value})}
+                        placeholder="Ex: Quelle mythologie pour un futur Cyberpunk ?" 
+                        className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Catégorie</Label>
+                        <Select value={newThread.category} onValueChange={(val) => setNewThread({...newThread, category: val})}>
+                          <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                            <SelectValue placeholder="Choisir un salon" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-stone-900 border-white/10">
+                            {sections.map(s => <SelectItem key={s.id} value={s.title}>{s.title}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs font-bold">Contenu Spoiler</Label>
+                          <p className="text-[8px] text-stone-500 uppercase font-black">Masquer le texte par défaut</p>
+                        </div>
+                        <Switch 
+                          checked={newThread.isSpoiler} 
+                          onCheckedChange={(val) => setNewThread({...newThread, isSpoiler: val})} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest ml-1">Message</Label>
+                      <Textarea 
+                        value={newThread.content}
+                        onChange={(e) => setNewThread({...newThread, content: e.target.value})}
+                        placeholder="Développez votre pensée..." 
+                        className="min-h-[150px] bg-white/5 border-white/10 rounded-2xl italic font-light p-6" 
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button 
+                      onClick={handleCreateThread} 
+                      disabled={isSubmitting}
+                      className="w-full h-14 rounded-xl bg-primary text-black font-black text-lg gold-shimmer"
+                    >
+                      {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : "Publier le sujet"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10">
                 <Link href="#rules">Règles de Vie</Link>
               </Button>
