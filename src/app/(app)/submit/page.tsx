@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User, sendEmailVerification } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -95,7 +95,24 @@ export default function SubmitPage() {
       const uploadResult = await uploadBytes(storageRef, coverFile);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 2. Create Firestore doc
+      // 2. Generate Unique Slug
+      let baseSlug = formData.title.toLowerCase().trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      
+      const storiesRef = collection(db, 'stories');
+      const q = query(storiesRef, where('slug', '==', baseSlug));
+      const querySnapshot = await getDocs(q);
+      
+      let finalSlug = baseSlug;
+      if (!querySnapshot.empty) {
+        // Append a random 4-digit suffix if collision detected
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        finalSlug = `${baseSlug}-${randomSuffix}`;
+      }
+
+      // 3. Create Firestore doc
       const storyData = {
         ...formData,
         artistId: user.uid,
@@ -116,12 +133,12 @@ export default function SubmitPage() {
         subscriptions: 0,
         chapterCount: 0,
         rating: 0,
-        slug: formData.title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, ''),
+        slug: finalSlug,
         genreSlug: formData.genre.toLowerCase(),
         tags: [formData.genre],
       };
 
-      await addDoc(collection(db, 'stories'), storyData);
+      await addDoc(storiesRef, storyData);
 
       toast({
         title: "Légende créée !",
@@ -152,7 +169,7 @@ export default function SubmitPage() {
 
   if (user && !user.emailVerified) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-24 text-center">
+      <div className="container mx-auto max-xl px-4 py-24 text-center">
         <ShieldAlert className="h-16 w-16 text-orange-500 mx-auto mb-6" />
         <h1 className="text-3xl font-bold mb-4 font-display">Vérifiez votre Identité</h1>
         <p className="text-muted-foreground mb-8 italic">
