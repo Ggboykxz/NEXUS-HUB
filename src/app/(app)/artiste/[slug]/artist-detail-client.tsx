@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star, History, Clock, Loader2 } from 'lucide-react';
+import { Bell, Heart, Book, Edit, ShieldCheck, Share2, LayoutGrid, Award, Eye, Star, History, Clock, Loader2, Coins } from 'lucide-react';
 import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ import Image from 'next/image';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, collection, addDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, collection, addDoc, query, orderBy, limit, getDocs, runTransaction } from 'firebase/firestore';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -46,6 +46,10 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [liveSubscribersCount, setLiveSubscribersCount] = useState(artist.subscribersCount || 0);
   
+  // Donation State
+  const [selectedAmount, setSelectedAmount] = useState('10');
+  const [isDonating, setIsDonating] = useState(false);
+
   // Activity State
   const [activities, setActivities] = useState<any[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
@@ -187,16 +191,62 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
     }
   };
 
-  const handleDonation = () => {
+  const handleDonation = async () => {
     if (!currentUser) {
       openAuthModal('soutenir directement les créateurs');
       return;
     }
-    toast({
-      title: "Merci pour votre soutien !",
-      description: `Votre don à ${artist.displayName} a bien été enregistré (simulation).`,
-    });
-  }
+
+    const amount = parseInt(selectedAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setIsDonating(true);
+    const senderRef = doc(db, 'users', currentUser.uid);
+    const artistRef = doc(db, 'users', artist.uid);
+    const notifRef = doc(collection(db, 'users', artist.uid, 'notifications'));
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const senderDoc = await transaction.get(senderRef);
+        if (!senderDoc.exists()) throw "Profil expéditeur introuvable.";
+        
+        const senderCoins = senderDoc.data().afriCoins || 0;
+        if (senderCoins < amount) {
+          throw "Solde d'AfriCoins insuffisant. Veuillez recharger votre compte.";
+        }
+
+        // Update balances
+        transaction.update(senderRef, { afriCoins: senderCoins - amount });
+        transaction.update(artistRef, { afriCoins: increment(amount) });
+        
+        // Add notification to artist
+        transaction.set(notifRef, {
+          type: 'donation',
+          fromUserId: currentUser.uid,
+          fromDisplayName: currentUser.displayName || 'Un voyageur',
+          fromPhoto: currentUser.photoURL || '',
+          message: `vous a envoyé ${amount} 🪙 pour soutenir votre art.`,
+          amount: amount,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      });
+
+      toast({
+        title: "Merci pour votre générosité !",
+        description: `Votre don de ${amount} 🪙 à ${artist.displayName} a été envoyé avec succès.`,
+      });
+    } catch (error: any) {
+      console.error("Donation error:", error);
+      toast({
+        title: "Échec du don",
+        description: typeof error === 'string' ? error : "Une erreur est survenue lors de la transaction.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDonating(false);
+    }
+  };
 
   const totalViews = artistStories.reduce((acc, story) => acc + story.views, 0);
   const totalLikes = artistStories.reduce((acc, story) => acc + story.likes, 0);
@@ -278,24 +328,29 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-6 py-8">
-                                <RadioGroup defaultValue="10" className="grid grid-cols-3 gap-4">
-                                    {[5, 10, 25].map(v => (
+                                <RadioGroup value={selectedAmount} onValueChange={setSelectedAmount} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    {[5, 10, 25, 50].map(v => (
                                       <div key={v}>
                                           <RadioGroupItem value={v.toString()} id={`v${v}`} className="peer sr-only" />
                                           <Label htmlFor={`v${v}`} className="flex cursor-pointer flex-col items-center justify-center h-16 rounded-2xl border-2 border-white/5 bg-white/5 hover:bg-white/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 transition-all font-black text-xl">
-                                              {v}€
+                                              {v} 🪙
                                           </Label>
                                       </div>
                                     ))}
                                 </RadioGroup>
-                                <Input placeholder="Montant personnalisé" className="h-14 bg-white/5 border-white/10 rounded-2xl text-center text-xl font-bold" type="number" />
+                                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center gap-3">
+                                  <Coins className="h-5 w-5 text-primary" />
+                                  <p className="text-[10px] uppercase font-black text-stone-400 tracking-widest">Le montant sera déduit de votre solde AfriCoins.</p>
+                                </div>
                             </div>
                             <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button className="w-full h-16 rounded-2xl bg-primary text-black font-black text-xl gold-shimmer" onClick={handleDonation}>
-                                      Confirmer le don
-                                  </Button>
-                                </DialogClose>
+                                <Button 
+                                  className="w-full h-16 rounded-2xl bg-primary text-black font-black text-xl gold-shimmer" 
+                                  onClick={handleDonation}
+                                  disabled={isDonating}
+                                >
+                                    {isDonating ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Envoi...</> : "Confirmer le don"}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
