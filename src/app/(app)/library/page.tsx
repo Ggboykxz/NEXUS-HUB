@@ -3,22 +3,31 @@
 import { useState, useEffect } from 'react';
 import { StoryCard } from '@/components/story-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookMarked, Heart, History, Clock, Library as LibraryIcon, Play, Trash2, ArrowRight, Flame, Sparkles, Star } from 'lucide-react';
+import { 
+  BookMarked, Heart, History, Clock, Library as LibraryIcon, 
+  Play, Trash2, ArrowRight, Flame, Sparkles, Star, Loader2,
+  XCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, query, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { 
+  collection, query, orderBy, getDocs, doc, deleteDoc, 
+  where, documentId, writeBatch 
+} from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { LibraryEntry } from '@/lib/types';
+import type { LibraryEntry, Story } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LibraryPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -29,6 +38,7 @@ export default function LibraryPage() {
     return () => unsubscribe();
   }, []);
 
+  // --- FETCH PROGRESS (READING HISTORY) ---
   const { data: progressList = [], isLoading: isLoadingLib } = useQuery({
     queryKey: ['library-progress', currentUser?.uid],
     enabled: !!currentUser,
@@ -39,11 +49,55 @@ export default function LibraryPage() {
     }
   });
 
-  const removeMutation = useMutation({
+  // --- FETCH FAVORITES ---
+  const { data: favoriteStories = [], isLoading: isLoadingFavs } = useQuery({
+    queryKey: ['library-favorites', currentUser?.uid],
+    enabled: !!currentUser,
+    queryFn: async () => {
+      const favsRef = collection(db, 'users', currentUser!.uid, 'favorites');
+      const favsSnap = await getDocs(favsRef);
+      const favIds = favsSnap.docs.map(d => d.id);
+
+      if (favIds.length === 0) return [];
+
+      // Firestore limit for 'in' queries is 30. For simplicity, we take the first 30.
+      const chunks = [];
+      for (let i = 0; i < favIds.length; i += 30) {
+        chunks.push(favIds.slice(i, i + 30));
+      }
+
+      const storiesRef = collection(db, 'stories');
+      const results: Story[] = [];
+
+      for (const chunk of chunks) {
+        const q = query(storiesRef, where(documentId(), 'in', chunk));
+        const snap = await getDocs(q);
+        results.push(...snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)));
+      }
+
+      return results;
+    }
+  });
+
+  const removeProgressMutation = useMutation({
     mutationFn: async (storyId: string) => {
       await deleteDoc(doc(db, 'users', currentUser!.uid, 'library', storyId));
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library-progress'] })
+  });
+
+  const clearFavoritesMutation = useMutation({
+    mutationFn: async () => {
+      const favsRef = collection(db, 'users', currentUser!.uid, 'favorites');
+      const snap = await getDocs(favsRef);
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library-favorites'] });
+      toast({ title: "Favoris vidés", description: "Votre liste de favoris a été réinitialisée." });
+    }
   });
 
   if (loading || isLoadingLib) {
@@ -98,12 +152,12 @@ export default function LibraryPage() {
           
           <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
-              <p className="text-3xl font-black text-primary">{progressList.length}</p>
-              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Œuvres suivies</p>
+              <p className="text-3xl font-black text-primary">{progressList.length + favoriteStories.length}</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Épopées Suivies</p>
             </div>
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 text-center space-y-1">
-              <p className="text-3xl font-black text-emerald-500">75%</p>
-              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Complétion</p>
+              <p className="text-3xl font-black text-emerald-500">{favoriteStories.length}</p>
+              <p className="text-[10px] uppercase font-bold text-stone-500 tracking-widest">Favoris</p>
             </div>
           </div>
         </div>
@@ -125,6 +179,7 @@ export default function LibraryPage() {
           </TabsList>
         </div>
 
+        {/* PROGRESS TAB */}
         <TabsContent value="progress" className="space-y-6 animate-in fade-in duration-700">
           {progressList.length > 0 ? (
             <div className="grid grid-cols-1 gap-6">
@@ -145,14 +200,16 @@ export default function LibraryPage() {
                           <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[8px] font-black uppercase px-3 tracking-widest">
                             Chapitre {entry.lastReadChapterTitle}
                           </Badge>
-                          <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tighter">Lu il y a 2 jours</span>
+                          <span className="text-[10px] text-stone-500 font-bold uppercase tracking-tighter">
+                            {entry.lastReadAt ? formatDistanceToNow(new Date((entry.lastReadAt as any).toDate?.() || entry.lastReadAt), { addSuffix: true, locale: fr }) : 'Récemment'}
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Button asChild size="lg" className="rounded-full font-black px-10 bg-primary text-black gold-shimmer h-12 shadow-xl shadow-primary/20">
                           <Link href={`/read/${entry.storyId}`}>Reprendre <ArrowRight className="ml-2 h-5 w-5" /></Link>
                         </Button>
-                        <Button onClick={() => removeMutation.mutate(entry.storyId)} variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
+                        <Button onClick={() => removeProgressMutation.mutate(entry.storyId)} variant="ghost" size="icon" className="rounded-full text-stone-600 hover:text-rose-500 h-12 w-12 bg-white/5 hover:bg-rose-500/10 transition-all">
                           <Trash2 className="h-5 w-5" />
                         </Button>
                       </div>
@@ -176,8 +233,34 @@ export default function LibraryPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="favorites" className="animate-in fade-in duration-700">
-          <EmptyState message="Aucun favori pour le moment. Laissez votre cœur guider vos lectures." icon={Heart} />
+        {/* FAVORITES TAB */}
+        <TabsContent value="favorites" className="space-y-10 animate-in fade-in duration-700">
+          {favoriteStories.length > 0 ? (
+            <>
+              <div className="flex justify-between items-center px-2">
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-widest flex items-center gap-3">
+                  <Star className="h-5 w-5 text-primary" /> Sélection Sacrée
+                </h3>
+                <Button 
+                  onClick={() => clearFavoritesMutation.mutate()} 
+                  disabled={clearFavoritesMutation.isPending}
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-stone-500 hover:text-rose-500 font-black text-[9px] uppercase tracking-[0.2em] gap-2"
+                >
+                  {clearFavoritesMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                  Vider les favoris
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+                {favoriteStories.map((story) => (
+                  <StoryCard key={story.id} story={story} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyState message="Aucun favori pour le moment. Laissez votre cœur guider vos lectures." icon={Heart} />
+          )}
         </TabsContent>
 
         <TabsContent value="following" className="animate-in fade-in duration-700">

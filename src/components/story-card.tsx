@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Story, UserProfile, Playlist } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Clock, Handshake, Check } from 'lucide-react';
+import { Crown, Heart, ListPlus, Play, Award, PenSquare, Eye, Info, Clock, Handshake, Check, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthModal } from './providers/auth-modal-provider';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, serverTimestamp, onSnapshot, increment, updateDoc } from 'firebase/firestore';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface StoryCardProps {
   story: Story;
@@ -43,14 +44,18 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
   const [relativeDate, setRelativeDate] = useState('');
   const [artistInfo, setArtistInfo] = useState<UserProfile | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isTogglingFav, setIsTogglingFav] = useState(false);
+  
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
+  const queryClient = useQueryClient();
 
   const updatedAtDate = story.updatedAt instanceof Date 
     ? story.updatedAt 
     : typeof story.updatedAt === 'string' 
       ? new Date(story.updatedAt)
-      : new Date();
+      : (story.updatedAt as any)?.toDate?.() || new Date();
 
   useEffect(() => {
     try {
@@ -72,23 +77,60 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
     fetchArtist();
 
     if (auth.currentUser) {
+      // Fetch user playlists for the dropdown
       const fetchPlaylists = async () => {
         const q = query(collection(db, 'playlists'), where('ownerId', '==', auth.currentUser?.uid));
         const snap = await getDocs(q);
         setUserPlaylists(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
       };
       fetchPlaylists();
-    }
-  }, [story.updatedAt, story.artistId]);
 
-  const handleHeartClick = (e: React.MouseEvent) => {
+      // Monitor favorite status
+      const favRef = doc(db, 'users', auth.currentUser.uid, 'favorites', story.id);
+      const unsubFav = onSnapshot(favRef, (snap) => {
+        setIsFavorite(snap.exists());
+      });
+
+      return () => unsubFav();
+    }
+  }, [story.id, story.updatedAt, story.artistId]);
+
+  const handleHeartClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    
     if (!auth.currentUser) {
       openAuthModal('ajouter cette œuvre à vos favoris');
       return;
     }
-    toast({ title: "Ajouté aux favoris !" });
+
+    if (isTogglingFav) return;
+
+    setIsTogglingFav(true);
+    const favRef = doc(db, 'users', auth.currentUser.uid, 'favorites', story.id);
+    const storyRef = doc(db, 'stories', story.id);
+
+    try {
+      if (isFavorite) {
+        await deleteDoc(favRef);
+        await updateDoc(storyRef, { likes: increment(-1) });
+        toast({ title: "Retiré des favoris" });
+      } else {
+        await setDoc(favRef, {
+          storyId: story.id,
+          addedAt: serverTimestamp()
+        });
+        await updateDoc(storyRef, { likes: increment(1) });
+        toast({ title: "Ajouté aux favoris !" });
+      }
+      // Invalidate library queries to refresh the list if we are on the library page
+      queryClient.invalidateQueries({ queryKey: ['library-favorites'] });
+    } catch (error) {
+      console.error("Favorite toggle error:", error);
+      toast({ title: "Erreur", description: "Action impossible pour le moment.", variant: "destructive" });
+    } finally {
+      setIsTogglingFav(false);
+    }
   };
 
   const handleAddToPlaylist = (e: React.MouseEvent, playlistName: string) => {
@@ -208,10 +250,14 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
                         <Button 
                           variant="secondary" 
                           size="icon" 
-                          className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                          className={cn(
+                            "rounded-full h-7 w-7 transition-all active:scale-95 shadow-lg",
+                            isFavorite ? "bg-rose-500 text-white border-rose-500" : "bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md"
+                          )}
+                          disabled={isTogglingFav}
                           onClick={handleHeartClick}
                         >
-                            <Heart className="h-4 w-4" />
+                            {isTogglingFav ? <Loader2 className="h-3 w-3 animate-spin" /> : <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />}
                         </Button>
                     </div>
                     
@@ -250,7 +296,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
                     {formatStat(story.views)}
                 </div>
                 <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Heart className="h-2 text-destructive" />
+                    <Heart className={cn("h-2", isFavorite ? "text-rose-500" : "text-destructive")} />
                     {formatStat(story.likes)}
                 </div>
             </div>
