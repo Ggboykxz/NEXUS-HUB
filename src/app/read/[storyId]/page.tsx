@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -449,6 +449,80 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
       }
     }
   }, [story, storyId]);
+
+  // Streak & Reward tracking
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `reading_secs_${currentUser.uid}_${today}`;
+    const claimedKey = `streak_claimed_${currentUser.uid}_${today}`;
+    
+    // Check if reward already claimed today in local storage
+    if (localStorage.getItem(claimedKey)) return;
+
+    let savedSecs = parseInt(localStorage.getItem(storageKey) || '0');
+
+    const interval = setInterval(() => {
+      savedSecs += 1;
+      localStorage.setItem(storageKey, savedSecs.toString());
+
+      if (savedSecs >= 300) { // 5 minutes = 300 seconds
+        handleStreakUpdate(currentUser.uid, claimedKey);
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  const handleStreakUpdate = async (uid: string, claimedKey: string) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
+
+      const data = userSnap.data();
+      const today = new Date().toISOString().split('T')[0];
+      const lastRead = data.readingStreak?.lastReadDate || '';
+
+      // Only reward if this is the first session today
+      if (lastRead !== today) {
+        const newStreak = (data.readingStreak?.currentCount || 0) + 1;
+        const currentCoins = data.afriCoins || 0;
+        
+        // Single updateDoc call for efficiency
+        await updateDoc(userRef, {
+          afriCoins: increment(2),
+          'readingStreak.currentCount': newStreak,
+          'readingStreak.lastReadDate': today,
+          'readingStreak.lastReadAt': serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        // Add internal notification for the reward
+        await addDoc(collection(db, 'users', uid, 'notifications'), {
+          type: 'streak_reward',
+          fromDisplayName: 'NexusHub',
+          fromPhoto: '',
+          message: `a récompensé votre assiduité ! Streak de ${newStreak} jours. Voici +2 🪙.`,
+          link: '/africoins',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        // Mark as claimed in local storage to prevent redundant calls in the same session
+        localStorage.setItem(claimedKey, 'true');
+
+        toast({
+          title: "Récompense de lecture !",
+          description: `Jour ${newStreak} ! Vous avez gagné 2 AfriCoins.`,
+        });
+      }
+    } catch (error) {
+      console.error("Streak reward error:", error);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
