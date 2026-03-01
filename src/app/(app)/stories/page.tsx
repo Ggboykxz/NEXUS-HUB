@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Story } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
-import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2 } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, startAfter, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useGenres } from '@/components/providers/genres-provider';
-import { useQuery } from '@tanstack/react-query';
 
 function StoriesContent() {
   const searchParams = useSearchParams();
@@ -26,62 +25,93 @@ function StoriesContent() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: allStories = [], isLoading } = useQuery({
-    queryKey: ['stories', 'all'],
-    queryFn: async () => {
-      const q = query(collection(db, 'stories'), orderBy('views', 'desc'));
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+  // Pagination State
+  const [stories, setStories] = useState<Story[]>([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const PAGE_SIZE = 20;
+
+  const fetchStories = useCallback(async (isNextPage = false) => {
+    if (!isNextPage) {
+      setIsLoading(true);
+      setLastDoc(null);
+    } else {
+      setIsLoadingMore(true);
     }
-  });
 
-  const filteredAndSortedStories = useMemo(() => {
-    let filtered = allStories;
+    try {
+      const storiesRef = collection(db, 'stories');
+      let constraints: any[] = [where('isPublished', '==', true)];
 
-    if (typeFilter === 'public') {
-      filtered = filtered.filter(story => !story.isPremium);
-    } else if (typeFilter === 'premium') {
-      filtered = filtered.filter(story => story.isPremium);
-    }
-
-    if (genreFilter !== 'all') {
-      const targetGenre = uniqueGenres.find(g => g.slug === genreFilter)?.name;
-      if (targetGenre) {
-        filtered = filtered.filter(story => story.genre === targetGenre);
+      // Apply Type Filter
+      if (typeFilter === 'public') constraints.push(where('isPremium', '==', false));
+      if (typeFilter === 'premium') constraints.push(where('isPremium', '==', true));
+      
+      // Apply Genre Filter
+      if (genreFilter !== 'all') {
+        constraints.push(where('genreSlug', '==', genreFilter));
       }
-    }
 
-    if (searchQuery.trim()) {
-      const lowerTerm = searchQuery.toLowerCase();
-      filtered = filtered.filter(story => 
-        story.title.toLowerCase().includes(lowerTerm) || 
-        story.description.toLowerCase().includes(lowerTerm)
-      );
-    }
+      // Sort logic
+      let orderField = 'views';
+      if (sortFilter === 'newest') orderField = 'updatedAt';
+      if (sortFilter === 'likes') orderField = 'likes';
+      
+      constraints.push(orderBy(orderField, 'desc'));
 
-    const sorted = [...filtered];
-    switch (sortFilter) {
-      case 'popular':
-        sorted.sort((a, b) => b.views - a.views);
-        break;
-      case 'newest':
-        sorted.sort((a, b) => new Date(b.updatedAt as string).getTime() - new Date(a.updatedAt as string).getTime());
-        break;
-      case 'likes':
-        sorted.sort((a, b) => b.likes - a.likes);
-        break;
-    }
+      // Cursor for pagination
+      if (isNextPage && lastDoc) {
+        constraints.push(startAfter(lastDoc));
+      }
 
-    return sorted;
-  }, [allStories, genreFilter, sortFilter, typeFilter, searchQuery, uniqueGenres]);
+      constraints.push(limit(PAGE_SIZE));
+
+      const q = query(storiesRef, ...constraints);
+      const snap = await getDocs(q);
+
+      const fetchedStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      
+      if (isNextPage) {
+        setStories(prev => [...prev, ...fetchedStories]);
+      } else {
+        setStories(fetchedStories);
+      }
+
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error fetching stories from Firestore:", error);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [genreFilter, typeFilter, sortFilter, lastDoc]);
+
+  // Reset pagination and fetch on filter changes
+  useEffect(() => {
+    fetchStories(false);
+  }, [genreFilter, typeFilter, sortFilter]);
+
+  // Client-side search within current results or for initial search
+  const displayedStories = useMemo(() => {
+    if (!searchQuery.trim()) return stories;
+    const lowerTerm = searchQuery.toLowerCase();
+    return stories.filter(story => 
+      story.title.toLowerCase().includes(lowerTerm) || 
+      story.description.toLowerCase().includes(lowerTerm)
+    );
+  }, [stories, searchQuery]);
 
   const activeFiltersCount = (genreFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
-  if (isLoading) {
+  if (isLoading && stories.length === 0) {
     return (
       <div className="h-96 flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground font-display font-bold">Chargement de la bibliothèque...</p>
+        <p className="text-muted-foreground font-display font-bold">Consultation des archives...</p>
       </div>
     );
   }
@@ -177,22 +207,47 @@ function StoriesContent() {
         <div className="flex items-center gap-2">
             <LayoutGrid className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-display font-bold">
-                {filteredAndSortedStories.length} résultats trouvés
+                {displayedStories.length} résultats chargés
             </h2>
         </div>
       </div>
 
-      {filteredAndSortedStories.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12 animate-in fade-in duration-700">
-          {filteredAndSortedStories.map((story) => (
-            <StoryCard key={story.id} story={story} />
-          ))}
-        </div>
+      {displayedStories.length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12 animate-in fade-in duration-700">
+            {displayedStories.map((story) => (
+              <StoryCard key={story.id} story={story} />
+            ))}
+          </div>
+          
+          {hasMore && (
+            <div className="mt-16 flex justify-center">
+              <Button 
+                onClick={() => fetchStories(true)} 
+                disabled={isLoadingMore}
+                variant="outline"
+                className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase tracking-widest gap-3 shadow-xl transition-all"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Chargement...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    Charger plus de récits
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <h3 className="text-xl font-bold mb-2">Aucune œuvre ne correspond à vos filtres</h3>
-          <p className="text-muted-foreground max-w-xs mx-auto mb-8">Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.</p>
+          <h3 className="text-xl font-bold mb-2">Aucune œuvre trouvée</h3>
+          <p className="text-muted-foreground max-w-xs mx-auto mb-8">Réinitialisez les filtres ou changez vos critères de recherche.</p>
           <Button 
             variant="outline" 
             className="rounded-full"
@@ -226,7 +281,7 @@ export default function StoriesPage() {
       <Suspense fallback={
         <div className="h-96 flex flex-col items-center justify-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground font-display font-bold">Chargement de la bibliothèque...</p>
+            <p className="text-muted-foreground font-display font-bold">Consultation des archives...</p>
         </div>
       }>
         <StoriesContent />
