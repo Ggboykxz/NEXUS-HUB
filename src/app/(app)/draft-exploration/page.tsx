@@ -1,15 +1,23 @@
-'use client';
-
-import { stories, artists } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
 import { PenSquare, Sparkles, Rocket, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import type { Story } from '@/lib/types';
 
-export default function DraftExplorationPage() {
-  const draftStories = stories.filter(s => {
-    const artist = artists.find(a => a.id === s.artistId);
-    return !artist?.isMentor;
-  });
+export const revalidate = 3600;
+
+export default async function DraftExplorationPage() {
+  const q = query(
+    collection(db, 'stories'),
+    where('isPublished', '==', true),
+    where('isDraft', '==', true),
+    orderBy('views', 'desc'),
+    limit(40)
+  );
+
+  const snap = await getDocs(q);
+  const draftStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-6 py-12">

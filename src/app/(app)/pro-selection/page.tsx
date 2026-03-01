@@ -1,21 +1,29 @@
-'use client';
-
-import { stories, artists } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
 import { Award, Star, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import type { Story } from '@/lib/types';
 
-export default function ProSelectionPage() {
-  const proStories = stories.filter(s => {
-    const artist = artists.find(a => a.id === s.artistId);
-    return artist?.role === 'artist_pro';
-  });
+export const revalidate = 3600;
+
+export default async function ProSelectionPage() {
+  const q = query(
+    collection(db, 'stories'),
+    where('isPublished', '==', true),
+    where('isPro', '==', true),
+    orderBy('views', 'desc'),
+    limit(20)
+  );
+
+  const snap = await getDocs(q);
+  const proStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (
     <div className="container mx-auto max-w-7xl px-6 py-12">
       <header className="mb-16 relative p-12 rounded-[2.5rem] bg-emerald-500/[0.03] border border-emerald-500/10 overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] -z-10" />
+        <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] -z-10" />
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 text-center md:text-left">
             <div className="flex items-center gap-3 justify-center md:justify-start">
