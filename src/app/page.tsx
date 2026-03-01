@@ -55,8 +55,6 @@ export default function RootHomePage() {
     },
   });
 
-  const featured = popular[0];
-
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
       <Header />
@@ -75,7 +73,6 @@ export default function RootHomePage() {
 // ==================== VUE UTILISATEUR CONNECTÉ ====================
 function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile | null, currentUser: any, popular: Story[] }) {
   
-  // 1. Fetch Library Progress (Last 3)
   const { data: library = [] } = useQuery({
     queryKey: ['user-library-home', currentUser?.uid],
     enabled: !!currentUser,
@@ -90,7 +87,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
     }
   });
 
-  // 2. Fetch Followed Artists Updates (Simplified for prototype)
   const { data: followedUpdates = [] } = useQuery({
     queryKey: ['user-followed-updates', currentUser?.uid],
     enabled: !!currentUser,
@@ -107,8 +103,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
 
   return (
     <div className="container max-w-7xl mx-auto px-6 py-8 space-y-20 animate-in fade-in duration-1000">
-      
-      {/* AFRI-COINS DAILY BANNER */}
       <section className="bg-primary/10 border border-primary/20 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-primary/5">
         <div className="flex items-center gap-4">
           <div className="bg-primary/20 p-2 rounded-xl animate-pulse">
@@ -128,7 +122,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
         </div>
       </section>
 
-      {/* POUR TOI (IA RECOMMANDATIONS) */}
       <section className="space-y-8">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
@@ -144,7 +137,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
         </div>
       </section>
 
-      {/* CONTINUER LA LECTURE (3 ITEMS) */}
       <section className="space-y-8">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
@@ -186,7 +178,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
         )}
       </section>
 
-      {/* SUIVIS RÉCENTS (NOUVEAUX CHAPITRES) */}
       <section className="space-y-8">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
@@ -210,7 +201,6 @@ function UserHomeView({ profile, currentUser, popular }: { profile: UserProfile 
         </div>
       </section>
 
-      {/* CLUBS DE LECTURE ACTIFS */}
       <section className="p-10 rounded-[3rem] bg-stone-900 border border-white/5 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 p-8 opacity-5"><Users className="h-48 w-48 text-emerald-500" /></div>
         <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
@@ -333,8 +323,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
       </section>
 
       <div className="container max-w-7xl mx-auto px-6 space-y-24">
-        
-        {/* 2. STATS PLATEFORME & PROFIL ARTISTES */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Globe, title: "Panafricain", text: "15+ Pays représentés", color: "text-blue-500 bg-blue-500/10" },
@@ -354,7 +342,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           ))}
         </section>
 
-        {/* 3. DÉCOUVERTE PAR RÉGION (EXCLUSIVITÉ NEXUSHUB) */}
         <section className="space-y-10">
           <div className="text-center space-y-2">
             <h2 className="text-3xl md:text-4xl font-display font-black text-white uppercase tracking-tighter">Découverte par Région</h2>
@@ -370,7 +357,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           </div>
         </section>
 
-        {/* 4. TENDANCES MONDIALES */}
         <section>
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
@@ -386,7 +372,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           </div>
         </section>
 
-        {/* 5. ORIGINALS & CONCOURS (AIMANT CRÉATEURS) */}
         <section className="bg-stone-900 border border-primary/20 rounded-[3.5rem] p-12 relative overflow-hidden group shadow-2xl">
           <div className="absolute top-0 right-0 p-8 opacity-5"><Trophy className="h-64 w-64 text-primary" /></div>
           <div className="relative z-10 grid lg:grid-cols-2 gap-16 items-center">
@@ -421,7 +406,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           </div>
         </section>
 
-        {/* 6. AI STUDIO TEASER */}
         <section className="p-12 rounded-[3rem] border border-white/5 bg-gradient-to-br from-stone-900 to-black relative overflow-hidden group">
             <div className="absolute -bottom-10 -left-10 p-8 opacity-5"><BrainCircuit className="h-64 w-64 text-primary" /></div>
             <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
@@ -445,7 +429,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             </div>
         </section>
 
-        {/* 7. CTA CRÉATEUR DIFFÉRENCIÉ (TRANSPARENCE) */}
         <section className="py-24 border-t border-border/50 text-center space-y-12">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
