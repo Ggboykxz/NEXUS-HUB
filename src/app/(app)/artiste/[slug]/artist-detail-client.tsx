@@ -27,7 +27,7 @@ import Image from 'next/image';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import type { Story, UserProfile } from '@/lib/types';
 
 interface ArtistDetailClientProps {
@@ -111,6 +111,20 @@ export default function ArtistDetailClient({ artist, artistStories }: ArtistDeta
         await updateDoc(artistRef, {
           subscribersCount: increment(1)
         });
+
+        // Send Notification to Artist
+        const notifRef = collection(db, 'users', artist.uid, 'notifications');
+        await addDoc(notifRef, {
+          type: 'new_follower',
+          fromUserId: currentUser.uid,
+          fromDisplayName: currentUser.displayName || 'Un voyageur',
+          fromPhoto: currentUser.photoURL || '',
+          message: 'a commencé à vous suivre.',
+          link: `/profile/${currentUser.uid}`,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
         toast({
           title: "Abonné !",
           description: `Vous suivez désormais ${artist.displayName}.`,

@@ -6,7 +6,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, 
   ChevronDown, CircleDollarSign, Brush, Library, PenSquare, 
-  MoreHorizontal, Database, Cloud, Zap, Flame, Mic, LayoutGrid
+  MoreHorizontal, Database, Cloud, Zap, Flame, Mic, LayoutGrid,
+  Bell
 } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -30,7 +31,7 @@ import { ThemeToggle } from './theme-toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { db, auth } from '@/lib/firebase';
-import { collection, limit, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, limit, query, onSnapshot, doc, getDoc, where } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +51,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [hasMounted, setHasMounted] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -73,9 +75,19 @@ export default function Header() {
         if (userDoc.exists()) {
           setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
         }
+
+        // Real-time listener for unread notifications
+        const notifRef = collection(db, 'users', user.uid, 'notifications');
+        const qNotif = query(notifRef, where('read', '==', false));
+        const unsubNotif = onSnapshot(qNotif, (snap) => {
+          setUnreadCount(snap.size);
+        });
+
+        return () => unsubNotif();
       } else {
         setIsLoggedIn(false);
         setUserProfile(null);
+        setUnreadCount(0);
       }
     });
 
@@ -225,6 +237,19 @@ export default function Header() {
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-full" onClick={() => setIsSearchOpen(true)}>
                 <Search className="h-4 w-4" />
               </Button>
+
+              {isLoggedIn && (
+                <Link href="/notifications" className="relative">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-full">
+                    <Bell className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 h-3.5 min-w-[14px] px-1 bg-destructive text-white text-[8px] font-black rounded-full flex items-center justify-center animate-in zoom-in duration-300 border-2 border-background">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              )}
 
               {!isLoggedIn ? (
                 <div className="flex items-center gap-1">
