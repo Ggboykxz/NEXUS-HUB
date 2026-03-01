@@ -196,7 +196,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             {library.map((entry) => (
               <div key={entry.storyId} className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-5 flex items-center gap-5 hover:border-primary/20 transition-all group shadow-xl">
                 <div className="relative h-24 w-16 rounded-xl overflow-hidden shadow-lg shrink-0">
-                  <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform" />
+                  <Image src={entry.storyCover} alt={entry.storyTitle} fill className="object-cover group-hover:scale-110 transition-transform" sizes="(max-width: 640px) 25vw, 100px" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <Play className="h-6 w-6 text-primary fill-current" />
                   </div>
@@ -310,7 +310,10 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                   'object-cover transition-all duration-[3000ms]',
                   heroLoaded ? 'opacity-35 scale-100' : 'opacity-0 scale-105'
                 )}
-                priority
+                priority={true}
+                fetchPriority="high"
+                placeholder="blur"
+                blurDataURL={featured.coverImage.blurHash || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="}
                 onLoad={() => setHeroLoaded(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
@@ -478,7 +481,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                     </Button>
                 </div>
                 <div className="relative aspect-video rounded-3xl overflow-hidden border-8 border-white/5 shadow-2xl">
-                  <Image src="https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg" alt="AI Studio" fill className="object-cover opacity-60" />
+                  <Image src="https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg" alt="AI Studio" fill className="object-cover opacity-60" sizes="(max-width: 1024px) 100vw, 50vw" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-black/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center gap-3">
                       <Sparkles className="h-6 w-6 text-primary" />

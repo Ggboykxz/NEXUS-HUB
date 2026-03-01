@@ -156,7 +156,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
               alt={story.title}
               fill
               className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-[1.08]"
-              sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
+              sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
               placeholder="blur"
               blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
             />
