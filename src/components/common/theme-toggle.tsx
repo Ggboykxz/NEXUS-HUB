@@ -2,35 +2,52 @@
 
 import * as React from 'react';
 import { Moon, Sun } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
+import { auth, db } from '@/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false);
+  const [theme, setThemeState] = React.useState<'light' | 'dark'>('dark');
 
   React.useEffect(() => {
     setMounted(true);
-    // On mount, set the theme based on localStorage or system preference
-    const theme = localStorage.getItem('theme');
-    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
+    // Initial theme check on mount
+    const savedTheme = localStorage.getItem('nexushub-theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setThemeState(savedTheme);
     } else {
-        document.documentElement.classList.remove('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      setThemeState(isDark ? 'dark' : 'light');
     }
   }, []);
 
-  const toggleTheme = () => {
-    try {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (isDark) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+  const toggleTheme = async () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setThemeState(newTheme);
+    
+    // Update DOM
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Persist to localStorage
+    localStorage.setItem('nexushub-theme', newTheme);
+    
+    // Persist to Firestore if logged in
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+          'preferences.theme': newTheme
+        });
+      } catch (error) {
+        // Silently fail if firestore update fails (e.g. connectivity)
+        console.error("Error updating theme preference in Firestore:", error);
       }
-    } catch (e) {
-      // localStorage is not available
     }
   };
 
@@ -45,7 +62,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <Button variant="ghost" size="icon" className="text-foreground/90" disabled>
-        {buttonContent}
+        <Sun className="h-5 w-5" />
       </Button>
     );
   }

@@ -5,7 +5,6 @@ import { LanguageProvider } from '@/components/providers/language-provider';
 import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
 import { GenresProvider } from '@/components/providers/genres-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
-import Script from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -45,6 +44,19 @@ export default function RootLayout({
         />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('nexushub-theme');
+                  var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  document.documentElement.classList.toggle('dark', isDark);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <QueryProvider>
