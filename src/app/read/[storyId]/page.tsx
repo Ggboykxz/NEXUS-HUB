@@ -39,26 +39,26 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
   const storyUrl = getStoryUrl(story);
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl transition-transform duration-300",
+      "fixed top-0 left-0 right-0 h-14 bg-stone-950/95 border-b border-white/10 z-50 flex items-center justify-between px-5 backdrop-blur-xl transition-transform duration-300",
       !isVisible && "-translate-y-full"
     )}>
       <div className="flex items-center gap-4 flex-1">
-        <Link href="/" className="font-display font-black text-lg tracking-tighter text-foreground gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
-        <div className="w-px h-5 bg-border hidden md:block" />
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px]">{story.title}</Link>
+        <Link href="/" className="font-display font-black text-lg tracking-tighter text-white gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
+        <div className="w-px h-5 bg-white/10 hidden md:block" />
+        <div className="flex items-center gap-2 text-sm text-stone-400">
+          <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px] text-stone-400">{story.title}</Link>
           <ChevronRight className="h-4 w-4 hidden sm:block" />
           <span className="text-primary font-semibold whitespace-nowrap">Ep. {chapter?.chapterNumber || 1}</span>
         </div>
       </div>
 
       <div className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-        <Button size="icon" variant="outline" className="w-8 h-8 rounded-full"><ChevronLeft className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" className="w-8 h-8 rounded-full border-white/10 text-white hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></Button>
         <Select defaultValue={chapter?.id}>
-          <SelectTrigger className="w-[180px] h-8 text-[10px] uppercase font-black tracking-widest rounded-xl">
+          <SelectTrigger className="w-[180px] h-8 text-[10px] uppercase font-black tracking-widest rounded-xl bg-white/5 border-white/10 text-white">
             <SelectValue placeholder="Épisodes" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-primary/10">
+          <SelectContent className="rounded-xl border-white/10 bg-stone-900 text-white">
             {story.chapters?.map((chap: Chapter) => (
               <SelectItem key={chap.id} value={chap.id} className="text-xs font-bold">
                 Épisode {chap.chapterNumber}
@@ -66,28 +66,28 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
             ))}
           </SelectContent>
         </Select>
-        <Button size="icon" variant="outline" className="w-8 h-8 rounded-full"><ChevronRight className="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" className="w-8 h-8 rounded-full border-white/10 text-white hover:bg-white/10"><ChevronRight className="h-4 w-4" /></Button>
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end">
-        <div className="hidden sm:flex bg-muted/50 border border-border/50 rounded-xl p-0.5">
-          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className="h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg">
+        <div className="hidden sm:flex bg-white/5 border border-white/10 rounded-xl p-0.5">
+          <Button onClick={() => onModeChange('scroll')} size="sm" variant={activeMode === 'scroll' ? 'default' : 'ghost'} className={cn("h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg", activeMode === 'scroll' ? "bg-primary text-black" : "text-stone-400 hover:text-white")}>
             <Layers className="h-3 w-3" /> Webtoon
           </Button>
-          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg">
-            < Book className="h-3 w-3" /> BD
+          <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className={cn("h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg", activeMode === 'pages' ? "bg-primary text-black" : "text-stone-400 hover:text-white")}>
+            <Book className="h-3 w-3" /> BD
           </Button>
         </div>
         
-        <Button onClick={onToggleFullscreen} size="icon" variant="ghost" className="h-9 w-9 rounded-full hover:bg-muted text-stone-500">
+        <Button onClick={onToggleFullscreen} size="icon" variant="ghost" className="h-9 w-9 rounded-full hover:bg-white/10 text-stone-400 hover:text-white">
           {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
         </Button>
 
-        <Button onClick={onBookmark} size="sm" variant="outline" className={cn("h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5 transition-all", isBookmarked && "bg-primary/10 border-primary text-primary")}>
+        <Button onClick={onBookmark} size="sm" variant="outline" className={cn("h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5 transition-all border-white/10 text-white hover:bg-white/10", isBookmarked && "bg-primary/10 border-primary text-primary")}>
           <Bookmark className={cn("h-3.5 w-3.5", isBookmarked && "fill-current")} />
           <span className="hidden md:inline">{isBookmarked ? 'Sauvegardé' : 'Sauvegarder'}</span>
         </Button>
-        <Button onClick={onSettingsToggle} size="icon" variant="outline" className="h-8 w-8 rounded-full">
+        <Button onClick={onSettingsToggle} size="icon" variant="outline" className="h-8 w-8 rounded-full border-white/10 text-white hover:bg-white/10">
           <Settings className="h-4 w-4" />
         </Button>
       </div>
@@ -98,7 +98,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
 function ProgressBar({ progress, isVisible }: { progress: number, isVisible: boolean }) {
   return (
     <div className={cn(
-      "fixed top-14 left-0 right-0 h-0.5 bg-foreground/5 z-50 transition-transform duration-300",
+      "fixed top-14 left-0 right-0 h-0.5 bg-white/5 z-50 transition-transform duration-300",
       !isVisible && "top-0 translate-y-0"
     )}>
       <div
@@ -388,7 +388,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
                   <AvatarFallback>{c.authorName.slice(0,1)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white truncate">{c.authorName}</p>
+                  <p className="text-xs font-bold text-white">{c.authorName}</p>
                   <p className="text-[8px] text-stone-500 uppercase font-black">Il y a un instant</p>
                 </div>
                 <div className="flex items-center gap-1">

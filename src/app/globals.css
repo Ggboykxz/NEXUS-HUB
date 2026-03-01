@@ -47,6 +47,8 @@
     --cream: 40 43% 87%;
     --cream-dim: 41 24% 63%;
     --cream-faint: 40 43% 87% / 0.06;
+
+    --reader-bg: #0a0a0a;
   }
 
   .dark {
