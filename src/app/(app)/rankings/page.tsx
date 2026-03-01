@@ -17,7 +17,35 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
+
+function RankingRowSkeleton() {
+  return (
+    <Card className="border-white/5 bg-card/50 rounded-[2rem] overflow-hidden">
+      <div className="flex flex-col md:flex-row items-stretch">
+        <div className="p-8 md:w-28 flex items-center justify-center border-r border-white/5">
+          <Skeleton className="h-12 w-12 bg-stone-800 rounded-lg" />
+        </div>
+        <div className="flex-1 p-8 flex items-center gap-8">
+          <Skeleton className="w-24 md:w-36 aspect-[2/3] bg-stone-800 rounded-2xl shrink-0" />
+          <div className="flex-1 space-y-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-4 w-16 bg-stone-800" />
+              <Skeleton className="h-4 w-16 bg-stone-800" />
+            </div>
+            <Skeleton className="h-8 w-3/4 bg-stone-800" />
+            <Skeleton className="h-4 w-1/4 bg-stone-800/50" />
+            <div className="flex gap-8 pt-2">
+              <Skeleton className="h-10 w-24 bg-stone-800" />
+              <Skeleton className="h-10 w-24 bg-stone-800" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
   const formatStat = (num: number): string => {
@@ -180,7 +208,21 @@ function ArtistRankingList() {
   });
 
   if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="grid gap-4">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="bg-stone-900/30 border-white/5 rounded-3xl p-6 flex items-center gap-6">
+            <Skeleton className="w-12 h-12 rounded-2xl bg-stone-800" />
+            <Skeleton className="h-14 w-14 rounded-full bg-stone-800" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-5 w-1/3 bg-stone-800" />
+              <Skeleton className="h-3 w-1/4 bg-stone-800/50" />
+            </div>
+            <Skeleton className="h-11 w-32 rounded-xl bg-stone-800" />
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -290,9 +332,8 @@ export default function RankingsPage() {
 
       {/* 2. RANKINGS TABS */}
       {loading ? (
-        <div className="h-96 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-stone-500 font-display font-bold uppercase text-[10px] tracking-widest animate-pulse">Calcul des scores stellaires...</p>
+        <div className="space-y-6">
+          {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
         </div>
       ) : (
         <Tabs defaultValue={defaultTab} className="w-full">

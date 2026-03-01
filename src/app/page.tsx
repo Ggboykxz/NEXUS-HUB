@@ -72,12 +72,12 @@ export default function RootHomePage() {
 }
 
 // ==================== COMPOSANTS SKELETON ====================
-function StoryGridSkeleton() {
+function StoryGridSkeleton({ count = 5 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <div key={i} className="space-y-3">
-          <Skeleton className="aspect-[3/4] w-full bg-stone-800 rounded-xl" />
+          <Skeleton className="aspect-[3/4] w-full bg-stone-800 animate-pulse rounded-2xl" />
           <Skeleton className="h-4 w-3/4 bg-stone-800" />
           <Skeleton className="h-3 w-1/2 bg-stone-800/50" />
         </div>
@@ -175,7 +175,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </div>
             <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
           </div>
-          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</Link>
+          <link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</link>
         </div>
 
         {isLoadingLibrary ? (
@@ -183,7 +183,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             {[...Array(3)].map((_, i) => (
               <div key={i} className="bg-stone-900 border border-white/5 rounded-[2.5rem] p-5 flex items-center gap-5">
                 <Skeleton className="h-24 w-16 rounded-xl bg-stone-800 shrink-0" />
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 min-w-0 space-y-3">
                   <Skeleton className="h-4 w-3/4 bg-stone-800" />
                   <Skeleton className="h-2 w-full bg-stone-800" />
                   <Skeleton className="h-6 w-full bg-stone-800 rounded-lg" />
@@ -317,7 +317,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             </div>
           ) : (
             <div className="absolute inset-0">
-              <Skeleton className="w-full h-full bg-stone-900 rounded-none animate-pulse" />
+              <Skeleton className="w-full h-full h-[85vh] bg-stone-900 animate-pulse rounded-none" />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
             </div>
           )}
@@ -422,7 +422,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           </div>
           
           {isLoading ? (
-            <StoryGridSkeleton />
+            <StoryGridSkeleton count={5} />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {popular.slice(0, 5).map((story) => (

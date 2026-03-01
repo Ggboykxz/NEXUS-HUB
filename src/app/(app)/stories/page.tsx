@@ -11,9 +11,24 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit, startAfter, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useGenres } from '@/components/providers/genres-provider';
+
+function StoryGridSkeleton({ count = 10 }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-[3/4] w-full bg-stone-800 animate-pulse rounded-2xl" />
+          <Skeleton className="h-4 w-3/4 bg-stone-800" />
+          <Skeleton className="h-3 w-1/2 bg-stone-800/50" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function StoriesContent() {
   const searchParams = useSearchParams();
@@ -109,9 +124,8 @@ function StoriesContent() {
 
   if (isLoading && stories.length === 0) {
     return (
-      <div className="h-96 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-muted-foreground font-display font-bold">Consultation des archives...</p>
+      <div className="space-y-10">
+        <StoryGridSkeleton count={10} />
       </div>
     );
   }
@@ -279,9 +293,8 @@ export default function StoriesPage() {
       </header>
       
       <Suspense fallback={
-        <div className="h-96 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground font-display font-bold">Consultation des archives...</p>
+        <div className="space-y-10">
+            <StoryGridSkeleton count={10} />
         </div>
       }>
         <StoriesContent />
