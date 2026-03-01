@@ -432,6 +432,24 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
     return unsub;
   }, []);
 
+  // Increment view count logic
+  useEffect(() => {
+    if (story && story.chapters && story.chapters.length > 0) {
+      const chapterId = story.chapters[0].id;
+      const viewKey = `viewed_${storyId}_${chapterId}`;
+      
+      if (!sessionStorage.getItem(viewKey)) {
+        const storyRef = doc(db, 'stories', storyId);
+        const chapterRef = doc(db, 'stories', storyId, 'chapters', chapterId);
+        
+        updateDoc(storyRef, { views: increment(1) }).catch(console.error);
+        updateDoc(chapterRef, { views: increment(1) }).catch(console.error);
+        
+        sessionStorage.setItem(viewKey, 'true');
+      }
+    }
+  }, [story, storyId]);
+
   useEffect(() => {
     const handleScroll = () => {
       const docHeight = document.documentElement.scrollHeight;
