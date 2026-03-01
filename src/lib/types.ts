@@ -207,6 +207,14 @@ export interface Product {
 }
 
 // ==================== HELPERS ====================
-export const getStoryUrl = (storyId: string) => `/read/${storyId}`;
-export const getChapterUrl = (storyId: string, chapterSlug: string) => `/webtoon-hub/${storyId}/${chapterSlug}`;
+/**
+ * Helper SEO pour générer les URLs des histoires.
+ */
+export const getStoryUrl = (story: { format: string, slug: string } | string) => {
+  if (typeof story === 'string') return `/read/${story}`; // Fallback pour les anciens appels basés sur l'ID
+  if (story.format === 'BD') return `/bd-africaine/${story.slug}`;
+  return `/webtoon-hub/${story.slug}`;
+};
+
+export const getChapterUrl = (storySlug: string, chapterSlug: string) => `/webtoon-hub/${storySlug}/${chapterSlug}`;
 export const getUserUrl = (slug: string) => `/artiste/${slug.replace('@', '')}`;

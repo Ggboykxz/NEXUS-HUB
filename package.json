@@ -60,8 +60,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.50.1",
     "@netlify/plugin-nextjs": "^5.15.8",
+    "@playwright/test": "^1.50.1",
     "@tailwindcss/typography": "^0.5.13",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -70,6 +70,8 @@
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "9.39.3",
+    "eslint-config-next": "16.1.6",
     "genkit-cli": "^1.28.0",
     "jsdom": "^26.0.0",
     "postcss": "^8",

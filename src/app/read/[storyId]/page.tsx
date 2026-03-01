@@ -19,18 +19,20 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { getOptimizedImage } from '@/lib/image-utils';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
+import { getStoryUrl } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 
 // #region Page Components
 
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked }: any) {
+  const storyUrl = getStoryUrl(story);
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-background/95 border-b border-border z-50 flex items-center justify-between px-5 backdrop-blur-xl">
       <div className="flex items-center gap-4 flex-1">
         <Link href="/" className="font-display font-black text-lg tracking-tighter text-foreground gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
         <div className="w-px h-5 bg-border hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href={`/webtoon-hub/${story.slug}`} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px]">{story.title}</Link>
+          <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px]">{story.title}</Link>
           <ChevronRight className="h-4 w-4 hidden sm:block" />
           <span className="text-primary font-semibold whitespace-nowrap">Ep. {chapter?.chapterNumber || 1}</span>
         </div>
@@ -59,7 +61,7 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
             <Layers className="h-3 w-3" /> Webtoon
           </Button>
           <Button onClick={() => onModeChange('pages')} size="sm" variant={activeMode === 'pages' ? 'default' : 'ghost'} className="h-7 text-[9px] font-black uppercase px-3 gap-1.5 rounded-lg">
-            <Book className="h-3 w-3" /> BD
+            < Book className="h-3 w-3" /> BD
           </Button>
         </div>
         <Button onClick={onBookmark} size="sm" variant="outline" className={cn("h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-1.5 transition-all", isBookmarked && "bg-primary/10 border-primary text-primary")}>
@@ -119,14 +121,15 @@ function ReaderSidebar({ story, artist }: { story: Story, artist: UserProfile | 
 
 function ChaptersTab({ story }: { story: Story }) {
   const { toast } = useToast();
+  const storyUrl = getStoryUrl(story);
   return (
     <div className="p-6 space-y-8">
       <div className="flex gap-4 items-start pb-6 border-b border-white/5">
-        <Link href={`/webtoon-hub/${story.slug}`} className="shrink-0">
+        <Link href={storyUrl} className="shrink-0">
             <Image src={story.coverImage.imageUrl} alt={story.title} width={64} height={96} className="rounded-xl object-cover shadow-lg border border-white/10 hover:border-primary transition-all" />
         </Link>
         <div className="min-w-0">
-          <Link href={`/webtoon-hub/${story.slug}`}>
+          <Link href={storyUrl}>
             <h3 className="font-display font-black text-sm text-white mb-1 hover:text-primary transition-colors truncate">{story.title}</h3>
           </Link>
           <p className="text-[10px] text-primary font-black uppercase tracking-widest flex items-center gap-1.5 mb-3">
@@ -395,7 +398,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
                 <h2 className="text-3xl font-display font-black text-white">Le chapitre est en cours de création</h2>
                 <p className="text-stone-500 italic max-w-sm mx-auto">"L'artiste prépare ses prochaines planches. Revenez bientôt pour la suite de l'aventure."</p>
                 <Button asChild variant="outline" className="rounded-full px-8 border-white/10 text-white">
-                  <Link href={`/webtoon-hub/${story.slug}`}>Retour à l'œuvre</Link>
+                  <Link href={getStoryUrl(story)}>Retour à l'œuvre</Link>
                 </Button>
               </div>
             )}

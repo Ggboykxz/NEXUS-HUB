@@ -103,7 +103,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
     });
   };
 
-  const storyUrl = getStoryUrl(story.id);
+  const storyUrl = getStoryUrl(story);
   const coverUrl = story.coverImage.imageUrl;
 
   return (

@@ -24,7 +24,7 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
   return (
     <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {stories.map((story, index) => {
-        const storyUrl = getStoryUrl(story.id);
+        const storyUrl = getStoryUrl(story);
         const rank = index + 1;
         const isTop3 = rank <= 3;
 
@@ -51,7 +51,7 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
                   <div className="flex flex-1 p-8 gap-8 items-center">
                     <Link href={storyUrl} className="shrink-0 relative">
                         <div className="relative w-24 md:w-36 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl transition-all duration-700 group-hover:scale-105 group-hover:shadow-primary/10">
-                            <Image src={story.coverImage} alt={story.title} fill className="object-cover" />
+                            <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover" />
                             {story.isPremium && (
                                 <div className="absolute top-2 right-2 bg-primary p-1.5 rounded-lg shadow-xl">
                                     <Crown className="h-4 w-4 text-black fill-current" />
