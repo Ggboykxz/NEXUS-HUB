@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuthModal } from './providers/auth-modal-provider';
-import { db, auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, serverTimestamp, onSnapshot, increment, updateDoc } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -77,7 +77,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
     fetchArtist();
 
     if (auth.currentUser) {
-      // Fetch user playlists for the dropdown
       const fetchPlaylists = async () => {
         const q = query(collection(db, 'playlists'), where('ownerId', '==', auth.currentUser?.uid));
         const snap = await getDocs(q);
@@ -85,7 +84,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
       };
       fetchPlaylists();
 
-      // Monitor favorite status
       const favRef = doc(db, 'users', auth.currentUser.uid, 'favorites', story.id);
       const unsubFav = onSnapshot(favRef, (snap) => {
         setIsFavorite(snap.exists());
@@ -123,7 +121,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
         await updateDoc(storyRef, { likes: increment(1) });
         toast({ title: "Ajouté aux favoris !" });
       }
-      // Invalidate library queries to refresh the list if we are on the library page
       queryClient.invalidateQueries({ queryKey: ['library-favorites'] });
     } catch (error) {
       console.error("Favorite toggle error:", error);
@@ -150,35 +147,37 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
   const coverUrl = story.coverImage.imageUrl;
 
   return (
-    <div className={cn("group relative transition-all duration-300 animate-in fade-in zoom-in-95", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stone-100 mb-2 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
+    <div className={cn("group relative transition-all duration-500 animate-in fade-in zoom-in-95", className)}>
+      {/* Main Card Container with Gold Glow */}
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-stone-100 mb-3 shadow-sm transition-all duration-700 ease-in-out hover:shadow-[0_0_30px_hsl(var(--primary)/0.3)] border border-transparent hover:border-primary/20">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
             <Image
               src={coverUrl}
               alt={story.title}
               fill
-              className="object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:blur-[2px]"
+              className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-[1.08]"
               sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 15vw"
               placeholder="blur"
               blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
             />
         </Link>
         
-        <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
+        {/* Floating Static Badges (Hidden on hover) */}
+        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
             {story.sponsoredBy ? (
-                <Badge className="gap-1 px-1.5 py-0.5 bg-black/60 text-emerald-400 backdrop-blur-md border-emerald-500/30 shadow-lg text-[7px] uppercase font-black tracking-widest">
-                    <Handshake className="h-2 w-2" />
+                <Badge className="gap-1 px-2 py-0.5 bg-black/60 text-emerald-400 backdrop-blur-md border-emerald-500/30 shadow-lg text-[8px] uppercase font-black tracking-widest">
+                    <Handshake className="h-2.5 w-2.5" />
                     Par {story.sponsoredBy.name}
                 </Badge>
             ) : (
                 artistInfo?.role?.includes('pro') ? (
-                    <Badge variant="default" className="gap-1 px-1 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[7px] uppercase font-bold tracking-wider">
-                        <Award className="h-2 w-2" />
+                    <Badge variant="default" className="gap-1 px-2 py-0.5 bg-emerald-500 text-white backdrop-blur-md border-none shadow-lg text-[8px] uppercase font-bold tracking-wider">
+                        <Award className="h-2.5 w-2.5" />
                         Pro
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="gap-1 px-1 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[7px] uppercase font-bold tracking-wider">
-                        <PenSquare className="h-2 w-2" />
+                    <Badge variant="outline" className="gap-1 px-2 py-0.5 bg-black/40 text-orange-400 backdrop-blur-md border-orange-500/50 shadow-lg text-[8px] uppercase font-bold tracking-wider">
+                        <PenSquare className="h-2.5 w-2.5" />
                         Draft
                     </Badge>
                 )
@@ -186,15 +185,15 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
         </div>
 
         {story.isPremium && (
-          <Badge variant="default" className="absolute top-2 right-2 z-20 gap-1 px-1 py-0.5 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[7px] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
-            <Crown className="h-2 w-2" />
+          <Badge variant="default" className="absolute top-3 right-3 z-20 gap-1 px-2 py-0.5 bg-primary/95 text-white backdrop-blur-md border-white/20 shadow-lg text-[8px] transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
+            <Crown className="h-2.5 w-2.5" />
             PREMIUM
           </Badge>
         )}
 
-        {/* Reading Progress Bar */}
+        {/* Reading Progress */}
         {progress !== undefined && progress > 0 && progress < 100 && (
-          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-black/40 z-20 transition-opacity duration-300 group-hover:opacity-0">
+          <div className="absolute bottom-0 left-0 w-full h-[4px] bg-black/40 z-20 transition-opacity duration-300 group-hover:opacity-0">
             <div 
               className="h-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" 
               style={{ width: `${progress}%` }} 
@@ -202,105 +201,107 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
           </div>
         )}
 
-        {/* Completion Badge */}
         {progress === 100 && (
-          <Badge className="absolute bottom-2 right-2 z-20 bg-emerald-500 text-white border-none text-[8px] font-black uppercase px-2 py-0.5 shadow-lg transition-opacity duration-300 group-hover:opacity-0">
+          <Badge className="absolute bottom-3 right-3 z-20 bg-emerald-500 text-white border-none text-[9px] font-black uppercase px-2.5 py-1 shadow-lg transition-opacity duration-300 group-hover:opacity-0">
             ✓ Terminé
           </Badge>
         )}
         
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/75 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 p-3 text-center">
-            <div className="flex-1 flex flex-col justify-center">
-                <p className="text-white/90 text-[9px] mb-4 line-clamp-3 transform -translate-y-2 group-hover:translate-y-0 transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 font-light leading-relaxed italic">
+        {/* NEW SLIDING HOVER OVERLAY */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-5">
+            <div className="transform translate-y-12 group-hover:translate-y-0 transition-transform duration-500 ease-out space-y-4">
+                <Badge className="bg-primary/20 text-primary border border-primary/20 text-[9px] font-black uppercase px-2.5 py-0.5 w-fit backdrop-blur-md">
+                    {story.genre}
+                </Badge>
+                
+                <p className="text-white/90 text-[11px] line-clamp-2 leading-relaxed italic font-light mb-2">
                     {story.description}
                 </p>
                 
-                <div className="flex flex-col items-center gap-3 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500 delay-75 ease-out opacity-0 group-hover:opacity-100">
-                    <div className="flex items-center justify-center gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    className="rounded-full h-7 w-7 bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md transition-all active:scale-95 shadow-lg"
-                                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                >
-                                    <ListPlus className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="center" className="w-40">
-                                <DropdownMenuLabel className="text-[10px]">Playlist rapide</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {userPlaylists.length > 0 ? userPlaylists.map(p => (
-                                    <DropdownMenuItem key={p.id} className="text-[10px]" onClick={(e) => handleAddToPlaylist(e, p.title)}>
-                                        {p.title}
-                                    </DropdownMenuItem>
-                                )) : (
-                                  <DropdownMenuItem disabled className="text-[10px]">Aucune playlist</DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        
-                        <Button asChild size="lg" className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-xl hover:scale-110 transition-transform active:scale-95 border border-white/10">
-                            <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
-                                <Play className="ml-0.5 h-5 w-5 fill-current" />
-                            </Link>
-                        </Button>
-
-                        <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          className={cn(
-                            "rounded-full h-7 w-7 transition-all active:scale-95 shadow-lg",
-                            isFavorite ? "bg-rose-500 text-white border-rose-500" : "bg-white/10 text-white border-white/20 hover:bg-white/30 backdrop-blur-md"
-                          )}
-                          disabled={isTogglingFav}
-                          onClick={handleHeartClick}
-                        >
-                            {isTogglingFav ? <Loader2 className="h-3 w-3 animate-spin" /> : <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />}
-                        </Button>
-                    </div>
-                    
-                    <Button asChild variant="outline" className="w-full border-white/30 text-white hover:bg-primary hover:text-primary-foreground hover:border-primary backdrop-blur-md rounded-full h-7 text-[8px] uppercase tracking-[0.1em] font-bold transition-all active:scale-95 shadow-md">
+                <div className="flex items-center gap-2">
+                    <Button asChild className="flex-1 h-11 rounded-xl bg-primary text-black font-black uppercase text-xs gold-shimmer shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">
                         <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
-                            <Info className="mr-1 h-3 w-3" />
-                            Détails
+                            <Play className="mr-2 h-4 w-4 fill-current" />
+                            Lire
                         </Link>
                     </Button>
+                    
+                    <div className="flex gap-2">
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  className="rounded-xl h-11 w-11 bg-white/10 text-white border border-white/10 hover:bg-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                              >
+                                  <ListPlus className="h-5 w-5" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="center" className="w-40 rounded-xl border-white/10 bg-stone-900/95 backdrop-blur-xl">
+                              <DropdownMenuLabel className="text-[10px] uppercase font-black tracking-widest text-stone-500">Ajouter à...</DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-white/5" />
+                              {userPlaylists.length > 0 ? userPlaylists.map(p => (
+                                  <DropdownMenuItem key={p.id} className="text-[10px] font-bold cursor-pointer" onClick={(e) => handleAddToPlaylist(e, p.title)}>
+                                      {p.title}
+                                  </DropdownMenuItem>
+                              )) : (
+                                <DropdownMenuItem disabled className="text-[10px] italic">Aucune playlist</DropdownMenuItem>
+                              )}
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      
+                      <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        className={cn(
+                          "rounded-xl h-11 w-11 transition-all active:scale-95 shadow-lg border",
+                          isFavorite ? "bg-rose-500 text-white border-rose-500 shadow-rose-500/20" : "bg-white/10 text-white border-white/10 hover:bg-white/20 backdrop-blur-md"
+                        )}
+                        disabled={isTogglingFav}
+                        onClick={handleHeartClick}
+                      >
+                          {isTogglingFav ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className={cn("h-5 w-5", isFavorite && "fill-current")} />}
+                      </Button>
+                    </div>
                 </div>
             </div>
         </div>
       </div>
 
-      <div className="space-y-0.5 px-0.5">
+      {/* Metadata Section */}
+      <div className="space-y-1 px-1">
         <div className="flex items-center justify-between gap-2">
           <Link href={storyUrl} className="min-w-0">
-              <h3 className="font-display font-bold text-xs text-foreground hover:text-primary transition-colors truncate">{story.title}</h3>
+              <h3 className="font-display font-black text-xs text-foreground group-hover:text-primary transition-colors truncate tracking-tight">{story.title}</h3>
           </Link>
           {relativeDate && (
-            <span className="text-[7px] text-muted-foreground whitespace-nowrap flex items-center gap-0.5 uppercase tracking-tighter">
-              <Clock className="h-2 w-2" /> {relativeDate}
+            <span className="text-[8px] text-stone-500 whitespace-nowrap flex items-center gap-1 uppercase tracking-tighter font-bold">
+              <Clock className="h-2.5 w-2.5" /> {relativeDate}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-light">
+        
+        {/* ARTIST NAME FADES IN WITH DELAY ON HOVER */}
+        <div className="flex items-center gap-1 text-[10px] transition-all duration-500 delay-300 opacity-60 group-hover:opacity-100 group-hover:translate-x-1">
             <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1">
-                <span className="font-medium truncate max-w-[80px]">{artistInfo?.displayName || 'Artiste'}</span>
+                <span className="font-bold truncate max-w-[100px] text-stone-400 group-hover:text-stone-300">{artistInfo?.displayName || 'Artiste'}</span>
                 {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>
         </div>
-        <div className="flex items-center justify-between mt-1 pt-1 border-t border-border/50">
-            <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Eye className="h-2 text-primary" />
+
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-stone-500">
+                    <Eye className="h-3 w-3 text-primary" />
                     {formatStat(story.views)}
                 </div>
-                <div className="flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-widest text-muted-foreground">
-                    <Heart className={cn("h-2", isFavorite ? "text-rose-500" : "text-destructive")} />
+                <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-stone-500">
+                    <Heart className={cn("h-3 w-3", isFavorite ? "text-rose-500 fill-rose-500" : "text-stone-600")} />
                     {formatStat(story.likes)}
                 </div>
             </div>
-            <Badge variant="outline" className="text-[7px] uppercase font-bold tracking-tighter px-1 py-0 h-3 border-primary/20">
+            <Badge variant="outline" className="text-[8px] uppercase font-black tracking-[0.1em] px-2 py-0 h-4 border-white/5 text-stone-600">
                 {story.format}
             </Badge>
         </div>
