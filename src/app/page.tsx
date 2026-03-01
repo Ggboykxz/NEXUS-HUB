@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { Story, UserProfile, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -21,7 +21,7 @@ import {
   Headphones, Film, Star, Flame, Gift, History, Bookmark, 
   Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin, 
   Activity, Timer, Languages, Map, MessageSquare, CheckCircle2,
-  ArrowUpRight, Heart, Share2, PlayCircle, Clock, BookOpen, UserCheck
+  ArrowUpRight, Heart, Share2, PlayCircle, Clock, BookOpen, UserCheck, X, Settings
 } from 'lucide-react';
 
 const REGIONS = [
@@ -86,18 +86,34 @@ function StoryGridSkeleton({ count = 5 }) {
   );
 }
 
-function SectionTitleSkeleton() {
-  return (
-    <div className="space-y-2 mb-8">
-      <Skeleton className="h-8 w-48 bg-stone-800" />
-      <Skeleton className="h-4 w-32 bg-stone-800/50" />
-    </div>
-  );
-}
-
 // ==================== VUE UTILISATEUR CONNECTÉ ====================
 function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { profile: UserProfile | null, currentUser: any, popular: Story[], isLoadingPopular: boolean }) {
-  
+  const [onboardingVisible, setOnboardingVisible] = useState(false);
+
+  useEffect(() => {
+    if (profile && !profile.onboardingCompleted) {
+      const createdAtDate = (profile.createdAt as any)?.toDate 
+        ? (profile.createdAt as any).toDate() 
+        : new Date(profile.createdAt as string);
+      
+      const hoursSinceCreation = (new Date().getTime() - createdAtDate.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceCreation < 48) {
+        setOnboardingVisible(true);
+      }
+    }
+  }, [profile]);
+
+  const handleDismissOnboarding = async () => {
+    setOnboardingVisible(false);
+    if (currentUser) {
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        onboardingCompleted: true,
+        updatedAt: serverTimestamp()
+      });
+    }
+  };
+
   const { data: library = [], isLoading: isLoadingLibrary } = useQuery({
     queryKey: ['user-library-home', currentUser?.uid],
     enabled: !!currentUser,
@@ -128,6 +144,61 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
 
   return (
     <div className="container max-w-7xl mx-auto px-6 py-8 space-y-20 animate-in fade-in duration-1000">
+      {/* ONBOARDING BANNER */}
+      {onboardingVisible && (
+        <section className="animate-in slide-in-from-top-10 duration-700">
+          <Card className="bg-stone-900 border-primary/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 p-8 opacity-5"><Sparkles className="h-64 w-64 text-primary" /></div>
+            <button 
+              onClick={handleDismissOnboarding}
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-stone-500 hover:text-white transition-all z-20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="relative z-10 space-y-10">
+              <div className="space-y-4 text-center md:text-left">
+                <Badge className="bg-primary text-black uppercase text-[10px] font-black tracking-widest px-4 py-1">NOUVEAU VOYAGEUR</Badge>
+                <h2 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter">Bienvenue au Hub, {profile?.displayName} !</h2>
+                <p className="text-stone-400 text-lg font-light italic max-w-2xl mx-auto md:mx-0">
+                  "Votre quête commence ici. Voici quelques étapes pour maîtriser l'univers du Nexus."
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Link href="/stories" className="group">
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-primary/50 transition-all h-full space-y-4">
+                    <div className="bg-primary/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><BookOpen className="h-6 w-6 text-primary" /></div>
+                    <div>
+                      <h4 className="font-bold text-white flex items-center gap-2">Explorer le catalogue <ChevronRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-all" /></h4>
+                      <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-1">Dénichez votre prochaine épopée</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/settings" className="group">
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-emerald-500/50 transition-all h-full space-y-4">
+                    <div className="bg-emerald-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Settings className="h-6 w-6 text-emerald-500" /></div>
+                    <div>
+                      <h4 className="font-bold text-white flex items-center gap-2">Configurer mon profil <ChevronRight className="h-4 w-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-all" /></h4>
+                      <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-1">Affirmez votre identité numérique</p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href="/africoins" className="group">
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-amber-500/50 transition-all h-full space-y-4">
+                    <div className="bg-amber-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Coins className="h-6 w-6 text-amber-500" /></div>
+                    <div>
+                      <h4 className="font-bold text-white flex items-center gap-2">Découvrir les AfriCoins <ChevronRight className="h-4 w-4 text-amber-500 opacity-0 group-hover:opacity-100 transition-all" /></h4>
+                      <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest mt-1">Comprendre l'économie du Hub</p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </section>
+      )}
+
       <section className="bg-primary/10 border border-primary/20 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-primary/5">
         <div className="flex items-center gap-4">
           <div className="bg-primary/20 p-2 rounded-xl animate-pulse">
@@ -143,7 +214,9 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             <p className="text-[10px] text-stone-500 uppercase font-black">Prochain palier</p>
             <p className="text-xs text-white font-bold">5 min de lecture pour +1 🪙</p>
           </div>
-          <Button size="sm" className="rounded-full bg-primary text-black font-black px-6 h-9">Détails</Button>
+          <Button asChild size="sm" className="rounded-full bg-primary text-black font-black px-6 h-9">
+            <Link href="/africoins">Détails</Link>
+          </Button>
         </div>
       </section>
 
@@ -175,7 +248,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </div>
             <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
           </div>
-          <link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</link>
+          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</Link>
         </div>
 
         {isLoadingLibrary ? (
@@ -257,20 +330,24 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             <p className="text-stone-400 italic">"Ne lisez plus jamais seul. Participez aux débats enflammés sur vos séries préférées avec des milliers de passionnés."</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto">
-            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
-              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
-              <div>
-                <p className="text-xs font-bold text-white">Le Sanctuaire d'Orisha</p>
-                <p className="text-[9px] text-stone-500 uppercase font-black">1 245 membres en direct</p>
-              </div>
-            </Card>
-            <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
-              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform"><Activity className="h-5 w-5 text-primary" /></div>
-              <div>
-                <p className="text-xs font-bold text-white">Cyber-Reines Fans</p>
-                <p className="text-[9px] text-stone-500 uppercase font-black">850 débats aujourd'hui</p>
-              </div>
-            </Card>
+            <Link href="/clubs">
+              <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
+                <div>
+                  <p className="text-xs font-bold text-white">Clubs de lecture</p>
+                  <p className="text-[9px] text-stone-500 uppercase font-black">1 245 membres en direct</p>
+                </div>
+              </Card>
+            </Link>
+            <Link href="/forums">
+              <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
+                <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform"><Activity className="h-5 w-5 text-primary" /></div>
+                <div>
+                  <p className="text-xs font-bold text-white">Forums Publics</p>
+                  <p className="text-[9px] text-stone-500 uppercase font-black">850 débats aujourd'hui</p>
+                </div>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>

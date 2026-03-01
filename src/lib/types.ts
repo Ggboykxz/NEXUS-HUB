@@ -45,6 +45,7 @@ export interface UserProfile {
   isCertified: boolean;
   isBanned: boolean;
   isVerified: boolean;
+  onboardingCompleted?: boolean;    // Nouveau: Statut du tutoriel d'accueil
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
   lastActive?: Timestamp | string;
