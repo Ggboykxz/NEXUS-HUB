@@ -8,7 +8,7 @@ import {
   Brush, Languages, BrainCircuit, TrendingUp, Plus, 
   Settings, ChevronRight, Eye, Heart, Star, LayoutGrid,
   FileText, Wand2, Share2, Globe, Clock, Loader2, Download,
-  CheckCircle2, FileArchive, PenSquare
+  CheckCircle2, FileArchive, PenSquare, Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -150,7 +150,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
     { 
       title: "World Building", 
       icon: Globe, 
-      desc: "Gérez vos notes et templates d'univers.", 
+      desc: "Gérez vos nos et templates d'univers.", 
       href: `/dashboard/world-building`,
       color: "text-blue-500 bg-blue-500/10"
     }
@@ -221,44 +221,59 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
             </div>
             
             <div className="space-y-3">
-              {chapters.length > 0 ? chapters.map((chap) => (
-                <div key={chap.id} className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-2xl bg-stone-900/30 border border-white/5 hover:border-primary/20 transition-all group">
-                  <div className="h-12 w-12 rounded-xl bg-black flex items-center justify-center font-display font-black text-stone-500 group-hover:text-primary transition-colors border border-white/5 shrink-0">
-                    {chap.chapterNumber}
-                  </div>
-                  <div className="flex-1 min-w-0 text-center sm:text-left">
-                    <p className="font-bold text-white text-base truncate">{chap.title}</p>
-                    <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 mt-1">
-                      <p className="text-[10px] text-stone-500 uppercase tracking-tighter flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" /> {new Date(chap.publishedAt as any).toLocaleDateString()}
-                      </p>
-                      <Badge className={cn(
-                        "text-[8px] font-black uppercase px-2 py-0.5",
-                        chap.isPremium ? "bg-primary/10 text-primary border-primary/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                      )}>
-                        {chap.isPremium ? 'Premium' : 'Gratuit'}
-                      </Badge>
+              {chapters.length > 0 ? chapters.map((chap) => {
+                const isScheduled = chap.status === 'Programmé';
+                const dateToShow = isScheduled 
+                  ? (chap as any).scheduledAt?.toDate?.() || new Date((chap as any).scheduledAt)
+                  : chap.publishedAt?.toDate?.() || new Date(chap.publishedAt as any);
+
+                return (
+                  <div key={chap.id} className="flex flex-col sm:flex-row items-center gap-4 p-5 rounded-2xl bg-stone-900/30 border border-white/5 hover:border-primary/20 transition-all group">
+                    <div className={cn(
+                      "h-12 w-12 rounded-xl flex items-center justify-center font-display font-black text-stone-500 group-hover:text-primary transition-colors border border-white/5 shrink-0",
+                      isScheduled ? "bg-primary/5 border-primary/20" : "bg-black"
+                    )}>
+                      {chap.chapterNumber}
+                    </div>
+                    <div className="flex-1 min-w-0 text-center sm:text-left">
+                      <p className="font-bold text-white text-base truncate">{chap.title}</p>
+                      <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 mt-1">
+                        <p className="text-[10px] text-stone-500 uppercase tracking-tighter flex items-center gap-1.5">
+                          {isScheduled ? <Clock className="h-3 w-3 text-primary animate-pulse" /> : <Calendar className="h-3 w-3" />}
+                          {isScheduled ? `Sortie le : ` : `Publié le : `}
+                          {dateToShow.toLocaleDateString()} {isScheduled && `à ${dateToShow.getHours()}:${dateToShow.getMinutes().toString().padStart(2, '0')}`}
+                        </p>
+                        {isScheduled && <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase h-4 px-2">Programmé 🕐</Badge>}
+                        <Badge className={cn(
+                          "text-[8px] font-black uppercase px-2 py-0.5",
+                          chap.isPremium ? "bg-primary/10 text-primary border-primary/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                        )}>
+                          {chap.isPremium ? 'Premium' : 'Gratuit'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button 
+                        onClick={() => handleDownloadChapter(chap)}
+                        disabled={downloadingId !== null}
+                        variant="outline" 
+                        className="h-10 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 gap-2 font-black text-[9px] uppercase tracking-widest"
+                      >
+                        {downloadingId === chap.id ? (
+                          <><Loader2 className="h-3 w-3 animate-spin" /> Archivage...</>
+                        ) : (
+                          <><Download className="h-3.5 w-3.5 text-primary" /> Télécharger</>
+                        )}
+                      </Button>
+                      {!isScheduled && (
+                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-stone-500 hover:text-white">
+                          <Link href={`/read/${storyId}?chapter=${chap.id}`}><Eye className="h-4 w-4" /></Link>
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button 
-                      onClick={() => handleDownloadChapter(chap)}
-                      disabled={downloadingId !== null}
-                      variant="outline" 
-                      className="h-10 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 gap-2 font-black text-[9px] uppercase tracking-widest"
-                    >
-                      {downloadingId === chap.id ? (
-                        <><Loader2 className="h-3 w-3 animate-spin" /> Archivage...</>
-                      ) : (
-                        <><Download className="h-3.5 w-3.5 text-primary" /> Télécharger</>
-                      )}
-                    </Button>
-                    <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-stone-500 hover:text-white">
-                      <Link href={`/read/${storyId}?chapter=${chap.id}`}><Eye className="h-4 w-4" /></Link>
-                    </Button>
-                  </div>
-                </div>
-              )) : (
+                );
+              }) : (
                 <div className="text-center py-12 bg-white/5 rounded-3xl border-2 border-dashed border-white/10">
                   <p className="text-stone-500 italic text-sm">"L'ardoise est vierge. Publiez votre premier chapitre."</p>
                 </div>
@@ -312,10 +327,6 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       </div>
     </div>
   );
-}
-
-function Calendar(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>;
 }
 
 function ShieldCheck(props: any) {

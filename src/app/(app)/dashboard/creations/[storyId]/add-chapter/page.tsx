@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Plus, 
   UploadCloud, 
@@ -23,7 +24,10 @@ import {
   Sparkles,
   Info,
   Crown,
-  Coins
+  Coins,
+  Clock,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
@@ -40,7 +44,8 @@ import {
   writeBatch, 
   query, 
   where, 
-  getDocs 
+  getDocs,
+  Timestamp 
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
@@ -58,9 +63,6 @@ interface ImageFile {
   progress: number;
 }
 
-/**
- * Utility function to compress images on the client side using Canvas API.
- */
 const compressImage = (file: File, maxWidth: number, quality: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -114,6 +116,9 @@ export default function AddChapterPage(props: PageProps) {
   const [afriCoinsPrice, setAfriCoinsPrice] = useState(5);
   const [selectedImages, setSelectedImages] = useState<ImageFile[]>([]);
 
+  const [pubMode, setPubMode] = useState<'now' | 'scheduled'>('now');
+  const [scheduledDate, setScheduledDate] = useState('');
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -147,53 +152,17 @@ export default function AddChapterPage(props: PageProps) {
     return () => unsub();
   }, [storyId, router, toast]);
 
-  const validatePage = async (file: File): Promise<boolean> => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({ title: "Format invalide", description: `${file.name} : Utilisez du JPG, PNG ou WebP.`, variant: "destructive" });
-      return false;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "Fichier trop lourd", description: `${file.name} : Max 10Mo par page.`, variant: "destructive" });
-      return false;
-    }
-
-    return new Promise((resolve) => {
-      const img = new (window as any).Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.src = objectUrl;
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        if (img.naturalWidth < 600) {
-          toast({ title: "Largeur insuffisante", description: `${file.name} : Largeur min. 600px requise.`, variant: "destructive" });
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        toast({ title: "Erreur de lecture", description: `Impossible de lire ${file.name}.`, variant: "destructive" });
-        resolve(false);
-      };
-    });
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const validatedImages: ImageFile[] = [];
 
     for (const file of files) {
-      const isValid = await validatePage(file);
-      if (isValid) {
-        validatedImages.push({
-          id: Math.random().toString(36).substr(2, 9),
-          file,
-          preview: URL.createObjectURL(file),
-          progress: 0
-        });
-      }
+      validatedImages.push({
+        id: Math.random().toString(36).substr(2, 9),
+        file,
+        preview: URL.createObjectURL(file),
+        progress: 0
+      });
     }
 
     if (validatedImages.length > 0) {
@@ -227,6 +196,11 @@ export default function AddChapterPage(props: PageProps) {
       return;
     }
 
+    if (pubMode === 'scheduled' && !scheduledDate) {
+      toast({ title: "Date manquante", description: "Veuillez choisir une date de publication.", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const chapterNumber = (story?.chapterCount || 0) + 1;
@@ -256,6 +230,9 @@ export default function AddChapterPage(props: PageProps) {
         });
       }
 
+      const chapterStatus = pubMode === 'now' ? 'Publié' : 'Programmé';
+      const scheduledTimestamp = pubMode === 'scheduled' ? Timestamp.fromDate(new Date(scheduledDate)) : null;
+
       await setDoc(newChapterDocRef, {
         id: newChapterDocRef.id,
         storyId,
@@ -266,13 +243,14 @@ export default function AddChapterPage(props: PageProps) {
         isPremium,
         afriCoinsPrice: isPremium ? afriCoinsPrice : 0,
         isLocked: false,
-        status: 'Publié',
+        status: chapterStatus,
+        scheduledAt: scheduledTimestamp,
         views: 0,
         likes: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        publishedAt: serverTimestamp(),
-        releaseDate: serverTimestamp()
+        publishedAt: pubMode === 'now' ? serverTimestamp() : null,
+        releaseDate: pubMode === 'now' ? serverTimestamp() : scheduledTimestamp
       });
 
       await updateDoc(doc(db, 'stories', storyId), {
@@ -280,8 +258,7 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      // FAN-OUT NOTIFICATIONS TO SUBSCRIBERS
-      if (story) {
+      if (story && pubMode === 'now') {
         const subsQuery = query(collection(db, 'users'), 
           where('followedArtists', 'array-contains', story.artistId));
         const subsSnap = await getDocs(subsQuery);
@@ -304,6 +281,8 @@ export default function AddChapterPage(props: PageProps) {
         
         await batch.commit();
         toast({ title: `✅ Publié ! ${subsSnap.size} abonnés notifiés.` });
+      } else if (pubMode === 'scheduled') {
+        toast({ title: "📅 Épisode programmé", description: `Sortie prévue le ${new Date(scheduledDate).toLocaleString()}.` });
       }
 
       router.push(`/dashboard/creations/${storyId}`);
@@ -351,9 +330,9 @@ export default function AddChapterPage(props: PageProps) {
             {isCompressing ? (
               <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compression...</>
             ) : isSubmitting ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Publication...</>
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> {pubMode === 'now' ? 'Publication...' : 'Programmation...'}</>
             ) : (
-              <><Sparkles className="mr-2 h-5 w-5" /> Publier l'Épisode</>
+              <><Sparkles className="mr-2 h-5 w-5" /> {pubMode === 'now' ? "Publier l'Épisode" : "Programmer l'Épisode"}</>
             )}
           </Button>
         </div>
@@ -362,7 +341,7 @@ export default function AddChapterPage(props: PageProps) {
       <div className="grid lg:grid-cols-[1fr,350px] gap-12">
         <div className="space-y-8">
           <Card className="bg-stone-900/50 border-white/5 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur-xl">
-            <div className="space-y-8">
+            <div className="space-y-10">
               <div className="space-y-3">
                 <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Titre de l'épisode</Label>
                 <Input 
@@ -371,6 +350,61 @@ export default function AddChapterPage(props: PageProps) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
+              </div>
+
+              <div className="p-8 bg-white/5 border border-white/10 rounded-3xl space-y-6">
+                <div className="space-y-1">
+                  <Label className="text-sm font-bold text-white flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" /> Mode de publication
+                  </Label>
+                  <p className="text-[10px] text-stone-500 uppercase font-bold tracking-tighter italic">Choisissez quand votre œuvre sera visible.</p>
+                </div>
+
+                <RadioGroup 
+                  value={pubMode} 
+                  onValueChange={(val: any) => setPubMode(val)}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div className="relative">
+                    <RadioGroupItem value="now" id="pub-now" className="sr-only" />
+                    <Label 
+                      htmlFor="pub-now" 
+                      className={cn(
+                        "flex flex-col items-center justify-center p-6 border-2 rounded-2xl cursor-pointer transition-all",
+                        pubMode === 'now' ? "border-primary bg-primary/10 text-primary" : "border-white/5 bg-white/5 text-stone-500 hover:bg-white/10"
+                      )}
+                    >
+                      <Zap className="h-6 w-6 mb-2" />
+                      <span className="font-black text-xs uppercase">Publier maintenant</span>
+                    </Label>
+                  </div>
+                  <div className="relative">
+                    <RadioGroupItem value="scheduled" id="pub-later" className="sr-only" />
+                    <Label 
+                      htmlFor="pub-later" 
+                      className={cn(
+                        "flex flex-col items-center justify-center p-6 border-2 rounded-2xl cursor-pointer transition-all",
+                        pubMode === 'scheduled' ? "border-primary bg-primary/10 text-primary" : "border-white/5 bg-white/5 text-stone-500 hover:bg-white/10"
+                      )}
+                    >
+                      <Calendar className="h-6 w-6 mb-2" />
+                      <span className="font-black text-xs uppercase">Programmer</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+
+                {pubMode === 'scheduled' && (
+                  <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Date et heure de sortie</Label>
+                    <Input 
+                      type="datetime-local"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="h-12 bg-black/40 border-primary/20 rounded-xl text-stone-200"
+                    />
+                    <p className="text-[9px] text-stone-500 italic">L'épisode sera automatiquement débloqué à cette date.</p>
+                  </div>
+                )}
               </div>
 
               <div className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
@@ -459,6 +493,15 @@ export default function AddChapterPage(props: PageProps) {
                 <span className="text-2xl font-black text-white">#{ (story?.chapterCount || 0) + 1 }</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <span className="text-xs text-stone-500 font-bold uppercase">Statut</span>
+                <Badge className={cn(
+                  "border-none uppercase text-[8px] font-black",
+                  pubMode === 'now' ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                )}>
+                  {pubMode === 'now' ? 'Direct' : 'Planifié'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-xs text-stone-500 font-bold uppercase">Type</span>
                 {isPremium ? (
                   <Badge className="bg-primary text-black border-none uppercase text-[8px] font-black">Premium</Badge>
@@ -466,12 +509,6 @@ export default function AddChapterPage(props: PageProps) {
                   <Badge className="bg-emerald-500/10 text-emerald-500 border-none uppercase text-[8px] font-black">Gratuit</Badge>
                 )}
               </div>
-              {isPremium && (
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                  <span className="text-xs text-stone-500 font-bold uppercase">Coût</span>
-                  <span className="text-xl font-black text-primary">{afriCoinsPrice} 🪙</span>
-                </div>
-              )}
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-xs text-stone-500 font-bold uppercase">Pages</span>
                 <span className="text-xl font-black text-white">{selectedImages.length}</span>
@@ -482,7 +519,7 @@ export default function AddChapterPage(props: PageProps) {
           <Card className="bg-primary/5 border border-primary/10 rounded-[2rem] p-8">
             <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest">Conseil de l'Atelier</h4>
             <p className="text-xs text-stone-400 leading-relaxed italic font-light">
-              "L'IA Nexus compresse désormais vos planches avant l'envoi pour préserver votre bande passante et accélérer la mise en ligne."
+              "Programmer vos sorties à l'avance permet de maintenir un rythme régulier, ce que les algorithmes du Hub et les lecteurs apprécient particulièrement."
             </p>
           </Card>
         </aside>
