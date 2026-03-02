@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
@@ -36,6 +36,7 @@ import {
   FacebookAuthProvider, 
   OAuthProvider 
 } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 
 const formSchema = z.object({
@@ -72,9 +73,13 @@ function LoginForm() {
     return () => clearInterval(interval);
   }, []);
 
-  const setSessionCookie = async () => {
+  const setSessionCookie = async (role: string) => {
     try {
-      await fetch('/api/auth/session', { method: 'POST' });
+      await fetch('/api/auth/session', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
     } catch (e) {
       console.error("Erreur lors de l'initialisation de la session sécurisée", e);
     }
@@ -91,8 +96,12 @@ function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      await setSessionCookie();
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const role = userDoc.data()?.role || 'reader';
+      
+      await setSessionCookie(role);
+      
       toast({
         title: "Connexion réussie !",
         description: "Heureux de vous revoir parmi nous.",
@@ -127,8 +136,12 @@ function LoginForm() {
     }
 
     try {
-      await signInWithPopup(auth, provider!);
-      await setSessionCookie();
+      const userCredential = await signInWithPopup(auth, provider!);
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const role = userDoc.data()?.role || 'reader';
+      
+      await setSessionCookie(role);
+      
       toast({
         title: `Connecté avec ${platform}`,
         description: "Bienvenue sur NexusHub !",

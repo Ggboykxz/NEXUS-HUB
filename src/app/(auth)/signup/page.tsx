@@ -67,9 +67,13 @@ function SignupForm() {
     setParticles(newParticles);
   }, []);
 
-  const setSessionCookie = async () => {
+  const setSessionCookie = async (role: string) => {
     try {
-      await fetch('/api/auth/session', { method: 'POST' });
+      await fetch('/api/auth/session', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
     } catch (e) {
       console.error("Erreur lors de l'initialisation de la session sécurisée", e);
     }
@@ -107,7 +111,8 @@ function SignupForm() {
         }, { merge: true });
       }
     } else {
-      await setSessionCookie();
+      const role = userDoc.data()?.role || 'reader';
+      await setSessionCookie(role);
       router.push(redirectTo);
       router.refresh();
     }
@@ -132,7 +137,7 @@ function SignupForm() {
         updatedAt: new Date().toISOString(),
       });
 
-      await setSessionCookie();
+      await setSessionCookie(values.accountType);
       toast({
         title: "Bienvenue sur NexusHub !",
         description: "Votre compte a été créé avec succès.",
@@ -190,7 +195,7 @@ function SignupForm() {
         role,
         updatedAt: new Date().toISOString()
       });
-      await setSessionCookie();
+      await setSessionCookie(role);
       toast({
         title: role === 'reader' ? "Destinée : Lecteur" : "Destinée : Artiste",
         description: "Votre profil a été configuré. Bienvenue au Hub !",
@@ -522,7 +527,7 @@ function SignupForm() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-[9px] md:text-[10px] text-stone-400 font-light leading-snug">
                             J'accepte les <Link href="/legal/terms" className="text-primary font-bold hover:underline">Conditions</Link> et la <Link href="/legal/privacy" className="text-primary font-bold hover:underline">Politique de Confidentialité</Link>.
-                          </Label>
+                          </FormLabel>
                         </div>
                       </FormItem>
                     )}
