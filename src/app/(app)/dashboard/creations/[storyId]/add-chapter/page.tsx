@@ -149,15 +149,64 @@ export default function AddChapterPage(props: PageProps) {
     return () => unsub();
   }, [storyId, router, toast]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validatePage = async (file: File): Promise<boolean> => {
+    // 1. Type check
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Format invalide", description: `${file.name} : Utilisez du JPG, PNG ou WebP.`, variant: "destructive" });
+      return false;
+    }
+
+    // 2. Size check (10MB for pages)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: `${file.name} : Max 10Mo par page.`, variant: "destructive" });
+      return false;
+    }
+
+    // 3. Dimensions check (at least 600px wide)
+    return new Promise((resolve) => {
+      const img = new (window as any).Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.naturalWidth < 600) {
+          toast({ title: "Largeur insuffisante", description: `${file.name} : Largeur min. 600px requise.`, variant: "destructive" });
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        toast({ title: "Erreur de lecture", description: `Impossible de lire ${file.name}.`, variant: "destructive" });
+        resolve(false);
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newImages: ImageFile[] = files.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      preview: URL.createObjectURL(file),
-      progress: 0
-    }));
-    setSelectedImages(prev => [...prev, ...newImages]);
+    const validatedImages: ImageFile[] = [];
+
+    for (const file of files) {
+      const isValid = await validatePage(file);
+      if (isValid) {
+        validatedImages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file,
+          preview: URL.createObjectURL(file),
+          progress: 0
+        });
+      }
+    }
+
+    if (validatedImages.length > 0) {
+      setSelectedImages(prev => [...prev, ...validatedImages]);
+    }
+    
+    // Reset input value to allow re-selecting the same file if needed
+    e.target.value = '';
   };
 
   const removeImage = (id: string) => {

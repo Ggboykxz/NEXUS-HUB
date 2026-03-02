@@ -83,17 +83,54 @@ export default function SubmitPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateCover = async (file: File): Promise<boolean> => {
+    // 1. Type check
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Format invalide", description: "Veuillez utiliser du JPG, PNG ou WebP.", variant: "destructive" });
+      return false;
+    }
+
+    // 2. Size check (5MB for covers)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: "La couverture ne doit pas dépasser 5Mo.", variant: "destructive" });
+      return false;
+    }
+
+    // 3. Dimensions check (at least 300x400px)
+    return new Promise((resolve) => {
+      const img = new (window as any).Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.naturalWidth < 300 || img.naturalHeight < 400) {
+          toast({ title: "Dimensions insuffisantes", description: "La couverture doit faire au moins 300x400px.", variant: "destructive" });
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        toast({ title: "Erreur de lecture", description: "Impossible de lire l'image.", variant: "destructive" });
+        resolve(false);
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: "Fichier trop lourd", description: "La taille maximale avant compression est de 10Mo.", variant: "destructive" });
-        return;
+      const isValid = await validateCover(file);
+      if (isValid) {
+        setCoverFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setCoverPreview(reader.result as string);
+        reader.readAsDataURL(file);
+      } else {
+        e.target.value = ''; // Reset input
       }
-      setCoverFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setCoverPreview(reader.result as string);
-      reader.readAsDataURL(file);
     }
   };
 
