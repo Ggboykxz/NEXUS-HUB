@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { 
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings, 
   ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, PenSquare, 
@@ -437,6 +437,10 @@ export default function Header() {
                 <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 rounded-full"><Menu className="h-5 w-5" /></Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 bg-stone-950 text-white border-none">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Menu de Navigation</SheetTitle>
+                  <SheetDescription>Accédez aux différentes sections de NexusHub</SheetDescription>
+                </SheetHeader>
                 <ScrollArea className="h-full">
                   <div className="p-8 space-y-10">
                     <h2 className="font-display font-black text-2xl gold-resplendant">NexusHub<span className="text-primary">.</span></h2>

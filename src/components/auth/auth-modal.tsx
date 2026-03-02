@@ -166,6 +166,10 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-[90vw] sm:max-w-[500px] p-8 border-none bg-stone-950 rounded-3xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Choix de destinée</DialogTitle>
+            <DialogDescription>Sélectionnez votre rôle sur la plateforme NexusHub</DialogDescription>
+          </DialogHeader>
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>
             <div className="grid grid-cols-2 gap-4">
