@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { notFound, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -608,6 +608,51 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
 
     return () => observer.disconnect();
   }, [currentChapter, storyId]);
+
+  // --- STREAK REWARD TIMER (5 MINUTES) ---
+  useEffect(() => {
+    if (!currentUser || !story || !currentChapter) return;
+
+    const rewardTimer = setTimeout(async () => {
+      try {
+        await runTransaction(db, async (transaction) => {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userDoc = await transaction.get(userRef);
+          
+          if (!userDoc.exists()) return;
+          
+          const userData = userDoc.data() as UserProfile;
+          const today = new Date().toISOString().split('T')[0];
+          
+          // 1. Check if already rewarded today
+          if (userData.readingStreak?.lastReadDate === today) return;
+          
+          // 2. Check weekly cap (14 coins)
+          const weeklyCoins = (userData as any).readingStreak?.weeklyCoins || 0;
+          if (weeklyCoins >= 14) return;
+
+          // 3. Apply rewards
+          transaction.update(userRef, {
+            afriCoins: increment(2),
+            'readingStreak.currentCount': increment(1),
+            'readingStreak.lastReadDate': today,
+            'readingStreak.weeklyCoins': increment(2),
+            updatedAt: serverTimestamp()
+          });
+          
+          // SUCCESS TOAST
+          toast({
+            title: "🔥 Streak actif !",
+            description: "+2 🪙 AfriCoins gagnés pour votre fidélité.",
+          });
+        });
+      } catch (e) {
+        console.error("Streak reward error:", e);
+      }
+    }, 300000); // 5 minutes
+
+    return () => clearTimeout(rewardTimer);
+  }, [currentUser, story, currentChapter, toast]);
 
   const handleNextChapter = useCallback(() => {
     if (story?.chapters && currentChapterIndex < story.chapters.length - 1) {
