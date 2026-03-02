@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 
-  getFirestore, 
   initializeFirestore, 
   persistentLocalCache, 
   persistentMultipleTabManager 
@@ -9,6 +8,7 @@ import {
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -20,7 +20,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialisation sécurisée : on vérifie qu'on a au moins l'API Key pour éviter internal-error
+// Initialisation sécurisée
 const app = getApps().length > 0 
   ? getApp() 
   : initializeApp(firebaseConfig);
@@ -36,6 +36,32 @@ export const auth = getAuth(app);
 export { db };
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'europe-west1');
+
+/**
+ * Initialisation de Firebase App Check
+ * Protège vos ressources Firebase contre les abus (facturation, phishing).
+ */
+if (typeof window !== "undefined") {
+  // Support du mode débogage en développement
+  if (process.env.NODE_ENV === 'development') {
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  if (siteKey) {
+    try {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(siteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+      console.log("Nexus Security: App Check activé.");
+    } catch (error) {
+      console.error("Nexus Security: Échec de l'activation d'App Check", error);
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    console.warn("Nexus Security: NEXT_PUBLIC_RECAPTCHA_SITE_KEY manquante en production.");
+  }
+}
 
 export const initAnalytics = async () => {
   if (typeof window !== "undefined" && await isSupported()) {
