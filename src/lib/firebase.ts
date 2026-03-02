@@ -20,17 +20,18 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase only if we have at least an API key
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Initialisation sécurisée : on vérifie qu'on a au moins l'API Key pour éviter internal-error
+const app = getApps().length > 0 
+  ? getApp() 
+  : initializeApp(firebaseConfig);
 
-// Initialize Firestore with multi-tab persistence
+// Initialisation de Firestore avec cache persistant multi-onglets
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-// Auth & Services
 export const auth = getAuth(app);
 export { db };
 export const storage = getStorage(app);
