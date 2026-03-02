@@ -50,7 +50,7 @@ function SignupForm() {
   const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
-  // Get callbackUrl and sanitize
+  // Get callbackUrl and sanitize to prevent open redirects
   const callbackUrl = searchParams.get('callbackUrl');
   const redirectTo = (callbackUrl && callbackUrl.startsWith('/')) ? callbackUrl : '/';
 
@@ -67,8 +67,12 @@ function SignupForm() {
     setParticles(newParticles);
   }, []);
 
-  const setSessionCookie = () => {
-    document.cookie = "nexushub-session=active; path=/; max-age=86400; SameSite=Lax";
+  const setSessionCookie = async () => {
+    try {
+      await fetch('/api/auth/session', { method: 'POST' });
+    } catch (e) {
+      console.error("Erreur lors de l'initialisation de la session sécurisée", e);
+    }
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -103,7 +107,7 @@ function SignupForm() {
         }, { merge: true });
       }
     } else {
-      setSessionCookie();
+      await setSessionCookie();
       router.push(redirectTo);
       router.refresh();
     }
@@ -128,7 +132,7 @@ function SignupForm() {
         updatedAt: new Date().toISOString(),
       });
 
-      setSessionCookie();
+      await setSessionCookie();
       toast({
         title: "Bienvenue sur NexusHub !",
         description: "Votre compte a été créé avec succès.",
@@ -186,7 +190,7 @@ function SignupForm() {
         role,
         updatedAt: new Date().toISOString()
       });
-      setSessionCookie();
+      await setSessionCookie();
       toast({
         title: role === 'reader' ? "Destinée : Lecteur" : "Destinée : Artiste",
         description: "Votre profil a été configuré. Bienvenue au Hub !",
@@ -518,7 +522,7 @@ function SignupForm() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-[9px] md:text-[10px] text-stone-400 font-light leading-snug">
                             J'accepte les <Link href="/legal/terms" className="text-primary font-bold hover:underline">Conditions</Link> et la <Link href="/legal/privacy" className="text-primary font-bold hover:underline">Politique de Confidentialité</Link>.
-                          </FormLabel>
+                          </Label>
                         </div>
                       </FormItem>
                     )}
@@ -557,30 +561,10 @@ function SignupForm() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
-              { 
-                icon: Users, 
-                title: "Inclusivité", 
-                desc: "Connectez-vous avec des artistes du Gabon et d'Afrique.", 
-                color: "bg-blue-500/10 text-blue-500" 
-              },
-              { 
-                icon: Coins, 
-                title: "Revenus", 
-                desc: "Gagnez avec les AfriCoins et dons.", 
-                color: "bg-amber-500/10 text-amber-500" 
-              },
-              { 
-                icon: LayoutGrid, 
-                title: "Immersion", 
-                desc: "Outils de création inspirés de la culture africaine.", 
-                color: "bg-primary/10 text-primary" 
-              },
-              { 
-                icon: CheckCircle2, 
-                title: "Gratuité", 
-                desc: "Draft gratuit, Pro sur validation.", 
-                color: "bg-emerald-500/10 text-emerald-500" 
-              },
+              { icon: Users, title: "Inclusivité", desc: "Connectez-vous avec des artistes du Gabon et d'Afrique.", color: "bg-blue-500/10 text-blue-500" },
+              { icon: Coins, title: "Revenus", desc: "Gagnez avec les AfriCoins et dons.", color: "bg-amber-500/10 text-amber-500" },
+              { icon: LayoutGrid, title: "Immersion", desc: "Outils de création inspirés de la culture africaine.", color: "bg-primary/10 text-primary" },
+              { icon: CheckCircle2, title: "Gratuité", desc: "Draft gratuit, Pro sur validation.", color: "bg-emerald-500/10 text-emerald-500" },
             ].map((item, i) => (
               <Card key={i} className="bg-stone-900 border-white/5 hover:border-primary/30 transition-all duration-500 group rounded-[2rem] overflow-hidden shadow-xl">
                 <CardContent className="p-6 md:p-8 space-y-4">

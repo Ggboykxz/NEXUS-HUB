@@ -59,7 +59,7 @@ function LoginForm() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Get callbackUrl and sanitize
+  // Get callbackUrl and sanitize to prevent open redirects
   const callbackUrl = searchParams.get('callbackUrl');
   const redirectTo = (callbackUrl && callbackUrl.startsWith('/')) ? callbackUrl : '/';
 
@@ -72,8 +72,12 @@ function LoginForm() {
     return () => clearInterval(interval);
   }, []);
 
-  const setSessionCookie = () => {
-    document.cookie = "nexushub-session=active; path=/; max-age=86400; SameSite=Lax";
+  const setSessionCookie = async () => {
+    try {
+      await fetch('/api/auth/session', { method: 'POST' });
+    } catch (e) {
+      console.error("Erreur lors de l'initialisation de la session sécurisée", e);
+    }
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -88,7 +92,7 @@ function LoginForm() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      setSessionCookie();
+      await setSessionCookie();
       toast({
         title: "Connexion réussie !",
         description: "Heureux de vous revoir parmi nous.",
@@ -124,7 +128,7 @@ function LoginForm() {
 
     try {
       await signInWithPopup(auth, provider!);
-      setSessionCookie();
+      await setSessionCookie();
       toast({
         title: `Connecté avec ${platform}`,
         description: "Bienvenue sur NexusHub !",

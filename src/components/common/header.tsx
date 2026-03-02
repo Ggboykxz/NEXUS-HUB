@@ -137,7 +137,11 @@ export default function Header() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    document.cookie = "nexushub-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (e) {
+      console.error("Erreur lors de la suppression de la session sécurisée", e);
+    }
     router.push('/');
     router.refresh();
   };
