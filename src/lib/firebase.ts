@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 
@@ -22,7 +23,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
+// Initialize Firebase with protection against multiple initializations
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firestore with multi-tab persistence to handle "Could not reach backend" errors
@@ -32,12 +33,16 @@ const db = initializeFirestore(app, {
   })
 });
 
-// Initialize App Check for CSRF/Abuse protection
+// Initialize App Check for CSRF/Abuse protection (only on client)
 if (typeof window !== "undefined") {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_KEY || '6Lc_placeholder_key'),
-    isTokenAutoRefreshEnabled: true
-  });
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_KEY || '6Lc_placeholder_key'),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (e) {
+    console.warn("App Check initialization skipped or failed. This is expected in some dev environments.");
+  }
 }
 
 export const auth = getAuth(app);
