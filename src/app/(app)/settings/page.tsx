@@ -8,7 +8,7 @@ import {
   ShieldCheck, Smartphone, CreditCard, Bitcoin, Check,
   UserCircle, Eye, History, Users, Crown, Star,
   Banknote, Landmark, Wallet, ArrowUpRight, ChevronRight,
-  AlertCircle
+  AlertCircle, ShieldAlert, LogOut, Trash2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,18 +21,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getIdToken } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -77,13 +80,54 @@ export default function SettingsPage() {
         bio: profile.bio,
         photoURL: profile.photoURL,
         preferences: profile.preferences,
-        // Revenue settings are saved within the same doc for simplicity or can be nested
         paymentMethod: (profile as any).paymentMethod || {},
         payoutThreshold: (profile as any).payoutThreshold || 20
       });
       toast({ title: "Paramètres enregistrés !", description: "Vos préférences ont été mises à jour." });
     } catch (error) {
       toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
+    }
+  };
+
+  const handleRevokeAllSessions = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    setIsRevoking(true);
+    try {
+      // 1. Forcer le rafraîchissement du token pour prouver l'activité récente
+      const token = await getIdToken(user, true);
+
+      // 2. Appeler l'API de révocation
+      const response = await fetch('/api/auth/revoke', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Échec de la révocation serveur');
+
+      // 3. Déconnexion locale
+      await signOut(auth);
+      
+      toast({ 
+        title: "Sécurité activée", 
+        description: "Tous vos appareils ont été déconnectés avec succès." 
+      });
+
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast({ 
+        title: "Erreur de sécurité", 
+        description: "Impossible de déconnecter les autres appareils pour le moment.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRevoking(false);
     }
   };
 
@@ -138,7 +182,7 @@ export default function SettingsPage() {
           <TabsTrigger value="profile" className="rounded-xl py-3 font-bold text-xs uppercase">Profil</TabsTrigger>
           <TabsTrigger value="africoins" className="rounded-xl py-3 font-bold text-xs uppercase">AfriCoins</TabsTrigger>
           {isArtist && <TabsTrigger value="revenues" className="rounded-xl py-3 font-bold text-xs uppercase gap-2"><Banknote className="h-3.5 w-3.5" /> Revenus</TabsTrigger>}
-          <TabsTrigger value="privacy" className="rounded-xl py-3 font-bold text-xs uppercase">Vie Privée</TabsTrigger>
+          <TabsTrigger value="privacy" className="rounded-xl py-3 font-bold text-xs uppercase">Sécurité</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="space-y-8 animate-in fade-in duration-500">
@@ -423,27 +467,69 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-8 animate-in fade-in duration-500">
-          <Card className="border-none bg-card shadow-2xl rounded-[2.5rem] overflow-hidden">
-            <CardHeader className="bg-stone-950/50 p-8 border-b border-white/5">
-              <CardTitle className="text-2xl font-display font-black text-white">Contrôle Social</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-black">Activité en Direct</Label>
-                  <p className="text-xs text-muted-foreground italic">Affiche vos lectures actuelles à vos abonnés.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card className="border-none bg-stone-900 text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="bg-stone-950/50 p-8 border-b border-white/5">
+                <CardTitle className="text-2xl font-display font-black text-white">Contrôle Social</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-black">Activité en Direct</Label>
+                    <p className="text-xs text-muted-foreground italic">Affiche vos lectures actuelles à vos abonnés.</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-black">Historique Partagé</Label>
-                  <p className="text-xs text-muted-foreground italic">Permet aux amis de voir ce que vous avez terminé.</p>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-black">Historique Partagé</Label>
+                    <p className="text-xs text-muted-foreground italic">Permet aux amis de voir ce que vous avez terminé.</p>
+                  </div>
+                  <Switch />
                 </div>
-                <Switch />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none bg-stone-900 text-white shadow-2xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="bg-rose-950/20 p-8 border-b border-rose-500/10">
+                <div className="flex items-center gap-3 text-rose-500">
+                  <ShieldAlert className="h-6 w-6" />
+                  <CardTitle className="text-2xl font-display font-black">Sécurité du Compte</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="space-y-4">
+                  <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl">
+                    <p className="text-xs text-rose-200/70 italic leading-relaxed">
+                      "Une activité suspecte ? Déconnectez instantanément tous les appareils reliés à votre compte NexusHub."
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleRevokeAllSessions}
+                    disabled={isRevoking}
+                    className="w-full h-12 rounded-xl font-black gap-2 shadow-xl shadow-destructive/20"
+                  >
+                    {isRevoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+                    Déconnecter tous les appareils
+                  </Button>
+                </div>
+
+                <Separator className="bg-white/5" />
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase text-stone-500 tracking-widest">Zone de Danger</p>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-12 rounded-xl text-stone-500 hover:text-rose-500 hover:bg-rose-500/10 font-bold gap-2 transition-all"
+                  >
+                    <Trash2 className="h-4 w-4" /> Supprimer mon compte
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
