@@ -7,31 +7,73 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Brush, Languages, BrainCircuit, TrendingUp, Plus, 
   Settings, ChevronRight, Eye, Heart, Star, LayoutGrid,
-  FileText, Wand2, Share2, Globe, Clock
+  FileText, Wand2, Share2, Globe, Clock, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import type { Story } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export default function StoryDashboardPage(props: { params: Promise<{ storyId: string }> }) {
   const { storyId } = use(props.params);
+  const router = useRouter();
+  const { toast } = useToast();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    async function fetchStory() {
-      const snap = await getDoc(doc(db, 'stories', storyId));
-      if (snap.exists()) {
-        setStory({ id: snap.id, ...snap.data() } as Story);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push('/login');
+        return;
       }
-      setLoading(false);
-    }
-    fetchStory();
-  }, [storyId]);
+      setCurrentUser(user);
 
-  if (loading) return <div className="flex justify-center py-32"><div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+      try {
+        const snap = await getDoc(doc(db, 'stories', storyId));
+        if (snap.exists()) {
+          const data = snap.data() as Story;
+          
+          // Ownership Check (Défense en profondeur côté client)
+          if (data.artistId !== user.uid) {
+            router.push('/dashboard/creations');
+            toast({ 
+              title: "Accès refusé", 
+              description: "Vous n'êtes pas l'auteur de cette légende.",
+              variant: "destructive" 
+            });
+            return;
+          }
+          
+          setStory({ id: snap.id, ...data } as Story);
+        } else {
+          router.push('/dashboard/creations');
+        }
+      } catch (error) {
+        console.error("Error fetching story:", error);
+        router.push('/dashboard/creations');
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => unsub();
+  }, [storyId, router, toast]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase tracking-widest text-[10px]">Ouverture de l'Atelier...</p>
+      </div>
+    );
+  }
+
   if (!story) return <div className="text-center py-32">Œuvre introuvable.</div>;
 
   const tools = [
@@ -128,8 +170,10 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
                   <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-black uppercase">Actif</Badge>
                 </div>
               ))}
-              <Button variant="outline" className="w-full h-14 border-dashed rounded-2xl text-muted-foreground hover:text-primary hover:border-primary/50 gap-2">
-                <Plus className="h-4 w-4" /> Ajouter un chapitre
+              <Button asChild variant="outline" className="w-full h-14 border-dashed rounded-2xl text-muted-foreground hover:text-primary hover:border-primary/50 gap-2">
+                <Link href={`/dashboard/creations/${storyId}/add-chapter`}>
+                  <Plus className="h-4 w-4" /> Ajouter un chapitre
+                </Link>
               </Button>
             </div>
           </section>

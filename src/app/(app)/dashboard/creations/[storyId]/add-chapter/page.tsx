@@ -128,11 +128,18 @@ export default function AddChapterPage(props: PageProps) {
       
       if (storySnap.exists()) {
         const data = storySnap.data() as Story;
+        
+        // Ownership Check (Défense en profondeur côté client)
         if (data.artistId !== user.uid) {
           router.push('/dashboard/creations');
-          toast({ title: "Accès refusé", variant: "destructive" });
+          toast({ 
+            title: "Accès refusé", 
+            description: "Vous n'avez pas les droits pour modifier ce récit.",
+            variant: "destructive" 
+          });
           return;
         }
+        
         setStory({ id: storySnap.id, ...data });
       } else {
         router.push('/dashboard/creations');
@@ -185,16 +192,13 @@ export default function AddChapterPage(props: PageProps) {
       
       const pagesData = [];
       
-      // We process compression and upload one by one to avoid memory overflow
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
         
-        // 1. Client-side compression for each page
         setIsCompressing(true);
         const compressedBlob = await compressImage(img.file, 1600, 0.85);
         setIsCompressing(false);
 
-        // 2. Upload to Storage
         const storagePath = `chapters/${storyId}/${newChapterDocRef.id}/page_${i}.jpg`;
         const storageRef = ref(storage, storagePath);
         
@@ -204,7 +208,7 @@ export default function AddChapterPage(props: PageProps) {
         
         pagesData.push({
           imageUrl: downloadURL,
-          width: 0, // In production, we'd extract actual dimensions from img object
+          width: 0,
           height: 0
         });
       }
