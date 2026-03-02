@@ -24,9 +24,10 @@ import {
   signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
-  OAuthProvider 
+  OAuthProvider,
+  getRedirectResult
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -65,6 +66,16 @@ function SignupForm() {
       ty: `${Math.random() * -200}px`
     }));
     setParticles(newParticles);
+  }, []);
+
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result) {
+        await checkUserRoleAndRedirect(result.user.uid);
+      }
+    }).catch((error) => {
+      console.error("Redirect auth error:", error);
+    });
   }, []);
 
   const setSessionCookie = async (role: string) => {
@@ -137,8 +148,8 @@ function SignupForm() {
           photoURL: user?.photoURL || '',
           afriCoins: 0,
           bio: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         }, { merge: true });
       }
     } else {
@@ -173,8 +184,8 @@ function SignupForm() {
         role: values.accountType,
         afriCoins: 0,
         bio: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
       await setSessionCookie(values.accountType);
@@ -207,10 +218,16 @@ function SignupForm() {
     }
 
     try {
-      await signInWithPopup(auth, provider!);
-      const user = auth.currentUser;
-      if (user) {
-        await checkUserRoleAndRedirect(user.uid);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider!);
+      } else {
+        await signInWithPopup(auth, provider!);
+        const user = auth.currentUser;
+        if (user) {
+          await checkUserRoleAndRedirect(user.uid);
+        }
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -218,7 +235,8 @@ function SignupForm() {
         toast({ title: "Popup bloqué", description: "Utilisation du mode redirection sécurisée..." });
         await signInWithRedirect(auth, provider!);
       } else if (error.code === 'auth/popup-closed-by-user') {
-        toast({ title: "Fenêtre fermée", description: "L'inscription a été annulée." });
+        // User closed manualy, just ignore
+        console.log("Signup popup closed by user");
       } else {
         toast({ title: "Erreur", description: "La connexion a échoué. Réessayez via redirection.", variant: "destructive" });
         await signInWithRedirect(auth, provider!);
@@ -234,7 +252,7 @@ function SignupForm() {
     try {
       await updateDoc(doc(db, 'users', pendingUid), { 
         role,
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       });
       await setSessionCookie(role);
       toast({

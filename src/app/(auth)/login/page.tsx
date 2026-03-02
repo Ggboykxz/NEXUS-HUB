@@ -26,8 +26,7 @@ import {
   Zap,
   BookOpen,
   Brush
-} from "lucide-center";
-import { Checkbox } from '@/components/ui/checkbox';
+} from "lucide-react";
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { 
@@ -36,7 +35,8 @@ import {
   signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
-  OAuthProvider 
+  OAuthProvider,
+  getRedirectResult 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
@@ -74,6 +74,17 @@ function LoginForm() {
       setHeroIndex((prev) => (prev + 1) % SHOWCASE_IMAGES.length);
     }, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Gérer le résultat de la redirection au chargement
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result) {
+        await checkUserRoleAndRedirect(result.user.uid);
+      }
+    }).catch((error) => {
+      console.error("Redirect auth error:", error);
+    });
   }, []);
 
   const setSessionCookie = async (role: string) => {
@@ -143,34 +154,29 @@ function LoginForm() {
     }
 
     try {
-      // Tenter d'abord la pop-up
-      await signInWithPopup(auth, provider!);
-      const user = auth.currentUser;
-      if (user) {
-        await checkUserRoleAndRedirect(user.uid);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider!);
+      } else {
+        await signInWithPopup(auth, provider!);
+        const user = auth.currentUser;
+        if (user) {
+          await checkUserRoleAndRedirect(user.uid);
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);
       
-      // Gestion des erreurs spécifiques recommandées
       if (error.code === 'auth/popup-blocked') {
         toast({ 
           title: "Fenêtre bloquée", 
-          description: "Votre navigateur bloque les pop-ups. Redirection vers la page sécurisée...",
+          description: "Votre navigateur bloque les pop-ups. Redirection sécurisée...",
         });
         await signInWithRedirect(auth, provider!);
       } else if (error.code === 'auth/popup-closed-by-user') {
-        toast({ 
-          title: "Connexion annulée", 
-          description: "Vous avez fermé la fenêtre de connexion." 
-        });
-      } else if (error.code === 'auth/internal-error') {
-        toast({ 
-          title: "Erreur Interne", 
-          description: "Un problème de communication est survenu. Tentative via redirection...",
-          variant: "destructive"
-        });
-        await signInWithRedirect(auth, provider!);
+        // Silence or simple log for cancellation
+        console.log("User cancelled login popup");
       } else {
         toast({ 
           title: "Échec de connexion", 

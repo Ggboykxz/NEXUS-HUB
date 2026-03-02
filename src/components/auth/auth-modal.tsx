@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,8 @@ import {
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  getRedirectResult
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -58,6 +59,18 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
 
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      getRedirectResult(auth).then(async (result) => {
+        if (result) {
+          await checkUserRoleAndRedirect(result.user.uid);
+        }
+      }).catch((error) => {
+        console.error("Modal redirect auth error:", error);
+      });
+    }
+  }, [isOpen]);
 
   const setSessionCookie = async (role: string) => {
     try {
@@ -110,27 +123,29 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     }
 
     try {
-      // Tenter la popup d'abord
-      await signInWithPopup(auth, provider!);
-      const user = auth.currentUser;
-      if (user) {
-        await checkUserRoleAndRedirect(user.uid);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider!);
+      } else {
+        await signInWithPopup(auth, provider!);
+        const user = auth.currentUser;
+        if (user) {
+          await checkUserRoleAndRedirect(user.uid);
+        }
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
+      console.error("Auth modal error:", error);
       
-      // Gestion des blocages de popup et fermetures forcées
       if (error.code === 'auth/popup-blocked') {
         toast({ 
           title: "Popup bloqué", 
-          description: "Redirection vers la page sécurisée de connexion..." 
+          description: "Redirection sécurisée en cours..." 
         });
         await signInWithRedirect(auth, provider!);
       } else if (error.code === 'auth/popup-closed-by-user') {
-        toast({ 
-          title: "Connexion annulée", 
-          description: "La fenêtre de connexion a été fermée." 
-        });
+        // Just log the cancellation
+        console.log("Auth modal popup closed by user");
       } else {
         toast({ 
           title: "Erreur", 
@@ -183,11 +198,10 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-[90vw] sm:max-w-[500px] p-8 border-none bg-stone-950 rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="sr-only">Choix de destinée</DialogTitle>
-            <DialogDescription className="sr-only">Sélectionnez votre rôle sur la plateforme NexusHub</DialogDescription>
+            <DialogTitle className="text-2xl font-display font-black text-white gold-resplendant text-center">Quelle est votre destinée ?</DialogTitle>
+            <DialogDescription className="text-center text-stone-400">Sélectionnez votre rôle sur la plateforme NexusHub</DialogDescription>
           </DialogHeader>
-          <div className="text-center space-y-6">
-            <h2 className="text-2xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>
+          <div className="text-center space-y-6 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => handleRoleChoice('artist_draft')} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary transition-all text-center space-y-3 group">
                 <Brush className="h-8 w-8 mx-auto text-primary group-hover:scale-110 transition-transform" />
