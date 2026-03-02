@@ -59,6 +59,46 @@ interface ImageFile {
   progress: number;
 }
 
+/**
+ * Utility function to compress images on the client side using Canvas API.
+ */
+const compressImage = (file: File, maxWidth: number, quality: number): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new (window as any).Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('La conversion de la planche a échoué.'));
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 export default function AddChapterPage(props: PageProps) {
   const { storyId } = use(props.params);
   const router = useRouter();
@@ -68,6 +108,7 @@ export default function AddChapterPage(props: PageProps) {
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   
   const [title, setTitle] = useState('');
   const [isPremium, setIsPremium] = useState(false);
@@ -143,18 +184,27 @@ export default function AddChapterPage(props: PageProps) {
       const newChapterDocRef = doc(chapterRef);
       
       const pagesData = [];
+      
+      // We process compression and upload one by one to avoid memory overflow
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
-        const storagePath = `chapters/${storyId}/${newChapterDocRef.id}/${i}_${img.file.name}`;
+        
+        // 1. Client-side compression for each page
+        setIsCompressing(true);
+        const compressedBlob = await compressImage(img.file, 1600, 0.85);
+        setIsCompressing(false);
+
+        // 2. Upload to Storage
+        const storagePath = `chapters/${storyId}/${newChapterDocRef.id}/page_${i}.jpg`;
         const storageRef = ref(storage, storagePath);
         
-        const uploadTask = uploadBytesResumable(storageRef, img.file);
+        const uploadTask = uploadBytesResumable(storageRef, compressedBlob);
         await uploadTask;
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         
         pagesData.push({
           imageUrl: downloadURL,
-          width: 0,
+          width: 0, // In production, we'd extract actual dimensions from img object
           height: 0
         });
       }
@@ -232,6 +282,7 @@ export default function AddChapterPage(props: PageProps) {
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
+      setIsCompressing(false);
       toast({ title: "Erreur de publication", description: error.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
@@ -267,10 +318,16 @@ export default function AddChapterPage(props: PageProps) {
         <div className="flex gap-3 w-full md:w-auto">
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting || !title.trim() || selectedImages.length === 0}
+            disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
             className="flex-1 md:flex-none rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black gold-shimmer px-10 shadow-xl shadow-emerald-500/20"
           >
-            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi...</> : <><Sparkles className="mr-2 h-5 w-5" /> Publier l'Épisode</>}
+            {isCompressing ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compression...</>
+            ) : isSubmitting ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Publication...</>
+            ) : (
+              <><Sparkles className="mr-2 h-5 w-5" /> Publier l'Épisode</>
+            )}
           </Button>
         </div>
       </div>
@@ -348,7 +405,7 @@ export default function AddChapterPage(props: PageProps) {
                       <UploadCloud className="h-8 w-8 text-primary" />
                     </div>
                     <span className="font-display font-black text-white">Ajouter des planches</span>
-                    <span className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">Multi-sélection autorisée (Max 5Mo/page)</span>
+                    <span className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">Multi-sélection autorisée (Max 10Mo/page)</span>
                     <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                   </label>
                 </div>
@@ -392,7 +449,7 @@ export default function AddChapterPage(props: PageProps) {
           <Card className="bg-primary/5 border border-primary/10 rounded-[2rem] p-8">
             <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest">Conseil de l'Atelier</h4>
             <p className="text-xs text-stone-400 leading-relaxed italic font-light">
-              "Les chapitres Premium génèrent 80% des revenus des artistes Pro. Assurez-vous que la qualité visuelle justifie le soutien des fans."
+              "L'IA Nexus compresse désormais vos planches avant l'envoi pour préserver votre bande passante et accélérer la mise en ligne."
             </p>
           </Card>
         </aside>

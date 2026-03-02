@@ -18,9 +18,50 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
+/**
+ * Utility function to compress images on the client side using Canvas API.
+ */
+const compressImage = (file: File, maxWidth: number, quality: number): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new (window as any).Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('La conversion de l\'image a échoué.'));
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 export default function SubmitPage() {
   const [step, setStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -47,8 +88,8 @@ export default function SubmitPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "Fichier trop lourd", description: "La taille maximale est de 5Mo.", variant: "destructive" });
+      if (file.size > 10 * 1024 * 1024) { // Increased limit slightly because we compress anyway
+        toast({ title: "Fichier trop lourd", description: "La taille maximale avant compression est de 10Mo.", variant: "destructive" });
         return;
       }
       setCoverFile(file);
@@ -87,15 +128,20 @@ export default function SubmitPage() {
     
     setIsCreating(true);
     try {
-      // 1. Upload cover to Storage
+      // 1. Client-side compression
+      setIsCompressing(true);
+      const compressedBlob = await compressImage(coverFile, 1200, 0.85);
+      setIsCompressing(false);
+
+      // 2. Upload compressed blob to Storage
       const timestamp = Date.now();
-      const storagePath = `covers/${user.uid}/${timestamp}_${coverFile.name}`;
+      const storagePath = `covers/${user.uid}/${timestamp}_cover.jpg`;
       const storageRef = ref(storage, storagePath);
       
-      const uploadResult = await uploadBytes(storageRef, coverFile);
+      const uploadResult = await uploadBytes(storageRef, compressedBlob);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      // 2. Generate Unique Slug
+      // 3. Generate Unique Slug
       let baseSlug = formData.title.toLowerCase().trim()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
@@ -107,12 +153,11 @@ export default function SubmitPage() {
       
       let finalSlug = baseSlug;
       if (!querySnapshot.empty) {
-        // Append a random 4-digit suffix if collision detected
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
         finalSlug = `${baseSlug}-${randomSuffix}`;
       }
 
-      // 3. Create Firestore doc
+      // 4. Create Firestore doc
       const storyData = {
         ...formData,
         artistId: user.uid,
@@ -148,6 +193,7 @@ export default function SubmitPage() {
       router.push('/dashboard/creations');
     } catch (error: any) {
       console.error("Submission error:", error);
+      setIsCompressing(false);
       toast({
         title: "Échec de la création",
         description: error.message || "Une erreur est survenue lors de l'envoi.",
@@ -200,7 +246,6 @@ export default function SubmitPage() {
       </div>
 
       <div className="max-w-3xl mx-auto">
-        {/* PROGRESS STEPPER */}
         <div className="flex justify-between items-center mb-12 relative">
           <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -translate-y-1/2 -z-10" />
           {steps.map((s) => (
@@ -366,7 +411,11 @@ export default function SubmitPage() {
                 disabled={isCreating || !formData.title || !formData.genre || !coverFile}
                 className="rounded-xl px-12 h-14 font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_0_30px_rgba(16,185,129,0.3)] group"
               >
-                {isCreating ? <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Forgeage du Récit...</> : "Lancer le Projet de Vie"}
+                {isCompressing ? (
+                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Compression en cours...</>
+                ) : isCreating ? (
+                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Forgeage du Récit...</>
+                ) : "Lancer le Projet de Vie"}
               </Button>
             )}
           </CardFooter>
