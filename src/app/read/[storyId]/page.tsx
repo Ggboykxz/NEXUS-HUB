@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useRef, useCallback } from 'react';
@@ -42,6 +41,8 @@ import {
 } from "@/components/ui/sheet";
 
 // #region Page Components
+
+const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked, isFullscreen, onToggleFullscreen, isVisible, onChapterChange }: any) {
   const storyUrl = getStoryUrl(story);
@@ -303,12 +304,19 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
         openAuthModal('poster un commentaire');
         throw new Error('Auth required');
       }
+      
+      const sanitizedText = sanitize(text.trim());
+      
+      if (sanitizedText.length > 500) {
+        throw new Error('Le commentaire est trop long (max 500 caractères).');
+      }
+
       const ref = collection(db, 'stories', storyId, 'chapters', chapterId, 'comments');
       await addDoc(ref, {
         authorId: currentUser.uid,
         authorName: currentUser.displayName || 'Anonyme',
         authorAvatar: currentUser.photoURL || '',
-        content: text,
+        content: sanitizedText,
         likes: 0,
         isHidden: false,
         isEdited: false,
@@ -319,6 +327,9 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
       setCommentText('');
       queryClient.invalidateQueries({ queryKey: ['comments', storyId, chapterId] });
       toast({ title: "Commentaire publié !" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     }
   });
 
@@ -363,18 +374,27 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
   return (
     <div className="p-6 space-y-8">
       <div className="space-y-4">
-        <h4 className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-          <MessageSquare className="h-4 w-4"/> Partagez votre avis
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
+            <MessageSquare className="h-4 w-4"/> Partagez votre avis
+          </h4>
+          <span className={cn(
+            "text-[9px] font-bold uppercase",
+            commentText.length > 500 ? "text-rose-500" : "text-stone-600"
+          )}>
+            {commentText.length}/500
+          </span>
+        </div>
         <div className="space-y-3">
           <Textarea 
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Qu'avez-vous pensé de cet épisode ?" 
             className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-xs font-light"
+            maxLength={550}
           />
           <Button 
-            disabled={!commentText.trim() || submitMutation.isPending}
+            disabled={!commentText.trim() || commentText.length > 500 || submitMutation.isPending}
             onClick={() => submitMutation.mutate(commentText)}
             className="w-full h-10 rounded-xl font-black text-[10px] uppercase gold-shimmer"
           >

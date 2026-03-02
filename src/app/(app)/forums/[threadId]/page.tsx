@@ -42,6 +42,8 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 
+const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /**
  * Composant de protection de contenu (Spoiler).
  * Masque le contenu avec un flou et nécessite un clic pour révéler.
@@ -134,6 +136,13 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
 
     if (!replyText.trim()) return;
 
+    const sanitizedReply = sanitize(replyText.trim());
+
+    if (sanitizedReply.length > 500) {
+      toast({ title: "Message trop long", description: "Votre réponse ne doit pas dépasser 500 caractères.", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const repliesRef = collection(db, 'forumThreads', threadId, 'replies');
@@ -141,7 +150,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
         author: currentUser.displayName || 'Anonyme',
         authorId: currentUser.uid,
         authorPhoto: currentUser.photoURL || '',
-        content: replyText.trim(),
+        content: sanitizedReply,
         isSpoiler: isSpoilerActive,
         likes: 0,
         createdAt: serverTimestamp()
@@ -315,12 +324,20 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
           <div className="absolute top-0 right-0 p-12 opacity-5"><MessageSquare className="h-48 w-48 text-primary" /></div>
           
           <div className="relative z-10 space-y-10">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-4 rounded-2xl shadow-inner"><MessageSquare className="text-primary h-8 w-8" /></div>
-              <div>
-                <h2 className="text-3xl font-black font-display text-white tracking-tighter">Ajouter une Réponse</h2>
-                <p className="text-stone-500 text-sm italic font-light">"Partagez votre lumière avec la communauté."</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-primary/10 p-4 rounded-2xl shadow-inner"><MessageSquare className="text-primary h-8 w-8" /></div>
+                <div>
+                  <h2 className="text-3xl font-black font-display text-white tracking-tighter">Ajouter une Réponse</h2>
+                  <p className="text-stone-500 text-sm italic font-light">"Partagez votre lumière avec la communauté."</p>
+                </div>
               </div>
+              <span className={cn(
+                "text-[10px] font-black uppercase tracking-widest",
+                replyText.length > 500 ? "text-rose-500" : "text-stone-600"
+              )}>
+                {replyText.length} / 500
+              </span>
             </div>
 
             <div className="space-y-6">
@@ -330,6 +347,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="Écrivez votre message ici..." 
                   className="min-h-[200px] bg-white/5 border-white/10 rounded-[2rem] p-8 text-white font-light text-lg italic focus-visible:ring-primary shadow-inner"
+                  maxLength={550}
                 />
                 {isSpoilerActive && (
                   <div className="absolute inset-0 bg-amber-500/5 rounded-[2rem] border-2 border-dashed border-amber-500/30 pointer-events-none animate-in fade-in duration-500" />
@@ -354,7 +372,7 @@ export default function ThreadDetailPage(props: { params: Promise<{ threadId: st
 
                 <Button 
                   onClick={handlePostReply} 
-                  disabled={!replyText.trim() || isSubmitting} 
+                  disabled={!replyText.trim() || replyText.length > 500 || isSubmitting} 
                   className="h-16 px-14 rounded-full font-black text-xl bg-primary text-black shadow-[0_0_40px_rgba(212,168,67,0.3)] gold-shimmer w-full sm:w-auto"
                 >
                   {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Poster ma réponse"}
