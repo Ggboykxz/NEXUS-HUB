@@ -8,7 +8,7 @@ import {
   Brush, Languages, BrainCircuit, TrendingUp, Plus, 
   Settings, ChevronRight, Eye, Heart, Star, LayoutGrid,
   FileText, Wand2, Share2, Globe, Clock, Loader2, Download,
-  CheckCircle2, FileArchive
+  CheckCircle2, FileArchive, PenSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -44,7 +44,6 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
         if (snap.exists()) {
           const data = snap.data() as Story;
           
-          // Ownership Check (Défense en profondeur côté client)
           if (data.artistId !== user.uid) {
             router.push('/dashboard/creations');
             toast({ 
@@ -57,7 +56,6 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
           
           setStory({ id: snap.id, ...data } as Story);
 
-          // Fetch real chapters
           const chaptersRef = collection(db, 'stories', storyId, 'chapters');
           const q = query(chaptersRef, orderBy('chapterNumber', 'asc'));
           const chaptersSnap = await getDocs(q);
@@ -91,7 +89,6 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       const downloadPromises = chapter.pages.map(async (page, idx) => {
         const response = await fetch(page.imageUrl);
         const blob = await response.blob();
-        // Extract extension or default to jpg
         const urlPart = page.imageUrl.split('?')[0];
         const ext = urlPart.split('.').pop() || 'jpg';
         const fileName = `page_${(idx + 1).toString().padStart(3, '0')}.${ext}`;
@@ -178,10 +175,14 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
           </div>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Button asChild className="flex-1 md:flex-none rounded-full px-8 font-black bg-white text-black hover:bg-stone-200">
+          <Button asChild variant="outline" className="flex-1 md:flex-none rounded-full px-6 font-black border-white/10 text-white hover:bg-white/5 h-12 gap-2 text-xs uppercase tracking-widest">
+            <Link href={`/dashboard/creations/${storyId}/edit`}>
+              <PenSquare className="h-4 w-4 text-primary" /> Modifier l'œuvre
+            </Link>
+          </Button>
+          <Button asChild className="flex-1 md:flex-none rounded-full px-8 font-black bg-white text-black hover:bg-stone-200 h-12">
             <Link href={`/read/${storyId}`}><Eye className="mr-2 h-4 w-4" /> Voir l'œuvre</Link>
           </Button>
-          <Button variant="outline" className="rounded-full h-10 w-10 p-0 border-white/10 text-white"><Settings className="h-4 w-4" /></Button>
         </div>
       </div>
 
@@ -229,7 +230,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
                     <p className="font-bold text-white text-base truncate">{chap.title}</p>
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 mt-1">
                       <p className="text-[10px] text-stone-500 uppercase tracking-tighter flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3" /> {new Date(chap.publishedAt as any).toLocaleDateString()}
+                        <Clock className="h-3 w-3" /> {new Date(chap.publishedAt as any).toLocaleDateString()}
                       </p>
                       <Badge className={cn(
                         "text-[8px] font-black uppercase px-2 py-0.5",
