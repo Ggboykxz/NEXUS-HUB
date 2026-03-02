@@ -38,7 +38,6 @@ import {
   increment, 
   setDoc, 
   writeBatch, 
-  collectionGroup, 
   query, 
   where, 
   getDocs 
@@ -129,7 +128,6 @@ export default function AddChapterPage(props: PageProps) {
       if (storySnap.exists()) {
         const data = storySnap.data() as Story;
         
-        // Ownership Check (Défense en profondeur côté client)
         if (data.artistId !== user.uid) {
           router.push('/dashboard/creations');
           toast({ 
@@ -150,20 +148,17 @@ export default function AddChapterPage(props: PageProps) {
   }, [storyId, router, toast]);
 
   const validatePage = async (file: File): Promise<boolean> => {
-    // 1. Type check
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({ title: "Format invalide", description: `${file.name} : Utilisez du JPG, PNG ou WebP.`, variant: "destructive" });
       return false;
     }
 
-    // 2. Size check (10MB for pages)
     if (file.size > 10 * 1024 * 1024) {
       toast({ title: "Fichier trop lourd", description: `${file.name} : Max 10Mo par page.`, variant: "destructive" });
       return false;
     }
 
-    // 3. Dimensions check (at least 600px wide)
     return new Promise((resolve) => {
       const img = new (window as any).Image();
       const objectUrl = URL.createObjectURL(file);
@@ -205,7 +200,6 @@ export default function AddChapterPage(props: PageProps) {
       setSelectedImages(prev => [...prev, ...validatedImages]);
     }
     
-    // Reset input value to allow re-selecting the same file if needed
     e.target.value = '';
   };
 
@@ -286,52 +280,32 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      const subscribersQuery = query(
-        collectionGroup(db, 'subscriptions'),
-        where('artistId', '==', story?.artistId)
-      );
-      
-      const subscribersSnap = await getDocs(subscribersQuery);
-      
-      if (!subscribersSnap.empty) {
-        let batch = writeBatch(db);
-        let count = 0;
-
-        for (const subDoc of subscribersSnap.docs) {
-          const subscriberId = subDoc.ref.parent.parent?.id;
-          if (!subscriberId) continue;
-
-          const notifRef = doc(collection(db, 'users', subscriberId, 'notifications'));
+      // FAN-OUT NOTIFICATIONS TO SUBSCRIBERS
+      if (story) {
+        const subsQuery = query(collection(db, 'users'), 
+          where('followedArtists', 'array-contains', story.artistId));
+        const subsSnap = await getDocs(subsQuery);
+        
+        const batch = writeBatch(db);
+        subsSnap.docs.forEach(sub => {
+          const notifRef = doc(collection(db, 'users', sub.id, 'notifications'));
           batch.set(notifRef, {
-            type: 'chapter',
-            storyId: storyId,
-            storyTitle: story?.title,
+            type: 'new_chapter', 
+            storyId: story.id, 
+            storyTitle: story.title,
+            storyCoverUrl: story.coverImage.imageUrl,
+            chapterNumber, 
             chapterTitle: title,
-            chapterNumber: chapterNumber,
-            artistId: story?.artistId,
-            artistName: story?.artistName,
-            fromDisplayName: story?.artistName,
-            fromPhoto: currentUser?.photoURL || '',
-            message: `vient de publier l'épisode ${chapterNumber} de "${story?.title}"`,
-            link: `/read/${storyId}`,
-            read: false,
+            artistName: story.artistName,
+            read: false, 
             createdAt: serverTimestamp()
           });
-
-          count++;
-          if (count === 500) {
-            await batch.commit();
-            batch = writeBatch(db);
-            count = 0;
-          }
-        }
-
-        if (count > 0) {
-          await batch.commit();
-        }
+        });
+        
+        await batch.commit();
+        toast({ title: `✅ Publié ! ${subsSnap.size} abonnés notifiés.` });
       }
 
-      toast({ title: "Épisode publié !", description: `Le chapitre ${chapterNumber} est maintenant en ligne.` });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
