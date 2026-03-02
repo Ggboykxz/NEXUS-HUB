@@ -1,4 +1,3 @@
-
 import * as admin from 'firebase-admin';
 
 /**
@@ -7,7 +6,7 @@ import * as admin from 'firebase-admin';
  */
 if (!admin.apps.length) {
   try {
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-6915614597-eca66';
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
@@ -22,12 +21,12 @@ if (!admin.apps.length) {
       });
       console.log('Firebase Admin: Initialisé avec certificat.');
     } else {
-      // Fallback pour le développement local sans certificat (utilise les ADC ou le projectId)
+      // Fallback sécurisé pour éviter le plantage 500 si les secrets sont absents au début
       admin.initializeApp({
-        projectId: projectId || 'studio-6915614597-eca66',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'studio-6915614597-eca66.firebasestorage.app'
+        projectId: projectId,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
       });
-      console.warn('Firebase Admin: Initialisé sans certificat (mode dégradé ou ADC).');
+      console.warn('Firebase Admin: Initialisé sans certificat (Secrets manquants dans .env).');
     }
   } catch (error) {
     console.error('Firebase Admin init error:', error);
