@@ -151,10 +151,12 @@ function LoginForm() {
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Popup bloqué", description: "Redirection vers la page de connexion sécurisée..." });
+        toast({ title: "Popup bloqué", description: "Redirection vers la page sécurisée..." });
         await signInWithRedirect(auth, provider!);
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        toast({ title: "Connexion annulée", description: "La fenêtre de connexion a été fermée." });
       } else {
-        toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+        toast({ title: "Erreur", description: "La connexion a échoué. Vérifiez vos identifiants.", variant: "destructive" });
       }
     } finally {
       setIsSocialLoading(null);

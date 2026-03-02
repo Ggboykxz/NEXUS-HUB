@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 
@@ -19,14 +18,13 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // Initialize Firebase with protection against multiple initializations
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore with multi-tab persistence to handle "Could not reach backend" errors
+// Initialize Firestore with multi-tab persistence
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
@@ -36,12 +34,15 @@ const db = initializeFirestore(app, {
 // Initialize App Check for CSRF/Abuse protection (only on client)
 if (typeof window !== "undefined") {
   try {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_KEY || '6Lc_placeholder_key'),
-      isTokenAutoRefreshEnabled: true
-    });
+    const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_KEY;
+    if (recaptchaKey && recaptchaKey !== '6Lc_placeholder_key') {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+        isTokenAutoRefreshEnabled: true
+      });
+    }
   } catch (e) {
-    console.warn("App Check initialization skipped or failed. This is expected in some dev environments.");
+    console.warn("App Check initialization skipped.");
   }
 }
 
