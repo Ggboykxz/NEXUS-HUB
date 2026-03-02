@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,6 +90,38 @@ function SignupForm() {
     },
   });
 
+  const password = form.watch('password');
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+  }, [password]);
+
+  const strengthLabel = useMemo(() => {
+    switch (passwordStrength) {
+      case 1: return 'Faible';
+      case 2: return 'Moyen';
+      case 3: return 'Fort';
+      case 4: return 'Très fort';
+      default: return '';
+    }
+  }, [passwordStrength]);
+
+  const strengthColor = useMemo(() => {
+    switch (passwordStrength) {
+      case 1: return 'bg-rose-500';
+      case 2: return 'bg-orange-500';
+      case 3: return 'bg-yellow-500';
+      case 4: return 'bg-emerald-500';
+      default: return 'bg-stone-800';
+    }
+  }, [passwordStrength]);
+
   const checkUserRoleAndRedirect = async (uid: string) => {
     const userDoc = await getDoc(doc(db, 'users', uid));
     if (!userDoc.exists() || !userDoc.data()?.role) {
@@ -119,6 +151,15 @@ function SignupForm() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (passwordStrength < 2) {
+      toast({
+        title: "Mot de passe trop faible",
+        description: "Veuillez renforcer votre mot de passe pour continuer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -448,7 +489,7 @@ function SignupForm() {
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
+                      <FormItem className="space-y-1.5">
                         <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Mot de passe</FormLabel>
                         <FormControl>
                           <div className="relative">
@@ -468,6 +509,31 @@ function SignupForm() {
                             </Button>
                           </div>
                         </FormControl>
+                        
+                        {/* PASSWORD STRENGTH INDICATOR */}
+                        <div className="space-y-2 pt-1">
+                          <div className="flex justify-between items-center px-1">
+                            <span className="text-[8px] font-black uppercase text-stone-500 tracking-widest">Sécurité</span>
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest", passwordStrength > 0 ? strengthColor.replace('bg-', 'text-') : 'text-stone-600')}>
+                              {strengthLabel || '---'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1 h-1">
+                            {[1, 2, 3, 4].map((step) => (
+                              <div 
+                                key={step}
+                                className={cn(
+                                  "flex-1 rounded-full transition-all duration-500",
+                                  passwordStrength >= step ? strengthColor : "bg-stone-800"
+                                )}
+                              />
+                            ))}
+                          </div>
+                          {password && passwordStrength < 2 && (
+                            <p className="text-[8px] text-rose-500 font-bold italic">Mot de passe trop simple. Ajoutez des majuscules ou chiffres.</p>
+                          )}
+                        </div>
+                        
                         <FormMessage className="text-[9px] md:text-[10px]" />
                       </FormItem>
                     )}
@@ -533,7 +599,14 @@ function SignupForm() {
                     )}
                   />
 
-                  <Button type="submit" disabled={isLoading} className="w-full h-12 md:h-14 rounded-xl font-black text-sm md:text-base bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)] transition-all active:scale-95 group overflow-hidden relative mt-2 gold-shimmer">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || passwordStrength < 2} 
+                    className={cn(
+                      "w-full h-12 md:h-14 rounded-xl font-black text-sm md:text-base transition-all active:scale-95 group relative overflow-hidden mt-2 gold-shimmer",
+                      passwordStrength >= 2 ? "bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)]" : "bg-stone-800 text-stone-500 cursor-not-allowed"
+                    )}
+                  >
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                       <>
                         S'inscrire au Hub
