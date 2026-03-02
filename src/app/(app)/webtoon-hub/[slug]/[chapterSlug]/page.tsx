@@ -1,17 +1,14 @@
 'use client';
 
 import { useState, useEffect, use, useRef, useCallback } from 'react';
-import { stories, comicPages } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, MessageSquare, SlidersHorizontal, X, ChevronRight, Heart, Share2, 
-  Sparkles, Flame, AlertCircle, Coins, Info, Languages, History, BrainCircuit,
-  Maximize2, Eye, Database, BatteryMedium, Wand2, BookOpen, Headphones, Music, Volume2, VolumeX,
-  Layout
+  ArrowLeft, SlidersHorizontal, X, ChevronRight, 
+  History, BrainCircuit, Eye, Database, BatteryMedium, 
+  Wand2, Headphones, Layout, Loader2
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -20,19 +17,19 @@ import { Label } from '@/components/ui/label';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { SponsoredPanel } from '@/components/ads/sponsored-panel';
-import { RewardedAdModal } from '@/components/ads/rewarded-ad-modal';
 import { augmentedReadingAction } from '@/ai/flows/augmented-reading-flow';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuery } from '@tanstack/react-query';
+import type { Story, Chapter } from '@/lib/types';
 
 interface MagicalReaderProps {
   params: Promise<{ slug: string, chapterSlug: string }>;
@@ -44,15 +41,38 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   
-  const story = stories.find(s => s.slug === slug);
-  if (!story) notFound();
+  // 1. Fetch Story by Slug
+  const { data: story, isLoading: loadingStory } = useQuery({
+    queryKey: ['reader-story', slug],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('slug', '==', slug), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const data = snap.docs[0].data();
+      
+      return { id: snap.docs[0].id, ...data } as Story;
+    }
+  });
 
-  const chapter = story.chapters?.find(c => c.slug === chapterSlug) || story.chapters?.[0] || { id: '1', title: 'Épisode', slug: '1', chapterNumber: 1 } as any;
-  
+  // 2. Fetch Chapter by Slug from Sub-collection
+  const { data: chapter, isLoading: loadingChapter } = useQuery({
+    queryKey: ['reader-chapter', story?.id, chapterSlug],
+    enabled: !!story?.id,
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'stories', story!.id, 'chapters'),
+        where('slug', '==', chapterSlug),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      return { id: snap.docs[0].id, ...snap.docs[0].data() } as Chapter;
+    }
+  });
+
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>(defaultMode);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<'comments' | 'ai'>('comments');
   const [progress, setProgress] = useState(0);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -62,11 +82,9 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
   const [isBatterySaver, setIsBatterySaver] = useState(false);
   const [isDoublePage, setIsDoublePage] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   
   // Audio Mode
   const [isAudioMode, setIsAudioMode] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   
   // AI State
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -98,6 +116,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
 
   const handleGetSummary = async () => {
     if (!currentUser) { openAuthModal('obtenir un résumé IA'); return; }
+    if (!story || !chapter) return;
     setIsSummaryOpen(true);
     setSummaryLoading(true);
     try {
@@ -122,6 +141,19 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
     });
   };
 
+  if (loadingStory || loadingChapter) {
+    return (
+      <div className="h-screen bg-stone-950 flex flex-col items-center justify-center gap-6">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase tracking-[0.3em] text-[10px]">
+          Ouverture du portail de lecture...
+        </p>
+      </div>
+    );
+  }
+
+  if (!story || !chapter) notFound();
+
   return (
     <div className={cn(
       "h-screen flex flex-col overflow-hidden text-stone-200 transition-all duration-1000",
@@ -130,7 +162,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
     )}>
       {/* HEADER NAVIGATION */}
       <nav className={cn(
-        "fixed top-0 left-0 right-0 h-14 bg-background/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
+        "fixed top-0 left-0 right-0 h-14 bg-stone-950/90 border-b border-white/5 z-50 flex items-center justify-between px-5 backdrop-blur-2xl reader-ui-transition",
         (!isUIVisible && !isFocusMode) && "reader-ui-hidden",
         isFocusMode && "opacity-0 pointer-events-none"
       )}>
@@ -140,7 +172,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
           <Button asChild variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-full bg-white/5 hover:bg-primary/10">
             <Link href={`/webtoon-hub/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span className="text-[9px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1 truncate max-w-[120px]">{story.title}</span>
             <span className="text-xs font-bold text-foreground truncate max-w-[150px]">Épisode {chapter.chapterNumber}</span>
           </div>
@@ -160,9 +192,9 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
           <Button onClick={() => setIsSettingsOpen(!isSettingsOpen)} variant="ghost" size="icon" className={cn("h-9 w-9 rounded-full bg-white/5", isSettingsOpen && "text-primary bg-primary/10")}>
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
-          <Button onClick={() => { setIsSidebarOpen(!isSidebarOpen); setSidebarTab('ai'); }} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-full bg-white/5", (isSidebarOpen && sidebarTab === 'ai') && "text-primary bg-primary/10")}>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={cn("h-9 w-9 flex items-center justify-center rounded-full bg-white/5", isSidebarOpen && "text-primary bg-primary/10")}>
             <BrainCircuit className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </nav>
       
@@ -181,9 +213,9 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
             activeMode === 'scroll' ? "max-w-[800px] flex flex-col items-center" : "max-w-7xl px-6",
             (activeMode === 'pages' && isDoublePage) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "flex flex-col items-center"
           )}>
-            {comicPages.map((page, index) => (
+            {chapter.pages?.map((page, index) => (
               <div 
-                key={page.id} 
+                key={index} 
                 className={cn(
                   "relative w-full aspect-[2/3] group cursor-pointer",
                   activeMode === 'pages' && "shadow-2xl border border-white/5 rounded-lg overflow-hidden mb-8"
@@ -195,7 +227,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
                     quality: isLowData ? 30 : 90, 
                     lowData: isLowData 
                   })}
-                  alt={page.description}
+                  alt={`Page ${index + 1}`}
                   fill
                   className="object-contain md:object-cover"
                   priority={index < 2}
@@ -203,14 +235,16 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
               </div>
             ))}
             
-            <div className="col-span-full">
+            <div className="col-span-full w-full">
               <SponsoredPanel />
-              <div className="py-32 text-center space-y-8 max-w-lg mx-auto">
-                <div className="bg-primary/10 p-6 rounded-[2.5rem] border border-primary/20 backdrop-blur-md">
-                  <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Chapitre Terminé</h2>
+              <div className="py-32 text-center space-y-8 max-w-lg mx-auto px-6">
+                <div className="bg-stone-900 border border-primary/20 p-10 rounded-[3rem] shadow-2xl backdrop-blur-md">
+                  <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Épisode Terminé</h2>
                   <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
                 </div>
-                <Button size="lg" className="w-full rounded-full px-12 h-14 font-black text-lg gold-shimmer shadow-2xl">Épisode Suivant <ChevronRight className="ml-2 h-5 w-5" /></Button>
+                <Button size="lg" className="w-full rounded-full px-12 h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
+                  Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
+                </Button>
               </div>
             </div>
           </div>
@@ -250,7 +284,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
 
         <aside className={cn(
           "fixed top-14 bottom-0 right-0 w-full lg:w-[400px] bg-stone-950 border-l border-white/5 z-40 transition-transform duration-500",
-          isSidebarOpen ? "translate-x-0" : "translate-x-full"
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
             <div className="flex gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
