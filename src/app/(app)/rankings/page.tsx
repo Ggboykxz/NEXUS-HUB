@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
-import { type Story, getStoryUrl } from '@/lib/data';
+import { getStoryUrl, type Story, type UserProfile } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, where, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, where, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { UserProfile } from '@/lib/types';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function RankingRowSkeleton() {
   return (
@@ -122,27 +122,8 @@ function PodiumCard({ story, rank, metric }: { story: Story, rank: number, metri
 }
 
 function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
-  const [visibleCount, setVisibleCount] = useState(7); // Show podium + 7 items initially
   const top3 = stories.slice(0, 3);
   const others = stories.slice(3);
-  const visibleOthers = others.slice(0, visibleCount);
-
-  // Implement Infinite Scroll logic
-  useEffect(() => {
-    if (visibleCount >= others.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        // Load 10 more
-        setVisibleCount(prev => Math.min(prev + 10, others.length));
-      }
-    }, { threshold: 0.1, rootMargin: '100px' });
-
-    const sentinel = document.getElementById(`sentinel-${metric}`);
-    if (sentinel) observer.observe(sentinel);
-
-    return () => observer.disconnect();
-  }, [visibleCount, others.length, metric]);
 
   return (
     <div className="space-y-20 animate-in fade-in duration-1000">
@@ -157,9 +138,9 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
         </section>
       )}
 
-      {/* OTHERS LIST (4-50) */}
+      {/* OTHERS LIST */}
       <div className="grid gap-6">
-        {visibleOthers.map((story, index) => {
+        {others.map((story, index) => {
           const storyUrl = getStoryUrl(story);
           const rank = index + 4;
 
@@ -232,14 +213,6 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
           );
         })}
       </div>
-
-      {/* INFINITE SCROLL SENTINEL */}
-      {visibleCount < others.length && (
-        <div id={`sentinel-${metric}`} className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
-          <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
-          <p className="text-[10px] text-stone-600 font-black uppercase tracking-[0.3em]">Ouverture des archives...</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -249,7 +222,6 @@ function ArtistRankingList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [visibleCount, setVisibleCount] = useState(10); // Show 10 artists initially
 
   useEffect(() => {
     return onAuthStateChanged(auth, (user) => setCurrentUser(user));
@@ -260,33 +232,15 @@ function ArtistRankingList() {
     queryFn: async () => {
       const q = query(
         collection(db, 'users'),
-        where('role', 'in', ['artist_pro', 'artist_draft']),
+        where('role', 'in', ['artist_draft', 'artist_pro', 'artist_elite']),
         orderBy('subscribersCount', 'desc'),
-        limit(50)
+        limit(20)
       );
       const snap = await getDocs(q);
       return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
     },
     staleTime: 10 * 60 * 1000,
   });
-
-  const visibleArtists = artists.slice(0, visibleCount);
-
-  // Implement Infinite Scroll logic for Artists
-  useEffect(() => {
-    if (visibleCount >= artists.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount(prev => Math.min(prev + 10, artists.length));
-      }
-    }, { threshold: 0.1, rootMargin: '100px' });
-
-    const sentinel = document.getElementById('sentinel-artists');
-    if (sentinel) observer.observe(sentinel);
-
-    return () => observer.disconnect();
-  }, [visibleCount, artists.length]);
 
   const followMutation = useMutation({
     mutationFn: async ({ artistId, isFollowing }: { artistId: string, isFollowing: boolean }) => {
@@ -339,7 +293,7 @@ function ArtistRankingList() {
 
   return (
     <div className="grid gap-4 animate-in fade-in duration-700">
-      {visibleArtists.map((artist, index) => {
+      {artists.map((artist, index) => {
         const rank = index + 1;
         return (
           <Card key={artist.uid} className="bg-stone-900/30 border-white/5 rounded-3xl p-6 hover:border-primary/20 transition-all group">
@@ -367,7 +321,6 @@ function ArtistRankingList() {
                   </div>
                   <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-stone-500">
                     <span className="flex items-center gap-1"><Users className="h-3 w-3 text-primary" /> {artist.subscribersCount.toLocaleString()} abonnés</span>
-                    <span className="flex items-center gap-1"><Eye className="h-3 w-3 text-stone-600" /> {Math.floor(Math.random() * 50000).toLocaleString()} vues</span>
                   </div>
                 </div>
               </Link>
@@ -383,14 +336,6 @@ function ArtistRankingList() {
           </Card>
         );
       })}
-
-      {/* INFINITE SCROLL SENTINEL FOR ARTISTS */}
-      {visibleCount < artists.length && (
-        <div id="sentinel-artists" className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
-          <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
-          <p className="text-[10px] text-stone-600 font-black uppercase tracking-[0.3em]">Appel des maîtres...</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -399,19 +344,38 @@ export default function RankingsPage() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'popular';
   
-  const { data: stories = [], isLoading } = useQuery<Story[]>({
-    queryKey: ['rankings-stories'],
+  // 1. FETCH POPULAR (BY VIEWS)
+  const { data: popular = [], isLoading: loadingPopular } = useQuery<Story[]>({
+    queryKey: ['rankings-popular'],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('isPublished', '==', true), limit(50));
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(50));
       const snap = await getDocs(q);
       return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
     },
     staleTime: 10 * 60 * 1000,
   });
 
-  const popular = useMemo(() => [...stories].sort((a, b) => b.views - a.views), [stories]);
-  const trending = useMemo(() => [...stories].sort((a, b) => b.likes - a.likes), [stories]);
-  const newest = useMemo(() => [...stories].sort((a, b) => new Date(b.updatedAt as string).getTime() - new Date(a.updatedAt as string).getTime()), [stories]);
+  // 2. FETCH TRENDING (BY LIKES)
+  const { data: trending = [], isLoading: loadingTrending } = useQuery<Story[]>({
+    queryKey: ['rankings-trending'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('likes', 'desc'), limit(50));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // 3. FETCH NEWEST (BY UPDATED DATE)
+  const { data: newest = [], isLoading: loadingNewest } = useQuery<Story[]>({
+    queryKey: ['rankings-newest'],
+    queryFn: async () => {
+      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('updatedAt', 'desc'), limit(30));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
   return (
     <div className="container max-w-7xl mx-auto px-6 py-12 space-y-16">
@@ -441,35 +405,58 @@ export default function RankingsPage() {
         </div>
       </header>
 
-      {isLoading ? (
-        <div className="space-y-6">
-          {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <div className="flex justify-center mb-16">
+          <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl w-full overflow-x-auto">
+              <TabsTrigger value="popular" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                  <Trophy className="h-4 w-4" /> Par Vues
+              </TabsTrigger>
+              <TabsTrigger value="trending" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
+                  <Heart className="h-4 w-4" /> Par Likes
+              </TabsTrigger>
+              <TabsTrigger value="newest" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
+                  <Sparkles className="h-4 w-4" /> Nouveaux
+              </TabsTrigger>
+              <TabsTrigger value="artists" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                  <Users className="h-4 w-4" /> Artistes
+              </TabsTrigger>
+          </TabsList>
         </div>
-      ) : (
-        <Tabs defaultValue={defaultTab} className="w-full">
-          <div className="flex justify-center mb-16">
-            <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl w-full overflow-x-auto">
-                <TabsTrigger value="popular" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-                    <Trophy className="h-4 w-4" /> Par Vues
-                </TabsTrigger>
-                <TabsTrigger value="trending" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
-                    <Heart className="h-4 w-4" /> Par Likes
-                </TabsTrigger>
-                <TabsTrigger value="newest" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
-                    <Sparkles className="h-4 w-4" /> Nouveaux
-                </TabsTrigger>
-                <TabsTrigger value="artists" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-                    <Users className="h-4 w-4" /> Artistes
-                </TabsTrigger>
-            </TabsList>
-          </div>
 
-          <TabsContent value="popular"><RankingList stories={popular} metric="views" /></TabsContent>
-          <TabsContent value="trending"><RankingList stories={trending} metric="likes" /></TabsContent>
-          <TabsContent value="newest"><RankingList stories={newest} metric="updatedAt" /></TabsContent>
-          <TabsContent value="artists"><ArtistRankingList /></TabsContent>
-        </Tabs>
-      )}
+        <TabsContent value="popular">
+          {loadingPopular ? (
+            <div className="space-y-6">
+              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+            </div>
+          ) : (
+            <RankingList stories={popular} metric="views" />
+          )}
+        </TabsContent>
+
+        <TabsContent value="trending">
+          {loadingTrending ? (
+            <div className="space-y-6">
+              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+            </div>
+          ) : (
+            <RankingList stories={trending} metric="likes" />
+          )}
+        </TabsContent>
+
+        <TabsContent value="newest">
+          {loadingNewest ? (
+            <div className="space-y-6">
+              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+            </div>
+          ) : (
+            <RankingList stories={newest} metric="updatedAt" />
+          )}
+        </TabsContent>
+
+        <TabsContent value="artists">
+          <ArtistRankingList />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
