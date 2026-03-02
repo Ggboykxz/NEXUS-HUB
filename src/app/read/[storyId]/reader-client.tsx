@@ -39,8 +39,56 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Card } from '@/components/ui/card';
 
 const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function PremiumGate({ chapter, userCoins, onUnlock, isUnlocking }: any) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-700">
+      <div className="relative">
+        <div className="h-32 w-32 bg-primary/10 rounded-full flex items-center justify-center border-4 border-primary/20 shadow-[0_0_50px_rgba(212,168,67,0.3)]">
+          <Crown className="h-16 w-16 text-primary animate-pulse" />
+        </div>
+        <div className="absolute -bottom-2 -right-2 bg-stone-900 border-2 border-primary/50 p-2 rounded-full shadow-2xl">
+          <Lock className="h-6 w-6 text-primary" />
+        </div>
+      </div>
+      
+      <div className="space-y-4 max-w-sm">
+        <h2 className="text-3xl font-display font-black text-white uppercase tracking-tight">Accès Premium</h2>
+        <p className="text-stone-400 italic font-light leading-relaxed">
+          "Cet épisode est une exclusivité réservée aux membres. Débloquez-le pour soutenir l'artiste et poursuivre votre quête."
+        </p>
+      </div>
+
+      <Card className="bg-stone-900 border-white/5 p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl space-y-6">
+        <div className="flex justify-between items-center text-stone-500 text-[10px] font-black uppercase tracking-widest px-2">
+          <span>Prix du chapitre</span>
+          <span>Votre solde</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="text-3xl font-black text-white">{chapter.afriCoinsPrice} 🪙</div>
+          <div className="text-3xl font-black text-primary">{userCoins} 🪙</div>
+        </div>
+        <Button 
+          onClick={onUnlock} 
+          disabled={isUnlocking || userCoins < chapter.afriCoinsPrice}
+          className="w-full h-16 rounded-2xl bg-primary text-black font-black text-xl gold-shimmer shadow-xl shadow-primary/20"
+        >
+          {isUnlocking ? <Loader2 className="animate-spin h-6 w-6" /> : `Débloquer pour ${chapter.afriCoinsPrice} 🪙`}
+        </Button>
+        {userCoins < chapter.afriCoinsPrice && (
+          <p className="text-[10px] text-rose-500 font-bold uppercase tracking-tighter">Solde insuffisant. Rechargez vos coins.</p>
+        )}
+      </Card>
+      
+      <Link href="/africoins" className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-600 hover:text-primary transition-colors">
+        Recharger mes AfriCoins <ChevronRight className="inline h-3 w-3" />
+      </Link>
+    </div>
+  );
+}
 
 function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsToggle, onBookmark, isBookmarked, isFullscreen, onToggleFullscreen, isVisible, onChapterChange, onShare }: any) {
   const storyUrl = getStoryUrl(story);
@@ -522,6 +570,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
   const queryClient = useQueryClient();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>('scroll');
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -535,6 +584,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
   const [readerBg, setReaderBg] = useState('#0a0a0a');
   const [brightness, setBrightness] = useState(100);
   const [swipeIndicator, setSwipeIndicator] = useState<'prev' | 'next' | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -574,11 +624,63 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
 
   const currentChapter = story?.chapters?.[currentChapterIndex];
 
+  // --- PREMIUM GATE CHECK ---
+  const { data: isUnlocked, isLoading: loadingUnlock } = useQuery({
+    queryKey: ['chapter-unlock', currentUser?.uid, currentChapter?.id],
+    enabled: !!currentUser && !!currentChapter?.isPremium,
+    queryFn: async () => {
+      const unlockRef = doc(db, 'users', currentUser!.uid, 'unlockedChapters', currentChapter!.id);
+      const snap = await getDoc(unlockRef);
+      return snap.exists();
+    }
+  });
+
+  const handleUnlock = async () => {
+    if (!currentUser) {
+      openAuthModal('débloquer ce chapitre Premium');
+      return;
+    }
+    if (!currentChapter) return;
+
+    const price = currentChapter.isPremium ? (currentChapter as any).afriCoinsPrice || 0 : 0;
+    
+    setIsUnlocking(true);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await transaction.get(userRef);
+        
+        if (!userSnap.exists()) throw new Error("Profil utilisateur introuvable.");
+        
+        const currentCoins = userSnap.data().afriCoins || 0;
+        if (currentCoins < price) throw new Error("Solde d'AfriCoins insuffisant.");
+
+        // Débiter les coins
+        transaction.update(userRef, { afriCoins: increment(-price) });
+        
+        // Créer l'accès débloqué
+        const unlockRef = doc(db, 'users', currentUser.uid, 'unlockedChapters', currentChapter.id);
+        transaction.set(unlockRef, {
+          unlockedAt: serverTimestamp(),
+          storyId,
+          chapterId: currentChapter.id,
+          pricePaid: price
+        });
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['chapter-unlock', currentUser.uid, currentChapter.id] });
+      toast({ title: "Chapitre débloqué !", description: "Bonne lecture !" });
+    } catch (e: any) {
+      toast({ title: "Action impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
+
   // --- ANALYTICS: TRACK PAGE VISIBILITY ---
   useEffect(() => {
-    if (!currentChapter || !story) return;
+    if (!currentChapter || !story || (currentChapter.isPremium && !isUnlocked)) return;
     
-    // Reset viewed pages for new chapter
     viewedPages.current.clear();
 
     const observer = new IntersectionObserver((entries) => {
@@ -589,7 +691,6 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
           if (!viewedPages.current.has(pageIndex)) {
             viewedPages.current.add(pageIndex);
             
-            // Track view in Firestore
             try {
               const chapterRef = doc(db, 'stories', storyId, 'chapters', currentChapter.id);
               await updateDoc(chapterRef, {
@@ -601,17 +702,17 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
           }
         }
       });
-    }, { threshold: 0.5 }); // Image must be 50% visible
+    }, { threshold: 0.5 });
 
     const pageElements = document.querySelectorAll('.chapter-page');
     pageElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [currentChapter, storyId]);
+  }, [currentChapter, storyId, isUnlocked]);
 
-  // --- STREAK REWARD TIMER (5 MINUTES) ---
+  // --- STREAK REWARD TIMER ---
   useEffect(() => {
-    if (!currentUser || !story || !currentChapter) return;
+    if (!currentUser || !story || !currentChapter || (currentChapter.isPremium && !isUnlocked)) return;
 
     const rewardTimer = setTimeout(async () => {
       try {
@@ -624,14 +725,11 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
           const userData = userDoc.data() as UserProfile;
           const today = new Date().toISOString().split('T')[0];
           
-          // 1. Check if already rewarded today
           if (userData.readingStreak?.lastReadDate === today) return;
           
-          // 2. Check weekly cap (14 coins)
           const weeklyCoins = (userData as any).readingStreak?.weeklyCoins || 0;
           if (weeklyCoins >= 14) return;
 
-          // 3. Apply rewards
           transaction.update(userRef, {
             afriCoins: increment(2),
             'readingStreak.currentCount': increment(1),
@@ -640,7 +738,6 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
             updatedAt: serverTimestamp()
           });
           
-          // SUCCESS TOAST
           toast({
             title: "🔥 Streak actif !",
             description: "+2 🪙 AfriCoins gagnés pour votre fidélité.",
@@ -649,10 +746,10 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       } catch (e) {
         console.error("Streak reward error:", e);
       }
-    }, 300000); // 5 minutes
+    }, 300000);
 
     return () => clearTimeout(rewardTimer);
-  }, [currentUser, story, currentChapter, toast]);
+  }, [currentUser, story, currentChapter, toast, isUnlocked]);
 
   const handleNextChapter = useCallback(() => {
     if (story?.chapters && currentChapterIndex < story.chapters.length - 1) {
@@ -736,7 +833,13 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
   }, []);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) setUserProfile(snap.data() as UserProfile);
+      }
+    });
     return unsub;
   }, []);
 
@@ -755,7 +858,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
         lastScrollY.current = scrollPosition;
       }
 
-      if (currentUser && story && currentChapter) {
+      if (currentUser && story && currentChapter && (!currentChapter.isPremium || isUnlocked)) {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(async () => {
           try {
@@ -779,7 +882,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       window.removeEventListener('scroll', handleScroll); 
       if (debounceTimer.current) clearTimeout(debounceTimer.current); 
     };
-  }, [currentUser, story, currentChapter, storyId]);
+  }, [currentUser, story, currentChapter, storyId, isUnlocked]);
 
   if (loadingStory) {
     return (
@@ -790,9 +893,10 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
     );
   }
 
-  if (!story) notFound();
+  if (!story || !currentChapter) notFound();
   
-  const pages = currentChapter?.pages || [];
+  const pages = currentChapter.pages || [];
+  const showPremiumGate = currentChapter.isPremium && !isUnlocked && !loadingUnlock;
 
   return (
     <div className="min-h-screen relative" style={{ backgroundColor: readerBg }}>
@@ -823,36 +927,51 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
         <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
-          <div className="w-full max-w-[800px] mx-auto flex flex-col items-center">
-            {pages.map((page, index) => (
-              <div 
-                key={index} 
-                data-page-index={index}
-                className="relative w-full aspect-[2/3] animate-in fade-in duration-1000 chapter-page" 
-                style={{ filter: `brightness(${brightness}%)` }}
-              >
-                <Image
-                  src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
-                  alt={`Page ${index + 1}`}
-                  fill
-                  className="object-contain md:object-cover"
-                  priority={index < 2}
-                  sizes="(max-width: 768px) 100vw, 800px"
-                />
+          <div className="w-full max-w-[800px] mx-auto flex flex-col items-center min-h-full">
+            {showPremiumGate ? (
+              <PremiumGate 
+                chapter={currentChapter} 
+                userCoins={userProfile?.afriCoins || 0} 
+                onUnlock={handleUnlock}
+                isUnlocking={isUnlocking}
+              />
+            ) : loadingUnlock ? (
+              <div className="flex-1 flex items-center justify-center py-32">
+                <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
               </div>
-            ))}
+            ) : (
+              <>
+                {pages.map((page, index) => (
+                  <div 
+                    key={index} 
+                    data-page-index={index}
+                    className="relative w-full aspect-[2/3] animate-in fade-in duration-1000 chapter-page" 
+                    style={{ filter: `brightness(${brightness}%)` }}
+                  >
+                    <Image
+                      src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
+                      alt={`Page ${index + 1}`}
+                      fill
+                      className="object-contain md:object-cover"
+                      priority={index < 2}
+                      sizes="(max-width: 768px) 100vw, 800px"
+                    />
+                  </div>
+                ))}
 
-            <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
-              <div className="bg-primary/10 p-10 rounded-[3rem] border border-primary/20 backdrop-blur-xl relative overflow-hidden group">
-                <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Épisode Terminé</h2>
-                <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
-              </div>
-              <div className="flex flex-col gap-4">
-                <Button onClick={handleNextChapter} size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
-                  Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
-                </Button>
-              </div>
-            </div>
+                <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
+                  <div className="bg-primary/10 p-10 rounded-[3rem] border border-primary/20 backdrop-blur-xl relative overflow-hidden group">
+                    <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Épisode Terminé</h2>
+                    <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <Button onClick={handleNextChapter} size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
+                      Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </main>
         
@@ -877,7 +996,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
         onShare={handleShare}
         onComment={() => { setSidebarOpen(true); setSidebarTab('comments'); }}
         commentsCount={0}
-        isVisible={isHeaderVisible}
+        isVisible={isHeaderVisible && !showPremiumGate}
       />
 
       <Sheet open={showSettings} onOpenChange={setShowSettings}>

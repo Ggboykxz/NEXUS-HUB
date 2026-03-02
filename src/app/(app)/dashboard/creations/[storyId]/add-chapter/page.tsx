@@ -386,14 +386,20 @@ export default function AddChapterPage(props: PageProps) {
 
                 {isPremium && (
                   <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Prix en AfriCoins</Label>
+                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Prix en AfriCoins (1-50)</Label>
                     <div className="flex items-center gap-4">
                       <div className="relative flex-1">
                         <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
                         <Input 
                           type="number"
+                          min={1}
+                          max={50}
                           value={afriCoinsPrice}
-                          onChange={(e) => setAfriCoinsPrice(parseInt(e.target.value) || 0)}
+                          onChange={(e) => {
+                            let val = parseInt(e.target.value) || 0;
+                            if (val > 50) val = 50;
+                            setAfriCoinsPrice(val);
+                          }}
                           className="h-14 pl-12 bg-black/40 border-primary/20 rounded-2xl text-xl font-black text-white"
                         />
                       </div>
