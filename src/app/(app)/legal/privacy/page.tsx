@@ -1,13 +1,5 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-
 export default function PrivacyPage() {
-    const [lastUpdated, setLastUpdated] = useState('');
-
-    useEffect(() => {
-        setLastUpdated(new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }));
-    }, []);
+    const lastUpdated = "20 Février 2026";
 
     return (
         <div>
