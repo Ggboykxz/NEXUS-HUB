@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Sparkles, Palette, Users, Zap, BrainCircuit, HeartPulse, 
   MessageSquareQuote, Brush, Layout, Waves, Wind, ShieldCheck,
-  ChevronRight, Loader2, Save, Send, Info, Wand2
+  ChevronRight, Loader2, Save, Send, Info, Wand2, AlertTriangle
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { aiStudioAction } from '@/ai/flows/ai-studio-flow';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function AIStudioPage() {
   const { toast } = useToast();
@@ -25,6 +26,45 @@ export default function AIStudioPage() {
   const handleRunAi = async () => {
     if (!promptText.trim()) return;
     setLoading(true);
+    setResult(null);
+
+    // MODE DÉMO (Pour le développement et les tests sans quota)
+    if (process.env.NEXT_PUBLIC_AI_DEMO_MODE === 'true') {
+      await new Promise(r => setTimeout(r, 1500)); // Simuler latence
+      
+      const mocks: Record<string, any> = {
+        storyboard: { 
+          result: "Case 1: Gros plan sur le regard déterminé de l'héroïne. Case 2: Elle s'élance à travers le marché de Libreville en évitant les étals de Bogolan. Case 3: Plan large, elle fait face à l'ombre colossale de l'Orisha invoqué.",
+          visualHints: ["Utilisez des lignes de vitesse cinétiques", "Accentuez les contrastes chaud/froid"]
+        },
+        character: { 
+          result: "Traits immuables : Yeux ambrés luisants, cicatrice en forme de fougère sur l'avant-bras gauche, porte toujours un pendentif protecteur en bronze.",
+          recommendations: ["Gardez la hauteur du bandeau constante"]
+        },
+        'color-palette': { 
+          result: "Palette 'Héritage Royal' : #8B4513 (Terre Cuite), #DAA520 (Or Ashanti), #2E8B57 (Vert Émeraude), #FF4500 (Ocre Brûlé), #000000 (Noir Intense).",
+          visualHints: ["Idéal pour les scènes de palais ou de cérémonie"]
+        },
+        onomatopoeia: { 
+          result: "BOUM-KRAK ! (Impact tellurique), SHHH-VUIIT ! (Déplacement mystique), KLO-KLOP (Bruit de sabots sur la latérite).",
+          visualHints: ["Utilisez une typographie angulaire et épaisse"]
+        },
+        burnout: { 
+          result: "Votre niveau de stress créatif semble élevé. La narration risque d'en pâtir.",
+          recommendations: [
+            "Accordez-vous une pause de 15 minutes loin des écrans.",
+            "Réalisez une esquisse rapide sur papier physique pour réinitialiser votre perception.",
+            "Hydratez-vous et pratiquez 3 cycles de respiration profonde."
+          ]
+        },
+      };
+
+      setResult(mocks[activeTab] || { result: "Analyse simulée en mode démo. Connectez une clé API pour les résultats réels." });
+      setLoading(false);
+      toast({ title: "Mode Démo Actif", description: "Résultat généré instantanément." });
+      return;
+    }
+
     try {
       const output = await aiStudioAction({
         toolType: activeTab as any,
@@ -33,8 +73,26 @@ export default function AIStudioPage() {
       });
       setResult(output);
       toast({ title: "Génération réussie !", description: "L'IA a terminé son analyse." });
-    } catch (e) {
-      toast({ title: "Erreur IA", variant: "destructive" });
+    } catch (e: any) {
+      console.error("AI Studio Error:", e);
+      const errorMessage = e.message || "";
+      
+      // Gestion spécifique des erreurs de maintenance/quota
+      if (errorMessage.toLowerCase().includes('api key') || 
+          errorMessage.toLowerCase().includes('quota') || 
+          errorMessage.toLowerCase().includes('expired')) {
+        toast({ 
+          title: "Service en maintenance", 
+          description: "Le Studio IA est momentanément indisponible. Réessayez dans quelques instants.",
+          variant: "destructive" 
+        });
+      } else {
+        toast({ 
+          title: "Erreur de connexion", 
+          description: "Le portail vers l'IA a rencontré une turbulence. Veuillez réessayer.", 
+          variant: "destructive" 
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -147,12 +205,18 @@ export default function AIStudioPage() {
                     </p>
                   </div>
 
-                  {result.recommendations && (
+                  {(result.recommendations || result.visualHints) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {result.recommendations.map((rec: string, i: number) => (
+                      {result.recommendations?.map((rec: string, i: number) => (
                         <div key={i} className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-2xl flex gap-3 items-start">
                           <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                           <p className="text-xs text-emerald-700 font-medium">{rec}</p>
+                        </div>
+                      ))}
+                      {result.visualHints?.map((hint: string, i: number) => (
+                        <div key={i} className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-2xl flex gap-3 items-start">
+                          <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-700 font-medium">{hint}</p>
                         </div>
                       ))}
                     </div>
