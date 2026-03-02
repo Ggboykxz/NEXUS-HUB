@@ -150,7 +150,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
     <div className={cn("group relative transition-all duration-500 animate-in fade-in zoom-in-95", className)}>
       {/* Main Card Container with Gold Glow */}
       <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-stone-100 mb-3 shadow-sm transition-all duration-700 ease-in-out hover:shadow-[0_0_30px_hsl(var(--primary)/0.3)] border border-transparent hover:border-primary/20">
-        <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`}>
+        <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`} prefetch={true}>
             <Image
               src={coverUrl}
               alt={story.title}
@@ -220,7 +220,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
                 
                 <div className="flex items-center gap-2">
                     <Button asChild className="flex-1 h-11 rounded-xl bg-primary text-black font-black uppercase text-xs gold-shimmer shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">
-                        <Link href={storyUrl} onClick={(e) => e.stopPropagation()}>
+                        <Link href={storyUrl} onClick={(e) => e.stopPropagation()} prefetch={true}>
                             <Play className="mr-2 h-4 w-4 fill-current" />
                             Lire
                         </Link>
@@ -272,7 +272,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
       {/* Metadata Section */}
       <div className="space-y-1 px-1">
         <div className="flex items-center justify-between gap-2">
-          <Link href={storyUrl} className="min-w-0">
+          <Link href={storyUrl} className="min-w-0" prefetch={true}>
               <h3 className="font-display font-black text-xs text-foreground group-hover:text-primary transition-colors truncate tracking-tight">{story.title}</h3>
           </Link>
           {relativeDate && (
@@ -284,7 +284,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
         
         {/* ARTIST NAME FADES IN WITH DELAY ON HOVER */}
         <div className="flex items-center gap-1 text-[10px] transition-all duration-500 delay-300 opacity-60 group-hover:opacity-100 group-hover:translate-x-1">
-            <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1">
+            <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1" prefetch={true}>
                 <span className="font-bold truncate max-w-[100px] text-stone-400 group-hover:text-stone-300">{artistInfo?.displayName || 'Artiste'}</span>
                 {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
             </Link>

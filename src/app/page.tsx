@@ -143,8 +143,46 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
     }
   });
 
+  const featured = popular.length > 0 ? popular[0] : null;
+
   return (
     <div className="container max-w-7xl mx-auto px-6 py-8 space-y-20 animate-in fade-in duration-1000">
+      {/* HERO SECTION FOR USER */}
+      <section className="relative w-full overflow-hidden">
+        <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
+          {featured ? (
+            <>
+              <Image 
+                src={featured.coverImage.imageUrl} 
+                alt={featured.title} 
+                fill 
+                className="object-cover opacity-50 transition-transform duration-[10000ms] hover:scale-110"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-8 md:p-16">
+                <div className="max-w-2xl space-y-4">
+                  <Badge className="bg-primary text-black border-none uppercase tracking-widest font-black text-[10px] px-3 py-1">NexusHub Originals</Badge>
+                  <h1 className="text-4xl md:text-6xl font-display font-black text-white leading-tight tracking-tighter">{featured.title}</h1>
+                  <p className="text-stone-300 text-sm md:text-lg font-light italic line-clamp-2">"{featured.description}"</p>
+                  <div className="flex gap-4 pt-4">
+                    <Button asChild size="lg" className="rounded-full font-black px-8 gold-shimmer h-14">
+                      <Link href={`/read/${featured.id}`} prefetch={true}><Play className="mr-2 h-5 w-5 fill-current" /> Lire l'Épisode</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-14 px-8">
+                      <Link href={`/read/${featured.id}`} prefetch={true}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* ONBOARDING BANNER */}
       {onboardingVisible && (
         <section className="animate-in slide-in-from-top-10 duration-700">
@@ -167,7 +205,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Link href="/stories" className="group">
+                <Link href="/stories" className="group" prefetch={true}>
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-primary/50 transition-all h-full space-y-4">
                     <div className="bg-primary/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><BookOpen className="h-6 w-6 text-primary" /></div>
                     <div>
@@ -176,7 +214,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     </div>
                   </div>
                 </Link>
-                <Link href="/settings" className="group">
+                <Link href="/settings" className="group" prefetch={true}>
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-emerald-500/50 transition-all h-full space-y-4">
                     <div className="bg-emerald-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Settings className="h-6 w-6 text-emerald-500" /></div>
                     <div>
@@ -185,7 +223,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     </div>
                   </div>
                 </Link>
-                <Link href="/africoins" className="group">
+                <Link href="/africoins" className="group" prefetch={true}>
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-amber-500/50 transition-all h-full space-y-4">
                     <div className="bg-amber-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Coins className="h-6 w-6 text-amber-500" /></div>
                     <div>
@@ -216,7 +254,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             <p className="text-xs text-white font-bold">5 min de lecture pour +1 🪙</p>
           </div>
           <Button asChild size="sm" className="rounded-full bg-primary text-black font-black px-6 h-9">
-            <Link href="/africoins">Détails</Link>
+            <Link href="/africoins" prefetch={true}>Détails</Link>
           </Button>
         </div>
       </section>
@@ -249,7 +287,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </div>
             <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
           </div>
-          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">Ma bibliothèque complète</Link>
+          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors" prefetch={true}>Ma bibliothèque complète</Link>
         </div>
 
         {isLoadingLibrary ? (
@@ -282,7 +320,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     <div className="h-full bg-primary" style={{ width: `${entry.progress}%` }} />
                   </div>
                   <Button asChild size="sm" variant="ghost" className="h-7 w-full rounded-lg text-[9px] font-black uppercase bg-white/5 hover:bg-primary hover:text-black">
-                    <Link href={`/read/${entry.storyId}`}>Lire</Link>
+                    <Link href={`/read/${entry.storyId}`} prefetch={true}>Lire</Link>
                   </Button>
                 </div>
               </div>
@@ -331,7 +369,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             <p className="text-stone-400 italic">"Ne lisez plus jamais seul. Participez aux débats enflammés sur vos séries préférées avec des milliers de passionnés."</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto">
-            <Link href="/clubs">
+            <Link href="/clubs" prefetch={true}>
               <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
                 <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
                 <div>
@@ -340,7 +378,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                 </div>
               </Card>
             </Link>
-            <Link href="/forums">
+            <Link href="/forums" prefetch={true}>
               <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
                 <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform"><Activity className="h-5 w-5 text-primary" /></div>
                 <div>
@@ -419,11 +457,11 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-4 pt-8">
-                    <Button asChild size="lg" className="h-16 px-10 rounded-full font-black text-xl shadow-2xl shadow-primary/30">
-                      <Link href={`/read/${featured.id}`}>Commencer l'Aventure</Link>
+                    <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/30 bg-primary text-black gold-shimmer">
+                      <Link href={`/read/${featured.id}`} prefetch={true}>Commencer l'Aventure</Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="h-16 px-10 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
-                      <Link href="/signup">S'inscrire Gratuitement</Link>
+                    <Button asChild variant="outline" size="lg" className="h-16 px-12 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
+                      <Link href="/signup" prefetch={true}>S'inscrire Gratuitement</Link>
                     </Button>
                   </div>
                 </div>
@@ -485,7 +523,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {REGIONS.map((region) => (
-              <Link key={region.slug} href={`/search?region=${region.name}`} className={cn("p-8 rounded-[2.5rem] border flex flex-col items-center justify-center gap-4 group hover:scale-105 transition-all shadow-xl", region.color)}>
+              <Link key={region.slug} href={`/search?region=${region.name}`} className={cn("p-8 rounded-[2.5rem] border flex flex-col items-center justify-center gap-4 group hover:scale-105 transition-all shadow-xl", region.color)} prefetch={true}>
                 <span className="text-5xl group-hover:rotate-12 transition-transform">{region.flag}</span>
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80 text-center">{region.name}</span>
               </Link>
@@ -499,7 +537,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
               <div className="bg-primary/10 p-2 rounded-lg"><TrendingUp className="h-6 w-6 text-primary" /></div>
               <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Tendances Mondiales</h2>
             </div>
-            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline">Voir tout le classement <ChevronRight className="h-3 w-3" /></Link>
+            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline" prefetch={true}>Voir tout le classement <ChevronRight className="h-3 w-3" /></Link>
           </div>
           
           {isLoading ? (
@@ -531,7 +569,9 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
               </div>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" className="rounded-full px-10 h-14 shadow-2xl">Participer au concours</Button>
-                <Button variant="outline" size="lg" className="rounded-full border-white/10 text-white font-bold h-14 px-8">Voir les Originals</Button>
+                <Button asChild variant="outline" size="lg" className="rounded-full border-white/10 text-white font-bold h-14 px-8">
+                  <Link href="/originals" prefetch={true}>Voir les Originals</Link>
+                </Button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -555,7 +595,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                     <h2 className="text-4xl font-display font-black text-white leading-tight">Boostez votre production avec l'IA</h2>
                     <p className="text-stone-400 text-lg font-light italic leading-relaxed">"Storyboard automatique, palettes textiles Kente et aide à la consistance des personnages. Libérez votre génie, NexusHub s'occupe du reste."</p>
                     <Button asChild size="lg" className="rounded-full bg-white text-black font-black px-10 h-14 shadow-2xl hover:bg-stone-200">
-                        <Link href="/dashboard/ai-studio">Accéder au Studio AI <ChevronRight className="ml-2 h-5 w-5" /></Link>
+                        <Link href="/dashboard/ai-studio" prefetch={true}>Accéder au Studio AI <ChevronRight className="ml-2 h-5 w-5" /></Link>
                     </Button>
                 </div>
                 <div className="relative aspect-video rounded-3xl overflow-hidden border-8 border-white/5 shadow-2xl">
@@ -584,7 +624,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
 
             <div className="flex flex-col items-center gap-8">
               <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 bg-primary text-black">
-                  <Link href="/submit">Lancer mon Projet Maintenant</Link>
+                  <Link href="/submit" prefetch={true}>Lancer mon Projet Maintenant</Link>
               </Button>
               
               <div className="flex flex-wrap justify-center gap-8 text-stone-500 text-[10px] font-black uppercase tracking-widest">
