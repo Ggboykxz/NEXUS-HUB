@@ -20,6 +20,7 @@ export type StoryStatus = 'En cours' | 'Terminé' | 'À venir';
 export type StoryTier = 'free' | 'draft' | 'pro' | 'premium';
 export type ChapterStatus = 'Brouillon' | 'Programmé' | 'Publié';
 export type MessageType = 'text' | 'image' | 'africoins' | 'sticker';
+export type UniverseRelation = 'Préquel' | 'Séquelle' | 'Spin-off' | 'Original';
 
 // ==================== USER ====================
 export interface UserProfile {
@@ -105,6 +106,8 @@ export interface Story {
   publishedAt?: Timestamp | string;
   updatedAt: Timestamp | string;
   region?: string;                  // Region d'origine (WA, CA, EA, etc.)
+  universeId?: string;              // Identifiant de l'univers partagé
+  universeRelation?: UniverseRelation; // Type de relation dans l'univers
   sponsoredBy?: {
     name: string;
     link: string;

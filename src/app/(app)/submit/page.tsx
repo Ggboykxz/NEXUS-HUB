@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, Globe, ChevronRight, CheckCircle2, UploadCloud, Loader2, ShieldAlert, Image as ImageIcon, X } from 'lucide-react';
+import { BookOpen, Users, Globe, ChevronRight, CheckCircle2, UploadCloud, Loader2, ShieldAlert, Image as ImageIcon, X, Zap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,6 +73,8 @@ export default function SubmitPage() {
     genre: '',
     format: 'Webtoon' as any,
     description: '',
+    universeId: '',
+    universeRelation: 'Original' as any,
   });
 
   useEffect(() => {
@@ -84,20 +86,17 @@ export default function SubmitPage() {
   }, []);
 
   const validateCover = async (file: File): Promise<boolean> => {
-    // 1. Type check
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({ title: "Format invalide", description: "Veuillez utiliser du JPG, PNG ou WebP.", variant: "destructive" });
       return false;
     }
 
-    // 2. Size check (5MB for covers)
     if (file.size > 5 * 1024 * 1024) {
       toast({ title: "Fichier trop lourd", description: "La couverture ne doit pas dépasser 5Mo.", variant: "destructive" });
       return false;
     }
 
-    // 3. Dimensions check (at least 300x400px)
     return new Promise((resolve) => {
       const img = new (window as any).Image();
       const objectUrl = URL.createObjectURL(file);
@@ -163,21 +162,20 @@ export default function SubmitPage() {
     
     setIsCreating(true);
     try {
-      // 1. Client-side compression
       setIsCompressing(true);
       const compressedBlob = await compressImage(coverFile, 1200, 0.85);
       setIsCompressing(false);
 
-      // 2. Prepare FormData
       const token = await getIdToken(user);
       const submissionData = new FormData();
       submissionData.append('title', formData.title);
       submissionData.append('genre', formData.genre);
       submissionData.append('format', formData.format);
       submissionData.append('description', formData.description);
+      submissionData.append('universeId', formData.universeId);
+      submissionData.append('universeRelation', formData.universeRelation);
       submissionData.append('cover', compressedBlob, 'cover.jpg');
 
-      // 3. Post to Next.js API
       const response = await fetch('/api/stories/create', {
         method: 'POST',
         headers: {
@@ -209,31 +207,6 @@ export default function SubmitPage() {
       setIsCreating(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <Loader2 className="animate-spin text-primary h-12 w-12" />
-        <p className="text-stone-500 font-display font-black uppercase tracking-[0.2em] text-[10px]">Chargement de l'atelier...</p>
-      </div>
-    );
-  }
-
-  if (user && !user.emailVerified) {
-    return (
-      <div className="container mx-auto max-xl px-4 py-24 text-center">
-        <ShieldAlert className="h-16 w-16 text-orange-500 mx-auto mb-6" />
-        <h1 className="text-3xl font-bold mb-4 font-display">Vérifiez votre Identité</h1>
-        <p className="text-muted-foreground mb-8 italic">
-          "Pour garantir la sécurité de la communauté, les messagers doivent prouver leur identité avant de partager leurs récits."
-        </p>
-        <div className="flex flex-col gap-4">
-          <Button onClick={handleResendEmail} className="rounded-full h-12 gold-shimmer">Renvoyer le lien de vérification</Button>
-          <Button variant="ghost" onClick={() => window.location.reload()}>J'ai vérifié mon email</Button>
-        </div>
-      </div>
-    );
-  }
 
   const steps = [
     { id: 1, label: "Récit", icon: BookOpen },
@@ -312,6 +285,38 @@ export default function SubmitPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* UNIVERSE FIELDS */}
+                <div className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary flex items-center gap-2">
+                      <Globe className="h-3 w-3" /> Lier à un univers (Optionnel)
+                    </Label>
+                    <Input 
+                      placeholder="Nom de l'univers partagé (ex: NexusVerse)" 
+                      className="h-12 bg-black/40 border-white/10 rounded-xl text-stone-300"
+                      value={formData.universeId}
+                      onChange={(e) => setFormData({...formData, universeId: e.target.value})}
+                    />
+                  </div>
+                  {formData.universeId && (
+                    <div className="space-y-3 animate-in fade-in zoom-in-95">
+                      <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Relation Narrative</Label>
+                      <Select value={formData.universeRelation} onValueChange={(val) => setFormData({...formData, universeRelation: val})}>
+                        <SelectTrigger className="h-12 bg-black/40 border-white/10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-stone-900 border-white/10">
+                          <SelectItem value="Original">Original / Pilier</SelectItem>
+                          <SelectItem value="Préquel">Préquel</SelectItem>
+                          <SelectItem value="Séquelle">Séquelle</SelectItem>
+                          <SelectItem value="Spin-off">Spin-off</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-3">
                   <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Synopsis</Label>
                   <Textarea 

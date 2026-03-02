@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Play, Heart, MessageSquare, Share2, Star, Eye, Clock, 
   ChevronRight, Award, Zap, Crown, Flame, Plus, Check, Info,
-  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle, Loader2
+  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle, Loader2, Globe
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +18,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, onSnapshot, collection, addDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import type { Story, UserProfile, Chapter, LibraryEntry } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
 import {
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/components/providers/language-provider';
+import { useQuery } from '@tanstack/react-query';
 
 interface StoryDetailClientProps {
   story: Story;
@@ -86,6 +87,23 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
       unsubLib();
     };
   }, [currentUser, story.id]);
+
+  // Fetch stories in the same universe
+  const { data: universeStories = [], isLoading: loadingUniverse } = useQuery({
+    queryKey: ['universe-stories', story.universeId],
+    enabled: !!story.universeId,
+    queryFn: async () => {
+      const q = query(
+        collection(db, 'stories'),
+        where('universeId', '==', story.universeId),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Story))
+        .filter(s => s.id !== story.id);
+    }
+  });
 
   const handleFavorite = async (showToast: boolean | React.MouseEvent = true) => {
     const shouldShowToast = typeof showToast === 'boolean' ? showToast : true;
@@ -209,61 +227,95 @@ export default function StoryDetailClient({ story, artist, similarStories }: Sto
         </div>
       </header>
 
-      <main className="container max-w-7xl mx-auto px-6 pt-32 md:pt-48 grid lg:grid-cols-3 gap-16">
-        <div className="lg:col-span-2 space-y-16">
-          <section className="space-y-8">
+      <main className="container max-w-7xl mx-auto px-6 pt-32 md:pt-48 space-y-24">
+        {/* UNIVERSE SECTION */}
+        {story.universeId && universeStories.length > 0 && (
+          <section className="space-y-8 animate-in fade-in duration-1000">
             <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-2xl"><Info className="h-6 w-6 text-primary" /></div>
-              <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Le Récit</h2>
+              <div className="bg-primary/10 p-3 rounded-2xl"><Globe className="h-6 w-6 text-primary" /></div>
+              <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Dans le Même Univers</h2>
             </div>
-            <p className="text-xl text-stone-400 leading-relaxed italic font-light border-l-4 border-primary/20 pl-8">"{story.description}"</p>
-          </section>
-
-          <section className="space-y-8">
-            <Tabs defaultValue="chapters" className="w-full">
-              <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 mb-10 border border-border/50 max-w-md">
-                <TabsTrigger value="chapters" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-                  <Clock className="h-4 w-4" /> {story.chapterCount} {t('common.chapters')}
-                </TabsTrigger>
-                <TabsTrigger value="comments" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-                  <MessageSquare className="h-4 w-4" /> Avis Fans
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="chapters" className="space-y-4 animate-in fade-in duration-700">
-                <div className="space-y-3">
-                  {displayedChapters?.map((chap, i) => (
-                    <Link key={chap.id} href={`/webtoon-hub/${story.slug}/${chap.slug}`} className="block group">
-                      <div className={cn("flex items-center gap-6 p-6 rounded-3xl border transition-all hover:shadow-2xl hover:-translate-y-1", libraryEntry?.lastReadChapterId === chap.id ? "bg-primary/5 border-primary/30" : "bg-card/50 border-white/5 hover:border-primary/30")}>
-                        <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center font-display font-black transition-all text-2xl", libraryEntry?.lastReadChapterId === chap.id ? "bg-primary text-black" : "bg-white/5 text-stone-600 group-hover:text-primary group-hover:bg-primary/10")}>{chap.chapterNumber}</div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">{chap.title}</h4>
-                          <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em] mt-1">Saison 1 &bull; Publié le 12 Fév.</p>
+            <ScrollArea className="w-full whitespace-nowrap pb-4">
+              <div className="flex gap-6">
+                {universeStories.map((uStory) => (
+                  <Link key={uStory.id} href={getStoryUrl(uStory)} className="w-[200px] shrink-0 group">
+                    <div className="space-y-3">
+                      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-white/10 group-hover:border-primary/50 transition-all shadow-xl">
+                        <Image src={uStory.coverImage.imageUrl} alt={uStory.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute top-2 left-2">
+                          <Badge className="bg-black/60 backdrop-blur-md border-white/10 text-[8px] font-black uppercase px-2 py-0.5">
+                            {uStory.universeRelation || 'Spin-off'}
+                          </Badge>
                         </div>
-                        {chap.isPremium ? <div className="bg-primary/10 p-3 rounded-full text-primary shadow-lg"><Crown className="h-5 w-5" /></div> : <div className="bg-emerald-500/10 p-3 rounded-full text-emerald-500"><Check className="h-5 w-5" /></div>}
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                      <div className="px-1 min-w-0">
+                        <h4 className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">{uStory.title}</h4>
+                        <p className="text-[9px] text-stone-500 font-medium uppercase tracking-widest truncate">{uStory.genre}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </ScrollArea>
           </section>
-        </div>
+        )}
 
-        <aside className="space-y-12">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] text-center space-y-2">
-              <Eye className="h-6 w-6 text-primary mx-auto mb-2" />
-              <p className="text-3xl font-black text-white tracking-tighter">{(story.views/1000).toFixed(0)}k</p>
-              <p className="text-[9px] uppercase font-black text-stone-600 tracking-widest">{t('common.views')}</p>
-            </div>
-            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] text-center space-y-2">
-              <Heart className="h-6 w-6 text-rose-500 mx-auto mb-2" />
-              <p className="text-3xl font-black text-white tracking-tighter">{(story.likes/1000).toFixed(0)}k</p>
-              <p className="text-[9px] uppercase font-black text-stone-600 tracking-widest">{t('common.likes')}</p>
-            </div>
+        <div className="grid lg:grid-cols-3 gap-16">
+          <div className="lg:col-span-2 space-y-16">
+            <section className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-primary/10 p-3 rounded-2xl"><Info className="h-6 w-6 text-primary" /></div>
+                <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Le Récit</h2>
+              </div>
+              <p className="text-xl text-stone-400 leading-relaxed italic font-light border-l-4 border-primary/20 pl-8">"{story.description}"</p>
+            </section>
+
+            <section className="space-y-8">
+              <Tabs defaultValue="chapters" className="w-full">
+                <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 mb-10 border border-border/50 max-w-md">
+                  <TabsTrigger value="chapters" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                    <Clock className="h-4 w-4" /> {story.chapterCount} {t('common.chapters')}
+                  </TabsTrigger>
+                  <TabsTrigger value="comments" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                    <MessageSquare className="h-4 w-4" /> Avis Fans
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chapters" className="space-y-4 animate-in fade-in duration-700">
+                  <div className="space-y-3">
+                    {displayedChapters?.map((chap, i) => (
+                      <Link key={chap.id} href={`/webtoon-hub/${story.slug}/${chap.slug}`} className="block group">
+                        <div className={cn("flex items-center gap-6 p-6 rounded-3xl border transition-all hover:shadow-2xl hover:-translate-y-1", libraryEntry?.lastReadChapterId === chap.id ? "bg-primary/5 border-primary/30" : "bg-card/50 border-white/5 hover:border-primary/30")}>
+                          <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center font-display font-black transition-all text-2xl", libraryEntry?.lastReadChapterId === chap.id ? "bg-primary text-black" : "bg-white/5 text-stone-600 group-hover:text-primary group-hover:bg-primary/10")}>{chap.chapterNumber}</div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors truncate">{chap.title}</h4>
+                            <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em] mt-1">Saison 1 &bull; Publié le 12 Fév.</p>
+                          </div>
+                          {chap.isPremium ? <div className="bg-primary/10 p-3 rounded-full text-primary shadow-lg"><Crown className="h-5 w-5" /></div> : <div className="bg-emerald-500/10 p-3 rounded-full text-emerald-500"><Check className="h-5 w-5" /></div>}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </section>
           </div>
-        </aside>
+
+          <aside className="space-y-12">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] text-center space-y-2">
+                <Eye className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-3xl font-black text-white tracking-tighter">{(story.views/1000).toFixed(0)}k</p>
+                <p className="text-[9px] uppercase font-black text-stone-600 tracking-widest">{t('common.views')}</p>
+              </div>
+              <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] text-center space-y-2">
+                <Heart className="h-6 w-6 text-rose-500 mx-auto mb-2" />
+                <p className="text-3xl font-black text-white tracking-tighter">{(story.likes/1000).toFixed(0)}k</p>
+                <p className="text-[9px] uppercase font-black text-stone-600 tracking-widest">{t('common.likes')}</p>
+              </div>
+            </div>
+          </aside>
+        </div>
       </main>
     </div>
   );

@@ -7,6 +7,8 @@ const CreateStorySchema = z.object({
   description: z.string().min(10).max(2000),
   genre: z.string().min(2),
   format: z.enum(['Webtoon', 'BD', 'One-shot', 'Roman Illustré', 'Hybride']),
+  universeId: z.string().max(50).optional(),
+  universeRelation: z.enum(['Préquel', 'Séquelle', 'Spin-off', 'Original']).optional(),
 });
 
 export async function POST(request: Request) {
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
       description: formData.get('description') as string,
       genre: formData.get('genre') as string,
       format: formData.get('format') as any,
+      universeId: formData.get('universeId') as string || undefined,
+      universeRelation: formData.get('universeRelation') as any || 'Original',
     };
 
     // 3. Validation du schéma
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Données invalides', details: validation.error.format() }, { status: 400 });
     }
 
-    const { title, description, genre, format } = validation.data;
+    const { title, description, genre, format, universeId, universeRelation } = validation.data;
 
     // 4. Génération et vérification du slug
     let slug = title.toLowerCase().trim()
@@ -89,6 +93,8 @@ export async function POST(request: Request) {
         width: 0,
         height: 0
       },
+      universeId: universeId || null,
+      universeRelation: universeId ? universeRelation : 'Original',
       isPublished: false,
       isBanned: false,
       isOriginal: false,
