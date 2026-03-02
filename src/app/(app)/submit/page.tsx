@@ -11,10 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
-import { auth, db, storage } from '@/lib/firebase';
-import { onAuthStateChanged, User, sendEmailVerification } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User, sendEmailVerification, getIdToken } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -88,7 +86,7 @@ export default function SubmitPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // Increased limit slightly because we compress anyway
+      if (file.size > 10 * 1024 * 1024) {
         toast({ title: "Fichier trop lourd", description: "La taille maximale avant compression est de 10Mo.", variant: "destructive" });
         return;
       }
@@ -133,57 +131,28 @@ export default function SubmitPage() {
       const compressedBlob = await compressImage(coverFile, 1200, 0.85);
       setIsCompressing(false);
 
-      // 2. Upload compressed blob to Storage
-      const timestamp = Date.now();
-      const storagePath = `covers/${user.uid}/${timestamp}_cover.jpg`;
-      const storageRef = ref(storage, storagePath);
-      
-      const uploadResult = await uploadBytes(storageRef, compressedBlob);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
+      // 2. Prepare FormData
+      const token = await getIdToken(user);
+      const submissionData = new FormData();
+      submissionData.append('title', formData.title);
+      submissionData.append('genre', formData.genre);
+      submissionData.append('format', formData.format);
+      submissionData.append('description', formData.description);
+      submissionData.append('cover', compressedBlob, 'cover.jpg');
 
-      // 3. Generate Unique Slug
-      let baseSlug = formData.title.toLowerCase().trim()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      
-      const storiesRef = collection(db, 'stories');
-      const q = query(storiesRef, where('slug', '==', baseSlug));
-      const querySnapshot = await getDocs(q);
-      
-      let finalSlug = baseSlug;
-      if (!querySnapshot.empty) {
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        finalSlug = `${baseSlug}-${randomSuffix}`;
-      }
-
-      // 4. Create Firestore doc
-      const storyData = {
-        ...formData,
-        artistId: user.uid,
-        artistName: user.displayName || 'Artiste Nexus',
-        coverImage: {
-          imageUrl: downloadURL,
-          width: 0,
-          height: 0
+      // 3. Post to Next.js API
+      const response = await fetch('/api/stories/create', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
         },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isPublished: false,
-        isBanned: false,
-        isOriginal: false,
-        isPremium: false,
-        views: 0,
-        likes: 0,
-        subscriptions: 0,
-        chapterCount: 0,
-        rating: 0,
-        slug: finalSlug,
-        genreSlug: formData.genre.toLowerCase(),
-        tags: [formData.genre],
-      };
+        body: submissionData
+      });
 
-      await addDoc(storiesRef, storyData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la création serveur');
+      }
 
       toast({
         title: "Légende créée !",
@@ -268,7 +237,7 @@ export default function SubmitPage() {
             <CardTitle className="text-2xl font-display font-black text-white flex items-center gap-3">
               {steps[step - 1].label}
             </CardTitle>
-            <CardDescription className="italic text-stone-500">"Les données sont transmises via un tunnel sécurisé vers nos serveurs."</CardDescription>
+            <CardDescription className="italic text-stone-500">"Validation serveur en cours pour une sécurité maximale."</CardDescription>
           </CardHeader>
           
           <CardContent className="p-10 space-y-8 min-h-[450px]">
@@ -384,7 +353,7 @@ export default function SubmitPage() {
                 <div className="max-w-md mx-auto space-y-4 bg-stone-950/50 p-8 rounded-[2rem] border border-white/5">
                   <h3 className="text-xl font-display font-black text-white uppercase tracking-tighter">Prêt pour l'Immortalité ?</h3>
                   <p className="text-xs text-stone-500 leading-relaxed italic font-light">
-                    "En lançant le projet, vous initialisez votre espace de création sécurisé. Vous pourrez ensuite ajouter vos chapitres, utiliser l'IA éditoriale et gérer votre équipe."
+                    "En lançant le projet via notre API sécurisée, vous initialisez votre espace de création. Vos données et votre image de couverture seront validées par nos scribes numériques."
                   </p>
                 </div>
               </div>
@@ -412,9 +381,9 @@ export default function SubmitPage() {
                 className="rounded-xl px-12 h-14 font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_0_30px_rgba(16,185,129,0.3)] group"
               >
                 {isCompressing ? (
-                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Compression en cours...</>
+                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Compression...</>
                 ) : isCreating ? (
-                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Forgeage du Récit...</>
+                  <><Loader2 className="mr-3 h-5 w-5 animate-spin" /> Validation API...</>
                 ) : "Lancer le Projet de Vie"}
               </Button>
             )}
