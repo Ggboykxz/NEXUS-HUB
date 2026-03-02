@@ -20,7 +20,9 @@ export const translations = {
       stats: "Statistiques",
       settings: "Paramètres",
       logout: "Se déconnecter",
-      profile: "Profil"
+      profile: "Profil",
+      originals: "Originals",
+      ai_studio: "AI Studio"
     },
     home: {
       hero_title: "Partagez Votre Vision",
@@ -38,7 +40,9 @@ export const translations = {
       vision_subtitle: "Soumettez Votre BD/Webtoon",
       vision_cta: "Soumettre Maintenant",
       community_title: "Ce Que Dit la Communauté",
-      community_cta: "Rejoindre la Discussion"
+      community_cta: "Rejoindre la Discussion",
+      start_adventure: "Commencer l'Aventure",
+      free_signup: "S'inscrire Gratuitement"
     },
     common: {
       read: "Lire",
@@ -54,7 +58,21 @@ export const translations = {
       trending_badge: "Tendance",
       low_data: "Mode Low-Data",
       battery_saver: "Éco Batterie",
-      listen: "Écouter"
+      listen: "Écouter",
+      start_quest: "Commencer la Quête",
+      resume_quest: "Reprendre la Quête",
+      finished: "Terminé"
+    },
+    footer: {
+      desc: "Le hub créatif de la narration visuelle africaine. Une plateforme dédiée à l'éclosion des talents et à la célébration de nos cultures.",
+      follow_us: "Suivez-nous pour les updates et concours !",
+      library: "Bibliothèque",
+      creation: "Création",
+      community: "Communauté",
+      support: "Support & Légal",
+      rights: "Tous droits réservés.",
+      made_with: "Fait avec",
+      in_gabon: "au Gabon"
     }
   },
   en: {
@@ -76,7 +94,9 @@ export const translations = {
       stats: "Analytics",
       settings: "Settings",
       logout: "Logout",
-      profile: "Profile"
+      profile: "Profile",
+      originals: "Originals",
+      ai_studio: "AI Studio"
     },
     home: {
       hero_title: "Share Your Vision",
@@ -94,7 +114,9 @@ export const translations = {
       vision_subtitle: "Submit Your Comic/Webtoon",
       vision_cta: "Submit Now",
       community_title: "What the Community Says",
-      community_cta: "Join the Discussion"
+      community_cta: "Join the Discussion",
+      start_adventure: "Start the Adventure",
+      free_signup: "Join for Free"
     },
     common: {
       read: "Read",
@@ -110,7 +132,21 @@ export const translations = {
       trending_badge: "Trending",
       low_data: "Low-Data Mode",
       battery_saver: "Battery Saver",
-      listen: "Listen"
+      listen: "Listen",
+      start_quest: "Start the Quest",
+      resume_quest: "Resume Quest",
+      finished: "Finished"
+    },
+    footer: {
+      desc: "The creative hub for African visual storytelling. A platform dedicated to talent growth and cultural celebration.",
+      follow_us: "Follow us for updates and contests!",
+      library: "Library",
+      creation: "Creation",
+      community: "Community",
+      support: "Support & Legal",
+      rights: "All rights reserved.",
+      made_with: "Made with",
+      in_gabon: "in Gabon"
     }
   },
   sw: {
@@ -132,7 +168,9 @@ export const translations = {
       stats: "Takwimu",
       settings: "Mipangilio",
       logout: "Ondoka",
-      profile: "Wasifu"
+      profile: "Wasifu",
+      originals: "Asili",
+      ai_studio: "AI Studio"
     },
     home: {
       hero_title: "Shiriki Maono Yako",
@@ -150,7 +188,9 @@ export const translations = {
       vision_subtitle: "Wasilisha Comic/Webtoon Yako",
       vision_cta: "Wasilisha Sasa",
       community_title: "Inavyosema Jamii",
-      community_cta: "Jiunge na Majadiliano"
+      community_cta: "Jiunge na Majadiliano",
+      start_adventure: "Anza Safari",
+      free_signup: "Jiunge Bure"
     },
     common: {
       read: "Soma",
@@ -166,7 +206,21 @@ export const translations = {
       trending_badge: "Inavuma",
       low_data: "Hali ya Data Chini",
       battery_saver: "Okoa Betri",
-      listen: "Sikiliza"
+      listen: "Sikiliza",
+      start_quest: "Anza Harakati",
+      resume_quest: "Endelea na Harakati",
+      finished: "Imekamilika"
+    },
+    footer: {
+      desc: "Kitovu cha ubunifu cha usimulizi wa hadithi za picha za Afrika. Jukwaa lililojitolea kwa ukuaji wa talanta na sherehe za kitamaduni.",
+      follow_us: "Tufuate kwa habari na mashindano!",
+      library: "Maktaba",
+      creation: "Uumbaji",
+      community: "Jamii",
+      support: "Msaada na Sheria",
+      rights: "Haki zote zimehifadhiwa.",
+      made_with: "Imetengenezwa na",
+      in_gabon: "nchini Gabon"
     }
   },
   ha: {
@@ -188,7 +242,9 @@ export const translations = {
       stats: "Alkaluma",
       settings: "Saituna",
       logout: "Fita",
-      profile: "Bayanan martaba"
+      profile: "Bayanan martaba",
+      originals: "Asali",
+      ai_studio: "AI Studio"
     },
     home: {
       hero_title: "Raba hangen nesa",
@@ -204,9 +260,11 @@ export const translations = {
       featured_artists: "Mawaƙan da aka sanya wa gaba",
       vision_title: "Kasance cikin Juyin Juya Halin Afirka",
       vision_subtitle: "Aika Comic/Webtoon naka",
-      vision_cta: "Aika Ynow",
+      vision_cta: "Aika Yanzu",
       community_title: "Abin da al'umma ke cewa",
-      community_cta: "Kasance cikin Tattaunawa"
+      community_cta: "Kasance cikin Tattaunawa",
+      start_adventure: "Fara Tafiya",
+      free_signup: "Yi Rajista Kyauta"
     },
     common: {
       read: "Karanta",
@@ -222,7 +280,21 @@ export const translations = {
       trending_badge: "Yana tasowa",
       low_data: "Yanayin Karancin Data",
       battery_saver: "Ajiye Batir",
-      listen: "Saurara"
+      listen: "Saurara",
+      start_quest: "Fara Neman",
+      resume_quest: "Ci gaba da Neman",
+      finished: "An kammala"
+    },
+    footer: {
+      desc: "Cibiyar kirkire-kirkire don ba da labari na gani na Afirka. Dandali ne da aka sadaukar don haɓaka basira da bikin al'adu.",
+      follow_us: "Ku biyo mu don sabuntawa da gasa!",
+      library: "Laburare",
+      creation: "Halitta",
+      community: "Al'umma",
+      support: "Taimako da Shari'a",
+      rights: "An kiyaye duk haƙƙoƙi.",
+      made_with: "An yi da",
+      in_gabon: "a Gabon"
     }
   },
   am: {
@@ -244,7 +316,9 @@ export const translations = {
       stats: "አኃዛዊ መረጃዎች",
       settings: "ቅንብሮች",
       logout: "ይውጡ",
-      profile: "መገለጫ"
+      profile: "መገለጫ",
+      originals: "ኦሪጅናል",
+      ai_studio: "AI Studio"
     },
     home: {
       hero_title: "ራዕይዎን ያካፍሉ",
@@ -262,7 +336,9 @@ export const translations = {
       vision_subtitle: "የእርስዎን ኮሚክ/Webtoon ያስገቡ",
       vision_cta: "አሁን ያስገቡ",
       community_title: "ማህበረሰቡ የሚለው",
-      community_cta: "ውይይቱን ይቀላቀሉ"
+      community_cta: "ውይይቱን ይቀላቀሉ",
+      start_adventure: "ጉዞውን ይጀምሩ",
+      free_signup: "በነጻ ይመዝገቡ"
     },
     common: {
       read: "አንብብ",
@@ -278,7 +354,21 @@ export const translations = {
       trending_badge: "በመታየት ላይ",
       low_data: "ዝቅተኛ የዳታ ሁኔታ",
       battery_saver: "ባትሪ ቆጣቢ",
-      listen: "ያዳምጡ"
+      listen: "ያዳምጡ",
+      start_quest: "ፍለጋ ይጀምሩ",
+      resume_quest: "ፍለጋ ይቀጥሉ",
+      finished: "ተጠናቋል"
+    },
+    footer: {
+      desc: "የአፍሪካ የእይታ ታሪክ ጥበብ ማዕከል። ለችሎታ ዕድገትና ለባሕል በዓል የተሰጠ መድረክ።",
+      follow_us: "ለዜናዎችና ለውድድሮች ይከተሉን!",
+      library: "ቤተ-መጽሐፍት",
+      creation: "ፍጥረት",
+      community: "ማህበረሰብ",
+      support: "እርዳታና ሕጋዊ",
+      rights: "መብቱ በሕግ የተጠበቀ ነው።",
+      made_with: "የተሰራው በ",
+      in_gabon: "በጋቦን"
     }
   },
   ar: {
@@ -300,7 +390,9 @@ export const translations = {
       stats: "الإحصائيات",
       settings: "الإعدادات",
       logout: "تسجيل الخروج",
-      profile: "الملف الشخصي"
+      profile: "الملف الشخصي",
+      originals: "أصلي",
+      ai_studio: "ستوديو الذكاء الاصطناعي"
     },
     home: {
       hero_title: "شارك رؤيتك",
@@ -318,7 +410,9 @@ export const translations = {
       vision_subtitle: "أرسل عملك الفني",
       vision_cta: "أرسل الآن",
       community_title: "ماذا يقول المجتمع",
-      community_cta: "انضم إلى النقاش"
+      community_cta: "انضم إلى النقاش",
+      start_adventure: "ابدأ المغامرة",
+      free_signup: "سجل مجاناً"
     },
     common: {
       read: "اقرأ",
@@ -334,7 +428,21 @@ export const translations = {
       trending_badge: "رائج",
       low_data: "وضع توفير البيانات",
       battery_saver: "توفير البطارية",
-      listen: "استمع"
+      listen: "استمع",
+      start_quest: "ابدأ الرحلة",
+      resume_quest: "استئناف الرحلة",
+      finished: "مكتمل"
+    },
+    footer: {
+      desc: "المركز الإبداعي لسرد القصص المرئية الأفريقية. منصة مخصصة لنمو المواهب والاحتفال بثقافاتنا.",
+      follow_us: "تابعنا للحصول على التحديثات والمسابقات!",
+      library: "المكتبة",
+      creation: "الإبداع",
+      community: "المجتمع",
+      support: "الدعم والقانون",
+      rights: "جميع الحقوق محفوظة.",
+      made_with: "صنع بـ",
+      in_gabon: "في الغابون"
     }
   }
 };

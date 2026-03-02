@@ -16,6 +16,7 @@ import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/components/providers/language-provider';
 import { 
   Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit, 
   Headphones, Film, Star, Flame, Gift, History, Bookmark, 
@@ -32,6 +33,7 @@ const REGIONS = [
 ];
 
 export default function RootHomePage() {
+  const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
@@ -54,7 +56,7 @@ export default function RootHomePage() {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 5 * 60 * 1000,
   });
 
   return (
@@ -72,7 +74,6 @@ export default function RootHomePage() {
   );
 }
 
-// ==================== COMPOSANTS SKELETON ====================
 function StoryGridSkeleton({ count = 5 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -87,8 +88,8 @@ function StoryGridSkeleton({ count = 5 }) {
   );
 }
 
-// ==================== VUE UTILISATEUR CONNECTÉ ====================
 function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { profile: UserProfile | null, currentUser: any, popular: Story[], isLoadingPopular: boolean }) {
+  const { t } = useTranslation();
   const [onboardingVisible, setOnboardingVisible] = useState(false);
 
   useEffect(() => {
@@ -129,25 +130,10 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
     }
   });
 
-  const { data: followedUpdates = [], isLoading: isLoadingFollowed } = useQuery({
-    queryKey: ['user-followed-updates', currentUser?.uid],
-    enabled: !!currentUser,
-    queryFn: async () => {
-      const q = query(
-        collection(db, 'stories'),
-        orderBy('updatedAt', 'desc'),
-        limit(5)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-    }
-  });
-
   const featured = popular.length > 0 ? popular[0] : null;
 
   return (
     <div className="container max-w-7xl mx-auto px-6 py-8 space-y-20 animate-in fade-in duration-1000">
-      {/* HERO SECTION FOR USER */}
       <section className="relative w-full overflow-hidden">
         <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
           {featured ? (
@@ -166,7 +152,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                   <p className="text-stone-300 text-sm md:text-lg font-light italic line-clamp-2">"{featured.description}"</p>
                   <div className="flex gap-4 pt-4">
                     <Button asChild size="lg" className="rounded-full font-black px-8 gold-shimmer h-14">
-                      <Link href={`/read/${featured.id}`} prefetch={true}><Play className="mr-2 h-5 w-5 fill-current" /> Lire l'Épisode</Link>
+                      <Link href={`/read/${featured.id}`} prefetch={true}><Play className="mr-2 h-5 w-5 fill-current" /> {t('common.read')}</Link>
                     </Button>
                     <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-14 px-8">
                       <Link href={`/read/${featured.id}`} prefetch={true}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
@@ -183,7 +169,6 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
         </div>
       </section>
 
-      {/* ONBOARDING BANNER */}
       {onboardingVisible && (
         <section className="animate-in slide-in-from-top-10 duration-700">
           <Card className="bg-stone-900 border-primary/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
@@ -238,34 +223,13 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
         </section>
       )}
 
-      <section className="bg-primary/10 border border-primary/20 rounded-3xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-primary/5">
-        <div className="flex items-center gap-4">
-          <div className="bg-primary/20 p-2 rounded-xl animate-pulse">
-            <Coins className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-black text-white uppercase tracking-widest">Bonus Quotidien</p>
-            <p className="text-xs text-primary font-bold italic">Vous avez gagné 2 🪙 aujourd'hui !</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="text-right hidden sm:block">
-            <p className="text-[10px] text-stone-500 uppercase font-black">Prochain palier</p>
-            <p className="text-xs text-white font-bold">5 min de lecture pour +1 🪙</p>
-          </div>
-          <Button asChild size="sm" className="rounded-full bg-primary text-black font-black px-6 h-9">
-            <Link href="/africoins" prefetch={true}>Détails</Link>
-          </Button>
-        </div>
-      </section>
-
       <section className="space-y-8">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
               <BrainCircuit className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Pour Toi : Affinités IA</h2>
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">{t('home.for_you_title')}</h2>
           </div>
           <Badge variant="outline" className="border-primary/20 text-primary text-[8px] font-black uppercase px-3">Algorithme Nexus v4</Badge>
         </div>
@@ -287,7 +251,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </div>
             <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
           </div>
-          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors" prefetch={true}>Ma bibliothèque complète</Link>
+          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors" prefetch={true}>{t('nav.library')}</Link>
         </div>
 
         {isLoadingLibrary ? (
@@ -320,7 +284,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     <div className="h-full bg-primary" style={{ width: `${entry.progress}%` }} />
                   </div>
                   <Button asChild size="sm" variant="ghost" className="h-7 w-full rounded-lg text-[9px] font-black uppercase bg-white/5 hover:bg-primary hover:text-black">
-                    <Link href={`/read/${entry.storyId}`} prefetch={true}>Lire</Link>
+                    <Link href={`/read/${entry.storyId}`} prefetch={true}>{t('common.read')}</Link>
                   </Button>
                 </div>
               </div>
@@ -332,70 +296,12 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
           </div>
         )}
       </section>
-
-      <section className="space-y-8">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/10">
-              <UserCheck className="h-5 w-5 text-emerald-500" />
-            </div>
-            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Suivis récents</h2>
-          </div>
-          <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3">NOUVEAU</Badge>
-        </div>
-        
-        {isLoadingFollowed ? (
-          <StoryGridSkeleton />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {followedUpdates.map(s => (
-              <div key={s.id} className="relative group">
-                <StoryCard story={s} />
-                <div className="absolute -top-2 -right-2 bg-rose-600 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-lg border-2 border-stone-950 animate-bounce">
-                  NOUVEAU
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="p-10 rounded-[3rem] bg-stone-900 border border-white/5 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 p-8 opacity-5"><Users className="h-48 w-48 text-emerald-500" /></div>
-        <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="space-y-4 text-center md:text-left max-w-xl">
-            <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3">COMMUNAUTÉ ACTIVE</Badge>
-            <h2 className="text-3xl font-display font-black text-white leading-tight">Rejoignez les Cercles de Discussion</h2>
-            <p className="text-stone-400 italic">"Ne lisez plus jamais seul. Participez aux débats enflammés sur vos séries préférées avec des milliers de passionnés."</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto">
-            <Link href="/clubs" prefetch={true}>
-              <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform"><MessageSquare className="h-5 w-5 text-emerald-500" /></div>
-                <div>
-                  <p className="text-xs font-bold text-white">Clubs de lecture</p>
-                  <p className="text-[9px] text-stone-500 uppercase font-black">1 245 membres en direct</p>
-                </div>
-              </Card>
-            </Link>
-            <Link href="/forums" prefetch={true}>
-              <Card className="bg-white/5 border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform"><Activity className="h-5 w-5 text-primary" /></div>
-                <div>
-                  <p className="text-xs font-bold text-white">Forums Publics</p>
-                  <p className="text-[9px] text-stone-500 uppercase font-black">850 débats aujourd'hui</p>
-                </div>
-              </Card>
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
 
-// ==================== VUE LANDING (VISITEURS) ====================
 function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
+  const { t } = useTranslation();
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
@@ -411,7 +317,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
 
   return (
     <div className="flex flex-col gap-24">
-      {/* 1. HERO EXCLUSIF ROTATIF */}
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-transparent to-stone-950 z-10 pointer-events-none" />
         <div className="relative w-full min-h-[85vh] flex items-end">
@@ -428,8 +333,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                 )}
                 priority={true}
                 fetchPriority="high"
-                placeholder="blur"
-                blurDataURL={featured.coverImage.blurHash || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="}
                 onLoad={() => setHeroLoaded(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
@@ -446,11 +349,9 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
               {featured ? (
                 <div key={featured.id} className="animate-in fade-in slide-in-from-left-8 duration-1000">
                   <div className="space-y-4">
-                    <Badge className="bg-primary text-black mb-2 uppercase tracking-widest font-black text-[10px] px-4 py-1">Exclusivité NexusHub</Badge>
+                    <Badge className="bg-primary text-black mb-2 uppercase tracking-widest font-black text-[10px] px-4 py-1">NexusHub Originals</Badge>
                     <h1 className="text-5xl md:text-8xl font-display font-black text-white leading-[0.85] tracking-tighter mb-6">
-                      {featured.title.split(' ').map((word: string, i: number) => (
-                        <span key={i} className={i === 1 ? "gold-resplendant block" : "block"}>{word} </span>
-                      ))}
+                      {featured.title}
                     </h1>
                     <p className="text-stone-300 text-lg md:text-2xl font-light italic leading-relaxed max-w-xl">
                       "{featured.description}"
@@ -458,10 +359,10 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                   </div>
                   <div className="flex flex-wrap gap-4 pt-8">
                     <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/30 bg-primary text-black gold-shimmer">
-                      <Link href={`/read/${featured.id}`} prefetch={true}>Commencer l'Aventure</Link>
+                      <Link href={`/read/${featured.id}`} prefetch={true}>{t('home.start_adventure')}</Link>
                     </Button>
                     <Button asChild variant="outline" size="lg" className="h-16 px-12 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
-                      <Link href="/signup" prefetch={true}>S'inscrire Gratuitement</Link>
+                      <Link href="/signup" prefetch={true}>{t('home.free_signup')}</Link>
                     </Button>
                   </div>
                 </div>
@@ -470,74 +371,21 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                   <Skeleton className="h-4 w-24 bg-stone-800" />
                   <Skeleton className="h-20 w-full bg-stone-800" />
                   <Skeleton className="h-20 w-3/4 bg-stone-800" />
-                  <div className="flex gap-4 pt-4">
-                    <Skeleton className="h-14 w-48 rounded-full bg-stone-800" />
-                    <Skeleton className="h-14 w-48 rounded-full bg-stone-800" />
-                  </div>
                 </div>
               )}
             </div>
-          </div>
-
-          {/* INDICATEURS HERO */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
-            {[...Array(Math.min(5, popular.length || 5))].map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setHeroLoaded(false); setHeroIndex(i); }}
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-700",
-                  heroIndex === i ? "bg-primary w-10 shadow-[0_0_15px_hsl(var(--primary))]" : "bg-white/20 w-4 hover:bg-white/40"
-                )}
-                aria-label={`Slide ${i + 1}`}
-              />
-            ))}
           </div>
         </div>
       </section>
 
       <div className="container max-w-7xl mx-auto px-6 space-y-24">
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { icon: Globe, title: "Panafricain", text: "15+ Pays représentés", color: "text-blue-500 bg-blue-500/10" },
-            { icon: Languages, title: "Multilingue", text: "6 Langues régionales", color: "text-emerald-500 bg-emerald-500/10" },
-            { icon: Coins, title: "Économie", text: "Payé en AfriCoins", color: "text-amber-500 bg-amber-500/10" },
-            { icon: Users, title: "Fans", text: "50k+ Passionnés", color: "text-primary bg-primary/10" },
-          ].map((item, i) => (
-            <div key={i} className="bg-card/50 border border-border/50 rounded-[2rem] p-6 flex items-center gap-4 group hover:border-primary/30 transition-all">
-              <div className={cn("p-3 rounded-2xl transition-transform group-hover:scale-110", item.color)}>
-                <item.icon className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{item.title}</p>
-                <p className="text-lg font-black text-foreground">{item.text}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className="space-y-10">
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl md:text-4xl font-display font-black text-white uppercase tracking-tighter">Découverte par Région</h2>
-            <p className="text-stone-500 italic font-light">"Chaque coin du continent a sa propre façon de raconter."</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {REGIONS.map((region) => (
-              <Link key={region.slug} href={`/search?region=${region.name}`} className={cn("p-8 rounded-[2.5rem] border flex flex-col items-center justify-center gap-4 group hover:scale-105 transition-all shadow-xl", region.color)} prefetch={true}>
-                <span className="text-5xl group-hover:rotate-12 transition-transform">{region.flag}</span>
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80 text-center">{region.name}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         <section>
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 p-2 rounded-lg"><TrendingUp className="h-6 w-6 text-primary" /></div>
-              <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Tendances Mondiales</h2>
+              <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">{t('home.trending')}</h2>
             </div>
-            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline" prefetch={true}>Voir tout le classement <ChevronRight className="h-3 w-3" /></Link>
+            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline" prefetch={true}>{t('home.popular')} <ChevronRight className="h-3 w-3" /></Link>
           </div>
           
           {isLoading ? (
@@ -549,90 +397,6 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
               ))}
             </div>
           )}
-        </section>
-
-        <section className="bg-stone-900 border border-primary/20 rounded-[3.5rem] p-12 relative overflow-hidden group shadow-2xl">
-          <div className="absolute top-0 right-0 p-8 opacity-5"><Trophy className="h-64 w-64 text-primary" /></div>
-          <div className="relative z-10 grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3">CONCOURS ACTIF</Badge>
-                  <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
-                    <Timer className="h-3.5 w-3.5" /> 12j : 05h : 42m
-                  </div>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-display font-black text-white leading-tight">Afrofuturisme 2100 : <br/>Le Grand Défi</h2>
-                <p className="text-stone-400 text-lg font-light italic leading-relaxed">
-                  "Imaginez l'Afrique du prochain siècle. 5 000€ de dotation et un contrat NexusHub Originals pour le gagnant."
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="rounded-full px-10 h-14 shadow-2xl">Participer au concours</Button>
-                <Button asChild variant="outline" size="lg" className="rounded-full border-white/10 text-white font-bold h-14 px-8">
-                  <Link href="/originals" prefetch={true}>Voir les Originals</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-white/5 border-white/5 p-6 rounded-[2rem] text-center space-y-2">
-                <p className="text-3xl font-black text-primary">5 000€</p>
-                <p className="text-[9px] text-stone-500 uppercase font-black">Grand Prix Cash</p>
-              </Card>
-              <Card className="bg-white/5 border-white/10 p-6 rounded-[2rem] text-center space-y-2">
-                <p className="text-3xl font-black text-emerald-500">50k 🪙</p>
-                <p className="text-[9px] text-stone-500 uppercase font-black">Bonus AfriCoins</p>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-12 rounded-[3rem] border border-white/5 bg-gradient-to-br from-stone-900 to-black relative overflow-hidden group">
-            <div className="absolute -bottom-10 -left-10 p-8 opacity-5"><BrainCircuit className="h-64 w-64 text-primary" /></div>
-            <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6">
-                    <Badge className="bg-primary text-black uppercase text-[8px] font-black px-4">POUR LES ARTISTES</Badge>
-                    <h2 className="text-4xl font-display font-black text-white leading-tight">Boostez votre production avec l'IA</h2>
-                    <p className="text-stone-400 text-lg font-light italic leading-relaxed">"Storyboard automatique, palettes textiles Kente et aide à la consistance des personnages. Libérez votre génie, NexusHub s'occupe du reste."</p>
-                    <Button asChild size="lg" className="rounded-full bg-white text-black font-black px-10 h-14 shadow-2xl hover:bg-stone-200">
-                        <Link href="/dashboard/ai-studio" prefetch={true}>Accéder au Studio AI <ChevronRight className="ml-2 h-5 w-5" /></Link>
-                    </Button>
-                </div>
-                <div className="relative aspect-video rounded-3xl overflow-hidden border-8 border-white/5 shadow-2xl">
-                  <Image src="https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg" alt="AI Studio" fill className="object-cover opacity-60" sizes="(max-width: 1024px) 100vw, 50vw" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/60 backdrop-blur-xl p-4 rounded-2xl border border-white/10 flex items-center gap-3">
-                      <Sparkles className="h-6 w-6 text-primary" />
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">Optimisation IA Active</span>
-                    </div>
-                  </div>
-                </div>
-            </div>
-        </section>
-
-        <section className="py-24 border-t border-border/50 text-center space-y-12">
-            <div className="max-w-3xl mx-auto space-y-6">
-                <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full">
-                    <Globe className="h-4 w-4 text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Rejoignez la Révolution</span>
-                </div>
-                <h2 className="text-4xl md:text-6xl font-display font-black leading-tight tracking-tighter">Votre talent mérite <br/> un public mondial</h2>
-                <p className="text-lg text-stone-400 font-light leading-relaxed italic">
-                    "Plus de 12 000€ ont été reversés à nos artistes Pro le mois dernier via les AfriCoins et les dons directs. Pas de frais cachés, juste votre art."
-                </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-8">
-              <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/20 bg-primary text-black">
-                  <Link href="/submit" prefetch={true}>Lancer mon Projet Maintenant</Link>
-              </Button>
-              
-              <div className="flex flex-wrap justify-center gap-8 text-stone-500 text-[10px] font-black uppercase tracking-widest">
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> 70% de revenus Artiste</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Publication 100% Gratuite</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Support Multilingue Auto</div>
-              </div>
-            </div>
         </section>
       </div>
     </div>

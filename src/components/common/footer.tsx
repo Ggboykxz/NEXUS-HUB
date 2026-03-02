@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { BookOpen, Heart, ShieldCheck } from 'lucide-react';
+import { useTranslation } from '../providers/language-provider';
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-background border-t border-border/50 mt-16 pt-16 pb-8">
       <div className="container mx-auto max-w-7xl px-6 lg:px-12">
-        {/* Sitemap Grid: 1 column on mobile, scaling up to 5 on large screens */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 mb-12">
           <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-1">
              <Link href="/" className="flex items-center gap-2 mb-5">
@@ -17,11 +19,11 @@ export default function Footer() {
                 <span className="font-display font-bold text-lg tracking-tight text-foreground">NexusHub<span className="text-primary">.</span></span>
             </Link>
             <p className="text-foreground/60 dark:text-stone-400 text-xs leading-relaxed max-w-xs font-light mb-6">
-              Le hub créatif de la narration visuelle africaine. Une plateforme dédiée à l'éclosion des talents et à la célébration de nos cultures.
+              {t('footer.desc')}
             </p>
             
             <div className="space-y-4">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-primary/80">Suivez-nous pour les updates et concours !</p>
+              <p className="text-[10px] uppercase font-bold tracking-widest text-primary/80">{t('footer.follow_us')}</p>
               <div className="flex gap-4">
                 <Link href="#" className="text-foreground/40 hover:text-primary transition-colors" aria-label="X (Twitter)">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -40,65 +42,51 @@ export default function Footer() {
                     <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                   </svg>
                 </Link>
-                <Link href="#" className="text-foreground/40 hover:text-primary transition-colors" aria-label="Discord">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.074 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                  </svg>
-                </Link>
-                <Link href="#" className="text-foreground/40 hover:text-primary transition-colors" aria-label="TikTok">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.525.02c1.31-.032 2.512.309 3.474 1.315.15.16.46.325.705.326 1.58.006 3.16.006 4.74 0 .28 0 .42.06.585.3a12.705 12.705 0 0 1 2.112 3.965c.144.402-.02.787-.356 1.017-.36.245-.75.45-1.137.656-.53.284-1.06.567-1.59.85-.1.053-.204.145-.228.24-.35 1.37-.88 2.685-1.516 3.937-.46.913-1.02 1.745-1.66 2.516-.14.17-.305.21-.503.21-1.61-.007-3.22-.003-4.83-.004-.21 0-.37-.06-.414-.28-.09-.447-.18-.893-.268-1.34-.095-.483.13-.88.51-.1" />
-                  </svg>
-                </Link>
               </div>
             </div>
           </div>
 
           <div>
-            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">Bibliothèque</h4>
+            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">{t('footer.library')}</h4>
             <ul className="space-y-2.5 text-xs text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/stories" className="hover:text-primary transition-colors">Tout le Catalogue</Link></li>
+              <li><Link href="/stories" className="hover:text-primary transition-colors">{t('nav.browse')} Tout</Link></li>
               <li><Link href="/webtoon-hub" className="hover:text-primary transition-colors">Univers Webtoons</Link></li>
               <li><Link href="/bd-africaine" className="hover:text-primary transition-colors">Bandes Dessinées</Link></li>
-              <li><Link href="/rankings" className="hover:text-primary transition-colors">Elite du Hub</Link></li>
-              <li><Link href="/new-releases" className="hover:text-primary transition-colors">Dernières Sorties</Link></li>
-              <li><Link href="/completed" className="hover:text-primary transition-colors">Séries Terminées</Link></li>
+              <li><Link href="/rankings" className="hover:text-primary transition-colors">{t('nav.rankings')}</Link></li>
+              <li><Link href="/new-releases" className="hover:text-primary transition-colors">{t('home.new')}</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">Création</h4>
+            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">{t('footer.creation')}</h4>
             <ul className="space-y-2.5 text-xs text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/submit" className="hover:text-primary transition-colors">Soumettre Votre Projet</Link></li>
-              <li><Link href="/artists" className="hover:text-primary transition-colors">Nos Créateurs</Link></li>
+              <li><Link href="/submit" className="hover:text-primary transition-colors">{t('nav.submit')}</Link></li>
+              <li><Link href="/artists" className="hover:text-primary transition-colors">{t('nav.artists')}</Link></li>
               <li><Link href="/mentorship" className="hover:text-primary transition-colors">Programme Mentorat</Link></li>
-              <li><Link href="/dashboard/creations" className="hover:text-primary transition-colors">Mon Atelier</Link></li>
-              <li><Link href="/dashboard/world-building" className="hover:text-primary transition-colors">Outils World Building</Link></li>
-              <li><Link href="/submit" className="hover:text-primary transition-colors font-semibold text-emerald-500">Devenir NexusHub Pro</Link></li>
+              <li><Link href="/dashboard/creations" className="hover:text-primary transition-colors">{t('nav.workshop')}</Link></li>
+              <li><Link href="/dashboard/world-building" className="hover:text-primary transition-colors">World Building</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">Communauté</h4>
+            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">{t('footer.community')}</h4>
             <ul className="space-y-2.5 text-xs text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/forums" className="hover:text-primary transition-colors">Rejoindre la Communauté</Link></li>
+              <li><Link href="/forums" className="hover:text-primary transition-colors">{t('nav.forums')}</Link></li>
               <li><Link href="/blog" className="hover:text-primary transition-colors">Blog & Ressources</Link></li>
-              <li><Link href="/shop" className="hover:text-primary transition-colors">Boutique Goodies</Link></li>
-              <li><Link href="/library" className="hover:text-primary transition-colors">Ma Bibliothèque</Link></li>
-              <li><Link href="/playlists" className="hover:text-primary transition-colors">Mes Playlists</Link></li>
-              <li><Link href="/notifications" className="hover:text-primary transition-colors">Mes Notifications</Link></li>
+              <li><Link href="/shop" className="hover:text-primary transition-colors">{t('nav.shop')}</Link></li>
+              <li><Link href="/library" className="hover:text-primary transition-colors">{t('nav.library')}</Link></li>
+              <li><Link href="/playlists" className="hover:text-primary transition-colors">{t('nav.playlists')}</Link></li>
             </ul>
           </div>
 
            <div>
-            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">Support & Légal</h4>
+            <h4 className="font-bold mb-5 text-[11px] text-foreground uppercase tracking-widest">{t('footer.support')}</h4>
             <ul className="space-y-2.5 text-xs text-foreground/70 dark:text-stone-400 font-light">
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact / Feedback</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
               <li><Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales</Link></li>
               <li><Link href="/legal/privacy" className="hover:text-primary transition-colors">Confidentialité</Link></li>
-              <li><Link href="/legal/cookies" className="hover:text-primary transition-colors">Cookies</Link></li>
-              <li><Link href="/settings" className="hover:text-primary transition-colors">Paramètres</Link></li>
+              <li><Link href="/settings" className="hover:text-primary transition-colors">{t('nav.settings')}</Link></li>
             </ul>
           </div>
         </div>
@@ -106,33 +94,13 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-center border-t border-border/50 pt-6 gap-4">
            <div className="flex flex-col sm:flex-row items-center text-[10px] text-foreground/40 font-light gap-4 flex-wrap justify-center sm:justify-start">
              <div className="flex items-center gap-4">
-                <p>&copy; 2026 NexusHub – Tous droits réservés.</p>
-                <div className="hidden sm:flex gap-3">
-                    <span>Libreville</span>
-                    <span>Dakar</span>
-                    <span>Lagos</span>
-                    <span>Abidjan</span>
-                </div>
+                <p>&copy; 2026 NexusHub – {t('footer.rights')}</p>
              </div>
              
              <div className="flex items-center gap-1.5 font-medium sm:border-l border-border/50 sm:pl-4">
-                <span>Made with</span>
+                <span>{t('footer.made_with')}</span>
                 <Heart className="h-3 w-3 text-destructive fill-destructive" />
-                <span>in Gabon 🇬🇦</span>
-             </div>
-
-             <div className="flex flex-col items-center sm:items-start justify-center font-semibold sm:border-l border-border/50 sm:pl-4">
-                <span className="leading-tight text-foreground/60">
-                  Développé par <a href="mailto:ggboykxz@gmail.com" className="text-destructive hover:opacity-80 transition-colors">@All Might</a>
-                </span>
-             </div>
-
-             <div className="flex items-center gap-3 sm:border-l border-border/50 sm:pl-4">
-                <Link href="/legal/terms" className="hover:text-primary transition-colors">Mentions Légales</Link>
-                <span className="opacity-20">|</span>
-                <Link href="/legal/privacy" className="hover:text-primary transition-colors">Confidentialité</Link>
-                <span className="opacity-20">|</span>
-                <Link href="/legal/cookies" className="hover:text-primary transition-colors">Cookies</Link>
+                <span>{t('footer.in_gabon')} 🇬🇦</span>
              </div>
            </div>
            <div className="flex items-center gap-5">

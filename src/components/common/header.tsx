@@ -36,6 +36,7 @@ import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { LanguageSwitcher } from './language-switcher';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -55,14 +56,12 @@ export default function Header() {
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Animation State for AfriCoins
   const [isCoinFlashing, setIsCoinFlashing] = useState(false);
   const prevCoinsRef = useRef<number | undefined>(undefined);
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
-  // Fetch top 3 stories for Mega Menu
   const { data: trendingStories = [] } = useQuery({
     queryKey: ['mega-menu-trending'],
     queryFn: async () => {
@@ -105,7 +104,6 @@ export default function Header() {
     };
   }, []);
 
-  // Track AfriCoins changes for animation
   useEffect(() => {
     if (userProfile?.afriCoins !== undefined) {
       if (prevCoinsRef.current !== undefined && userProfile.afriCoins > prevCoinsRef.current) {
@@ -177,9 +175,25 @@ export default function Header() {
     recognition.start();
   };
 
+  // Label mapping based on keys in translations.ts
+  const getNavLabel = (link: NavLink) => {
+    const keyMap: Record<string, string> = {
+      "Parcourir": "nav.browse",
+      "Classements": "nav.rankings",
+      "Artistes": "nav.artists",
+      "Forums": "nav.forums",
+      "Boutique": "nav.shop",
+      "Originals": "nav.originals",
+      "AI Studio": "nav.ai_studio",
+      "NexusHub Pro": "nav.pro"
+    };
+    return t(keyMap[link.label] || link.label);
+  };
+
   const NavLinkRenderer = ({ link, className } : { link: NavLink, className?: string }) => {
     const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
-    const isBrowse = link.label === t('nav.browse');
+    const isBrowse = link.label === "Parcourir";
+    const label = getNavLabel(link);
     
     if (isBrowse || link.isGenreDropdown || (link.subLinks && link.subLinks.length > 0)) {
       return (
@@ -200,7 +214,7 @@ export default function Header() {
                 isActive ? 'text-foreground' : 'text-foreground/60'
               )}
             >
-              <span>{link.label}</span>
+              <span>{label}</span>
               <ChevronDown className="h-3 w-3 opacity-50" />
             </DropdownMenuTrigger>
             
@@ -215,7 +229,7 @@ export default function Header() {
                 <div className="flex h-full">
                   <div className="w-1/2 p-6 border-r border-white/5 space-y-6">
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mb-4">Bibliothèque</p>
+                      <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mb-4">{t('footer.library')}</p>
                       {[
                         { label: 'Webtoon Hub', href: '/webtoon-hub', icon: Layers, color: 'text-primary' },
                         { label: 'BD Africaine', href: '/bd-africaine', icon: Book, color: 'text-emerald-500' },
@@ -241,7 +255,7 @@ export default function Header() {
 
                   <div className="w-1/2 bg-white/[0.02] p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.2em]">Tendances</p>
+                      <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.2em]">{t('home.trending')}</p>
                       <TrendingUp className="h-3 w-3 text-stone-600" />
                     </div>
                     <div className="space-y-4">
@@ -274,7 +288,7 @@ export default function Header() {
                   {link.isGenreDropdown && (
                     <>
                       <DropdownMenuItem asChild className="rounded-xl h-10">
-                        <Link href="/stories" className="flex items-center gap-3 font-bold"><LayoutGrid className="h-4 w-4 text-primary" />{t('nav.browse')} Tout</Link>
+                        <Link href="/stories" className="flex items-center gap-3 font-bold"><LayoutGrid className="h-4 w-4 text-primary" />{label} Tout</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-primary/5" />
                       <DropdownMenuLabel className="text-[9px] uppercase font-black text-muted-foreground px-3 pt-3 pb-1 tracking-[0.2em]">Genres Populaires</DropdownMenuLabel>
@@ -302,7 +316,7 @@ export default function Header() {
 
     return (
       <Link href={link.href} className={cn('flex items-center gap-2 hover:text-primary transition-colors text-[11px] uppercase font-black tracking-widest', isActive ? 'text-foreground' : 'text-foreground/60', className)}>
-        <span>{link.label}</span>
+        <span>{label}</span>
         {link.badge && <Badge variant={link.badge.variant === 'green' ? 'default' : 'outline'} className={cn("text-[8px] px-1 py-0 h-3.5", link.badge.variant === 'green' ? "bg-emerald-500 border-none shadow-emerald-500/20" : "border-orange-500/50 text-orange-400")}>{link.badge.label}</Badge>}
       </Link>
     );
@@ -330,6 +344,8 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            
             <div className="hidden md:flex items-center gap-3">
               {isLoggedIn && userProfile && (
                 <div className="flex items-center gap-3 mr-2 px-3 py-1.5 bg-primary/5 rounded-full border border-primary/10 group cursor-help" title="Votre série de lecture actuelle">
@@ -405,12 +421,12 @@ export default function Header() {
                         <Badge variant="outline" className="text-[8px] h-4 uppercase border-primary/30 text-primary font-black">{userProfile?.role === 'reader' ? 'Lecteur' : 'Artiste'}</Badge>
                       </div>
                     </div>
-                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/profile/me"><UserCircle className="h-4 w-4 text-muted-foreground" />Mon Profil</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/library"><Library className="h-4 w-4 text-muted-foreground" />Ma Bibliothèque</Link></DropdownMenuItem>
-                    {userProfile?.role?.includes('artist') && <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/dashboard/creations"><Brush className="h-4 w-4 text-muted-foreground" />Mon Atelier</Link></DropdownMenuItem>}
-                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/settings"><Settings className="h-4 w-4 text-muted-foreground" />Paramètres</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/profile/me"><UserCircle className="h-4 w-4 text-muted-foreground" />{t('nav.profile')}</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/library"><Library className="h-4 w-4 text-muted-foreground" />{t('nav.library')}</Link></DropdownMenuItem>
+                    {userProfile?.role?.includes('artist') && <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/dashboard/creations"><Brush className="h-4 w-4 text-muted-foreground" />{t('nav.workshop')}</Link></DropdownMenuItem>}
+                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/settings"><Settings className="h-4 w-4 text-muted-foreground" />{t('nav.settings')}</Link></DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-primary/5" />
-                    <DropdownMenuItem onClick={handleLogout} className="rounded-xl h-10 gap-3 text-destructive focus:bg-destructive/10 focus:text-destructive font-black text-xs"><LogOut className="h-4 w-4" />Déconnexion</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="rounded-xl h-10 gap-3 text-destructive focus:bg-destructive/10 focus:text-destructive font-black text-xs"><LogOut className="h-4 w-4" />{t('nav.logout')}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -427,7 +443,7 @@ export default function Header() {
                     <nav className="space-y-2">
                       {navLinks.map((l, i) => (
                         <Link key={i} href={l.href} className="flex items-center gap-4 py-4 text-lg font-black uppercase tracking-tighter hover:text-primary transition-colors border-b border-white/5">
-                          <l.icon className="h-5 w-5 text-primary" />{l.label}
+                          <l.icon className="h-5 w-5 text-primary" />{getNavLabel(l)}
                         </Link>
                       ))}
                     </nav>
@@ -444,7 +460,7 @@ export default function Header() {
             <Input 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              placeholder="Titre, thème, auteur, genre..." 
+              placeholder={t('nav.search')}
               className="h-11 w-full pl-12 pr-12 rounded-full bg-white/5 border-white/10 text-white focus:border-primary shadow-2xl transition-all font-light" 
               autoFocus 
             />
