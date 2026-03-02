@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc, runTransaction, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, orderBy, setDoc, serverTimestamp, addDoc, increment, limit, updateDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { notFound, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -538,8 +538,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
   
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
+  const viewedPages = useRef<Set<number>>(new Set());
 
   const initialChapterId = searchParams.get('chapter');
 
@@ -574,6 +573,41 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
   }, [story, initialChapterId]);
 
   const currentChapter = story?.chapters?.[currentChapterIndex];
+
+  // --- ANALYTICS: TRACK PAGE VISIBILITY ---
+  useEffect(() => {
+    if (!currentChapter || !story) return;
+    
+    // Reset viewed pages for new chapter
+    viewedPages.current.clear();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+          const pageIndex = parseInt(entry.target.getAttribute('data-page-index') || '0');
+          
+          if (!viewedPages.current.has(pageIndex)) {
+            viewedPages.current.add(pageIndex);
+            
+            // Track view in Firestore
+            try {
+              const chapterRef = doc(db, 'stories', storyId, 'chapters', currentChapter.id);
+              await updateDoc(chapterRef, {
+                [`pageStats.${pageIndex}.views`]: increment(1)
+              });
+            } catch (e) {
+              console.error("Error tracking page view:", e);
+            }
+          }
+        }
+      });
+    }, { threshold: 0.5 }); // Image must be 50% visible
+
+    const pageElements = document.querySelectorAll('.chapter-page');
+    pageElements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [currentChapter, storyId]);
 
   const handleNextChapter = useCallback(() => {
     if (story?.chapters && currentChapterIndex < story.chapters.length - 1) {
@@ -746,7 +780,12 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
         <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
           <div className="w-full max-w-[800px] mx-auto flex flex-col items-center">
             {pages.map((page, index) => (
-              <div key={index} className="relative w-full aspect-[2/3] animate-in fade-in duration-1000" style={{ filter: `brightness(${brightness}%)` }}>
+              <div 
+                key={index} 
+                data-page-index={index}
+                className="relative w-full aspect-[2/3] animate-in fade-in duration-1000 chapter-page" 
+                style={{ filter: `brightness(${brightness}%)` }}
+              >
                 <Image
                   src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
                   alt={`Page ${index + 1}`}

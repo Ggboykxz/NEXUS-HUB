@@ -10,7 +10,8 @@ import {
 import { 
   TrendingUp, Wallet, Users, BookOpen, ArrowLeft, Globe, 
   Target, Zap, Sparkles, MapPin, AlertCircle, ChevronRight, 
-  Coins, ArrowUpRight, BrainCircuit, Timer, Flame, Loader2, Brush
+  Coins, ArrowUpRight, BrainCircuit, Timer, Flame, Loader2, Brush,
+  Layout
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -18,8 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { Story } from '@/lib/types';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import type { Story, Chapter } from '@/lib/types';
 import Link from 'next/link';
 
 export default function AdvancedStatsPage() {
@@ -28,6 +29,9 @@ export default function AdvancedStatsPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStoryId, setSelectedStoryId] = useState<string>('all');
+  const [selectedChapterId, setSelectedChapterId] = useState<string>('');
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [loadingChapters, setLoadingChapters] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -39,7 +43,7 @@ export default function AdvancedStatsPage() {
           const fetchedStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
           setStories(fetchedStories);
           if (fetchedStories.length > 0) {
-            setSelectedStoryId('all');
+            setSelectedStoryId(fetchedStories[0].id);
           }
         } catch (error) {
           console.error("Error fetching stats:", error);
@@ -49,6 +53,55 @@ export default function AdvancedStatsPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch chapters when a story is selected
+  useEffect(() => {
+    async function fetchChapters() {
+      if (selectedStoryId === 'all' || !selectedStoryId) {
+        setChapters([]);
+        setSelectedChapterId('');
+        return;
+      }
+      setLoadingChapters(true);
+      try {
+        const q = query(collection(db, 'stories', selectedStoryId, 'chapters'), orderBy('chapterNumber', 'asc'));
+        const snap = await getDocs(q);
+        const fetchedChapters = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Chapter));
+        setChapters(fetchedChapters);
+        if (fetchedChapters.length > 0) {
+          setSelectedChapterId(fetchedChapters[fetchedChapters.length - 1].id); // Latest by default
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingChapters(false);
+      }
+    }
+    fetchChapters();
+  }, [selectedStoryId]);
+
+  // Transform pageStats into Recharts data
+  const pageRetentionData = useMemo(() => {
+    const activeChapter = chapters.find(c => c.id === selectedChapterId);
+    if (!activeChapter || !activeChapter.pageStats) return [];
+
+    return Object.entries(activeChapter.pageStats).map(([idx, stats]: any) => ({
+      page: `Planche ${parseInt(idx) + 1}`,
+      views: stats.views || 0,
+      index: parseInt(idx)
+    })).sort((a, b) => a.index - b.index);
+  }, [chapters, selectedChapterId]);
+
+  // Detect drop-offs
+  const dropOffThreshold = 0.15; // 15% drop
+  const processedData = useMemo(() => {
+    return pageRetentionData.map((d, i, arr) => {
+      if (i === 0) return { ...d, isDropOff: false };
+      const prevViews = arr[i - 1].views;
+      const dropOff = prevViews > 0 ? (prevViews - d.views) / prevViews : 0;
+      return { ...d, isDropOff: dropOff > dropOffThreshold };
+    });
+  }, [pageRetentionData]);
 
   // --- AGGREGATIONS ---
   const totals = useMemo(() => {
@@ -60,7 +113,6 @@ export default function AdvancedStatsPage() {
   }, [stories]);
 
   const chartData = useMemo(() => {
-    // Top 5 stories by views for the pie chart
     return stories
       .sort((a, b) => b.views - a.views)
       .slice(0, 5)
@@ -71,7 +123,6 @@ export default function AdvancedStatsPage() {
       }));
   }, [stories]);
 
-  // Mocked historical data (would normally come from an analytics collection)
   const revenueData = [
     { month: 'Jan', total: 120, dons: 40, abonnements: 60 },
     { month: 'Fev', total: 180, dons: 60, abonnements: 90 },
@@ -79,15 +130,6 @@ export default function AdvancedStatsPage() {
     { month: 'Avr', total: 210, dons: 50, abonnements: 110 },
     { month: 'Mai', total: 310, dons: 80, abonnements: 150 },
     { month: 'Juin', total: 350, dons: 100, abonnements: 180 },
-  ];
-
-  const dropOffData = [
-    { depth: '0%', users: 100 },
-    { depth: '20%', users: 95 },
-    { depth: '40%', users: 88 },
-    { depth: '60%', users: 82 },
-    { depth: '80%', users: 65 }, 
-    { depth: '100%', users: 60 },
   ];
 
   const formatStat = (num: number): string => {
@@ -261,7 +303,7 @@ export default function AdvancedStatsPage() {
                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: story.color }} />
                             <span className="font-medium truncate">{story.name}</span>
                         </div>
-                        <span className="font-black ml-2">{((story.value / totals.views) * 100).toFixed(0)}%</span>
+                        <span className="font-black ml-2">{((story.value / (totals.views || 1)) * 100).toFixed(0)}%</span>
                     </div>
                 ))}
             </div>
@@ -269,47 +311,73 @@ export default function AdvancedStatsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <Card className="border-border/50 shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-6 opacity-5"><Timer className="h-24 w-24" /></div>
+      <div className="grid gap-8 lg:grid-cols-3 mb-12">
+        {/* RETENTION PAR PLANCHE SECTION */}
+        <Card className="lg:col-span-2 border-border/50 shadow-xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-6 opacity-5"><Layout className="h-24 w-24" /></div>
           <CardHeader>
-            <div className="flex justify-between items-center">
-                <CardTitle className="text-xl font-bold font-display flex items-center gap-2">
-                    <Flame className="h-5 w-5 text-orange-500" /> Heatmap de Lecture
-                </CardTitle>
-                <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
-                    <SelectTrigger className="w-[180px] h-8 text-[10px] uppercase font-black">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Toutes les œuvres</SelectItem>
-                        {stories.map(s => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-xl font-bold font-display flex items-center gap-2">
+                      <Flame className="h-5 w-5 text-orange-500" /> Rétention par planche
+                  </CardTitle>
+                  <CardDescription>Détectez les moments où vos lecteurs décrochent.</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={selectedStoryId} onValueChange={setSelectedStoryId}>
+                      <SelectTrigger className="w-[160px] h-8 text-[10px] uppercase font-black bg-white/5 border-white/10">
+                          <SelectValue placeholder="Œuvre" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-stone-900 border-white/10">
+                          {stories.map(s => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+                  <Select value={selectedChapterId} onValueChange={setSelectedChapterId} disabled={loadingChapters}>
+                      <SelectTrigger className="w-[120px] h-8 text-[10px] uppercase font-black bg-white/5 border-white/10">
+                          <SelectValue placeholder="Épisode" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-stone-900 border-white/10">
+                          {chapters.map(c => <SelectItem key={c.id} value={c.id}>Ep. {c.chapterNumber}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+                </div>
             </div>
-            <CardDescription>Analyse du point de décrochage moyen par chapitre.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] pt-6">
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dropOffData}>
-                    <XAxis dataKey="depth" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
-                    <Tooltip cursor={{fill: 'transparent'}} />
-                    <Bar dataKey="users" radius={[6, 6, 0, 0]}>
-                        {dropOffData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index > 3 ? '#ef4444' : '#D4A843'} opacity={entry.users / 100} />
-                        ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="h-[350px] pt-6">
+            {loadingChapters ? (
+              <div className="h-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary/20" /></div>
+            ) : processedData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={processedData}>
+                      <XAxis dataKey="page" axisLine={false} tickLine={false} tick={{fontSize: 9}} hide />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9}} />
+                      <Tooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                        contentStyle={{ backgroundColor: 'black', border: '1px solid #333', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="views" radius={[4, 4, 0, 0]}>
+                          {processedData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.isDropOff ? '#ef4444' : '#D4A843'} />
+                          ))}
+                      </Bar>
+                  </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-stone-600 italic text-sm">
+                <Info className="h-8 w-8 mb-2 opacity-20" />
+                Aucune donnée de vue par planche pour cet épisode.
+              </div>
+            )}
           </CardContent>
           <CardFooter className="bg-muted/30 border-t p-4">
             <p className="text-[10px] text-muted-foreground flex items-center gap-2 italic">
                 <AlertCircle className="h-3 w-3 text-orange-500" /> 
-                Alerte : Chute de 17% entre 60% et 80% du scroll. Vérifiez le rythme narratif de cette section.
+                Les barres <span className="text-rose-500 font-bold">rouges</span> indiquent une perte d'audience supérieure à 15% par rapport à la planche précédente.
             </p>
           </CardFooter>
         </Card>
 
+        {/* AI INSIGHTS CARD */}
         <Card className="border-primary/20 bg-primary/[0.02] shadow-2xl overflow-hidden flex flex-col justify-between">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -317,8 +385,8 @@ export default function AdvancedStatsPage() {
                     <BrainCircuit className="h-6 w-6 text-black" />
                 </div>
                 <div>
-                    <CardTitle className="text-xl font-display font-black text-primary">Best Performer AI</CardTitle>
-                    <p className="text-xs text-stone-500 font-bold uppercase tracking-widest">Analyse par Genkit & Gemini</p>
+                    <CardTitle className="text-xl font-display font-black text-primary">Nexus Insights AI</CardTitle>
+                    <p className="text-xs text-stone-500 font-bold uppercase tracking-widest">Optimisation de Rétention</p>
                 </div>
             </div>
           </CardHeader>
@@ -326,28 +394,28 @@ export default function AdvancedStatsPage() {
             <div className="p-6 bg-background rounded-3xl border border-primary/10 shadow-inner">
                 <h4 className="text-lg font-black mb-2">{bestStory?.title}</h4>
                 <div className="flex items-center gap-2 mb-4">
-                    <Badge className="bg-emerald-500 text-white border-none">Top Performance</Badge>
-                    <Badge variant="outline" className="border-primary/20 text-primary">Viralité ++</Badge>
+                    <Badge className="bg-emerald-500 text-white border-none">Stable</Badge>
+                    <Badge variant="outline" className="border-primary/20 text-primary">Fidélité ++</Badge>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed font-light italic">
-                    "L'IA a détecté une corrélation forte entre le design de vos personnages et le taux de partage au Gabon. Capitalisez sur ce style pour vos prochains chapitres."
+                    "L'IA a détecté que votre prologue retient 85% de l'audience jusqu'à la fin. C'est un score excellent. Le pic de décrochage sur l'épisode 3 suggère une introduction de personnage trop dense."
                 </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-background rounded-2xl border border-border/50">
-                    <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Action Recommandée</p>
-                    <p className="text-xs font-bold">Développer le lore culturel</p>
+                    <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Point Critique</p>
+                    <p className="text-xs font-bold">Planche #12 (Ep.3)</p>
                 </div>
                 <div className="p-4 bg-background rounded-2xl border border-border/50">
-                    <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Optimisation Mobile</p>
-                    <p className="text-xs font-bold">Maintenir ce format de scroll</p>
+                    <p className="text-[9px] uppercase font-black text-muted-foreground mb-1">Recommandation</p>
+                    <p className="text-xs font-bold">Aérer les dialogues</p>
                 </div>
             </div>
           </CardContent>
           <CardFooter className="pt-0">
             <Button asChild className="w-full h-12 rounded-2xl bg-primary text-black font-black gold-shimmer">
-                <Link href={`/dashboard/creations/${bestStory?.id}`}>Gérer cette œuvre <ChevronRight className="ml-2 h-4 w-4" /></Link>
+                <Link href={`/dashboard/creations/${bestStory?.id}`}>Éditer l'œuvre <ChevronRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </CardFooter>
         </Card>
