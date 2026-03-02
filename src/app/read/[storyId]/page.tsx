@@ -279,10 +279,21 @@ function ArtistTab({ artist }: { artist: UserProfile | null }) {
 function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { storyId: string, chapterId: string, currentUser: any, openAuthModal: any }) {
   const { toast } = useToast();
   const [commentText, setCommentText] = useState('');
+  const [cooldown, setCooldown] = useState(0);
   const queryClient = useQueryClient();
   const [reportCommentId, setReportCommentId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState('Autre');
   const [isReporting, setIsReporting] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['comments', storyId, chapterId],
@@ -312,6 +323,8 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
       }
 
       const ref = collection(db, 'stories', storyId, 'chapters', chapterId, 'comments');
+      const userRef = doc(db, 'users', currentUser.uid);
+
       await addDoc(ref, {
         authorId: currentUser.uid,
         authorName: currentUser.displayName || 'Anonyme',
@@ -322,9 +335,14 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
         isEdited: false,
         createdAt: serverTimestamp()
       });
+
+      await updateDoc(userRef, {
+        lastCommentAt: serverTimestamp()
+      });
     },
     onSuccess: () => {
       setCommentText('');
+      setCooldown(30);
       queryClient.invalidateQueries({ queryKey: ['comments', storyId, chapterId] });
       toast({ title: "Commentaire publié !" });
     },
@@ -394,11 +412,11 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
             maxLength={550}
           />
           <Button 
-            disabled={!commentText.trim() || commentText.length > 500 || submitMutation.isPending}
+            disabled={!commentText.trim() || commentText.length > 500 || submitMutation.isPending || cooldown > 0}
             onClick={() => submitMutation.mutate(commentText)}
             className="w-full h-10 rounded-xl font-black text-[10px] uppercase gold-shimmer"
           >
-            {submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publier"}
+            {submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : cooldown > 0 ? `Attendre (${cooldown}s)` : "Publier"}
           </Button>
         </div>
       </div>
@@ -759,8 +777,6 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
         const nextIdx = currentChapterIndex + 1;
         const nextChapter = story.chapters[nextIdx];
         if (!preloadedChapter.current || preloadedChapter.current.id !== nextChapter.id) {
-          // In a real app with sub-collections for pages, we would fetch the pages here
-          // For the prototype, we simply store the next chapter object
           preloadedChapter.current = nextChapter;
           console.log("Anticipation Nexus : Chapitre suivant préchargé.");
         }
@@ -872,7 +888,7 @@ export default function ReadPage(props: { params: Promise<{ storyId: string }> }
                     <div className="space-y-3">
                       <Badge className="bg-primary text-black font-black uppercase text-[10px] px-4 py-1">Épisode Premium</Badge>
                       <h2 className="text-4xl font-display font-black text-white tracking-tighter">Soutenez la Création</h2>
-                      <p className="text-stone-400 text-lg font-light italic max-w-sm mx-auto">
+                      <p className="text-stone-400 text-lg font-light italic max-sm mx-auto">
                         "Cet épisode est une exclusivité NexusHub. Débloquez-le pour continuer votre voyage."
                       </p>
                     </div>
