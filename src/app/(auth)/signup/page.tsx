@@ -75,7 +75,7 @@ function SignupForm() {
         body: JSON.stringify({ role })
       });
     } catch (e) {
-      console.error("Erreur lors de l'initialisation de la session sécurisée", e);
+      console.error("Erreur session", e);
     }
   };
 
@@ -215,10 +215,13 @@ function SignupForm() {
     } catch (error: any) {
       console.error("Signup error:", error);
       if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Popup bloqué", description: "Redirection vers la page sécurisée..." });
+        toast({ title: "Popup bloqué", description: "Utilisation du mode redirection sécurisée..." });
         await signInWithRedirect(auth, provider!);
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        toast({ title: "Fenêtre fermée", description: "L'inscription a été annulée." });
       } else {
-        toast({ title: "Erreur d'authentification", description: "La connexion a échoué.", variant: "destructive" });
+        toast({ title: "Erreur", description: "La connexion a échoué. Réessayez via redirection.", variant: "destructive" });
+        await signInWithRedirect(auth, provider!);
       }
     } finally {
       setIsSocialLoading(null);
@@ -507,7 +510,6 @@ function SignupForm() {
                           </div>
                         </FormControl>
                         
-                        {/* PASSWORD STRENGTH INDICATOR */}
                         <div className="space-y-2 pt-1">
                           <div className="flex justify-between items-center px-1">
                             <span className="text-[8px] font-black uppercase text-stone-500 tracking-widest">Sécurité</span>

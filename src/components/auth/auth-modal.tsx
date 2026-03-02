@@ -110,6 +110,7 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     }
 
     try {
+      // Tenter la popup d'abord
       await signInWithPopup(auth, provider!);
       const user = auth.currentUser;
       if (user) {
@@ -117,11 +118,26 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       }
     } catch (error: any) {
       console.error("Auth error:", error);
+      
+      // Gestion des blocages de popup et fermetures forcées
       if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Popup bloqué", description: "Utilisation du mode redirection..." });
+        toast({ 
+          title: "Popup bloqué", 
+          description: "Redirection vers la page sécurisée de connexion..." 
+        });
         await signInWithRedirect(auth, provider!);
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        toast({ 
+          title: "Connexion annulée", 
+          description: "La fenêtre de connexion a été fermée." 
+        });
       } else {
-        toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+        toast({ 
+          title: "Erreur", 
+          description: "La connexion a échoué. Tentative via redirection sécurisée...", 
+          variant: "destructive" 
+        });
+        await signInWithRedirect(auth, provider!);
       }
     } finally {
       setIsLoading(null);
@@ -166,9 +182,9 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-[90vw] sm:max-w-[500px] p-8 border-none bg-stone-950 rounded-3xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Choix de destinée</DialogTitle>
-            <DialogDescription>Sélectionnez votre rôle sur la plateforme NexusHub</DialogDescription>
+          <DialogHeader>
+            <DialogTitle className="sr-only">Choix de destinée</DialogTitle>
+            <DialogDescription className="sr-only">Sélectionnez votre rôle sur la plateforme NexusHub</DialogDescription>
           </DialogHeader>
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>

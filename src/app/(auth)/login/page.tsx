@@ -26,7 +26,7 @@ import {
   Zap,
   BookOpen,
   Brush
-} from "lucide-react";
+} from "lucide-center";
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
@@ -143,6 +143,7 @@ function LoginForm() {
     }
 
     try {
+      // Tenter d'abord la pop-up
       await signInWithPopup(auth, provider!);
       const user = auth.currentUser;
       if (user) {
@@ -150,13 +151,32 @@ function LoginForm() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Gestion des erreurs spécifiques recommandées
       if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Popup bloqué", description: "Redirection vers la page sécurisée..." });
+        toast({ 
+          title: "Fenêtre bloquée", 
+          description: "Votre navigateur bloque les pop-ups. Redirection vers la page sécurisée...",
+        });
         await signInWithRedirect(auth, provider!);
       } else if (error.code === 'auth/popup-closed-by-user') {
-        toast({ title: "Connexion annulée", description: "La fenêtre de connexion a été fermée." });
+        toast({ 
+          title: "Connexion annulée", 
+          description: "Vous avez fermé la fenêtre de connexion." 
+        });
+      } else if (error.code === 'auth/internal-error') {
+        toast({ 
+          title: "Erreur Interne", 
+          description: "Un problème de communication est survenu. Tentative via redirection...",
+          variant: "destructive"
+        });
+        await signInWithRedirect(auth, provider!);
       } else {
-        toast({ title: "Erreur", description: "La connexion a échoué. Vérifiez vos identifiants.", variant: "destructive" });
+        toast({ 
+          title: "Échec de connexion", 
+          description: "Vérifiez vos paramètres ou essayez un autre mode.", 
+          variant: "destructive" 
+        });
       }
     } finally {
       setIsSocialLoading(null);
