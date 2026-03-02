@@ -42,7 +42,9 @@ export const translations = {
       community_title: "Ce Que Dit la Communauté",
       community_cta: "Rejoindre la Discussion",
       start_adventure: "Commencer l'Aventure",
-      free_signup: "S'inscrire Gratuitement"
+      free_signup: "S'inscrire Gratuitement",
+      because_you_liked: "Car vous avez aimé",
+      new_from_artists: "Nouveautés de vos artistes suivis"
     },
     common: {
       read: "Lire",
@@ -116,7 +118,9 @@ export const translations = {
       community_title: "What the Community Says",
       community_cta: "Join the Discussion",
       start_adventure: "Start the Adventure",
-      free_signup: "Join for Free"
+      free_signup: "Join for Free",
+      because_you_liked: "Because you liked",
+      new_from_artists: "New from artists you follow"
     },
     common: {
       read: "Read",
@@ -190,7 +194,9 @@ export const translations = {
       community_title: "Inavyosema Jamii",
       community_cta: "Jiunge na Majadiliano",
       start_adventure: "Anza Safari",
-      free_signup: "Jiunge Bure"
+      free_signup: "Jiunge Bure",
+      because_you_liked: "Kwa sababu ulipenda",
+      new_from_artists: "Mapya kutoka kwa wasanii unaowafuata"
     },
     common: {
       read: "Soma",
@@ -243,7 +249,7 @@ export const translations = {
       settings: "Saituna",
       logout: "Fita",
       profile: "Bayanan martaba",
-      originals: "Asali",
+      originals: "Asili",
       ai_studio: "AI Studio"
     },
     home: {
@@ -264,7 +270,9 @@ export const translations = {
       community_title: "Abin da al'umma ke cewa",
       community_cta: "Kasance cikin Tattaunawa",
       start_adventure: "Fara Tafiya",
-      free_signup: "Yi Rajista Kyauta"
+      free_signup: "Yi Rajista Kyauta",
+      because_you_liked: "Saboda kun so",
+      new_from_artists: "Sabuwar daga mawakan da kuke bi"
     },
     common: {
       read: "Karanta",
@@ -338,7 +346,9 @@ export const translations = {
       community_title: "ማህበረሰቡ የሚለው",
       community_cta: "ውይይቱን ይቀላቀሉ",
       start_adventure: "ጉዞውን ይጀምሩ",
-      free_signup: "በነጻ ይመዝገቡ"
+      free_signup: "በነጻ ይመዝገቡ",
+      because_you_liked: "ስለወደዱ",
+      new_from_artists: "ከሚከተሏቸው አርቲስቶች አዲስ"
     },
     common: {
       read: "አንብብ",
@@ -412,7 +422,9 @@ export const translations = {
       community_title: "ماذا يقول المجتمع",
       community_cta: "انضم إلى النقاش",
       start_adventure: "ابدأ المغامرة",
-      free_signup: "سجل مجاناً"
+      free_signup: "سجل مجاناً",
+      because_you_liked: "لأنك أحببت",
+      new_from_artists: "جديد من الفنانين الذين تتابعهم"
     },
     common: {
       read: "اقرأ",
