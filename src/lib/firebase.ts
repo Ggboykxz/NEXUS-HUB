@@ -20,12 +20,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Log warning if API key is missing (for dev debugging)
-if (!firebaseConfig.apiKey) {
-  console.warn("Firebase Warning: NEXT_PUBLIC_FIREBASE_API_KEY is missing from .env file.");
-}
-
-// Initialize Firebase
+// Initialize Firebase only if we have at least an API key
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firestore with multi-tab persistence
