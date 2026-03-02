@@ -1,3 +1,4 @@
+
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
@@ -39,8 +40,8 @@ const StorySchema = z.object({
 });
 
 export const submitStory = functions.https.onCall(async (data, context) => {
-  // 1. Protection CSRF via App Check
-  if (!context.app) {
+  // 1. Protection CSRF via App Check (optionnelle en dev)
+  if (!context.app && process.env.NODE_ENV === 'production') {
     throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
   }
 
@@ -96,7 +97,7 @@ export const submitStory = functions.https.onCall(async (data, context) => {
  */
 export const purchaseAfriCoins = functions.https.onCall(async (data, context) => {
   // Protection CSRF
-  if (!context.app) {
+  if (!context.app && process.env.NODE_ENV === 'production') {
     throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
   }
 
