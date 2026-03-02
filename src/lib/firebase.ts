@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 
@@ -21,6 +20,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
+// Log warning if API key is missing (for dev debugging)
+if (!firebaseConfig.apiKey) {
+  console.warn("Firebase Warning: NEXT_PUBLIC_FIREBASE_API_KEY is missing from .env file.");
+}
+
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
@@ -31,8 +35,7 @@ const db = initializeFirestore(app, {
   })
 });
 
-// App Check désactivé pour simplifier le développement et l'authentification par email
-
+// Auth & Services
 export const auth = getAuth(app);
 export { db };
 export const storage = getStorage(app);
