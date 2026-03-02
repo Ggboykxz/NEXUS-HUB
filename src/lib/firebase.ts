@@ -10,7 +10,6 @@ import {
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,7 +21,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialize Firebase with protection against multiple initializations
+// Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firestore with multi-tab persistence
@@ -32,31 +31,7 @@ const db = initializeFirestore(app, {
   })
 });
 
-// Initialize App Check for CSRF/Abuse protection (only on client)
-if (typeof window !== "undefined") {
-  const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_KEY;
-  const isDebug = process.env.NEXT_PUBLIC_APP_CHECK_DEBUG_TOKEN === 'true';
-
-  // Si on est en mode debug ou qu'on a une clé valide, on initialise
-  if (isDebug || (recaptchaKey && recaptchaKey !== '6Lc_placeholder_key')) {
-    try {
-      // Pour le debug local
-      if (isDebug) {
-        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-      }
-
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(recaptchaKey || '6Lc_placeholder_key'),
-        isTokenAutoRefreshEnabled: true
-      });
-      console.log("Nexus App Check: Initialisé " + (isDebug ? "(Mode Debug)" : ""));
-    } catch (e) {
-      console.warn("App Check initialization failed:", e);
-    }
-  } else {
-    console.warn("Nexus App Check: Sauté (Clé manquante ou invalide).");
-  }
-}
+// App Check désactivé pour simplifier le développement et l'authentification par email
 
 export const auth = getAuth(app);
 export { db };

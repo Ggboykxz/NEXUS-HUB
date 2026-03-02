@@ -16,7 +16,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   return userRef.set({
     uid: user.uid,
     email: user.email,
-    displayName: user.displayName || 'Nouveau Lecteur',
+    displayName: user.displayName || 'Nouveau Voyageur',
     photoURL: user.photoURL || 'https://picsum.photos/seed/default/200/200',
     role: 'reader',
     afriCoins: 0,
@@ -30,27 +30,21 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
 
 /**
  * Fonction Callable : Validation et soumission d'une nouvelle œuvre.
- * Sécurisée par App Check (CSRF) et authentification.
  */
 const StorySchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(10).max(2000),
   genre: z.string(),
-  format: z.enum(['Webtoon', 'BD', 'Roman Illustré']),
+  format: z.enum(['Webtoon', 'BD', 'Roman Illustré', 'One-shot', 'Hybride']),
 });
 
 export const submitStory = functions.https.onCall(async (data, context) => {
-  // 1. Protection CSRF via App Check (optionnelle en dev)
-  if (!context.app && process.env.NODE_ENV === 'production') {
-    throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
-  }
-
-  // 2. Vérification de l'authentification
+  // Vérification de l'authentification
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Vous devez être connecté.');
   }
 
-  // 3. Validation du schéma
+  // Validation du schéma
   const validation = StorySchema.safeParse(data);
   if (!validation.success) {
     throw new functions.https.HttpsError('invalid-argument', 'Données de l\'œuvre invalides.');
@@ -59,10 +53,10 @@ export const submitStory = functions.https.onCall(async (data, context) => {
   const { title, description, genre, format } = validation.data;
   const artistId = context.auth.uid;
 
-  // 4. Vérification du rôle artiste
+  // Vérification du rôle artiste
   const userDoc = await db.collection('users').doc(artistId).get();
   const userData = userDoc.data();
-  if (!userData || !['artist_draft', 'artist_pro'].includes(userData.role)) {
+  if (!userData || !['artist_draft', 'artist_pro', 'artist_elite'].includes(userData.role)) {
     throw new functions.https.HttpsError('permission-denied', 'Seuls les artistes peuvent publier.');
   }
 
@@ -79,13 +73,14 @@ export const submitStory = functions.https.onCall(async (data, context) => {
     format,
     artistId,
     artistName: userData.displayName,
-    status: 'ongoing',
+    status: 'En cours',
     views: 0,
     likes: 0,
     isPremium: false,
+    isPublished: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    tags: []
+    tags: [genre]
   });
 
   return { id: storyRef.id, slug };
@@ -93,14 +88,8 @@ export const submitStory = functions.https.onCall(async (data, context) => {
 
 /**
  * Fonction Callable : Achat d'AfriCoins.
- * Sécurisée par App Check (CSRF).
  */
 export const purchaseAfriCoins = functions.https.onCall(async (data, context) => {
-  // Protection CSRF
-  if (!context.app && process.env.NODE_ENV === 'production') {
-    throw new functions.https.HttpsError('failed-precondition', 'La requête doit provenir d\'une application vérifiée.');
-  }
-
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Session expirée.');
   }
@@ -114,7 +103,7 @@ export const purchaseAfriCoins = functions.https.onCall(async (data, context) =>
 
   return db.runTransaction(async (transaction) => {
     const userSnap = await transaction.get(userRef);
-    if (!userSnap.exists) throw "L'utilisateur n'existe pas.";
+    if (!userSnap.exists) throw new functions.https.HttpsError('not-found', "L'utilisateur n'existe pas.");
 
     const currentCoins = userSnap.data()?.afriCoins || 0;
     transaction.update(userRef, { 
