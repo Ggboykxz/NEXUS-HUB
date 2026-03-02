@@ -1,6 +1,11 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 import { getAnalytics, isSupported } from "firebase/analytics";
@@ -20,6 +25,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
+// Initialize Firestore with multi-tab persistence to handle "Could not reach backend" errors
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
+
 // Initialize App Check for CSRF/Abuse protection
 if (typeof window !== "undefined") {
   initializeAppCheck(app, {
@@ -29,7 +41,7 @@ if (typeof window !== "undefined") {
 }
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export { db };
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'europe-west1');
 

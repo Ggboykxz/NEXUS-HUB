@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider,
@@ -109,11 +110,19 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     }
 
     try {
-      const userCredential = await signInWithPopup(auth, provider!);
-      await checkUserRoleAndRedirect(userCredential.user.uid);
+      await signInWithPopup(auth, provider!);
+      const user = auth.currentUser;
+      if (user) {
+        await checkUserRoleAndRedirect(user.uid);
+      }
     } catch (error: any) {
-      console.error(error);
-      toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+      console.error("Auth error:", error);
+      if (error.code === 'auth/popup-blocked') {
+        toast({ title: "Popup bloqué", description: "Utilisation du mode redirection..." });
+        await signInWithRedirect(auth, provider!);
+      } else {
+        toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+      }
     } finally {
       setIsLoading(null);
     }

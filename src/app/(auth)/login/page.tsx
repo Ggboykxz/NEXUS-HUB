@@ -33,6 +33,7 @@ import { auth, db } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider 
@@ -142,10 +143,19 @@ function LoginForm() {
     }
 
     try {
-      const userCredential = await signInWithPopup(auth, provider!);
-      await checkUserRoleAndRedirect(userCredential.user.uid);
+      await signInWithPopup(auth, provider!);
+      const user = auth.currentUser;
+      if (user) {
+        await checkUserRoleAndRedirect(user.uid);
+      }
     } catch (error: any) {
-      toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+      console.error("Login error:", error);
+      if (error.code === 'auth/popup-blocked') {
+        toast({ title: "Popup bloqué", description: "Redirection vers la page de connexion sécurisée..." });
+        await signInWithRedirect(auth, provider!);
+      } else {
+        toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+      }
     } finally {
       setIsSocialLoading(null);
     }

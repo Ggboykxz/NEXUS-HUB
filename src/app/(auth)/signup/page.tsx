@@ -21,6 +21,7 @@ import {
   createUserWithEmailAndPassword, 
   updateProfile, 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider 
@@ -50,7 +51,6 @@ function SignupForm() {
   const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
-  // Get callbackUrl and sanitize to prevent open redirects
   const callbackUrl = searchParams.get('callbackUrl');
   const redirectTo = (callbackUrl && callbackUrl.startsWith('/')) ? callbackUrl : '/';
 
@@ -128,7 +128,6 @@ function SignupForm() {
       setPendingUid(uid);
       setShowRoleSelection(true);
       
-      // Initialize basic doc if it doesn't exist
       if (!userDoc.exists()) {
         const user = auth.currentUser;
         await setDoc(doc(db, 'users', uid), {
@@ -202,27 +201,25 @@ function SignupForm() {
     let provider;
     
     switch (platform) {
-      case 'Google':
-        provider = new GoogleAuthProvider();
-        break;
-      case 'Facebook':
-        provider = new FacebookAuthProvider();
-        break;
-      case 'Apple':
-        provider = new OAuthProvider('apple.com');
-        break;
+      case 'Google': provider = new GoogleAuthProvider(); break;
+      case 'Facebook': provider = new FacebookAuthProvider(); break;
+      case 'Apple': provider = new OAuthProvider('apple.com'); break;
     }
 
     try {
-      const userCredential = await signInWithPopup(auth, provider!);
-      await checkUserRoleAndRedirect(userCredential.user.uid);
+      await signInWithPopup(auth, provider!);
+      const user = auth.currentUser;
+      if (user) {
+        await checkUserRoleAndRedirect(user.uid);
+      }
     } catch (error: any) {
-      console.error(error);
-      toast({
-        title: "Erreur d'authentification",
-        description: "La connexion a été annulée ou a échoué.",
-        variant: "destructive",
-      });
+      console.error("Signup error:", error);
+      if (error.code === 'auth/popup-blocked') {
+        toast({ title: "Popup bloqué", description: "Redirection vers la page sécurisée..." });
+        await signInWithRedirect(auth, provider!);
+      } else {
+        toast({ title: "Erreur d'authentification", description: "La connexion a échoué.", variant: "destructive" });
+      }
     } finally {
       setIsSocialLoading(null);
     }
