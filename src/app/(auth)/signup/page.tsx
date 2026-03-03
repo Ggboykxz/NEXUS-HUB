@@ -101,17 +101,17 @@ function SignupForm() {
     },
   });
 
-  const password = form.watch('password');
+  const passwordValue = form.watch('password');
 
   const passwordStrength = useMemo(() => {
-    if (!password) return 0;
+    if (!passwordValue) return 0;
     let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (passwordValue.length >= 8) score++;
+    if (/[A-Z]/.test(passwordValue)) score++;
+    if (/[0-9]/.test(passwordValue)) score++;
+    if (/[^A-Za-z0-9]/.test(passwordValue)) score++;
     return score;
-  }, [password]);
+  }, [passwordValue]);
 
   const strengthLabel = useMemo(() => {
     switch (passwordStrength) {
@@ -232,14 +232,10 @@ function SignupForm() {
     } catch (error: any) {
       console.error("Signup error:", error);
       if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Popup bloqué", description: "Utilisation du mode redirection sécurisée..." });
+        toast({ title: "Redirection sécurisée", description: "Veuillez patienter..." });
         await signInWithRedirect(auth, provider!);
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        // User closed manualy, just ignore
-        console.log("Signup popup closed by user");
-      } else {
-        toast({ title: "Erreur", description: "La connexion a échoué. Réessayez via redirection.", variant: "destructive" });
-        await signInWithRedirect(auth, provider!);
+      } else if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ title: "Erreur", description: "La connexion a échoué. Réessayez.", variant: "destructive" });
       }
     } finally {
       setIsSocialLoading(null);
@@ -255,10 +251,7 @@ function SignupForm() {
         updatedAt: serverTimestamp()
       });
       await setSessionCookie(role);
-      toast({
-        title: role === 'reader' ? "Destinée : Lecteur" : "Destinée : Artiste",
-        description: "Votre profil a été configuré. Bienvenue au Hub !",
-      });
+      toast({ title: "Profil configuré !", description: "Bienvenue au Hub." });
       router.push(redirectTo);
       router.refresh();
     } catch (e) {
@@ -337,21 +330,9 @@ function SignupForm() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_70%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.15),transparent_70%)]" />
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />
-          
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {particles.map((p) => (
-              <div 
-                key={p.id} 
-                className="particle bg-primary/20" 
-                style={{
-                  top: p.top,
-                  left: p.left,
-                  '--dur': p.dur,
-                  '--del': p.del,
-                  '--tx': p.tx,
-                  '--ty': p.ty
-                } as any} 
-              />
+              <div key={p.id} className="particle bg-primary/20" style={{ top: p.top, left: p.left, '--dur': p.dur, '--del': p.del, '--tx': p.tx, '--ty': p.ty } as any} />
             ))}
           </div>
         </div>
@@ -360,34 +341,13 @@ function SignupForm() {
           <div className="space-y-2">
             <h1 className="text-2xl md:text-4xl font-display font-black leading-tight text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
               Rejoignez NexusHub – <br/>
-              <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-shimmer">
-                Créez et Découvrez
-              </span> <br/>
-              des Histoires Africaines
+              <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-shimmer">Créez et Découvrez</span> des Histoires Africaines
             </h1>
-
             <p className="text-sm md:text-base text-stone-300 font-light max-w-2xl mx-auto leading-relaxed italic">
               Devenez artiste Pro/Draft, lisez gratuitement, connectez-vous à une communauté panafricaine. 
               <span className="block font-bold text-primary mt-1 uppercase tracking-[0.2em] text-[10px]">Inscription gratuite et instantanée !</span>
             </p>
           </div>
-
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            {[
-              { icon: Zap, text: "Publiez en un clic", color: "text-primary" },
-              { icon: Sparkles, text: "Univers mythologiques", color: "text-accent" },
-              { icon: Users, text: "Soutenez des créateurs", color: "text-emerald-500" },
-              { icon: Award, text: "AfriCoins et Premium", color: "text-amber-500" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5 bg-white/5 backdrop-blur-xl border border-white/10 p-2 rounded-lg group hover:border-primary/50 transition-all shadow-xl">
-                <div className={cn("bg-white/5 p-1 rounded-md", item.color)}>
-                  <item.icon className="h-3.5 w-3.5" />
-                </div>
-                <span className="text-[10px] font-bold text-stone-200 tracking-tight">{item.text}</span>
-              </div>
-            ))}
-          </div>
-
           <div className="pt-4 flex flex-col items-center gap-1 animate-bounce">
             <p className="text-[8px] uppercase tracking-[0.4em] font-black text-primary/60">Commencez ci-dessous</p>
             <ChevronDown className="h-4 w-4 text-primary" />
@@ -411,41 +371,10 @@ function SignupForm() {
               >
                 {isSocialLoading === 'Google' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c1.61-3.21 2.53-7.07 2.53-10.34z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
                     Continuer avec Google
-                  </>
-                )}
-              </button>
-              <button 
-                disabled={!!isSocialLoading}
-                onClick={() => handleSocialLogin('Facebook')}
-                className="h-11 md:h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 flex items-center justify-center group overflow-hidden relative shadow-xl transition-all active:scale-95"
-              >
-                {isSocialLoading === 'Facebook' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                    <svg className="h-4 w-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    Continuer avec Facebook
-                  </>
-                )}
-              </button>
-              <button 
-                disabled={!!isSocialLoading}
-                onClick={() => handleSocialLogin('Apple')}
-                className="h-11 md:h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-sm md:text-base gap-3 flex items-center justify-center group overflow-hidden relative shadow-xl transition-all active:scale-95"
-              >
-                {isSocialLoading === 'Apple' ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                    <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.152 6.896c-.548 0-1.411-.516-2.438-.516-1.357 0-2.714.836-3.407 2.015-1.412 2.4-.364 5.922 1.004 7.81.67.924 1.46 1.962 2.555 1.962.991 0 1.39-.636 2.585-.636 1.196 0 1.541.636 2.585.636 1.111 0 1.804-.937 2.471-1.848.774-1.068 1.09-2.096 1.114-2.148-.025-.013-2.135-.782-2.156-3.126-.021-1.96 1.602-2.898 1.677-2.95-.923-1.28-2.364-1.425-2.888-1.425-.122 0-.244 0-.36-.001-.012 0-.022 0-.033 0-.011 0-.021 0-.032 0-.412.001-.865.021-1.105.021zM12.093 5.22c.579-1.173.483-2.256.422-2.596-.051-.287-.519-.282-1.504.282-.466.267-.931.947-.931 1.626 0 .68.465 1.36.931 1.626.466.267.931.267 1.082-.938z"/>
-                    </svg>
-                    Continuer avec Apple
                   </>
                 )}
               </button>
@@ -455,16 +384,6 @@ function SignupForm() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/30" />
               <span className="text-[8px] md:text-[9px] uppercase font-black tracking-[0.3em] text-primary/60">Ou par email</span>
               <div className="h-px flex-1 bg-gradient-to-l from-transparent to-primary/30" />
-            </div>
-
-            <div className="bg-primary/5 border border-primary/10 rounded-xl md:rounded-2xl p-4 md:p-6 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/20 p-1.5 rounded-lg"><ShieldCheck className="h-4 w-4 text-primary" /></div>
-                <div>
-                  <p className="text-[11px] md:text-xs font-bold text-white leading-tight">Sécurité Garantie</p>
-                  <p className="text-[9px] md:text-[10px] text-stone-400">Vos données sont protégées conforme RGPD.</p>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -486,7 +405,7 @@ function SignupForm() {
                         <FormControl>
                           <Input placeholder="L'Aventurier" {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl focus:border-primary transition-all text-xs md:text-sm text-white" />
                         </FormControl>
-                        <FormMessage className="text-[9px] md:text-[10px]" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -499,7 +418,7 @@ function SignupForm() {
                         <FormControl>
                           <Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl focus:border-primary transition-all text-xs md:text-sm text-white" />
                         </FormControl>
-                        <FormMessage className="text-[9px] md:text-[10px]" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -511,47 +430,18 @@ function SignupForm() {
                         <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Mot de passe</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input 
-                              type={showPassword ? "text" : "password"} 
-                              {...field} 
-                              className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl pr-10 focus:border-primary transition-all text-xs md:text-sm text-white" 
-                            />
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="icon" 
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-stone-500 hover:text-white"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
+                            <Input type={showPassword ? "text" : "password"} {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl pr-10 focus:border-primary transition-all text-xs md:text-sm text-white" />
+                            <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-stone-500" onClick={() => setShowPassword(!showPassword)}>
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>
                           </div>
                         </FormControl>
-                        
-                        <div className="space-y-2 pt-1">
-                          <div className="flex justify-between items-center px-1">
-                            <span className="text-[8px] font-black uppercase text-stone-500 tracking-widest">Sécurité</span>
-                            <span className={cn("text-[8px] font-black uppercase tracking-widest", passwordStrength > 0 ? strengthColor.replace('bg-', 'text-') : 'text-stone-600')}>
-                              {strengthLabel || '---'}
-                            </span>
-                          </div>
-                          <div className="flex gap-1 h-1">
-                            {[1, 2, 3, 4].map((step) => (
-                              <div 
-                                key={step}
-                                className={cn(
-                                  "flex-1 rounded-full transition-all duration-500",
-                                  passwordStrength >= step ? strengthColor : "bg-stone-800"
-                                )}
-                              />
-                            ))}
-                          </div>
-                          {password && passwordStrength < 2 && (
-                            <p className="text-[8px] text-rose-500 font-bold italic">Mot de passe trop simple. Ajoutez des majuscules ou chiffres.</p>
-                          )}
+                        <div className="flex gap-1 h-1 mt-2">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div key={step} className={cn("flex-1 rounded-full transition-all duration-500", passwordStrength >= step ? strengthColor : "bg-stone-800")} />
+                          ))}
                         </div>
-                        
-                        <FormMessage className="text-[9px] md:text-[10px]" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -560,118 +450,50 @@ function SignupForm() {
                     name="accountType"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Je rejoins en tant que...</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Destinée au Hub</FormLabel>
                         <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="grid grid-cols-3 gap-2"
-                          >
+                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 gap-2">
                             {[
                               { value: "reader", label: "Lecteur", icon: BookOpen },
                               { value: "artist_draft", label: "Draft", icon: PenSquare },
                               { value: "artist_pro", label: "Pro", icon: Award },
                             ].map((item) => (
                               <FormItem key={item.value} className="flex items-center space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value={item.value} className="sr-only" id={item.value} />
-                                </FormControl>
-                                <label
-                                  htmlFor={item.value}
-                                  className={cn(
-                                    "flex-1 flex flex-col items-center justify-center p-2 md:p-3 rounded-xl border-2 border-white/10 cursor-pointer transition-all hover:bg-white/5",
-                                    field.value === item.value ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,168,67,0.2)]" : "text-stone-400 grayscale hover:grayscale-0"
-                                  )}
-                                >
-                                  <item.icon className="h-4 w-4 md:h-5 md:w-5 mb-1.5" />
-                                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                                <FormControl><RadioGroupItem value={item.value} className="sr-only" id={item.value} /></FormControl>
+                                <label htmlFor={item.value} className={cn("flex-1 flex flex-col items-center justify-center p-2 rounded-xl border-2 border-white/10 cursor-pointer transition-all hover:bg-white/5", field.value === item.value ? "border-primary bg-primary/10 text-primary" : "text-stone-400 grayscale")}>
+                                  <item.icon className="h-4 w-4 mb-1" />
+                                  <span className="text-[8px] font-black uppercase">{item.label}</span>
                                 </label>
                               </FormItem>
                             ))}
                           </RadioGroup>
                         </FormControl>
-                        <FormMessage className="text-[9px] md:text-[10px]" />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="acceptTerms"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-2 space-y-0 rounded-xl border border-white/5 p-3 bg-white/5">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            className="mt-0.5 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-black h-3.5 w-3.5"
-                          />
-                        </FormControl>
+                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" /></FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="text-[9px] md:text-[10px] text-stone-400 font-light leading-snug">
-                            J'accepte les <Link href="/legal/terms" className="text-primary font-bold hover:underline">Conditions</Link> et la <Link href="/legal/privacy" className="text-primary font-bold hover:underline">Politique de Confidentialité</Link>.
-                          </FormLabel>
+                          <FormLabel className="text-[9px] text-stone-400">J'accepte les Conditions et la Politique de Confidentialité.</FormLabel>
                         </div>
                       </FormItem>
                     )}
                   />
-
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || passwordStrength < 2} 
-                    className={cn(
-                      "w-full h-12 md:h-14 rounded-xl font-black text-sm md:text-base transition-all active:scale-95 group relative overflow-hidden mt-2 gold-shimmer",
-                      passwordStrength >= 2 ? "bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(212,168,67,0.3)]" : "bg-stone-800 text-stone-500 cursor-not-allowed"
-                    )}
-                  >
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                      <>
-                        S'inscrire au Hub
-                      </>
-                    )}
+                  <Button type="submit" disabled={isLoading || passwordStrength < 2} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-black gold-shimmer">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "S'inscrire au Hub"}
                   </Button>
                 </form>
               </Form>
             </CardContent>
             <CardFooter className="flex flex-col border-t border-white/5 py-6 bg-white/5">
-              <div className="text-center text-[10px] md:text-xs text-stone-400 font-medium">
-                Déjà un compte ?{" "}
-                <Link href="/login" className="font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-widest">
-                  Se connecter
-                </Link>
-              </div>
+              <div className="text-center text-[10px] text-stone-400">Déjà un compte ? <Link href="/login" className="font-black text-primary hover:underline uppercase tracking-widest">Se connecter</Link></div>
             </CardFooter>
           </Card>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-16 px-4 md:px-6 bg-gradient-to-b from-stone-950 to-stone-900 overflow-hidden relative">
-        <div className="absolute bottom-0 right-0 w-[300px] h-[300px] md:w-[400px] md:h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10" />
-        
-        <div className="max-w-6xl auto">
-          <div className="text-center mb-8 md:mb-12 space-y-2 md:space-y-3">
-            <h2 className="text-2xl md:text-4xl font-display font-bold text-white drop-shadow-[0_0_10px_rgba(212,168,67,0.2)]">Pourquoi Rejoindre NexusHub ?</h2>
-            <p className="text-stone-400 text-xs md:text-sm max-w-xl mx-auto italic font-light">Le premier hub créatif panafricain pour les passionnés de narration visuelle.</p>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {[
-              { icon: Users, title: "Inclusivité", desc: "Connectez-vous avec des artistes du Gabon et d'Afrique.", color: "bg-blue-500/10 text-blue-500" },
-              { icon: Coins, title: "Revenus", desc: "Gagnez avec les AfriCoins et dons.", color: "bg-amber-500/10 text-amber-500" },
-              { icon: LayoutGrid, title: "Immersion", desc: "Outils de création inspirés de la culture africaine.", color: "bg-primary/10 text-primary" },
-              { icon: CheckCircle2, title: "Gratuité", desc: "Draft gratuit, Pro sur validation.", color: "bg-emerald-500/10 text-emerald-500" },
-            ].map((item, i) => (
-              <Card key={i} className="bg-stone-900 border-white/5 hover:border-primary/30 transition-all duration-500 group rounded-[2rem] overflow-hidden shadow-xl">
-                <CardContent className="p-6 md:p-8 space-y-4">
-                  <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-inner", item.color)}>
-                    <item.icon className="h-6 w-6 md:h-7 md:w-7" />
-                  </div>
-                  <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-tight">{item.title}</h3>
-                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed line-clamp-3 italic font-light">{item.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
     </div>

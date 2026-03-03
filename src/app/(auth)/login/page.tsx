@@ -76,7 +76,6 @@ function LoginForm() {
     return () => clearInterval(interval);
   }, []);
 
-  // Gérer le résultat de la redirection au chargement
   useEffect(() => {
     getRedirectResult(auth).then(async (result) => {
       if (result) {
@@ -167,22 +166,11 @@ function LoginForm() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      
       if (error.code === 'auth/popup-blocked') {
-        toast({ 
-          title: "Fenêtre bloquée", 
-          description: "Votre navigateur bloque les pop-ups. Redirection sécurisée...",
-        });
+        toast({ title: "Fenêtre bloquée", description: "Veuillez autoriser les pop-ups ou réessayer." });
         await signInWithRedirect(auth, provider!);
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        // Silence or simple log for cancellation
-        console.log("User cancelled login popup");
-      } else {
-        toast({ 
-          title: "Échec de connexion", 
-          description: "Vérifiez vos paramètres ou essayez un autre mode.", 
-          variant: "destructive" 
-        });
+      } else if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ title: "Échec de connexion", description: "Une erreur est survenue.", variant: "destructive" });
       }
     } finally {
       setIsSocialLoading(null);
@@ -289,7 +277,7 @@ function LoginForm() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 text-black shadow-xl gold-shimmer">
+                <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl font-black text-lg bg-primary text-black shadow-xl gold-shimmer">
                   {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Se Connecter au Hub"}
                 </Button>
               </form>
