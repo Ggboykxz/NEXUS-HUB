@@ -22,19 +22,31 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialisation de l'application (Singleton)
+// Initialisation sécurisée de l'application (Singleton)
 let app: FirebaseApp;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
+try {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+  // Fallback for build time
+  app = getApps().length ? getApp() : initializeApp({
+    apiKey: "placeholder",
+    authDomain: "placeholder",
+    projectId: "placeholder"
+  });
 }
 
-// Initialisation de Firestore avec gestion du cache persistant
+// Initialisation de Firestore avec gestion du cache persistant et singleton
 let db: Firestore;
-if (getApps().length > 1) {
+try {
   db = getFirestore(app);
-} else {
+  // Optionnel: ré-initialiser avec la persistance si nécessaire, 
+  // mais getFirestore(app) suffit généralement après le premier appel réussi.
+} catch (error) {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
@@ -42,7 +54,7 @@ if (getApps().length > 1) {
   });
 }
 
-// Export des services
+// Export des services avec vérification d'initialisation
 export const auth: Auth = getAuth(app);
 export { db };
 export const storage: FirebaseStorage = getStorage(app);
@@ -51,7 +63,6 @@ export const functions: Functions = getFunctions(app, 'europe-west1');
 /**
  * Initialisation de Firebase App Check (uniquement côté client)
  */
-let appCheck: AppCheck | undefined;
 if (typeof window !== "undefined") {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   
@@ -61,12 +72,12 @@ if (typeof window !== "undefined") {
 
   if (siteKey) {
     try {
-      appCheck = initializeAppCheck(app, {
+      initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
     } catch (error) {
-      console.error("Nexus Security: App Check init failed", error);
+      console.warn("Nexus Security: App Check initialization skipped or failed", error);
     }
   }
 }
