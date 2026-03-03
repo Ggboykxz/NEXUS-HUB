@@ -27,28 +27,16 @@ const app = getApps().length > 0
   : initializeApp(firebaseConfig);
 
 /**
- * Initialisation de Firestore avec gestion des instances multiples (Hot Reload)
- * et cache persistant multi-onglets.
+ * Initialisation de Firestore avec pattern singleton pour éviter
+ * l'erreur "Failed to obtain primary lease".
  */
-let db;
-if (getApps().length > 0) {
-  try {
-    db = getFirestore(app);
-  } catch (error) {
-    // Si getFirestore échoue ou si on a besoin de réglages spécifiques
-    db = initializeFirestore(app, {
+const db = getApps().length > 0 
+  ? getFirestore(app)
+  : initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager()
       })
     });
-  }
-} else {
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager()
-    })
-  });
-}
 
 export const auth = getAuth(app);
 export { db };
@@ -57,7 +45,6 @@ export const functions = getFunctions(app, 'europe-west1');
 
 /**
  * Initialisation de Firebase App Check
- * Protège vos ressources Firebase contre les abus.
  */
 if (typeof window !== "undefined") {
   if (process.env.NODE_ENV === 'development') {
