@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { Sparkles } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -15,14 +14,11 @@ export default async function GenrePage({ params }: PageProps) {
   const { genre } = await params;
   const genreName = decodeURIComponent(genre);
   
-  const q = query(
-    collection(db, 'stories'),
-    where('genre', '==', genreName),
-    where('isPublished', '==', true),
-    orderBy('views', 'desc')
-  );
-
-  const snap = await getDocs(q);
+  const snap = await adminDb.collection('stories')
+    .where('genre', '==', genreName)
+    .where('isPublished', '==', true)
+    .orderBy('views', 'desc')
+    .get();
 
   if (snap.empty) {
     notFound();

@@ -1,21 +1,18 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { Crown } from 'lucide-react';
 import type { Story } from '@/lib/types';
 
-export const revalidate = 3600; // Revalider toutes les heures
+export const revalidate = 3600;
 
 export default async function PremiumStoriesPage() {
-  const q = query(
-    collection(db, 'stories'), 
-    where('isPremium', '==', true),
-    where('isPublished', '==', true),
-    orderBy('views', 'desc'),
-    limit(24)
-  );
+  const snap = await adminDb.collection('stories')
+    .where('isPremium', '==', true)
+    .where('isPublished', '==', true)
+    .orderBy('views', 'desc')
+    .limit(24)
+    .get();
   
-  const snap = await getDocs(q);
   const premiumStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (

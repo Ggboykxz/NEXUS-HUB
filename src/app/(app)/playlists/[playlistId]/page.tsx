@@ -1,8 +1,7 @@
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { notFound } from 'next/navigation';
 import { StoryCard } from '@/components/story-card';
-import { ListMusic, Lock, Globe, Sparkles, ChevronRight, Bookmark } from 'lucide-react';
+import { ListMusic, Lock, Globe, Sparkles, Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -13,16 +12,15 @@ interface PageProps {
 }
 
 async function getPlaylistData(playlistId: string) {
-  const playlistSnap = await getDoc(doc(db, 'playlists', playlistId));
-  if (!playlistSnap.exists()) return null;
+  const playlistSnap = await adminDb.collection('playlists').doc(playlistId).get();
+  if (!playlistSnap.exists) return null;
   
   const playlist = { id: playlistSnap.id, ...playlistSnap.data() } as Playlist;
   
   let storiesList: Story[] = [];
   if (playlist.storyIds && playlist.storyIds.length > 0) {
-    // Firestore limit: 'in' queries are capped at 30 items
     const storyIds = playlist.storyIds.slice(0, 30);
-    const storiesSnap = await getDocs(query(collection(db, 'stories'), where('id', 'in', storyIds)));
+    const storiesSnap = await adminDb.collection('stories').where('id', 'in', storyIds).get();
     storiesList = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
   }
 
@@ -41,9 +39,9 @@ export default async function PlaylistDetailPage({ params }: PageProps) {
     <div className="container mx-auto max-w-7xl px-6 py-12 space-y-16">
       {/* IMMERSIVE PLAYLIST HEADER */}
       <header className="relative p-12 rounded-[3.5rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.1),transparent_70%)]" />
-        <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="space-y-6 text-center md:text-left flex-1">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+          <div className="space-y-6 text-center lg:text-left flex-1">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
               <div className="bg-primary/10 p-2.5 rounded-2xl">
                 <ListMusic className="h-6 w-6 text-primary" />
