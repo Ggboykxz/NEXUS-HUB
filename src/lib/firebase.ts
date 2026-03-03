@@ -1,15 +1,16 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
   persistentMultipleTabManager,
-  getFirestore
+  getFirestore,
+  Firestore
 } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions";
-import { getAnalytics, isSupported } from "firebase/analytics";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getFunctions, Functions } from "firebase/functions";
+import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
+import { initializeAppCheck, ReCaptchaV3Provider, AppCheck } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,40 +22,46 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialisation sécurisée de l'application
-const app = getApps().length > 0 
-  ? getApp() 
-  : initializeApp(firebaseConfig);
+// Initialisation de l'application (Singleton)
+let app: FirebaseApp;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
 
-/**
- * Initialisation de Firestore avec pattern singleton pour éviter
- * l'erreur "Failed to obtain primary lease".
- */
-const db = getApps().length > 0 
-  ? getFirestore(app)
-  : initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    });
+// Initialisation de Firestore avec gestion du cache persistant
+let db: Firestore;
+if (getApps().length > 1) {
+  db = getFirestore(app);
+} else {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+}
 
-export const auth = getAuth(app);
+// Export des services
+export const auth: Auth = getAuth(app);
 export { db };
-export const storage = getStorage(app);
-export const functions = getFunctions(app, 'europe-west1');
+export const storage: FirebaseStorage = getStorage(app);
+export const functions: Functions = getFunctions(app, 'europe-west1');
 
 /**
- * Initialisation de Firebase App Check
+ * Initialisation de Firebase App Check (uniquement côté client)
  */
+let appCheck: AppCheck | undefined;
 if (typeof window !== "undefined") {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
   if (process.env.NODE_ENV === 'development') {
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   if (siteKey) {
     try {
-      initializeAppCheck(app, {
+      appCheck = initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
@@ -64,7 +71,10 @@ if (typeof window !== "undefined") {
   }
 }
 
-export const initAnalytics = async () => {
+/**
+ * Initialisation asynchrone des Analytics
+ */
+export const initAnalytics = async (): Promise<Analytics | null> => {
   if (typeof window !== "undefined" && await isSupported()) {
     return getAnalytics(app);
   }
