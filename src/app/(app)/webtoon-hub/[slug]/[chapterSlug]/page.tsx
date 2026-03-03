@@ -17,7 +17,9 @@ import { Label } from '@/components/ui/label';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, orderBy, updateDoc, increment, doc } from 'firebase/firestore';
+import type { Story, Chapter } from '@/lib/types';
+import { getStoryUrl } from '@/lib/types';
 import { getOptimizedImage } from '@/lib/image-utils';
 import { SponsoredPanel } from '@/components/ads/sponsored-panel';
 import { augmentedReadingAction } from '@/ai/flows/augmented-reading-flow';
@@ -28,8 +30,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery } from '@tanstack/react-query';
-import type { Story, Chapter } from '@/lib/types';
 
 interface MagicalReaderProps {
   params: Promise<{ slug: string, chapterSlug: string }>;
@@ -41,34 +41,10 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   
-  // 1. Fetch Story by Slug
-  const { data: story, isLoading: loadingStory } = useQuery({
-    queryKey: ['reader-story', slug],
-    queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('slug', '==', slug), limit(1));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      const data = snap.docs[0].data();
-      
-      return { id: snap.docs[0].id, ...data } as Story;
-    }
-  });
-
-  // 2. Fetch Chapter by Slug from Sub-collection
-  const { data: chapter, isLoading: loadingChapter } = useQuery({
-    queryKey: ['reader-chapter', story?.id, chapterSlug],
-    enabled: !!story?.id,
-    queryFn: async () => {
-      const q = query(
-        collection(db, 'stories', story!.id, 'chapters'),
-        where('slug', '==', chapterSlug),
-        limit(1)
-      );
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return { id: snap.docs[0].id, ...snap.docs[0].data() } as Chapter;
-    }
-  });
+  const [story, setStory] = useState<Story | null>(null);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [allChapters, setAllChapters] = useState<Chapter[]>([]);
+  const [isLoadingStory, setIsLoadingStory] = useState(true);
 
   const [activeMode, setActiveMode] = useState<'scroll' | 'pages'>(defaultMode);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -93,6 +69,34 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const storyQ = query(collection(db, 'stories'), where('slug', '==', slug), limit(1));
+        const storySnap = await getDocs(storyQ);
+        if (storySnap.empty) { notFound(); return; }
+        const storyData = { id: storySnap.docs[0].id, ...storySnap.docs[0].data() } as Story;
+        setStory(storyData);
+
+        const chaptersQ = query(collection(db, 'stories', storyData.id, 'chapters'), orderBy('chapterNumber', 'asc'));
+        const chaptersSnap = await getDocs(chaptersQ);
+        const chapters = chaptersSnap.docs.map(d => ({ id: d.id, ...d.data() } as Chapter));
+        setAllChapters(chapters);
+
+        const targetChapter = chapters.find(c => c.slug === chapterSlug) || chapters[0];
+        if (!targetChapter) { notFound(); return; }
+        setChapter(targetChapter);
+
+        updateDoc(doc(db, 'stories', storyData.id), { views: increment(1) }).catch(() => {});
+      } catch (error) {
+        console.error('Error fetching chapter:', error);
+      } finally {
+        setIsLoadingStory(false);
+      }
+    }
+    fetchData();
+  }, [slug, chapterSlug]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -141,7 +145,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
     });
   };
 
-  if (loadingStory || loadingChapter) {
+  if (isLoadingStory) {
     return (
       <div className="h-screen bg-stone-950 flex flex-col items-center justify-center gap-6">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -153,6 +157,8 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
   }
 
   if (!story || !chapter) notFound();
+
+  const pages = chapter?.pages || [];
 
   return (
     <div className={cn(
@@ -213,7 +219,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
             activeMode === 'scroll' ? "max-w-[800px] flex flex-col items-center" : "max-w-7xl px-6",
             (activeMode === 'pages' && isDoublePage) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "flex flex-col items-center"
           )}>
-            {chapter.pages?.map((page, index) => (
+            {pages.map((page, index) => (
               <div 
                 key={index} 
                 className={cn(
