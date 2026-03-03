@@ -3,7 +3,8 @@ import { getAuth } from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager 
+  persistentMultipleTabManager,
+  getFirestore
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
@@ -20,17 +21,34 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialisation sécurisée
+// Initialisation sécurisée de l'application
 const app = getApps().length > 0 
   ? getApp() 
   : initializeApp(firebaseConfig);
 
-// Initialisation de Firestore avec cache persistant multi-onglets
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-});
+/**
+ * Initialisation de Firestore avec gestion des instances multiples (Hot Reload)
+ * et cache persistant multi-onglets.
+ */
+let db;
+if (getApps().length > 0) {
+  try {
+    db = getFirestore(app);
+  } catch (error) {
+    // Si getFirestore échoue ou si on a besoin de réglages spécifiques
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+  }
+} else {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+}
 
 export const auth = getAuth(app);
 export { db };
@@ -39,10 +57,9 @@ export const functions = getFunctions(app, 'europe-west1');
 
 /**
  * Initialisation de Firebase App Check
- * Protège vos ressources Firebase contre les abus (facturation, phishing).
+ * Protège vos ressources Firebase contre les abus.
  */
 if (typeof window !== "undefined") {
-  // Support du mode débogage en développement
   if (process.env.NODE_ENV === 'development') {
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
@@ -54,9 +71,8 @@ if (typeof window !== "undefined") {
         provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
-      console.log("Nexus Security: App Check activé.");
     } catch (error) {
-      console.error("Nexus Security: Échec de l'activation d'App Check", error);
+      console.error("Nexus Security: App Check init failed", error);
     }
   }
 }
