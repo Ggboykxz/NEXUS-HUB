@@ -58,8 +58,6 @@ if (typeof window !== "undefined") {
     } catch (error) {
       console.error("Nexus Security: Échec de l'activation d'App Check", error);
     }
-  } else if (process.env.NODE_ENV === 'production') {
-    console.warn("Nexus Security: NEXT_PUBLIC_RECAPTCHA_SITE_KEY manquante en production.");
   }
 }
 
