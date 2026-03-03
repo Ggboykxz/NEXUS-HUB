@@ -1,3 +1,4 @@
+
 import * as admin from 'firebase-admin';
 
 /**
@@ -8,6 +9,7 @@ if (!admin.apps.length) {
     const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-6915614597-eca66';
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app`;
 
     if (privateKey && clientEmail) {
       admin.initializeApp({
@@ -16,12 +18,14 @@ if (!admin.apps.length) {
           clientEmail,
           privateKey,
         }),
+        databaseURL,
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
       });
     } else {
-      // Mode dégradé pour éviter l'erreur 500 au démarrage
+      // Mode dégradé (Server-side limited) pour éviter l'erreur 500 au démarrage sans clés privées
       admin.initializeApp({
         projectId: projectId,
+        databaseURL,
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
       });
     }
