@@ -1,8 +1,7 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar, ArrowLeft, Share2, MessageSquare, Tag } from 'lucide-react';
 import Link from 'next/link';
@@ -17,8 +16,11 @@ interface PageProps {
 }
 
 async function getPost(slug: string) {
-  const q = query(collection(db, 'blogPosts'), where('slug', '==', slug), limit(1));
-  const snap = await getDocs(q);
+  const snap = await adminDb.collection('blogPosts')
+    .where('slug', '==', slug)
+    .limit(1)
+    .get();
+    
   if (snap.empty) return null;
   return { id: snap.docs[0].id, ...snap.docs[0].data() } as BlogPost;
 }
@@ -97,7 +99,6 @@ export default async function BlogPostPage({ params }: PageProps) {
               {post.excerpt}
             </p>
             
-            {/* Simulation de contenu riche - À remplacer par post.content quand disponible en CMS */}
             <p>
               Dans le cadre du développement de la narration visuelle sur le continent, notamment pour les <strong>histoires africaines au Gabon</strong> et dans toute l'Afrique centrale, la question du world building est centrale. Comment marier les mythes ancestraux aux technologies de demain ?
             </p>

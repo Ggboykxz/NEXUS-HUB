@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Story, UserProfile } from '@/lib/types';
@@ -10,16 +9,21 @@ interface PageProps {
 }
 
 async function getArtistData(slug: string) {
-  const usersRef = collection(db, 'users');
-  const q = query(usersRef, where('slug', '==', slug), limit(1));
-  const snap = await getDocs(q);
+  const usersSnap = await adminDb.collection('users')
+    .where('slug', '==', slug)
+    .limit(1)
+    .get();
   
-  if (snap.empty) return null;
+  if (usersSnap.empty) return null;
   
-  const artist = { uid: snap.docs[0].id, ...snap.docs[0].data() } as UserProfile;
+  const artistDoc = usersSnap.docs[0];
+  const artist = { uid: artistDoc.id, ...artistDoc.data() } as UserProfile;
   
   // Fetch Stories
-  const storiesSnap = await getDocs(query(collection(db, 'stories'), where('artistId', '==', artist.uid)));
+  const storiesSnap = await adminDb.collection('stories')
+    .where('artistId', '==', artist.uid)
+    .get();
+    
   const artistStories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
 
   return { artist, artistStories };

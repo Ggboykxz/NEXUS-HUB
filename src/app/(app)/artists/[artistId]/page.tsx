@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { notFound, redirect } from 'next/navigation';
 import ArtistDetailClient from '../../artiste/[slug]/artist-detail-client';
 import type { UserProfile, Story } from '@/lib/types';
@@ -16,11 +15,10 @@ interface PageProps {
 export default async function ArtistProfileRedirectPage({ params }: PageProps) {
   const { artistId } = await params;
 
-  // 1. Récupération du profil artiste dans Firestore
-  const artistRef = doc(db, 'users', artistId);
-  const artistSnap = await getDoc(artistRef);
+  // 1. Récupération du profil artiste dans Firestore (Server-side)
+  const artistSnap = await adminDb.collection('users').doc(artistId).get();
   
-  if (!artistSnap.exists()) {
+  if (!artistSnap.exists) {
     notFound();
   }
 
@@ -32,9 +30,9 @@ export default async function ArtistProfileRedirectPage({ params }: PageProps) {
   }
 
   // 3. Fallback : Chargement des histoires et rendu inline si pas de slug
-  const storiesRef = collection(db, 'stories');
-  const q = query(storiesRef, where('artistId', '==', artistId));
-  const storiesSnap = await getDocs(q);
+  const storiesSnap = await adminDb.collection('stories')
+    .where('artistId', '==', artistId)
+    .get();
   
   const artistStories = storiesSnap.docs.map(d => ({ 
     id: d.id, 

@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { Clock } from 'lucide-react';
 import type { Story } from '@/lib/types';
@@ -7,15 +6,13 @@ import type { Story } from '@/lib/types';
 export const revalidate = 3600;
 
 export default async function OngoingPage() {
-  const q = query(
-    collection(db, 'stories'), 
-    where('status', '==', 'En cours'),
-    where('isPublished', '==', true),
-    where('isBanned', '==', false),
-    orderBy('updatedAt', 'desc')
-  );
+  const snap = await adminDb.collection('stories')
+    .where('status', '==', 'En cours')
+    .where('isPublished', '==', true)
+    .where('isBanned', '==', false)
+    .orderBy('updatedAt', 'desc')
+    .get();
   
-  const snap = await getDocs(q);
   const ongoingStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
 
   return (

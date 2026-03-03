@@ -1,5 +1,4 @@
-import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,12 +11,11 @@ import type { BlogPost } from '@/lib/types';
 export const revalidate = 3600;
 
 export default async function BlogListingPage() {
-  const q = query(
-    collection(db, 'blogPosts'),
-    orderBy('publishedAt', 'desc'),
-    limit(12)
-  );
-  const snap = await getDocs(q);
+  const snap = await adminDb.collection('blogPosts')
+    .orderBy('publishedAt', 'desc')
+    .limit(12)
+    .get();
+    
   const posts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
 
   return (
