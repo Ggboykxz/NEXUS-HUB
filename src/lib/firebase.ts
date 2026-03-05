@@ -1,14 +1,15 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
   persistentMultipleTabManager,
   getFirestore,
-  Firestore
+  Firestore,
+  connectFirestoreEmulator
 } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
-import { getFunctions, Functions } from "firebase/functions";
+import { getStorage, FirebaseStorage, connectStorageEmulator } from "firebase/storage";
+import { getFunctions, Functions, connectFunctionsEmulator } from "firebase/functions";
 import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -21,17 +22,33 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// Initialisation sécurisée de l'application (Singleton)
-const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Singleton pattern for Firebase App
+function getFirebaseApp(): FirebaseApp {
+  if (getApps().length > 0) {
+    return getApp();
+  }
+  return initializeApp(firebaseConfig);
+}
 
-// AUTHENTIFICATION (App Check explicitement ignoré ici)
+const app = getFirebaseApp();
+
+// Singleton for Auth
 export const auth: Auth = getAuth(app);
 
-// FIRESTORE (Singleton avec cache persistant)
+// Singleton for Firestore with robust handling of primary lease errors
 let db: Firestore;
-try {
-  db = getFirestore(app);
-} catch (error) {
+if (getApps().length > 0) {
+  try {
+    db = getFirestore(app);
+  } catch (e) {
+    // Fallback if already initialized or in a conflicting state
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+  }
+} else {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
@@ -44,7 +61,7 @@ export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app, 'europe-west1');
 
 /**
- * Initialisation asynchrone des Analytics
+ * Initialisation asynchrone des Analytics (Client-side uniquement)
  */
 export const initAnalytics = async (): Promise<Analytics | null> => {
   if (typeof window !== "undefined" && await isSupported()) {
@@ -52,5 +69,13 @@ export const initAnalytics = async (): Promise<Analytics | null> => {
   }
   return null;
 };
+
+// Emulators (optionnel, activé si variables d'env présentes)
+if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+  connectAuthEmulator(auth, "http://localhost:9099");
+  connectFirestoreEmulator(db, "localhost", 8080);
+  connectStorageEmulator(storage, "localhost", 9199);
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
 
 export default app;

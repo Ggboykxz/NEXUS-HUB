@@ -2,10 +2,11 @@ import * as admin from 'firebase-admin';
 
 /**
  * Initialisation sécurisée du Firebase Admin SDK.
+ * Utilise les variables d'environnement pour une configuration flexible.
  */
 if (!admin.apps.length) {
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID || 'studio-6915614597-eca66';
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-6915614597-eca66';
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
     const databaseURL = process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app`;
@@ -21,7 +22,8 @@ if (!admin.apps.length) {
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
       });
     } else {
-      // Mode dégradé (Server-side limited) pour le build ou développement sans clés privées
+      // Mode dégradé pour le build ou le développement sans clés privées
+      // Permet au build Next.js de passer sans crasher si les secrets ne sont pas injectés
       admin.initializeApp({
         projectId: projectId,
         databaseURL,
