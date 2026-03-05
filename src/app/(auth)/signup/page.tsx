@@ -113,16 +113,6 @@ function SignupForm() {
     return score;
   }, [passwordValue]);
 
-  const strengthLabel = useMemo(() => {
-    switch (passwordStrength) {
-      case 1: return 'Faible';
-      case 2: return 'Moyen';
-      case 3: return 'Fort';
-      case 4: return 'Très fort';
-      default: return '';
-    }
-  }, [passwordStrength]);
-
   const strengthColor = useMemo(() => {
     switch (passwordStrength) {
       case 1: return 'bg-rose-500';
@@ -141,11 +131,14 @@ function SignupForm() {
       
       if (!userDoc.exists()) {
         const user = auth.currentUser;
+        const slug = (user?.displayName || 'user').toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+        
         await setDoc(doc(db, 'users', uid), {
           uid: uid,
           email: user?.email,
           displayName: user?.displayName || 'Nouveau Voyageur',
           photoURL: user?.photoURL || '',
+          slug: slug,
           afriCoins: 0,
           bio: '',
           createdAt: serverTimestamp(),
@@ -161,15 +154,6 @@ function SignupForm() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (passwordStrength < 2) {
-      toast({
-        title: "Mot de passe trop faible",
-        description: "Veuillez renforcer votre mot de passe pour continuer.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -177,10 +161,13 @@ function SignupForm() {
 
       await updateProfile(user, { displayName: values.name });
 
+      const slug = values.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: values.email,
         displayName: values.name,
+        slug: slug,
         role: values.accountType,
         afriCoins: 0,
         bio: '',
@@ -197,11 +184,13 @@ function SignupForm() {
       router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
-      // Masquage des erreurs techniques (comme App Check)
-      const errorMessage = error.code === 'auth/email-already-in-use' 
-        ? "Cet email est déjà utilisé." 
-        : "Une erreur est survenue lors de l'inscription. Veuillez réessayer.";
+      console.error("Signup error:", error);
+      let errorMessage = "Une erreur est survenue lors de l'inscription.";
       
+      if (error.code === 'auth/email-already-in-use') errorMessage = "Cet email est déjà utilisé par un autre compte.";
+      if (error.code === 'auth/weak-password') errorMessage = "Le mot de passe est trop faible.";
+      if (error.code === 'auth/invalid-email') errorMessage = "L'adresse email n'est pas valide.";
+
       toast({
         title: "Échec de l'inscription",
         description: errorMessage,
@@ -224,7 +213,6 @@ function SignupForm() {
 
     try {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
       if (isMobile) {
         await signInWithRedirect(auth, provider!);
       } else {
@@ -235,13 +223,8 @@ function SignupForm() {
         }
       }
     } catch (error: any) {
-      console.error("Signup error:", error);
-      if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Redirection sécurisée", description: "Veuillez patienter..." });
-        await signInWithRedirect(auth, provider!);
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ title: "Erreur", description: "La connexion a échoué. Réessayez.", variant: "destructive" });
-      }
+      console.error("Social login error:", error);
+      toast({ title: "Erreur", description: "La connexion a échoué. Veuillez réessayer.", variant: "destructive" });
     } finally {
       setIsSocialLoading(null);
     }
@@ -406,7 +389,7 @@ function SignupForm() {
                     name="name"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Pseudo Unique</FormLabel>
+                        <FormLabel className="text-stone-300 text-[10px] md:text-xs font-bold uppercase tracking-widest">Pseudo Public</FormLabel>
                         <FormControl>
                           <Input placeholder="L'Aventurier" {...field} className="bg-white/5 border-white/10 h-10 md:h-11 rounded-xl focus:border-primary transition-all text-xs md:text-sm text-white" />
                         </FormControl>
@@ -489,7 +472,7 @@ function SignupForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={isLoading || passwordStrength < 2} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-black gold-shimmer">
+                  <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-black gold-shimmer">
                     {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "S'inscrire au Hub"}
                   </Button>
                 </form>
