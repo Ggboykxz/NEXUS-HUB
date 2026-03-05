@@ -133,10 +133,8 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       console.error("Auth modal error:", error);
       let errorMessage = "Échec de connexion.";
       
-      if (error.code === 'auth/internal-error') {
-        errorMessage = "Une erreur technique temporaire empêche la connexion via ce portail.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée.";
+      if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Vérification de sécurité bloquée (App Check).";
       }
       
       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/popup-blocked') {
@@ -159,10 +157,8 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       console.error("Email Login error:", error);
       let errorMessage = "Email ou mot de passe incorrect.";
       
-      if (error.code === 'auth/internal-error') {
-        errorMessage = "Erreur technique temporaire du service d'authentification.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Service temporairement indisponible.";
+      if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Sécurité Firebase : App Check bloque l'accès.";
       }
       
       toast({ title: "Accès refusé", description: errorMessage, variant: "destructive" });

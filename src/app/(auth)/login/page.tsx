@@ -132,9 +132,9 @@ function LoginForm() {
       let errorMessage = "Email ou mot de passe incorrect.";
       
       if (error.code === 'auth/internal-error') {
-        errorMessage = "Une erreur technique est survenue au Hub. Vérifiez votre connexion ou la configuration du navigateur.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée. Désactivez les bloqueurs de scripts et réessayez.";
+        errorMessage = "Difficulté technique du Hub. Réessayez bientôt.";
+      } else if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Accès bloqué par App Check. Vérifiez la configuration dans votre Console Firebase.";
       }
       
       toast({ title: "Erreur", description: errorMessage, variant: "destructive" });
@@ -166,12 +166,10 @@ function LoginForm() {
       }
     } catch (error: any) {
       console.error("Social Login error:", error);
-      let errorMessage = "Échec de connexion. Veuillez réessayer.";
+      let errorMessage = "Échec de connexion.";
       
-      if (error.code === 'auth/internal-error') {
-        errorMessage = "Le portail d'authentification rencontre une difficulté technique temporaire.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
+      if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Vérification de sécurité bloquée par App Check.";
       }
       
       if (error.code !== 'auth/popup-closed-by-user') {

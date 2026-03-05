@@ -1,11 +1,11 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { 
-  initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager,
   getFirestore,
-  Firestore
+  Firestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
 } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getFunctions, Functions } from "firebase/functions";
@@ -28,11 +28,6 @@ function getFirebaseApp(): FirebaseApp {
     return apps[0];
   }
   
-  // Minimal config check to prevent crash during Next.js build
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') {
-    console.warn("Firebase configuration is missing or incomplete. Authentication features may fail.");
-  }
-
   return initializeApp(firebaseConfig);
 }
 
@@ -41,18 +36,16 @@ const app = getFirebaseApp();
 // Export services as singletons
 export const auth: Auth = getAuth(app);
 
-// Use a separate variable for db to handle initialization options correctly
+// Initialize Firestore with multi-tab persistence
 let firestoreDb: Firestore;
-try {
-  firestoreDb = getFirestore(app);
-} catch (e) {
-  // If getFirestore fails (e.g. already initialized with different settings), 
-  // we try to initialize it correctly or just get the instance.
+if (getApps().length > 0 && typeof window !== "undefined") {
   firestoreDb = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
     })
   });
+} else {
+  firestoreDb = getFirestore(app);
 }
 
 export const db = firestoreDb;

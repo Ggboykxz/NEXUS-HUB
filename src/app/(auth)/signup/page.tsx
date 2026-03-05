@@ -188,9 +188,9 @@ function SignupForm() {
       let errorMessage = "Une erreur est survenue lors de l'inscription.";
       
       if (error.code === 'auth/internal-error') {
-        errorMessage = "Le Hub rencontre une erreur technique temporaire. Vérifiez votre configuration de sécurité ou vos extensions.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée. Désactivez les bloqueurs de scripts.";
+        errorMessage = "Le Hub rencontre une difficulté technique. Vérifiez votre connexion.";
+      } else if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Sécurité Firebase : App Check bloque l'accès. Veuillez désactiver l'Enforcement dans votre Console Firebase.";
       } else if (error.code === 'auth/email-already-in-use') {
         errorMessage = "Cet email est déjà utilisé par un autre compte.";
       }
@@ -230,10 +230,8 @@ function SignupForm() {
       console.error("Social login error:", error);
       let errorMessage = "La connexion a échoué. Veuillez réessayer.";
       
-      if (error.code === 'auth/internal-error') {
-        errorMessage = "Erreur technique temporaire du portail social.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée.";
+      if (error.code.includes('app-check') || error.message.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée (App Check).";
       }
       
       toast({ title: "Erreur", description: errorMessage, variant: "destructive" });
