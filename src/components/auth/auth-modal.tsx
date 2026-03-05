@@ -131,10 +131,14 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       }
     } catch (error: any) {
       console.error("Auth modal error:", error);
-      let errorMessage = "Une erreur est survenue lors de l'authentification.";
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
+      let errorMessage = "Échec de connexion.";
+      
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Une erreur technique temporaire empêche la connexion via ce portail.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée.";
       }
+      
       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/popup-blocked') {
         toast({ title: "Échec de connexion", description: errorMessage, variant: "destructive" });
       }
@@ -154,9 +158,13 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     } catch (error: any) {
       console.error("Email Login error:", error);
       let errorMessage = "Email ou mot de passe incorrect.";
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Service temporairement indisponible. Veuillez réessayer plus tard.";
+      
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Erreur technique temporaire du service d'authentification.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Service temporairement indisponible.";
       }
+      
       toast({ title: "Accès refusé", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(null);

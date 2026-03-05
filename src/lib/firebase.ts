@@ -23,38 +23,39 @@ const firebaseConfig = {
 
 // Singleton pattern for Firebase App
 function getFirebaseApp(): FirebaseApp {
-  if (getApps().length > 0) {
-    return getApp();
+  const apps = getApps();
+  if (apps.length > 0) {
+    return apps[0];
   }
+  
+  // Minimal config check to prevent crash during Next.js build
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') {
+    console.warn("Firebase configuration is missing or incomplete. Authentication features may fail.");
+  }
+
   return initializeApp(firebaseConfig);
 }
 
 const app = getFirebaseApp();
 
-// Singleton for Auth - No App Check configuration here
+// Export services as singletons
 export const auth: Auth = getAuth(app);
 
-// Singleton for Firestore with robust handling
-let db: Firestore;
-if (getApps().length > 0) {
-  try {
-    db = getFirestore(app);
-  } catch (e) {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    });
-  }
-} else {
-  db = initializeFirestore(app, {
+// Use a separate variable for db to handle initialization options correctly
+let firestoreDb: Firestore;
+try {
+  firestoreDb = getFirestore(app);
+} catch (e) {
+  // If getFirestore fails (e.g. already initialized with different settings), 
+  // we try to initialize it correctly or just get the instance.
+  firestoreDb = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
     })
   });
 }
 
-export { db };
+export const db = firestoreDb;
 export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app, 'europe-west1');
 

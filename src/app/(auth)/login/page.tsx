@@ -130,9 +130,13 @@ function LoginForm() {
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "Email ou mot de passe incorrect.";
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Service temporairement indisponible. Veuillez réessayer plus tard.";
+      
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Une erreur technique est survenue au Hub. Vérifiez votre connexion ou la configuration du navigateur.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée. Désactivez les bloqueurs de scripts et réessayez.";
       }
+      
       toast({ title: "Erreur", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -163,9 +167,13 @@ function LoginForm() {
     } catch (error: any) {
       console.error("Social Login error:", error);
       let errorMessage = "Échec de connexion. Veuillez réessayer.";
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+      
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Le portail d'authentification rencontre une difficulté technique temporaire.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
         errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
       }
+      
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({ title: "Échec de connexion", description: errorMessage, variant: "destructive" });
       }

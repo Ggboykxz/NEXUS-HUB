@@ -187,15 +187,12 @@ function SignupForm() {
       console.error("Signup error:", error);
       let errorMessage = "Une erreur est survenue lors de l'inscription.";
       
-      // Filtrage spécifique de l'erreur App Check
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Service temporairement inaccessible. Veuillez réessayer dans quelques instants ou désactiver l'application forcée d'App Check dans votre console.";
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Le Hub rencontre une erreur technique temporaire. Vérifiez votre configuration de sécurité ou vos extensions.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée. Désactivez les bloqueurs de scripts.";
       } else if (error.code === 'auth/email-already-in-use') {
         errorMessage = "Cet email est déjà utilisé par un autre compte.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Le mot de passe est trop faible.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "L'adresse email n'est pas valide.";
       }
 
       toast({
@@ -232,9 +229,13 @@ function SignupForm() {
     } catch (error: any) {
       console.error("Social login error:", error);
       let errorMessage = "La connexion a échoué. Veuillez réessayer.";
-      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
-        errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
+      
+      if (error.code === 'auth/internal-error') {
+        errorMessage = "Erreur technique temporaire du portail social.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée.";
       }
+      
       toast({ title: "Erreur", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSocialLoading(null);
