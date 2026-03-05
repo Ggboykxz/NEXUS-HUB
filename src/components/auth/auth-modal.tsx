@@ -140,7 +140,8 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
         toast({ title: "Redirection sécurisée", description: "Veuillez patienter..." });
         await signInWithRedirect(auth, provider!);
       } else if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ title: "Erreur", description: "La connexion a échoué.", variant: "destructive" });
+        // Masquer les erreurs techniques comme App Check
+        toast({ title: "Échec de connexion", description: "Une erreur est survenue lors de l'authentification.", variant: "destructive" });
       }
     } finally {
       setIsLoading(null);

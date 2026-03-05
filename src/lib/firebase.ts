@@ -32,16 +32,15 @@ function getFirebaseApp(): FirebaseApp {
 
 const app = getFirebaseApp();
 
-// Singleton for Auth
+// Singleton for Auth - Explicitly NO App Check mentioned here
 export const auth: Auth = getAuth(app);
 
-// Singleton for Firestore with robust handling of primary lease errors
+// Singleton for Firestore with robust handling
 let db: Firestore;
 if (getApps().length > 0) {
   try {
     db = getFirestore(app);
   } catch (e) {
-    // Fallback if already initialized or in a conflicting state
     db = initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager()

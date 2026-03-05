@@ -197,9 +197,14 @@ function SignupForm() {
       router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
+      // Masquage des erreurs techniques (comme App Check)
+      const errorMessage = error.code === 'auth/email-already-in-use' 
+        ? "Cet email est déjà utilisé." 
+        : "Une erreur est survenue lors de l'inscription. Veuillez réessayer.";
+      
       toast({
-        title: "Erreur d'inscription",
-        description: error.message || "Une erreur est survenue.",
+        title: "Échec de l'inscription",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
