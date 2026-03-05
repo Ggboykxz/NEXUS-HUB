@@ -22,30 +22,12 @@ const firebaseConfig = {
 };
 
 // Initialisation sécurisée de l'application (Singleton)
-let app: FirebaseApp;
-try {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApp();
-  }
-} catch (error) {
-  console.error("Firebase initialization error:", error);
-  // Fallback for build time
-  app = getApps().length ? getApp() : initializeApp({
-    apiKey: "placeholder",
-    authDomain: "placeholder",
-    projectId: "placeholder"
-  });
-}
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialisation de Auth sans App Check
+// AUTHENTIFICATION (App Check explicitement ignoré ici)
 export const auth: Auth = getAuth(app);
 
-// Désactive les vérifications d'application pour l'auth en environnement de test si nécessaire
-// Note: App Check est désactivé côté code en ne l'initialisant pas du tout.
-
-// Initialisation de Firestore avec gestion du cache persistant
+// FIRESTORE (Singleton avec cache persistant)
 let db: Firestore;
 try {
   db = getFirestore(app);
