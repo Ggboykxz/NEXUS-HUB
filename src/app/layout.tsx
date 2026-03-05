@@ -49,19 +49,6 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('nexushub-theme');
-                  var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                  document.documentElement.classList.toggle('dark', isDark);
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
       </head>
       <body className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <QueryProvider>
