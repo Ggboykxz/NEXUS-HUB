@@ -39,7 +39,13 @@ try {
   });
 }
 
-// Initialisation de Firestore avec gestion du cache persistant et singleton
+// Initialisation de Auth sans App Check
+export const auth: Auth = getAuth(app);
+
+// Désactive les vérifications d'application pour l'auth en environnement de test si nécessaire
+// Note: App Check est désactivé côté code en ne l'initialisant pas du tout.
+
+// Initialisation de Firestore avec gestion du cache persistant
 let db: Firestore;
 try {
   db = getFirestore(app);
@@ -51,8 +57,6 @@ try {
   });
 }
 
-// Export des services avec vérification d'initialisation
-export const auth: Auth = getAuth(app);
 export { db };
 export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app, 'europe-west1');
