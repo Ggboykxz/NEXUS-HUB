@@ -11,13 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
-  ShieldCheck, 
   Lock, 
   Mail, 
-  Heart, 
-  Users, 
-  Zap, 
-  Sparkles,
   Loader2,
   Brush,
   BookOpen,
@@ -136,12 +131,12 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       }
     } catch (error: any) {
       console.error("Auth modal error:", error);
-      if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Redirection sécurisée", description: "Veuillez patienter..." });
-        await signInWithRedirect(auth, provider!);
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        // Masquer les erreurs techniques comme App Check
-        toast({ title: "Échec de connexion", description: "Une erreur est survenue lors de l'authentification.", variant: "destructive" });
+      let errorMessage = "Une erreur est survenue lors de l'authentification.";
+      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
+      }
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/popup-blocked') {
+        toast({ title: "Échec de connexion", description: errorMessage, variant: "destructive" });
       }
     } finally {
       setIsLoading(null);
@@ -157,7 +152,12 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await checkUserRoleAndRedirect(userCredential.user.uid);
     } catch (error: any) {
-      toast({ title: "Accès refusé", description: "Email ou mot de passe incorrect.", variant: "destructive" });
+      console.error("Email Login error:", error);
+      let errorMessage = "Email ou mot de passe incorrect.";
+      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Service temporairement indisponible. Veuillez réessayer plus tard.";
+      }
+      toast({ title: "Accès refusé", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(null);
     }

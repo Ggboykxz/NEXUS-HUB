@@ -1,15 +1,14 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
+import { getAuth, Auth } from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
   persistentMultipleTabManager,
   getFirestore,
-  Firestore,
-  connectFirestoreEmulator
+  Firestore
 } from "firebase/firestore";
-import { getStorage, FirebaseStorage, connectStorageEmulator } from "firebase/storage";
-import { getFunctions, Functions, connectFunctionsEmulator } from "firebase/functions";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getFunctions, Functions } from "firebase/functions";
 import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -32,7 +31,7 @@ function getFirebaseApp(): FirebaseApp {
 
 const app = getFirebaseApp();
 
-// Singleton for Auth - Explicitly NO App Check mentioned here
+// Singleton for Auth - No App Check configuration here
 export const auth: Auth = getAuth(app);
 
 // Singleton for Firestore with robust handling
@@ -68,13 +67,5 @@ export const initAnalytics = async (): Promise<Analytics | null> => {
   }
   return null;
 };
-
-// Emulators (optionnel, activé si variables d'env présentes)
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
-  connectAuthEmulator(auth, "http://localhost:9099");
-  connectFirestoreEmulator(db, "localhost", 8080);
-  connectStorageEmulator(storage, "localhost", 9199);
-  connectFunctionsEmulator(functions, "localhost", 5001);
-}
 
 export default app;

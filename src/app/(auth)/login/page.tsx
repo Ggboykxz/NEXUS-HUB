@@ -12,18 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  ShieldCheck, 
-  Lock, 
   Eye, 
   EyeOff, 
   ArrowRight, 
   Loader2, 
-  Users, 
-  Sparkles, 
-  Globe, 
-  Trophy,
-  ChevronRight,
-  Zap,
   BookOpen,
   Brush
 } from "lucide-react";
@@ -40,7 +32,6 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
@@ -137,7 +128,12 @@ function LoginForm() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await checkUserRoleAndRedirect(userCredential.user.uid);
     } catch (error: any) {
-      toast({ title: "Erreur", description: "Email ou mot de passe incorrect.", variant: "destructive" });
+      console.error("Login error:", error);
+      let errorMessage = "Email ou mot de passe incorrect.";
+      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Service temporairement indisponible. Veuillez réessayer plus tard.";
+      }
+      toast({ title: "Erreur", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -165,12 +161,13 @@ function LoginForm() {
         }
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      if (error.code === 'auth/popup-blocked') {
-        toast({ title: "Fenêtre bloquée", description: "Veuillez autoriser les pop-ups ou réessayer." });
-        await signInWithRedirect(auth, provider!);
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ title: "Échec de connexion", description: "Une erreur est survenue.", variant: "destructive" });
+      console.error("Social Login error:", error);
+      let errorMessage = "Échec de connexion. Veuillez réessayer.";
+      if (error.code === 'auth/firebase-app-check-token-is-invalid' || error.message?.includes('app-check')) {
+        errorMessage = "Vérification de sécurité échouée. Veuillez réessayer plus tard.";
+      }
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ title: "Échec de connexion", description: errorMessage, variant: "destructive" });
       }
     } finally {
       setIsSocialLoading(null);
