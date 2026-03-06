@@ -15,13 +15,13 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Vérifie si la configuration est présente avant d'initialiser
+// Guard against missing config
 const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 
-// Initialize Firebase for SSR
+// Initialize Firebase for SSR and Client
 const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize services with guards
+// Initialize services
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
