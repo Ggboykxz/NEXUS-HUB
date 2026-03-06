@@ -1,7 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAdminServices } from '@/lib/firebase-admin';
 
-// Exchanges a Firebase ID token for a session cookie.
+/**
+ * API pour échanger un ID Token Firebase contre un cookie de session sécurisé.
+ * Utilise le nom de cookie standard '__session' requis par Firebase Hosting.
+ */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
   
@@ -16,22 +19,22 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Verify the ID token and get the user.
+    // 1. Vérification du token
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Get the user's role from Firestore, the single source of truth.
+    // 2. Récupération du rôle depuis Firestore (Source de vérité)
     const userDoc = await adminDb.collection('users').doc(uid).get();
-    const role = userDoc.data()?.role || 'reader'; // Default to 'reader' if no role.
+    const role = userDoc.data()?.role || 'reader';
 
-    // The session cookie expires in 14 days.
+    // 3. Création du cookie de session (14 jours)
     const expiresIn = 60 * 60 * 24 * 14 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const response = NextResponse.json({ success: true, role });
 
-    // Set the secure, HttpOnly session cookie.
-    response.cookies.set('session', sessionCookie, {
+    // Configuration du cookie de session (HttpOnly, Secure)
+    response.cookies.set('__session', sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Also set a client-accessible role cookie if needed by the UI.
+    // Cookie de rôle accessible au client pour le routage immédiat
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -50,18 +53,19 @@ export async function POST(request: NextRequest) {
 
     return response;
 
-  } catch (error) {
-    console.error('Session login error:', error);
-    return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 403 });
+  } catch (error: any) {
+    console.error('Session API Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 403 });
   }
 }
 
-// Deletes the session cookie.
+/**
+ * Suppression des cookies de session lors de la déconnexion.
+ */
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
   
-  // Expire the session cookie.
-  response.cookies.set('session', '', {
+  response.cookies.set('__session', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -69,7 +73,6 @@ export async function DELETE() {
     path: '/',
   });
 
-  // Expire the role cookie.
   response.cookies.set('nexushub-role', '', {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
