@@ -1,43 +1,41 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Middleware pour la sécurité et la gestion des routes.
- * 1. Protection des routes basées sur le rôle via le cookie '__session'.
- * 2. Redirection des utilisateurs connectés hors des pages d'authentification.
+ * Middleware de sécurité centralisé pour NexusHub.
+ * Gère les redirections basées sur le cookie '__session'.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Récupérer les cookies de session et de rôle
-  // '__session' est le nom standard pour Firebase Hosting SSR
   const sessionCookie = request.cookies.get('__session');
   const role = request.cookies.get('nexushub-role')?.value || '';
 
-  // Définition des routes
-  const protectedRoutes = ['/dashboard', '/settings', '/messages', '/library', '/profile'];
-  const artistRoutes = ['/submit', '/dashboard/creations', '/dashboard/ai-studio'];
-  const authRoutes = ['/login', '/signup', '/forgot-password'];
+  // Définition des zones d'accès
+  const isAuthRoute = ['/login', '/signup', '/forgot-password'].some(r => pathname.startsWith(r));
+  const isProtectedRoute = ['/dashboard', '/settings', '/messages', '/library', '/profile/me'].some(r => pathname.startsWith(r));
+  const isArtistRoute = ['/submit', '/dashboard/creations', '/dashboard/ai-studio'].some(r => pathname.startsWith(r));
+  const isAdminRoute = pathname.startsWith('/admin') || (pathname === '/dashboard' && role === 'admin');
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  const isArtistRoute = artistRoutes.some(route => pathname.startsWith(route));
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
-
-  // --- LOGIQUE DE REDIRECTION ---
-
-  // 1. Déjà connecté -> Pas besoin de voir les pages d'auth
+  // 1. Utilisateur déjà connecté -> Rediriger hors des pages d'authentification
   if (isAuthRoute && sessionCookie) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
-  // 2. Non connecté -> Redirection vers login pour les routes protégées
+  // 2. Utilisateur non connecté -> Rediriger vers login pour les zones protégées
   if ((isProtectedRoute || isArtistRoute) && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 3. Protection spécifique Artistes
-  if (isArtistRoute && !role.startsWith('artist')) {
+  // 3. Protection spécifique Artiste
+  if (isArtistRoute && !role.startsWith('artist') && role !== 'admin') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // 4. Protection Admin (Nexus Core)
+  if (isAdminRoute && role !== 'admin') {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

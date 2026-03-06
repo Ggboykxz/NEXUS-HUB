@@ -1,50 +1,66 @@
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /**
- * Poste un nouveau commentaire sur un chapitre.
+ * Rejoindre un club de lecture.
  */
-export async function postComment(storyId: string, chapterId: string, userId: string, content: string) {
+export async function joinClub(clubId: string) {
+  const { adminAuth, adminDb } = getAdminServices();
+  const session = (await cookies()).get('__session')?.value;
+  if (!session) throw new Error('Authentification requise');
+
+  const decoded = await adminAuth.verifySessionCookie(session);
+  const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+  const userData = userDoc.data();
+
+  const memberRef = adminDb.collection('readingClubs').doc(clubId).collection('members').doc(decoded.uid);
+  const clubRef = adminDb.collection('readingClubs').doc(clubId);
+
   try {
-    const userDoc = await adminDb.collection('users').doc(userId).get();
-    const userData = userDoc.data();
+    const memberSnap = await memberRef.get();
+    if (memberSnap.exists) return { success: true, message: 'Déjà membre' };
 
-    const commentRef = adminDb
-      .collection('stories').doc(storyId)
-      .collection('chapters').doc(chapterId)
-      .collection('comments').doc();
-
-    await commentRef.set({
-      id: commentRef.id,
-      authorId: userId,
-      authorName: userData?.displayName || 'Anonyme',
-      authorAvatar: userData?.photoURL || '',
-      content: content.slice(0, 500),
-      likes: 0,
-      createdAt: new Date().toISOString()
+    await memberRef.set({
+      userId: decoded.uid,
+      userName: userData?.displayName,
+      userPhoto: userData?.photoURL,
+      joinedAt: new Date().toISOString()
     });
 
-    revalidatePath(`/read/${storyId}`);
+    await clubRef.update({
+      membersCount: FieldValue.increment(1)
+    });
+
+    revalidatePath(`/clubs/${clubId}`);
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (e: any) {
+    return { success: false, error: e.message };
   }
 }
 
 /**
- * Crée un signalement pour modération.
+ * Signaler un contenu inapproprié.
  */
-export async function submitReport(data: { type: string, targetId: string, reporterId: string, reason: string }) {
+export async function reportContent(data: { type: 'story' | 'comment' | 'user'; targetId: string; reason: string }) {
+  const { adminAuth, adminDb } = getAdminServices();
+  const session = (await cookies()).get('__session')?.value;
+  
   try {
+    const reporterId = session ? (await adminAuth.verifySessionCookie(session)).uid : 'anonymous';
+    
     await adminDb.collection('reports').add({
       ...data,
+      reporterId,
       status: 'pending',
       createdAt: new Date().toISOString()
     });
+
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (e) {
+    return { success: false };
   }
 }

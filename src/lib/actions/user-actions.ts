@@ -1,19 +1,56 @@
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { FieldValue } from 'firebase-admin/firestore';
 
+async function getAuthenticatedUser() {
+  const { adminAuth, adminDb } = getAdminServices();
+  const session = (await cookies()).get('__session')?.value;
+  if (!session) throw new Error('Non authentifié');
+  
+  const decoded = await adminAuth.verifySessionCookie(session);
+  return { uid: decoded.uid, adminDb };
+}
+
 /**
- * Met à jour le profil d'un utilisateur.
+ * Met à jour le profil utilisateur (Bio, Nom).
  */
-export async function updateProfile(userId: string, data: any) {
+export async function updateProfile(data: { displayName?: string; bio?: string; photoURL?: string }) {
   try {
-    await adminDb.collection('users').doc(userId).update({
+    const { uid, adminDb } = await getAuthenticatedUser();
+    await adminDb.collection('users').doc(uid).update({
       ...data,
       updatedAt: new Date().toISOString()
     });
-    revalidatePath(`/profile/${userId}`);
+    revalidatePath(`/profile/${uid}`);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Gère l'achat fictif ou réel d'AfriCoins.
+ */
+export async function addAfriCoins(amount: number) {
+  try {
+    const { uid, adminDb } = await getAuthenticatedUser();
+    await adminDb.collection('users').doc(uid).update({
+      afriCoins: FieldValue.increment(amount),
+      updatedAt: new Date().toISOString()
+    });
+    
+    // Log de transaction
+    await adminDb.collection('transactions').add({
+      userId: uid,
+      amount,
+      type: 'purchase',
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+
     revalidatePath('/settings');
     return { success: true };
   } catch (error: any) {
@@ -22,38 +59,25 @@ export async function updateProfile(userId: string, data: any) {
 }
 
 /**
- * Traite un don d'AfriCoins d'un utilisateur à un artiste.
+ * Sauvegarde la progression de lecture.
  */
-export async function processDonation(senderId: string, artistId: string, amount: number) {
+export async function trackProgress(storyId: string, chapterId: string, progress: number) {
   try {
-    const senderRef = adminDb.collection('users').doc(senderId);
-    const artistRef = adminDb.collection('users').doc(artistId);
-    
-    const senderDoc = await senderRef.get();
-    if (!senderDoc.exists || (senderDoc.data()?.afriCoins || 0) < amount) {
-      throw new Error("Solde insuffisant.");
-    }
+    const { uid, adminDb } = await getAuthenticatedUser();
+    const storySnap = await adminDb.collection('stories').doc(storyId).get();
+    const storyData = storySnap.data();
 
-    const batch = adminDb.batch();
-    
-    batch.update(senderRef, { afriCoins: FieldValue.increment(-amount) });
-    batch.update(artistRef, { afriCoins: FieldValue.increment(amount) });
-    
-    // Notification à l'artiste
-    const notifRef = artistRef.collection('notifications').doc();
-    batch.set(notifRef, {
-      type: 'donation',
-      fromUserId: senderId,
-      fromDisplayName: senderDoc.data()?.displayName || 'Un voyageur',
-      message: `vous a envoyé ${amount} 🪙 pour soutenir votre art.`,
-      amount,
-      read: false,
-      createdAt: new Date().toISOString()
-    });
+    await adminDb.collection('users').doc(uid).collection('library').doc(storyId).set({
+      storyId,
+      storyTitle: storyData?.title,
+      storyCover: storyData?.coverImage?.imageUrl,
+      lastReadChapterId: chapterId,
+      progress,
+      lastReadAt: new Date().toISOString()
+    }, { merge: true });
 
-    await batch.commit();
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false };
   }
 }

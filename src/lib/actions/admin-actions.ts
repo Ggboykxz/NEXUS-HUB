@@ -1,34 +1,57 @@
 'use server';
 
 import { getAdminServices } from '@/lib/firebase-admin';
+import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+
+async function verifyAdmin() {
+  const { adminAuth, adminDb } = getAdminServices();
+  const session = (await cookies()).get('__session')?.value;
+  if (!session) throw new Error('Accès interdit');
+
+  const decoded = await adminAuth.verifySessionCookie(session);
+  const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+  
+  if (userDoc.data()?.role !== 'admin') {
+    throw new Error('Droits administrateur requis');
+  }
+
+  return { adminDb };
+}
 
 /**
- * Récupère les statistiques globales de la plateforme via le SDK Admin.
- * Permet de contourner les restrictions de lecture globale sur le client.
+ * Valide ou refuse une candidature artiste pro.
  */
-export async function getAdminStats() {
-  const { adminDb } = getAdminServices();
-
+export async function validateArtist(artistUid: string, approve: boolean) {
   try {
-    const [usersSnap, storiesSnap] = await Promise.all([
-      adminDb.collection('users').count().get(),
-      adminDb.collection('stories').count().get()
-    ]);
+    const { adminDb } = await verifyAdmin();
+    await adminDb.collection('users').doc(artistUid).update({
+      role: approve ? 'artist_pro' : 'artist_draft',
+      isCertified: approve,
+      updatedAt: new Date().toISOString()
+    });
 
-    const userCount = usersSnap.data().count;
-    const storyCount = storiesSnap.data().count;
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
 
-    return {
-      totalUsers: userCount,
-      totalStories: storyCount,
-      dau: Math.floor(userCount * 0.15) // Estimation basée sur les inscrits
-    };
-  } catch (error) {
-    console.error("Error fetching admin stats via Admin SDK:", error);
-    return {
-      totalUsers: 0,
-      totalStories: 0,
-      dau: 0
-    };
+/**
+ * Traite un signalement.
+ */
+export async function resolveReport(reportId: string) {
+  try {
+    const { adminDb } = await verifyAdmin();
+    await adminDb.collection('reports').doc(reportId).update({
+      status: 'resolved',
+      resolvedAt: new Date().toISOString()
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

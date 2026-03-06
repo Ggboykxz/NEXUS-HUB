@@ -1,78 +1,72 @@
 'use server';
 
-import { adminDb, adminStorage, adminAuth } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { cookies } from 'next/headers';
+import { FieldValue } from 'firebase-admin/firestore';
 
-const StorySchema = z.object({
-  title: z.string().min(3).max(100),
-  description: z.string().min(10).max(2000),
-  genre: z.string(),
-  format: z.enum(['Webtoon', 'BD', 'One-shot', 'Roman Illustré', 'Hybride']),
-  isPremium: z.boolean().optional(),
-  isPublished: z.boolean().optional(),
-});
+async function getAuthenticatedArtist() {
+  const { adminAuth, adminDb } = getAdminServices();
+  const session = (await cookies()).get('__session')?.value;
+  if (!session) throw new Error('Non authentifié');
+  
+  const decoded = await adminAuth.verifySessionCookie(session);
+  const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+  const role = userDoc.data()?.role || '';
+  
+  if (!role.startsWith('artist') && role !== 'admin') {
+    throw new Error('Permission artiste requise');
+  }
+
+  return { uid: decoded.uid, adminDb };
+}
 
 /**
- * Crée une nouvelle œuvre dans Firestore.
+ * Crée un nouveau chapitre pour une œuvre existante.
  */
-export async function createStory(formData: FormData, userId: string) {
+export async function createChapter(storyId: string, data: { title: string; chapterNumber: number; pages: any[]; isPremium: boolean; afriCoinsPrice: number }) {
   try {
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const genre = formData.get('genre') as string;
-    const format = formData.get('format') as any;
-    const coverFile = formData.get('cover') as File;
-
-    if (!coverFile) throw new Error("Image de couverture requise.");
-
-    const slug = title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
+    const { adminDb } = await getAuthenticatedArtist();
+    const chapterRef = adminDb.collection('stories').doc(storyId).collection('chapters').doc();
     
-    // Upload image vers Storage
-    const buffer = Buffer.from(await coverFile.arrayBuffer());
-    const bucket = adminStorage.bucket();
-    const filePath = `stories/${userId}/${Date.now()}_cover.jpg`;
-    const file = bucket.file(filePath);
-    await file.save(buffer, { metadata: { contentType: 'image/jpeg' } });
-    const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media`;
-
-    const storyRef = adminDb.collection('stories').doc();
-    await storyRef.set({
-      id: storyRef.id,
-      slug,
-      title,
-      description,
-      genre,
-      genreSlug: genre.toLowerCase(),
-      format,
-      artistId: userId,
-      coverImage: { imageUrl },
+    const chapterData = {
+      id: chapterRef.id,
+      storyId,
+      ...data,
+      status: 'Publié',
       views: 0,
       likes: 0,
-      chapterCount: 0,
-      isPublished: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString()
+    };
+
+    await chapterRef.set(chapterData);
+    
+    // Incrémentation du compteur de chapitres
+    await adminDb.collection('stories').doc(storyId).update({
+      chapterCount: FieldValue.increment(1),
+      updatedAt: new Date().toISOString()
     });
 
-    revalidatePath('/dashboard/creations');
-    return { success: true, id: storyRef.id };
+    revalidatePath(`/dashboard/creations/${storyId}`);
+    return { success: true, id: chapterRef.id };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Supprime une œuvre et ses données associées.
+ * Supprime une œuvre (Seul l'auteur ou un admin peut le faire).
  */
-export async function deleteStory(storyId: string, userId: string) {
+export async function deleteStory(storyId: string) {
   try {
+    const { uid, adminDb } = await getAuthenticatedArtist();
     const storyRef = adminDb.collection('stories').doc(storyId);
-    const doc = await storyRef.get();
-    
-    if (!doc.exists || doc.data()?.artistId !== userId) {
-      throw new Error("Action non autorisée.");
-    }
+    const storyDoc = await storyRef.get();
+
+    if (!storyDoc.exists) throw new Error('Histoire introuvable');
+    if (storyDoc.data()?.artistId !== uid) throw new Error('Accès non autorisé');
 
     await storyRef.delete();
     revalidatePath('/dashboard/creations');
