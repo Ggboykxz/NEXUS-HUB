@@ -81,7 +81,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           fill
           className="object-cover opacity-40 scale-105"
           priority
-          data-ai-hint={post.coverImage.imageHint || 'Image de couverture d''article de blog'}
+          data-ai-hint={post.coverImage.imageHint || 'Image de couverture d\'article de blog'}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent" />
         <div className="absolute inset-0 flex items-end">

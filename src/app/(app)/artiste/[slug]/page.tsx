@@ -4,22 +4,23 @@ import type { Metadata } from 'next';
 import type { Story, UserProfile } from '@/lib/types';
 import ArtistDetailClient from './artist-detail-client';
 
-// Correction: Le type des props d'une page. `params` n'est pas une promesse.
 interface PageProps {
   params: { slug: string };
 }
 
 /**
  * Récupère les données d'un artiste et ses histoires publiées depuis Firestore.
+ * Sécurisé pour ne retourner que les artistes non-bannis et les histoires publiées.
  * @param slug Le slug unique de l'artiste.
  * @returns Un objet contenant le profil de l'artiste et la liste de ses histoires, ou null si introuvable.
  */
 async function getArtistData(slug: string) {
-  const { adminDb } = getAdminServices(); // Correction: Utilisation du service admin.
+  const { adminDb } = getAdminServices();
 
-  // 1. Récupérer le profil de l'artiste
+  // 1. Récupérer le profil de l'artiste, en s'assurant qu'il n'est pas banni
   const usersSnap = await adminDb.collection('users')
     .where('slug', '==', slug)
+    .where('isBanned', '==', false) // Correction de sécurité : Ne pas afficher les artistes bannis
     .limit(1)
     .get();
   
@@ -33,7 +34,7 @@ async function getArtistData(slug: string) {
   // 2. Récupérer les histoires publiées de cet artiste
   const storiesSnap = await adminDb.collection('stories')
     .where('artistId', '==', artist.uid)
-    .where('isPublished', '==', true) // Amélioration: Ne montrer que les histoires publiées
+    .where('isPublished', '==', true)
     .orderBy('publishedAt', 'desc')
     .get();
     
@@ -43,8 +44,7 @@ async function getArtistData(slug: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = params; // Correction: `params` n'est plus une promesse
-  const data = await getArtistData(slug);
+  const data = await getArtistData(params.slug);
 
   if (!data) {
     return { title: 'Artiste introuvable' };
@@ -60,19 +60,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [{ url: data.artist.photoURL }],
       type: 'profile',
-      profile: {
-        username: data.artist.displayName,
-      }
+      // Correction de la structure OpenGraph : 'username' est une propriété directe de 'profile'
+      // mais 'profile' lui-même n'est pas un objet standard. On utilise les champs directs.
+      // Next.js va mapper 'username' à 'profile:username'
+      username: data.artist.displayName 
     },
+    twitter: {
+        card: 'summary_large_image',
+        title: `${data.artist.displayName} - Artiste sur NexusHub`,
+        description,
+        images: [data.artist.photoURL],
+    }
   };
 }
 
 export default async function ArtistProfilePage({ params }: PageProps) {
-  const { slug } = params; // Correction: `params` n'est plus une promesse
-  const data = await getArtistData(slug);
+  const data = await getArtistData(params.slug);
 
   if (!data) {
-    notFound(); // Affiche une page 404 si l'artiste n'est pas trouvé
+    notFound(); 
   }
 
   return <ArtistDetailClient artist={data.artist} artistStories={data.artistStories} />;
