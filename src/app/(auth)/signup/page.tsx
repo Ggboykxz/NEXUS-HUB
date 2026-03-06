@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -100,7 +99,7 @@ function SignupForm() {
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     try {
-      // 1. Initialisation Firestore (Prioritaire et attendue)
+      // 1. Initialisation Firestore
       const userRef = doc(db, 'users', user.uid);
       const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
@@ -126,15 +125,16 @@ function SignupForm() {
         preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
 
-      // 2. Création de la session serveur APRES Firestore pour garantir que le rôle est lu
+      // 2. Création de la session serveur
       const sessionCreated = await createSession(user);
       if (!sessionCreated) {
         throw new Error("Échec de création de la session serveur.");
       }
 
       toast({ title: "Bienvenue au Hub !", description: "Votre compte et votre profil ont été initialisés." });
-      router.push(getRedirectForRole(role));
-      router.refresh();
+      
+      // Utilisation de window.location pour forcer le chargement avec les nouveaux cookies
+      window.location.href = getRedirectForRole(role);
     } catch (error: any) {
       console.error("Firestore/Session init error:", error);
       toast({ 
@@ -142,8 +142,7 @@ function SignupForm() {
         description: "Votre compte est créé mais le profil a rencontré un problème. Reconnectez-vous pour réparer.", 
         variant: "destructive" 
       });
-      // On redirige quand même vers login pour forcer une reconnexion qui déclenchera le "repair"
-      router.push('/login');
+      setIsLoading(false);
     }
   };
 

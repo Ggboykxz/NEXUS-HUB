@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, User, getIdToken } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import Image from 'next/image';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Email invalide." }),
@@ -59,27 +58,35 @@ function LoginForm() {
     const user = auth.currentUser;
     if (!user) return;
 
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    
-    if (!userDoc.exists() || !userDoc.data()?.role) {
-      setPendingUid(uid);
-      setShowRoleSelection(true);
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', uid), {
-          uid, email: user.email, displayName: user.displayName || 'Voyageur',
-          photoURL: user.photoURL || '', afriCoins: 0, createdAt: serverTimestamp()
-        }, { merge: true });
-      }
-    } else {
-      const role = userDoc.data()?.role;
-      const sessionCreated = await createSession(user);
-      if (sessionCreated) {
-        toast({ title: "Content de vous revoir !" });
-        router.push(getRedirectForRole(role));
-        router.refresh();
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      
+      if (!userDoc.exists() || !userDoc.data()?.role) {
+        setPendingUid(uid);
+        setShowRoleSelection(true);
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', uid), {
+            uid, email: user.email, displayName: user.displayName || 'Voyageur',
+            photoURL: user.photoURL || `https://picsum.photos/seed/${uid}/200/200`, 
+            afriCoins: 0, createdAt: serverTimestamp(),
+            readingStats: { chaptersRead: 0, totalReadTime: 0 },
+            preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+          }, { merge: true });
+        }
       } else {
-        toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });
+        const role = userDoc.data()?.role;
+        const sessionCreated = await createSession(user);
+        if (sessionCreated) {
+          toast({ title: "Content de vous revoir !" });
+          // Utilisation de window.location pour forcer le chargement avec les nouveaux cookies
+          window.location.href = getRedirectForRole(role);
+        } else {
+          toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });
+        }
       }
+    } catch (error) {
+      console.error("Error in checkUserRoleAndRedirect:", error);
+      toast({ title: "Erreur d'authentification", variant: "destructive" });
     }
   };
 
@@ -95,7 +102,6 @@ function LoginForm() {
       await checkUserRoleAndRedirect(userCredential.user.uid);
     } catch (error: any) {
       toast({ title: "Erreur", description: "Email ou mot de passe incorrect.", variant: "destructive" });
-    } finally {
       setIsLoading(false);
     }
   }
@@ -119,13 +125,17 @@ function LoginForm() {
     setIsLoading(true);
     try {
       await updateDoc(doc(db, 'users', pendingUid), { role, updatedAt: serverTimestamp() });
-      await createSession(auth.currentUser);
-      toast({ title: "Destinée choisie !" });
-      router.push(getRedirectForRole(role));
-      router.refresh();
+      const sessionCreated = await createSession(auth.currentUser);
+      if (sessionCreated) {
+        toast({ title: "Destinée choisie !" });
+        window.location.href = getRedirectForRole(role);
+      } else {
+        toast({ title: "Erreur de session", variant: "destructive" });
+        setIsLoading(false);
+      }
     } catch (e) {
+      console.error("Role choice error:", e);
       toast({ title: "Erreur", variant: "destructive" });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -136,11 +146,19 @@ function LoginForm() {
         <div className="max-w-4xl w-full text-center space-y-12 animate-in zoom-in-95 duration-700">
           <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <button onClick={() => handleRoleChoice('artist_draft')} className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all group space-y-6">
+            <button 
+              disabled={isLoading}
+              onClick={() => handleRoleChoice('artist_draft')} 
+              className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all group space-y-6 disabled:opacity-50"
+            >
               <Brush className="h-16 w-16 mx-auto text-primary group-hover:scale-110 transition-transform" />
               <h3 className="text-2xl font-black text-white">Je suis Artiste</h3>
             </button>
-            <button onClick={() => handleRoleChoice('reader')} className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-emerald-500 transition-all group space-y-6">
+            <button 
+              disabled={isLoading}
+              onClick={() => handleRoleChoice('reader')} 
+              className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-emerald-500 transition-all group space-y-6 disabled:opacity-50"
+            >
               <BookOpen className="h-16 w-16 mx-auto text-emerald-500 group-hover:scale-110 transition-transform" />
               <h3 className="text-2xl font-black text-white">Je suis Lecteur</h3>
             </button>

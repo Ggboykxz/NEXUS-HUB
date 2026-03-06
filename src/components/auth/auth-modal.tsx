@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -80,55 +79,65 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     }
   };
 
+  const getRedirectForRole = (role: string) => {
+    if (role.startsWith('artist')) return '/dashboard/creations';
+    if (role === 'admin') return '/dashboard';
+    return '/';
+  };
+
   const handleSuccessfulLogin = useCallback(async (user: User) => {
-    const userRef = doc(db, 'users', user.uid);
-    let userDoc = await getDoc(userRef);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      let userDoc = await getDoc(userRef);
 
-    if (!userDoc.exists()) {
-      // 1. Initialisation atomique du profil si nouveau user social
-      const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
-      const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+      if (!userDoc.exists()) {
+        const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
+        const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
 
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || 'Nouveau Voyageur',
-        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
-        slug: slug,
-        afriCoins: 0,
-        level: 1,
-        subscribersCount: 0,
-        followedCount: 0,
-        isCertified: false,
-        isBanned: false,
-        isVerified: false,
-        onboardingCompleted: false,
-        bio: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        readingStats: { chaptersRead: 0, totalReadTime: 0 },
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      }, { merge: true });
-      
-      userDoc = await getDoc(userRef);
-    }
-
-    const userData = userDoc.data();
-
-    if (!userData?.role) {
-      setPendingUser(user);
-      setView('role_selection');
-    } else {
-      const sessionOk = await createSession(user);
-      if (sessionOk) {
-        toast({ title: "Connexion réussie", description: "Bon retour au Hub !" });
-        resetState();
-        router.refresh();
-      } else {
-        toast({ title: "Erreur de session", variant: "destructive" });
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || 'Nouveau Voyageur',
+          photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
+          slug: slug,
+          afriCoins: 0,
+          level: 1,
+          subscribersCount: 0,
+          followedCount: 0,
+          isCertified: false,
+          isBanned: false,
+          isVerified: false,
+          onboardingCompleted: false,
+          bio: '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          readingStats: { chaptersRead: 0, totalReadTime: 0 },
+          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+        }, { merge: true });
+        
+        userDoc = await getDoc(userRef);
       }
+
+      const userData = userDoc.data();
+
+      if (!userData?.role) {
+        setPendingUser(user);
+        setView('role_selection');
+      } else {
+        const sessionOk = await createSession(user);
+        if (sessionOk) {
+          toast({ title: "Connexion réussie", description: "Bon retour au Hub !" });
+          window.location.href = getRedirectForRole(userData.role);
+          resetState();
+        } else {
+          toast({ title: "Erreur de session", variant: "destructive" });
+        }
+      }
+    } catch (error) {
+      console.error("Login handling error:", error);
+      toast({ title: "Erreur lors de la connexion", variant: "destructive" });
     }
-  }, [router, toast]);
+  }, [toast, router]);
 
   useEffect(() => {
     if (isOpen) {
@@ -183,8 +192,8 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       const sessionOk = await createSession(pendingUser);
       if (sessionOk) {
         toast({ title: "Destinée scellée !", description: "Bienvenue au Hub." });
+        window.location.href = getRedirectForRole(role);
         resetState();
-        router.refresh();
       } else {
         throw new Error("Session fail");
       }
@@ -203,11 +212,11 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
             <DialogTitle className="text-2xl font-display font-black text-white gold-resplendant text-center">Choisissez votre rôle</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 pt-6">
-            <button onClick={() => handleRoleChoice('artist_draft')} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary transition-all text-center space-y-3 group">
+            <button disabled={!!isLoading} onClick={() => handleRoleChoice('artist_draft')} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary transition-all text-center space-y-3 group disabled:opacity-50">
               <Brush className="h-8 w-8 mx-auto text-primary group-hover:scale-110" />
               <p className="font-bold text-[10px] uppercase text-white">Artiste</p>
             </button>
-            <button onClick={() => handleRoleChoice('reader')} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500 transition-all text-center space-y-3 group">
+            <button disabled={!!isLoading} onClick={() => handleRoleChoice('reader')} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500 transition-all text-center space-y-3 group disabled:opacity-50">
               <BookOpen className="h-8 w-8 mx-auto text-emerald-500 group-hover:scale-110" />
               <p className="font-bold text-[10px] uppercase text-white">Lecteur</p>
             </button>
