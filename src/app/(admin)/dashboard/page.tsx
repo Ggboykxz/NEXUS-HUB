@@ -10,45 +10,38 @@ import {
   Search, ShieldCheck, Clock, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, getDocs, where, limit, orderBy, doc, updateDoc, increment, serverTimestamp, getCountFromServer } from 'firebase/firestore';
+import { collection, query, getDocs, where, limit, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { getAdminStats } from '@/lib/actions/admin-actions';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // 1. STATS FETCHING (Real counts)
+  // 1. STATS FETCHING (Server Action via SDK Admin pour éviter les erreurs de permissions client)
   const { data: stats, isLoading: loadingStats } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: async () => {
-      const usersColl = collection(db, 'users');
-      const storiesColl = collection(db, 'stories');
-      
-      const [usersSnap, storiesSnap] = await Promise.all([
-        getCountFromServer(usersColl),
-        getCountFromServer(storiesColl)
-      ]);
-
-      return {
-        totalUsers: usersSnap.data().count,
-        totalStories: storiesSnap.data().count,
-        dau: Math.floor(usersSnap.data().count * 0.15) // Estimated based on real users
-      };
-    }
+    queryFn: async () => await getAdminStats(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // 2. PENDING PRO ARTISTS
   const { data: pendingArtists = [], isLoading: loadingPending } = useQuery({
     queryKey: ['pending-pro-artists'],
     queryFn: async () => {
-      const q = query(collection(db, 'users'), where('role', '==', 'artist_draft'), limit(20));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
+      try {
+        const q = query(collection(db, 'users'), where('role', '==', 'artist_draft'), limit(20));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
+      } catch (e) {
+        console.error("Permission error on users query:", e);
+        return [];
+      }
     }
   });
 
@@ -56,9 +49,14 @@ export default function AdminDashboard() {
   const { data: reports = [], isLoading: loadingReports } = useQuery({
     queryKey: ['admin-reports'],
     queryFn: async () => {
-      const q = query(collection(db, 'reports'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(20));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      try {
+        const q = query(collection(db, 'reports'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(20));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      } catch (e) {
+        console.error("Permission error on reports query:", e);
+        return [];
+      }
     }
   });
 
@@ -66,9 +64,14 @@ export default function AdminDashboard() {
   const { data: latestUsers = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['latest-signups'],
     queryFn: async () => {
-      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
+      try {
+        const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
+      } catch (e) {
+        console.error("Permission error on latest signups query:", e);
+        return [];
+      }
     }
   });
 
@@ -247,7 +250,7 @@ export default function AdminDashboard() {
                   <tr key={i} className="animate-pulse">
                     <td colSpan={4} className="px-8 py-6"><div className="h-4 bg-stone-800 rounded w-full" /></td>
                   </tr>
-                )) : latestUsers.map((user: any) => (
+                )) : latestUsers.length > 0 ? latestUsers.map((user: any) => (
                   <tr key={user.uid} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
@@ -270,7 +273,11 @@ export default function AdminDashboard() {
                       <Button variant="ghost" size="icon" className="text-stone-600 hover:text-white"><ChevronRight className="h-4 w-4" /></Button>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="px-8 py-10 text-center text-stone-600 italic text-xs">Aucun voyageur n'est encore enregistré dans les archives.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
