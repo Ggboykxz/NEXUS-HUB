@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -13,7 +14,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Sparkles, 
-  ChevronDown, 
   Award, 
   Eye, 
   EyeOff, 
@@ -21,11 +21,7 @@ import {
   Loader2, 
   Brush, 
   BookOpen, 
-  Crown, 
-  ShieldCheck, 
-  Languages,
-  ShieldAlert,
-  Zap
+  Crown
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -34,10 +30,6 @@ import { auth, db } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   updateProfile, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  FacebookAuthProvider, 
-  OAuthProvider,
   User,
   getIdToken
 } from 'firebase/auth';
@@ -67,7 +59,6 @@ function SignupForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   const callbackUrl = searchParams.get('callbackUrl');
@@ -109,7 +100,7 @@ function SignupForm() {
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     try {
-      // 1. Initialisation Firestore
+      // 1. Initialisation Firestore (Prioritaire et attendue)
       const userRef = doc(db, 'users', user.uid);
       const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
@@ -122,26 +113,37 @@ function SignupForm() {
         role,
         afriCoins: role === 'premium_reader' ? 50 : 0,
         level: 1,
+        subscribersCount: 0,
+        followedCount: 0,
+        isCertified: role.includes('pro') || role.includes('elite'),
+        isBanned: false,
+        isVerified: false,
+        onboardingCompleted: false,
+        bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         readingStats: { chaptersRead: 0, totalReadTime: 0 },
         preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      });
+      }, { merge: true });
 
-      // 2. Création Session
+      // 2. Création de la session serveur APRES Firestore pour garantir que le rôle est lu
       const sessionCreated = await createSession(user);
       if (!sessionCreated) {
-        toast({ title: "Session expirée", description: "Veuillez vous connecter manuellement.", variant: "destructive" });
-        router.push('/login');
-        return;
+        throw new Error("Échec de création de la session serveur.");
       }
 
-      toast({ title: "Bienvenue au Hub !", description: "Votre compte a été initialisé." });
+      toast({ title: "Bienvenue au Hub !", description: "Votre compte et votre profil ont été initialisés." });
       router.push(getRedirectForRole(role));
       router.refresh();
-    } catch (error) {
-      console.error("Firestore init error:", error);
-      toast({ title: "Erreur technique", description: "Compte créé mais profil non initialisé.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Firestore/Session init error:", error);
+      toast({ 
+        title: "Erreur d'initialisation", 
+        description: "Votre compte est créé mais le profil a rencontré un problème. Reconnectez-vous pour réparer.", 
+        variant: "destructive" 
+      });
+      // On redirige quand même vers login pour forcer une reconnexion qui déclenchera le "repair"
+      router.push('/login');
     }
   };
 
@@ -155,7 +157,6 @@ function SignupForm() {
       let msg = "Erreur lors de l'inscription.";
       if (error.code === 'auth/email-already-in-use') msg = "Cet email est déjà utilisé.";
       toast({ title: "Échec", description: msg, variant: "destructive" });
-    } finally {
       setIsLoading(false);
     }
   }

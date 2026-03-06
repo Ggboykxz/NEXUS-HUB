@@ -9,12 +9,17 @@ const db = admin.firestore();
 
 /**
  * Déclencheur : Création automatique du profil Firestore lors de l'inscription Auth.
- * Initialise les compteurs et les objets de stats pour éviter les erreurs UI.
+ * Sert de filet de sécurité ultime si le client échoue à initialiser le profil.
  */
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const userRef = db.collection('users').doc(user.uid);
   
-  // Génération d'un slug de secours si le displayName est absent
+  // Vérification si le document existe déjà (évite d'écraser les données client plus précises)
+  const doc = await userRef.get();
+  if (doc.exists) {
+    return null;
+  }
+
   const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
   const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -24,7 +29,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     displayName: user.displayName || 'Nouveau Voyageur',
     photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
     slug: slug,
-    role: 'reader', // Rôle par défaut, sera mis à jour par le client si nécessaire
+    role: 'reader', 
     level: 1,
     afriCoins: 0,
     subscribersCount: 0,

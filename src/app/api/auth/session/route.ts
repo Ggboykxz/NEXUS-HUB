@@ -1,9 +1,9 @@
+
 import { NextResponse, NextRequest } from 'next/server';
 import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API pour échanger un ID Token Firebase contre un cookie de session sécurisé.
- * Utilise le nom de cookie standard '__session' requis par Firebase Hosting.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -19,21 +19,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // 1. Vérification du token
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // 2. Récupération du rôle depuis Firestore (Source de vérité)
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    const role = userDoc.data()?.role || 'reader';
+    // Tentative de récupération du rôle avec un retry minimal (race condition mitigation)
+    let role = 'reader';
+    let attempts = 0;
+    
+    while (attempts < 3) {
+      const userDoc = await adminDb.collection('users').doc(uid).get();
+      if (userDoc.exists && userDoc.data()?.role) {
+        role = userDoc.data()?.role;
+        break;
+      }
+      // Attendre 200ms avant la prochaine tentative si le doc n'est pas encore là
+      await new Promise(r => setTimeout(r, 200));
+      attempts++;
+    }
 
-    // 3. Création du cookie de session (14 jours)
     const expiresIn = 60 * 60 * 24 * 14 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const response = NextResponse.json({ success: true, role });
 
-    // Configuration du cookie de session (HttpOnly, Secure)
     response.cookies.set('__session', sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -42,7 +50,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Cookie de rôle accessible au client pour le routage immédiat
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -59,9 +66,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Suppression des cookies de session lors de la déconnexion.
- */
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
   

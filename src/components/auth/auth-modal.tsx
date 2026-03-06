@@ -29,7 +29,8 @@ import {
   OAuthProvider,
   signInWithEmailAndPassword,
   getRedirectResult,
-  User
+  User,
+  getIdToken
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -64,7 +65,7 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
   
   const createSession = async (user: User) => {
     try {
-      const idToken = await user.getIdToken(true);
+      const idToken = await getIdToken(user, true);
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: {
@@ -81,10 +82,10 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
 
   const handleSuccessfulLogin = useCallback(async (user: User) => {
     const userRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userRef);
+    let userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      // Initialisation sécurisée pour les logins sociaux
+      // 1. Initialisation atomique du profil si nouveau user social
       const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
       const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
 
@@ -105,39 +106,27 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
         bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        readingStats: {
-          preferredGenres: {},
-          totalReadTime: 0,
-          chaptersRead: 0,
-          favoriteArtists: []
-        },
-        readingStreak: {
-          currentCount: 0,
-          lastReadDate: '',
-          longestStreak: 0,
-          weeklyCoins: 0
-        },
-        preferences: {
-          theme: 'dark',
-          language: 'fr',
-          privacy: {
-            showCurrentReading: true,
-            showHistory: true
-          }
-        }
+        readingStats: { chaptersRead: 0, totalReadTime: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
+      
+      userDoc = await getDoc(userRef);
     }
 
-    const userData = (await getDoc(userRef)).data();
+    const userData = userDoc.data();
 
     if (!userData?.role) {
       setPendingUser(user);
       setView('role_selection');
     } else {
-      await createSession(user);
-      toast({ title: "Connexion réussie", description: "Bon retour au Hub !" });
-      resetState();
-      router.refresh();
+      const sessionOk = await createSession(user);
+      if (sessionOk) {
+        toast({ title: "Connexion réussie", description: "Bon retour au Hub !" });
+        resetState();
+        router.refresh();
+      } else {
+        toast({ title: "Erreur de session", variant: "destructive" });
+      }
     }
   }, [router, toast]);
 
@@ -183,7 +172,7 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
     }
   };
 
-  const handleRoleChoice = async (role: 'reader' | 'artist_draft') => {
+  const handleRoleChoice = async (role: string) => {
     if (!pendingUser) return;
     setIsLoading('role');
     try {
@@ -191,12 +180,16 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
         role,
         updatedAt: serverTimestamp()
       });
-      await createSession(pendingUser);
-      toast({ title: "Destinée scellée !", description: "Bienvenue au Hub." });
-      resetState();
-      router.refresh();
+      const sessionOk = await createSession(pendingUser);
+      if (sessionOk) {
+        toast({ title: "Destinée scellée !", description: "Bienvenue au Hub." });
+        resetState();
+        router.refresh();
+      } else {
+        throw new Error("Session fail");
+      }
     } catch (e) {
-      toast({ title: "Erreur", description: "Action impossible.", variant: "destructive" });
+      toast({ title: "Erreur", description: "Impossible de valider votre rôle.", variant: "destructive" });
     } finally {
       setIsLoading(null);
     }
