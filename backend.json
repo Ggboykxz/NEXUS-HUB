@@ -1,0 +1,174 @@
+{
+  "version": "4.3.0",
+  "database": "Firestore",
+  "collections": [
+    {
+      "name": "users",
+      "description": "Profils utilisateurs et gardiens du Hub",
+      "fields": {
+        "uid": { "type": "String", "required": true, "description": "ID unique Firebase Auth" },
+        "email": { "type": "String", "required": true, "unique": true },
+        "displayName": { "type": "String", "required": true },
+        "photoURL": { "type": "String", "default": "picsum placeholder" },
+        "slug": { "type": "String", "required": true, "unique": true, "description": "@pseudo unique pour les URLs" },
+        "role": { "type": "Enum", "ref": "UserRole", "default": "reader" },
+        "level": { "type": "Number", "default": 1 },
+        "afriCoins": { "type": "Number", "default": 0 },
+        "subscribersCount": { "type": "Number", "default": 0 },
+        "followedCount": { "type": "Number", "default": 0 },
+        "isCertified": { "type": "Boolean", "default": false },
+        "isBanned": { "type": "Boolean", "default": false },
+        "bio": { "type": "String" },
+        "country": { "type": "String", "description": "Code ISO" },
+        "onboardingCompleted": { "type": "Boolean", "default": false },
+        "readingStreak": {
+          "type": "Object",
+          "fields": {
+            "currentCount": { "type": "Number" },
+            "lastReadDate": { "type": "String" },
+            "longestStreak": { "type": "Number" }
+          }
+        },
+        "preferences": {
+          "type": "Object",
+          "fields": {
+            "language": { "type": "String", "default": "fr" },
+            "theme": { "type": "String", "default": "dark" },
+            "privacy": { "type": "Object" }
+          }
+        },
+        "createdAt": { "type": "Timestamp" },
+        "updatedAt": { "type": "Timestamp" }
+      },
+      "subCollections": [
+        {
+          "name": "library",
+          "description": "Progression de lecture par histoire",
+          "fields": {
+            "storyId": { "type": "String" },
+            "storyTitle": { "type": "String" },
+            "lastReadChapterId": { "type": "String" },
+            "progress": { "type": "Number", "description": "0 à 100" },
+            "lastReadAt": { "type": "Timestamp" }
+          }
+        },
+        {
+          "name": "favorites",
+          "description": "Liste des coups de cœur",
+          "fields": {
+            "storyId": { "type": "String" },
+            "addedAt": { "type": "Timestamp" }
+          }
+        },
+        {
+          "name": "notifications",
+          "description": "Alertes et messages système",
+          "fields": {
+            "type": { "type": "String" },
+            "fromDisplayName": { "type": "String" },
+            "message": { "type": "String" },
+            "read": { "type": "Boolean", "default": false },
+            "link": { "type": "String" },
+            "createdAt": { "type": "Timestamp" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "stories",
+      "description": "Légendes, Webtoons et Bandes Dessinées",
+      "fields": {
+        "id": { "type": "String", "required": true },
+        "slug": { "type": "String", "required": true, "unique": true },
+        "title": { "type": "String", "required": true },
+        "description": { "type": "String" },
+        "format": { "type": "Enum", "ref": "StoryFormat" },
+        "artistId": { "type": "String", "required": true, "ref": "users" },
+        "artistName": { "type": "String" },
+        "genre": { "type": "String" },
+        "genreSlug": { "type": "String" },
+        "coverImage": { "type": "Object", "fields": { "imageUrl": { "type": "String" } } },
+        "isPublished": { "type": "Boolean", "default": false },
+        "isPremium": { "type": "Boolean", "default": false },
+        "views": { "type": "Number", "default": 0 },
+        "likes": { "type": "Number", "default": 0 },
+        "chapterCount": { "type": "Number", "default": 0 },
+        "universeId": { "type": "String", "nullable": true },
+        "createdAt": { "type": "Timestamp" },
+        "updatedAt": { "type": "Timestamp" }
+      },
+      "subCollections": [
+        {
+          "name": "chapters",
+          "description": "Épisodes de la saga",
+          "fields": {
+            "chapterNumber": { "type": "Number" },
+            "title": { "type": "String" },
+            "slug": { "type": "String" },
+            "pages": { "type": "Array", "description": "Tableau d'URLs d'images" },
+            "isPremium": { "type": "Boolean" },
+            "afriCoinsPrice": { "type": "Number" },
+            "status": { "type": "String", "enum": ["Publié", "Brouillon", "Programmé"] },
+            "publishedAt": { "type": "Timestamp" }
+          },
+          "subCollections": [
+            {
+              "name": "comments",
+              "fields": {
+                "authorId": { "type": "String" },
+                "content": { "type": "String" },
+                "likes": { "type": "Number" },
+                "createdAt": { "type": "Timestamp" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "readingClubs",
+      "description": "Communautés et cercles de lecteurs",
+      "fields": {
+        "name": { "type": "String", "required": true },
+        "description": { "type": "String" },
+        "membersCount": { "type": "Number", "default": 0 },
+        "ownerId": { "type": "String" },
+        "isPrivate": { "type": "Boolean" },
+        "createdAt": { "type": "Timestamp" }
+      }
+    },
+    {
+      "name": "reports",
+      "description": "File de modération pour le Nexus Core",
+      "fields": {
+        "type": { "type": "String", "enum": ["story", "comment", "user"] },
+        "targetId": { "type": "String" },
+        "reporterId": { "type": "String" },
+        "reason": { "type": "String" },
+        "status": { "type": "String", "enum": ["pending", "resolved"] },
+        "createdAt": { "type": "Timestamp" }
+      }
+    },
+    {
+      "name": "products",
+      "description": "Boutique de produits dérivés",
+      "fields": {
+        "name": { "type": "String" },
+        "price": { "type": "Number" },
+        "category": { "type": "String" },
+        "image": { "type": "Object" },
+        "printfulUrl": { "type": "String" }
+      }
+    }
+  ],
+  "enums": {
+    "UserRole": ["reader", "premium_reader", "artist_draft", "artist_pro", "artist_elite", "admin", "translator"],
+    "StoryFormat": ["Webtoon", "BD", "One-shot", "Roman Illustré", "Hybride"],
+    "UniverseRelation": ["Préquel", "Séquelle", "Spin-off", "Original"]
+  },
+  "indexes": [
+    { "collection": "stories", "fields": ["isPublished", "views"], "order": "DESC" },
+    { "collection": "stories", "fields": ["isPublished", "updatedAt"], "order": "DESC" },
+    { "collection": "stories", "fields": ["genreSlug", "isPublished", "views"], "order": "DESC" }
+  ]
+}
