@@ -10,19 +10,32 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ChevronDown, Award, Eye, EyeOff, ArrowRight, Loader2, Brush, BookOpen } from "lucide-react";
+import { 
+  Sparkles, 
+  ChevronDown, 
+  Award, 
+  Eye, 
+  EyeOff, 
+  ArrowRight, 
+  Loader2, 
+  Brush, 
+  BookOpen, 
+  Crown, 
+  ShieldCheck, 
+  Languages,
+  ShieldAlert,
+  Zap
+} from "lucide-react";
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/components/checkbox-ui-fix'; // Utilisation d'un checkbox standard ou corrigé
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   updateProfile, 
   signInWithPopup, 
-  signInWithRedirect,
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider,
@@ -30,45 +43,53 @@ import {
   User
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Schema incluant TOUS les rôles de Types.ts
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
-  accountType: z.enum(["reader", "artist_draft", "artist_pro"], {
-    required_error: "Vous devez sélectionner un type de compte.",
+  accountType: z.enum([
+    "reader", 
+    "premium_reader", 
+    "artist_draft", 
+    "artist_pro", 
+    "artist_elite", 
+    "admin", 
+    "translator"
+  ], {
+    required_error: "Vous devez sélectionner une destinée.",
   }),
   acceptTerms: z.boolean().refine(val => val === true, {
-    message: "Vous devez accepter les conditions d'utilisation.",
+    message: "L'acceptation des conditions est obligatoire.",
   }),
 });
 
-// Helper to create the full user document
-const createFullUserDocument = (user: User, role: "reader" | "artist_draft" | "artist_pro", additionals: Partial<{displayName: string, email: string}> = {}) => {
-  const slug = (additionals.displayName || user.displayName || "user").toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+// Helper de création de document synchronisé avec Types.ts v4.3.0
+const createFullUserDocument = (user: User, role: string, additionals: Partial<{displayName: string, email: string}> = {}) => {
+  const slug = (additionals.displayName || user.displayName || "voyageur").toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
   
   return {
     uid: user.uid,
     email: additionals.email || user.email || '',
-    displayName: additionals.displayName || user.displayName || 'Nouveau Membre',
-    photoURL: user.photoURL || '',
+    displayName: additionals.displayName || user.displayName || 'Nouveau Voyageur',
+    photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
     slug: slug,
     role: role,
-    afriCoins: 0,
+    afriCoins: role === 'premium_reader' ? 50 : 0, // Bonus de bienvenue premium
     level: 1,
     subscribersCount: 0,
     followedCount: 0,
-    isCertified: false,
+    isCertified: ['artist_pro', 'artist_elite', 'admin'].includes(role),
     isBanned: false,
     isVerified: false,
     onboardingCompleted: false,
+    isMentor: role === 'artist_elite',
+    isTranslator: role === 'translator',
     bio: '',
-    country: '',
-    languages: [],
-    socialLinks: {},
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    lastActive: serverTimestamp(),
     readingStats: {
       preferredGenres: {},
       totalReadTime: 0,
@@ -78,8 +99,7 @@ const createFullUserDocument = (user: User, role: "reader" | "artist_draft" | "a
     readingStreak: {
       currentCount: 0,
       lastReadDate: '',
-      longestStreak: 0,
-      weeklyCoins: 0
+      longestStreak: 0
     },
     preferences: {
       theme: 'dark',
@@ -119,30 +139,6 @@ function SignupForm() {
     setParticles(newParticles);
   }, []);
 
-  useEffect(() => {
-    getRedirectResult(auth).then(async (result) => {
-      if (result) {
-        setIsSocialLoading('redirect');
-        await checkUserRoleAndRedirect(result.user);
-      }
-    }).catch((error) => {
-      console.error("Redirect auth error:", error);
-      setIsSocialLoading(null);
-    });
-  }, []);
-
-  const setSessionCookie = async (role: string) => {
-    try {
-      await fetch('/api/auth/session', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role })
-      });
-    } catch (e) {
-      console.error("Erreur session", e);
-    }
-  };
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -154,40 +150,18 @@ function SignupForm() {
     },
   });
 
-  const passwordValue = form.watch('password');
-
-  const passwordStrength = useMemo(() => {
-    if (!passwordValue) return 0;
-    let score = 0;
-    if (passwordValue.length >= 8) score++;
-    if (/[A-Z]/.test(passwordValue)) score++;
-    if (/[0-9]/.test(passwordValue)) score++;
-    if (/[^A-Za-z0-9]/.test(passwordValue)) score++;
-    return score;
-  }, [passwordValue]);
-
-  const strengthColor = useMemo(() => {
-    switch (passwordStrength) {
-      case 1: return 'bg-rose-500';
-      case 2: return 'bg-orange-500';
-      case 3: return 'bg-yellow-500';
-      case 4: return 'bg-emerald-500';
-      default: return 'bg-stone-800';
-    }
-  }, [passwordStrength]);
-
   const checkUserRoleAndRedirect = async (user: User) => {
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (!userDoc.exists()) {
-      // User exists in Auth, but not in Firestore. Start the role selection.
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!userDoc.exists() || !userDoc.data()?.role) {
       setPendingUser(user);
       setShowRoleSelection(true);
     } else {
-      // User exists, complete login
       const role = userDoc.data()?.role || 'reader';
-      await setSessionCookie(role);
+      await fetch('/api/auth/session', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }) 
+      });
       router.push(redirectTo);
       router.refresh();
     }
@@ -195,46 +169,25 @@ function SignupForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    let user: User | null = null;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      user = userCredential.user;
-
+      const user = userCredential.user;
       await updateProfile(user, { displayName: values.name });
-
       const userDoc = createFullUserDocument(user, values.accountType, { displayName: values.name, email: values.email });
-      
       await setDoc(doc(db, 'users', user.uid), userDoc);
-
-      await setSessionCookie(values.accountType);
-      toast({
-        title: "Bienvenue sur NexusHub !",
-        description: "Votre compte a été créé avec succès.",
+      await fetch('/api/auth/session', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: values.accountType }) 
       });
-
+      toast({ title: "Bienvenue au Hub !", description: "Votre compte a été initialisé avec succès." });
       router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
       console.error("Signup error:", error);
-      let errorMessage = "Une erreur est survenue lors de l'inscription.";
-      if (error.code === 'auth/email-already-in-use') errorMessage = "Cet email est déjà utilisé.";
-      if (error.message.includes('App Check')) errorMessage = "Vérification de sécurité échouée. Veuillez réessayer.";
-
-      // Rollback user creation in Auth if Firestore fails
-      if (user && error.code !== 'auth/email-already-in-use') {
-        try {
-          await user.delete();
-          console.log("Auth user rolled back successfully.");
-        } catch (rollbackError) {
-          console.error("Failed to rollback Auth user:", rollbackError);
-        }
-      }
-
-      toast({
-        title: "Échec de l'inscription",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      let msg = "Une erreur est survenue lors de l'accès aux archives.";
+      if (error.code === 'auth/email-already-in-use') msg = "Cet email appartient déjà à une autre légende.";
+      toast({ title: "Échec de l'éclosion", description: msg, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -248,56 +201,65 @@ function SignupForm() {
       case 'Facebook': provider = new FacebookAuthProvider(); break;
       case 'Apple': provider = new OAuthProvider('apple.com'); break;
     }
-
     try {
       const result = await signInWithPopup(auth, provider!);
-      if (result.user) {
-        await checkUserRoleAndRedirect(result.user);
-      }
+      if (result.user) await checkUserRoleAndRedirect(result.user);
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast({ title: "Erreur", description: "La connexion sociale a échoué.", variant: "destructive" });
+        toast({ title: "Erreur Connexion", variant: "destructive" });
       }
     } finally {
       setIsSocialLoading(null);
     }
   };
 
-  const handleRoleChoice = async (role: 'reader' | 'artist_draft') => {
+  const handleRoleChoice = async (role: string) => {
     if (!pendingUser) return;
     setIsLoading(true);
     try {
       const userDocData = createFullUserDocument(pendingUser, role);
       await setDoc(doc(db, 'users', pendingUser.uid), userDocData);
-      
-      await setSessionCookie(role);
-      toast({ title: "Profil configuré !", description: "Bienvenue au Hub." });
+      await fetch('/api/auth/session', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }) 
+      });
+      toast({ title: "Destinée choisie !", description: "Bienvenue voyageur." });
       router.push(redirectTo);
       router.refresh();
     } catch (e) {
-      console.error("Error setting role and creating user doc:", e);
-      toast({ title: "Erreur", description: "La création de votre profil a échoué.", variant: "destructive" });
+      toast({ title: "Erreur", description: "Impossible de sceller votre destinée.", variant: "destructive" });
     } finally {
       setIsLoading(false);
       setShowRoleSelection(false);
-      setPendingUser(null);
     }
   };
 
+  const roles = [
+    { id: 'reader', label: 'Lecteur', icon: BookOpen, desc: 'Accès standard, bibliothèque et forums.', color: 'text-stone-400' },
+    { id: 'premium_reader', label: 'Premium', icon: Crown, desc: 'Zéro pub, accès anticipé, +50 🪙.', color: 'text-amber-500' },
+    { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, desc: 'Publiez librement, progressez vers le Pro.', color: 'text-orange-500' },
+    { id: 'artist_pro', label: 'Artiste Pro', icon: Award, desc: 'Monétisation active et outils IA.', color: 'text-emerald-500' },
+    { id: 'artist_elite', label: 'Artiste Elite', icon: Zap, desc: 'Contrats Originals et mentorat.', color: 'text-primary' },
+    { id: 'translator', label: 'Traducteur', icon: Languages, desc: 'Traduisez et gagnez des AfriCoins.', color: 'text-blue-500' },
+    { id: 'admin', label: 'Admin Hub', icon: ShieldAlert, desc: 'Modération et gestion technique.', color: 'text-rose-500' },
+  ];
+
   if (showRoleSelection) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950 p-6 animate-in fade-in zoom-in-95 duration-700">
-        <div className="max-w-4xl w-full space-y-12 text-center">
-          <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant tracking-tighter">Choisissez votre Destinée</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <button disabled={isLoading} onClick={() => handleRoleChoice('artist_draft')} className="group p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all duration-500 space-y-6">
-              <Brush className="h-16 w-16 mx-auto text-primary group-hover:scale-110 transition-transform" />
-              <h3 className="text-3xl font-display font-black text-white">Je suis Artiste</h3>
-            </button>
-            <button disabled={isLoading} onClick={() => handleRoleChoice('reader')} className="group p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-emerald-500 transition-all duration-500 space-y-6">
-              <BookOpen className="h-16 w-16 mx-auto text-emerald-500 group-hover:scale-110 transition-transform" />
-              <h3 className="text-3xl font-display font-black text-white">Je suis Lecteur</h3>
-            </button>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950 p-6">
+        <div className="max-w-4xl w-full space-y-12 text-center animate-in fade-in zoom-in-95 duration-700">
+          <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant tracking-tighter">Votre destinée au Hub</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {roles.map((r) => (
+              <button key={r.id} onClick={() => handleRoleChoice(r.id)} className="group p-6 rounded-[2rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all duration-500 space-y-4">
+                <r.icon className={cn("h-8 w-8 mx-auto group-hover:scale-110 transition-transform", r.color)} />
+                <div className="space-y-1">
+                  <p className="font-display font-black text-white text-xs uppercase">{r.label}</p>
+                  <p className="text-[8px] text-stone-500 uppercase leading-tight">{r.desc}</p>
+                </div>
+              </button>
+            ))}
           </div>
           {isLoading && <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />}
         </div>
@@ -307,8 +269,7 @@ function SignupForm() {
 
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
-      {/* ... The rest of the JSX is unchanged ... */}
-      <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8 md:py-12">
+      <section className="relative min-h-[35vh] flex flex-col items-center justify-center overflow-hidden px-4 py-12">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_70%)]" />
           <div className="absolute inset-0 bg-stone-950/40 backdrop-blur-[1px]" />
@@ -318,110 +279,114 @@ function SignupForm() {
             ))}
           </div>
         </div>
-
         <div className="relative z-10 max-w-5xl w-full text-center space-y-4 animate-in fade-in slide-in-from-top-10 duration-1000">
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-5xl font-display font-black leading-tight text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
-              Rejoignez NexusHub
-            </h1>
-            <p className="text-sm md:text-base text-stone-300 font-light max-w-2xl mx-auto leading-relaxed italic">
-              "Commencez votre légende dans le sanctuaire de la narration visuelle africaine."
-            </p>
-          </div>
-          <div className="pt-4 flex flex-col items-center gap-1 animate-bounce">
-            <ChevronDown className="h-4 w-4 text-primary" />
-          </div>
+          <Badge variant="outline" className="mb-4 border-primary/20 text-primary px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em]">Éclosion Légendaire</Badge>
+          <h1 className="text-4xl md:text-7xl font-display font-black leading-[0.85] text-white tracking-tighter drop-shadow-[0_0_20px_rgba(212,168,67,0.3)]">
+            Forgez votre <br/><span className="gold-resplendant">Histoire</span>
+          </h1>
         </div>
       </section>
 
-      <section className="relative py-8 md:py-16 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
-        <div className="max-w-md mx-auto space-y-8">
+      <section className="relative py-12 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
+        <div className="max-w-2xl mx-auto space-y-10">
           <div className="flex flex-col gap-3">
-            <button onClick={() => handleSocialLogin('Google')} disabled={!!isSocialLoading} className="h-12 rounded-xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-3 flex items-center justify-center transition-all shadow-xl">
+            <button onClick={() => handleSocialLogin('Google')} disabled={!!isSocialLoading} className="h-14 rounded-2xl border-2 border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest gap-4 flex items-center justify-center transition-all shadow-xl">
               {isSocialLoading === 'Google' ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continuer avec Google"}
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-white/5" />
             <span className="text-[10px] font-black uppercase text-stone-600 tracking-widest">Ou par email</span>
             <div className="h-px flex-1 bg-white/5" />
           </div>
 
-          <Card className="border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl rounded-2xl overflow-hidden">
+          <Card className="border-white/10 bg-stone-900/50 backdrop-blur-2xl shadow-2xl rounded-[2.5rem] overflow-hidden">
             <div className="h-1.5 w-full bg-primary" />
-            <CardHeader className="text-center pb-2 pt-6">
-              <CardTitle className="text-xl font-display font-bold text-white">Créer un compte</CardTitle>
+            <CardHeader className="text-center pb-2 pt-10">
+              <CardTitle className="text-2xl font-display font-black text-white uppercase tracking-tighter">Création de Profil</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8 md:p-12">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Pseudo</FormLabel>
-                      <FormControl><Input placeholder="Votre Pseudo" {...field} className="bg-white/5 border-white/10 h-11 rounded-xl text-white" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Email</FormLabel>
-                      <FormControl><Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-11 rounded-xl text-white" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest ml-1">Pseudo</FormLabel>
+                        <FormControl><Input placeholder="Ex: Scribe_du_Kasaï" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest ml-1">Email</FormLabel>
+                        <FormControl><Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
                   <FormField control={form.control} name="password" render={({ field }) => (
-                    <FormItem className="space-y-1.5">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Mot de passe</FormLabel>
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest ml-1">Mot de passe</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input type={showPassword ? "text" : "password"} {...field} className="bg-white/5 border-white/10 h-11 rounded-xl text-white" />
-                          <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 text-stone-500" onClick={() => setShowPassword(!showPassword)}>
+                          <Input type={showPassword ? "text" : "password"} {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white pr-12" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" onClick={() => setShowPassword(!showPassword)}>
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                          </button>
                         </div>
                       </FormControl>
-                      <div className="flex gap-1 h-1 mt-2">
-                        {[1, 2, 3, 4].map((step) => (
-                          <div key={step} className={cn("flex-1 rounded-full transition-all duration-500", passwordStrength >= step ? strengthColor : "bg-stone-800")} />
-                        ))}
-                      </div>
                       <FormMessage />
                     </FormItem>
                   )} />
+
                   <FormField control={form.control} name="accountType" render={({ field }) => (
-                    <FormItem className="space-y-1.5">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Destinée au Hub</FormLabel>
+                    <FormItem className="space-y-4">
+                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest ml-1">Destinée au Hub</FormLabel>
                       <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 gap-2">
-                          {[{ value: "reader", label: "Lecteur", icon: BookOpen }, { value: "artist_draft", label: "Draft", icon: Brush }].map((item) => (
-                            <FormItem key={item.value} className="flex items-center space-y-0">
-                              <FormControl><RadioGroupItem value={item.value} className="sr-only" id={item.value} /></FormControl>
-                              <label htmlFor={item.value} className={cn("flex-1 flex flex-col items-center justify-center p-2 rounded-xl border-2 border-white/10 cursor-pointer transition-all", field.value === item.value ? "border-primary bg-primary/10 text-primary" : "text-stone-400")}>
-                                <item.icon className="h-4 w-4 mb-1" />
-                                <span className="text-[8px] font-black uppercase">{item.label}</span>
-                              </label>
-                            </FormItem>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {roles.map((r) => (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => field.onChange(r.id)}
+                              className={cn(
+                                "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all text-center gap-2",
+                                field.value === r.id 
+                                  ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(212,168,67,0.2)]" 
+                                  : "bg-white/5 border-white/5 text-stone-500 hover:bg-white/10"
+                              )}
+                            >
+                              <r.icon className={cn("h-5 w-5", field.value === r.id ? r.color : "text-stone-600")} />
+                              <span className="text-[9px] font-black uppercase tracking-tighter">{r.label}</span>
+                            </button>
                           ))}
-                        </RadioGroup>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
+
                   <FormField control={form.control} name="acceptTerms" render={({ field }) => (
-                    <FormItem className="flex items-start space-x-2 space-y-0 rounded-xl border border-white/5 p-3 bg-white/5">
+                    <FormItem className="flex items-start space-x-3 space-y-0 rounded-2xl border border-white/5 p-4 bg-white/5">
                       <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      <FormLabel className="text-[9px] text-stone-400 leading-tight">J'accepte les Conditions et la Politique de Confidentialité.</FormLabel>
+                      <FormLabel className="text-[10px] text-stone-400 leading-relaxed font-light italic">
+                        J'accepte les conditions et je jure de respecter la bienveillance du sanctuaire NexusHub.
+                      </FormLabel>
                     </FormItem>
                   )} />
-                  <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl font-black text-sm bg-primary text-black gold-shimmer shadow-xl shadow-primary/20">
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "S'inscrire au Hub"}
+
+                  <Button type="submit" disabled={isLoading} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer shadow-2xl shadow-primary/20">
+                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "S'inscrire au Hub"}
                   </Button>
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="border-t border-white/5 py-4 bg-white/5">
-              <div className="text-center w-full text-[10px] text-stone-400">Déjà un compte ? <Link href="/login" className="font-black text-primary hover:underline uppercase tracking-widest">Se connecter</Link></div>
+            <CardFooter className="border-t border-white/5 py-6 bg-white/5">
+              <div className="text-center w-full text-xs text-stone-500">
+                Déjà un compte ? <Link href="/login" className="font-black text-primary hover:underline uppercase tracking-widest ml-2">Se connecter</Link>
+              </div>
             </CardFooter>
           </Card>
         </div>
