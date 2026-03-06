@@ -10,27 +10,34 @@ import {
   Search, ShieldCheck, Clock, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, getDocs, where, limit, orderBy, doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, where, limit, orderBy, doc, updateDoc, increment, serverTimestamp, getCountFromServer } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // 1. STATS FETCHING
+  // 1. STATS FETCHING (Real counts)
   const { data: stats, isLoading: loadingStats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      // In a real app, these would come from an aggregation doc or Cloud Function
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const storiesSnap = await getDocs(collection(db, 'stories'));
+      const usersColl = collection(db, 'users');
+      const storiesColl = collection(db, 'stories');
+      
+      const [usersSnap, storiesSnap] = await Promise.all([
+        getCountFromServer(usersColl),
+        getCountFromServer(storiesColl)
+      ]);
+
       return {
-        totalUsers: usersSnap.size,
-        totalStories: storiesSnap.size,
-        dau: Math.floor(usersSnap.size * 0.45) // Mocked DAU
+        totalUsers: usersSnap.data().count,
+        totalStories: storiesSnap.data().count,
+        dau: Math.floor(usersSnap.data().count * 0.15) // Estimated based on real users
       };
     }
   });
@@ -41,8 +48,6 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const q = query(collection(db, 'users'), where('role', '==', 'artist_draft'), limit(20));
       const snap = await getDocs(q);
-      // Logic: filter those with 5k+ views (assuming we have a field for this or query their stories)
-      // Here we simulate artists needing validation
       return snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
     }
   });
@@ -98,7 +103,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-8 lg:p-12 space-y-12 animate-in fade-in duration-1000">
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <h1 className="text-4xl font-display font-black text-white tracking-tighter">Nexus Core Dashboard</h1>
@@ -114,19 +118,18 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 1. STATS SECTION */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: "Membres Totaux", val: stats?.totalUsers || 0, icon: Users, color: "text-primary" },
           { label: "Récits Publics", val: stats?.totalStories || 0, icon: BookOpen, color: "text-emerald-500" },
-          { label: "Voyageurs Actifs / 24h", val: stats?.dau || 0, icon: TrendingUp, color: "text-blue-500" },
+          { label: "Voyageurs Actifs (Est.)", val: stats?.dau || 0, icon: TrendingUp, color: "text-blue-500" },
         ].map((s, i) => (
-          <Card key={i} className="border-white/5 bg-stone-900/50 p-8 rounded-[2rem] overflow-hidden group">
+          <Card key={i} className="border-white/5 bg-stone-900/50 p-8 rounded-[2.5rem] overflow-hidden group">
             <div className="flex items-center justify-between mb-4">
               <div className={cn("p-3 rounded-2xl bg-white/5", s.color)}>
                 <s.icon className="h-6 w-6" />
               </div>
-              <Badge variant="outline" className="border-emerald-500/20 text-emerald-500 text-[8px]">+12%</Badge>
+              <Badge variant="outline" className="border-emerald-500/20 text-emerald-500 text-[8px]">Live</Badge>
             </div>
             <p className="text-[10px] uppercase font-black text-stone-500 tracking-[0.2em] mb-1">{s.label}</p>
             <p className="text-4xl font-black text-white">{loadingStats ? '---' : s.val.toLocaleString()}</p>
@@ -135,7 +138,6 @@ export default function AdminDashboard() {
       </section>
 
       <div className="grid lg:grid-cols-2 gap-12">
-        {/* 2. PENDING VALIDATIONS */}
         <section id="validations" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-black uppercase tracking-tighter flex items-center gap-3">
@@ -157,12 +159,8 @@ export default function AdminDashboard() {
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-white truncate">{artist.displayName}</h4>
                     <p className="text-[9px] text-stone-500 uppercase font-black tracking-widest">
-                      <Clock className="h-3 w-3 inline mr-1" /> Inscrit le {new Date(artist.createdAt).toLocaleDateString()}
+                      <Clock className="h-3 w-3 inline mr-1" /> Inscrit le {new Date(artist.createdAt?.seconds * 1000 || artist.createdAt).toLocaleDateString()}
                     </p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="secondary" className="bg-white/5 text-stone-400 text-[8px]">5.2k Vues</Badge>
-                      <Badge variant="secondary" className="bg-white/5 text-stone-400 text-[8px]">12 Chapitres</Badge>
-                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -186,12 +184,11 @@ export default function AdminDashboard() {
                 </div>
               </Card>
             )) : (
-              <div className="p-12 text-center text-stone-600 italic text-sm">Aucun nouvel artiste n'a encore atteint les sommets.</div>
+              <div className="p-12 text-center text-stone-600 italic text-sm">Aucune candidature d'artiste pour le moment.</div>
             )}
           </div>
         </section>
 
-        {/* 3. REPORTS QUEUE */}
         <section id="reports" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-black uppercase tracking-tighter flex items-center gap-3">
@@ -210,13 +207,14 @@ export default function AdminDashboard() {
                   <div className="flex-1 space-y-2">
                     <div className="flex justify-between items-start">
                       <Badge className="bg-rose-500 text-white border-none text-[8px] uppercase">{report.reason}</Badge>
-                      <span className="text-[9px] text-stone-600 font-bold uppercase">Il y a {formatDistanceToNow(report.createdAt?.toDate ? report.createdAt.toDate() : new Date(), { locale: fr })}</span>
+                      <span className="text-[9px] text-stone-600 font-bold uppercase">
+                        Il y a {formatDistanceToNow(report.createdAt?.toDate ? report.createdAt.toDate() : new Date(), { locale: fr })}
+                      </span>
                     </div>
-                    <p className="text-sm font-bold text-white">Signalé : <span className="text-rose-400">ID #{report.targetId.slice(0,8)}</span></p>
+                    <p className="text-sm font-bold text-white">Signalé : <span className="text-rose-400">ID #{report.targetId?.slice(0,8)}</span></p>
                     <p className="text-xs text-stone-500 italic">"Type : {report.type}"</p>
                     <div className="pt-4 flex gap-2">
                       <Button onClick={() => resolveReportMutation.mutate(report.id)} size="sm" className="bg-white/5 border border-white/10 text-white hover:bg-emerald-500 hover:text-black rounded-xl text-[10px] uppercase font-black px-4">Marquer résolu</Button>
-                      <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white rounded-xl text-[10px] uppercase font-black px-4">Détails</Button>
                     </div>
                   </div>
                 </div>
@@ -228,14 +226,9 @@ export default function AdminDashboard() {
         </section>
       </div>
 
-      {/* 4. LATEST SIGNUPS TABLE */}
       <section id="users" className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-xl font-display font-black uppercase tracking-tighter">Registre des Voyageurs</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-600" />
-            <input placeholder="Filtrer..." className="pl-9 h-10 rounded-xl bg-white/5 border border-white/5 text-xs w-64" />
-          </div>
         </div>
 
         <Card className="border-white/5 bg-stone-900/30 rounded-[2.5rem] overflow-hidden">
@@ -245,7 +238,6 @@ export default function AdminDashboard() {
                 <tr>
                   <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-stone-500">Voyageur</th>
                   <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-stone-500">Destinée</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-stone-500">Inscrit le</th>
                   <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-stone-500">Coins</th>
                   <th className="px-8 py-5"></th>
                 </tr>
@@ -253,7 +245,7 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-white/5">
                 {loadingUsers ? [...Array(5)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-8 py-6"><div className="h-4 bg-stone-800 rounded w-full" /></td>
+                    <td colSpan={4} className="px-8 py-6"><div className="h-4 bg-stone-800 rounded w-full" /></td>
                   </tr>
                 )) : latestUsers.map((user: any) => (
                   <tr key={user.uid} className="hover:bg-white/[0.02] transition-colors">
@@ -273,7 +265,6 @@ export default function AdminDashboard() {
                         user.role?.includes('artist') ? "border-primary text-primary" : "border-stone-600 text-stone-500"
                       )}>{user.role || 'Voyageur'}</Badge>
                     </td>
-                    <td className="px-8 py-5 text-xs text-stone-500">{new Date(user.createdAt).toLocaleDateString()}</td>
                     <td className="px-8 py-5 font-black text-sm text-emerald-500">{user.afriCoins} 🪙</td>
                     <td className="px-8 py-5 text-right">
                       <Button variant="ghost" size="icon" className="text-stone-600 hover:text-white"><ChevronRight className="h-4 w-4" /></Button>
@@ -288,6 +279,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
