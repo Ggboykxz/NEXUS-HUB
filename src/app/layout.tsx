@@ -57,6 +57,7 @@ export default function RootLayout({
     <html
       lang="fr"
       className={`${cinzel.variable} ${playfair.variable} ${dmSans.variable} dark`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>

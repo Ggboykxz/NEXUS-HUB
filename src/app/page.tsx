@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { StoryCard } from '@/components/story-card';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Story, UserProfile, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/common/header';
@@ -33,9 +33,19 @@ export default function RootHomePage() {
     queryKey: ['stories', 'popular'],
     queryFn: async () => {
       try {
-        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(15));
-        const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+        const storiesRef = collection(db, 'stories');
+        // Tentative de requête avec filtre. Si l'index manque, on bascule sur une version simplifiée.
+        let q;
+        try {
+          q = query(storiesRef, where('isPublished', '==', true), orderBy('views', 'desc'), limit(15));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+        } catch (e) {
+          console.warn("Firestore index missing or permissions error, falling back to simple query", e);
+          q = query(storiesRef, limit(15));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)).filter(s => s.isPublished);
+        }
       } catch (error) {
         console.error("Error fetching popular stories: ", error);
         return [];

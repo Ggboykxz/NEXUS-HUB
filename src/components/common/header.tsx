@@ -60,9 +60,18 @@ export default function Header() {
     queryKey: ['mega-menu-trending'],
     queryFn: async () => {
       try {
-        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(3));
-        const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+        const storiesRef = collection(db, 'stories');
+        // Protection contre les erreurs d'index ou de permissions sur les nouvelles bases
+        try {
+          const q = query(storiesRef, where('isPublished', '==', true), orderBy('views', 'desc'), limit(3));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+        } catch (e) {
+          // Fallback simple si l'index n'existe pas encore
+          const qSimple = query(storiesRef, limit(3));
+          const snapSimple = await getDocs(qSimple);
+          return snapSimple.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+        }
       } catch (error) {
         console.error("Error fetching trending stories for mega menu: ", error);
         return [];
@@ -104,16 +113,22 @@ export default function Header() {
       return;
     }
 
-    const notifRef = collection(db, 'users', currentUser.uid, 'notifications');
-    const qNotif = query(notifRef, where('read', '==', false));
+    try {
+      const notifRef = collection(db, 'users', currentUser.uid, 'notifications');
+      const qNotif = query(notifRef, where('read', '==', false));
 
-    const unsubscribeNotifications = onSnapshot(qNotif, (snap) => {
-      setUnreadCount(snap.size);
-    }, (error) => {
-      console.error("Notifications listener error:", error);
-    });
+      const unsubscribeNotifications = onSnapshot(qNotif, (snap) => {
+        setUnreadCount(snap.size);
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          console.error("Notifications listener error:", error);
+        }
+      });
 
-    return () => unsubscribeNotifications();
+      return () => unsubscribeNotifications();
+    } catch (e) {
+      // Sourdine sur les erreurs de permission lors de la création de compte
+    }
   }, [currentUser]);
 
   const handleLogout = async () => {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -44,18 +43,31 @@ export function useAuth() {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 readingStats: { chaptersRead: 0, totalReadTime: 0 },
+                readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
                 preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
               }, { merge: true });
-            } catch (err) {
-              console.error("Failed to repair profile:", err);
+            } catch (err: any) {
+              // Si c'est une erreur de permission, on attend que les règles se propagent
+              if (err.code === 'permission-denied') {
+                console.warn("Permission denied during profile repair, retrying later...");
+              } else {
+                console.error("Failed to repair profile:", err);
+              }
             } finally {
               setIsInitializing(false);
             }
           }
         }, (error) => {
-          console.error("Error fetching user profile: ", error);
-          setProfile(null);
-          setLoading(false);
+          // Si l'erreur est 'insufficient permissions', cela peut arriver si le doc n'existe pas encore
+          // et que les règles restreignent la lecture aux docs existants appartenant à l'UID.
+          if (error.code === 'permission-denied') {
+            setProfile(null);
+            // On laisse le chargement à true pour permettre au bloc de réparation de s'exécuter
+          } else {
+            console.error("Error fetching user profile: ", error);
+            setProfile(null);
+            setLoading(false);
+          }
         });
         
         return () => unsubscribeSnapshot();
