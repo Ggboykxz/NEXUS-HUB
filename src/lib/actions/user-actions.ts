@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getAdminServices } from '@/lib/firebase-admin';
@@ -15,16 +16,17 @@ async function getAuthenticatedUser() {
 }
 
 /**
- * Met à jour le profil utilisateur (Bio, Nom).
+ * Met à jour le profil utilisateur (Bio, Nom, Avatar).
  */
 export async function updateProfile(data: { displayName?: string; bio?: string; photoURL?: string }) {
   try {
     const { uid, adminDb } = await getAuthenticatedUser();
     await adminDb.collection('users').doc(uid).update({
       ...data,
-      updatedAt: new Date().toISOString()
+      updatedAt: FieldValue.serverTimestamp()
     });
     revalidatePath(`/profile/${uid}`);
+    revalidatePath('/settings');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -34,24 +36,34 @@ export async function updateProfile(data: { displayName?: string; bio?: string; 
 /**
  * Gère l'achat fictif ou réel d'AfriCoins.
  */
-export async function addAfriCoins(amount: number) {
+export async function purchaseAfriCoins(amount: number, packId: string) {
   try {
     const { uid, adminDb } = await getAuthenticatedUser();
-    await adminDb.collection('users').doc(uid).update({
-      afriCoins: FieldValue.increment(amount),
-      updatedAt: new Date().toISOString()
-    });
     
-    // Log de transaction
-    await adminDb.collection('transactions').add({
-      userId: uid,
-      amount,
-      type: 'purchase',
-      status: 'completed',
-      createdAt: new Date().toISOString()
+    await adminDb.runTransaction(async (transaction) => {
+      const userRef = adminDb.collection('users').doc(uid);
+      const userDoc = await transaction.get(userRef);
+      
+      if (!userDoc.exists) throw new Error("Utilisateur introuvable");
+      
+      transaction.update(userRef, {
+        afriCoins: FieldValue.increment(amount),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      
+      const transRef = adminDb.collection('transactions').doc();
+      transaction.set(transRef, {
+        userId: uid,
+        amount,
+        type: 'purchase',
+        packId,
+        status: 'completed',
+        createdAt: FieldValue.serverTimestamp()
+      });
     });
 
     revalidatePath('/settings');
+    revalidatePath('/africoins');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -59,21 +71,18 @@ export async function addAfriCoins(amount: number) {
 }
 
 /**
- * Sauvegarde la progression de lecture.
+ * Sauvegarde la progression de lecture de manière atomique.
  */
-export async function trackProgress(storyId: string, chapterId: string, progress: number) {
+export async function trackReadingProgress(storyId: string, chapterId: string, progress: number) {
   try {
     const { uid, adminDb } = await getAuthenticatedUser();
-    const storySnap = await adminDb.collection('stories').doc(storyId).get();
-    const storyData = storySnap.data();
-
-    await adminDb.collection('users').doc(uid).collection('library').doc(storyId).set({
+    const libRef = adminDb.collection('users').doc(uid).collection('library').doc(storyId);
+    
+    await libRef.set({
       storyId,
-      storyTitle: storyData?.title,
-      storyCover: storyData?.coverImage?.imageUrl,
       lastReadChapterId: chapterId,
       progress,
-      lastReadAt: new Date().toISOString()
+      lastReadAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
     return { success: true };

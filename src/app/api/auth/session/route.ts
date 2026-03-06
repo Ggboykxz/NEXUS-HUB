@@ -4,6 +4,7 @@ import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API pour échanger un ID Token Firebase contre un cookie de session sécurisé.
+ * Supporte le rafraîchissement des rôles pour le middleware.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -22,22 +23,20 @@ export async function POST(request: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Tentative de récupération du rôle avec un retry minimal (race condition mitigation)
+    // Retry logic pour l'initialisation Firestore (race condition mitigation)
     let role = 'reader';
     let attempts = 0;
-    
-    while (attempts < 3) {
+    while (attempts < 5) {
       const userDoc = await adminDb.collection('users').doc(uid).get();
       if (userDoc.exists && userDoc.data()?.role) {
         role = userDoc.data()?.role;
         break;
       }
-      // Attendre 200ms avant la prochaine tentative si le doc n'est pas encore là
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 250));
       attempts++;
     }
 
-    const expiresIn = 60 * 60 * 24 * 14 * 1000;
+    const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 jours
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const response = NextResponse.json({ success: true, role });
@@ -50,6 +49,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
+    // Cookie non-httpOnly pour que le client puisse lire le rôle sans appel API
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

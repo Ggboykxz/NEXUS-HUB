@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getAdminServices } from '@/lib/firebase-admin';
@@ -22,42 +23,7 @@ async function getAuthenticatedArtist() {
 }
 
 /**
- * Crée un nouveau chapitre pour une œuvre existante.
- */
-export async function createChapter(storyId: string, data: { title: string; chapterNumber: number; pages: any[]; isPremium: boolean; afriCoinsPrice: number }) {
-  try {
-    const { adminDb } = await getAuthenticatedArtist();
-    const chapterRef = adminDb.collection('stories').doc(storyId).collection('chapters').doc();
-    
-    const chapterData = {
-      id: chapterRef.id,
-      storyId,
-      ...data,
-      status: 'Publié',
-      views: 0,
-      likes: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      publishedAt: new Date().toISOString()
-    };
-
-    await chapterRef.set(chapterData);
-    
-    // Incrémentation du compteur de chapitres
-    await adminDb.collection('stories').doc(storyId).update({
-      chapterCount: FieldValue.increment(1),
-      updatedAt: new Date().toISOString()
-    });
-
-    revalidatePath(`/dashboard/creations/${storyId}`);
-    return { success: true, id: chapterRef.id };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * Supprime une œuvre (Seul l'auteur ou un admin peut le faire).
+ * Supprime une œuvre et ses chapitres associés.
  */
 export async function deleteStory(storyId: string) {
   try {
@@ -66,10 +32,39 @@ export async function deleteStory(storyId: string) {
     const storyDoc = await storyRef.get();
 
     if (!storyDoc.exists) throw new Error('Histoire introuvable');
-    if (storyDoc.data()?.artistId !== uid) throw new Error('Accès non autorisé');
+    if (storyDoc.data()?.artistId !== uid && (await adminDb.collection('users').doc(uid).get()).data()?.role !== 'admin') {
+      throw new Error('Accès non autorisé');
+    }
 
-    await storyRef.delete();
+    // Suppression en cascade (simplifiée pour le prototype)
+    const chapters = await storyRef.collection('chapters').get();
+    const batch = adminDb.batch();
+    chapters.forEach(c => batch.delete(c.ref));
+    batch.delete(storyRef);
+    
+    await batch.commit();
+    
     revalidatePath('/dashboard/creations');
+    revalidatePath('/stories');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Alterne l'état de publication d'une œuvre.
+ */
+export async function toggleStoryPublication(storyId: string, isPublished: boolean) {
+  try {
+    const { uid, adminDb } = await getAuthenticatedArtist();
+    await adminDb.collection('stories').doc(storyId).update({
+      isPublished,
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    
+    revalidatePath(`/dashboard/creations/${storyId}`);
+    revalidatePath('/stories');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

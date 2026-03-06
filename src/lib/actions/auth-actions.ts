@@ -1,15 +1,9 @@
+
 'use server';
 
 import { getAdminServices } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
-import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-
-const SignupSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  role: z.string()
-});
 
 /**
  * Action de déconnexion globale.
@@ -28,27 +22,29 @@ export async function logout() {
     }
   }
 
-  (await cookies()).set('__session', '', { maxAge: 0 });
-  (await cookies()).set('nexushub-role', '', { maxAge: 0 });
+  (await cookies()).set('__session', '', { maxAge: 0, path: '/' });
+  (await cookies()).set('nexushub-role', '', { maxAge: 0, path: '/' });
+  
   revalidatePath('/');
 }
 
 /**
  * Initialise un profil utilisateur en cas d'échec du flux client.
+ * Appelé si l'utilisateur est authentifié mais sans document Firestore.
  */
-export async function ensureUserProfile(uid: string, data: z.infer<typeof SignupSchema>) {
+export async function repairProfile(uid: string, email: string, name: string) {
   const { adminDb } = getAdminServices();
   const userRef = adminDb.collection('users').doc(uid);
   const doc = await userRef.get();
 
   if (!doc.exists) {
-    const slug = data.name.toLowerCase().replace(/ /g, '-') + '-' + Math.floor(1000 + Math.random() * 9000);
+    const slug = name.toLowerCase().replace(/ /g, '-') + '-' + Math.floor(1000 + Math.random() * 9000);
     await userRef.set({
       uid,
-      email: data.email,
-      displayName: data.name,
+      email,
+      displayName: name,
       slug,
-      role: data.role,
+      role: 'reader',
       afriCoins: 0,
       level: 1,
       subscribersCount: 0,
@@ -58,7 +54,8 @@ export async function ensureUserProfile(uid: string, data: z.infer<typeof Signup
       onboardingCompleted: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      readingStats: { chaptersRead: 0, totalReadTime: 0 }
+      readingStats: { chaptersRead: 0, totalReadTime: 0 },
+      preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
     });
   }
 }
