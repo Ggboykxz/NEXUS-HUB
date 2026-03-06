@@ -5,10 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { StoryCard } from '@/components/story-card';
-import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, orderBy, limit, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Story, UserProfile, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/common/header';
@@ -17,20 +17,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/components/providers/language-provider';
 import { useAuth } from '@/hooks/use-auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import {
-  Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit,
-  Headphones, Film, Star, Flame, Gift, History, Bookmark,
-  Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin,
-  Activity, Timer, Languages, Map, MessageSquare, CheckCircle2,
-  ArrowUpRight, Heart, Share2, PlayCircle, Clock, BookOpen, UserCheck, X, Settings
+  Play, TrendingUp, Sparkles, ChevronRight, BrainCircuit,
+  Headphones, Film, Star, Flame, Gift, History,
+  Users, Zap, Globe, Coins, Mic2, MessageSquare, CheckCircle2,
+  Heart, Trophy, Handshake, BookOpen, Settings, X
 } from 'lucide-react';
-
-const REGIONS = [
-  { name: 'Afrique de l\'Ouest', slug: 'west', flag: '🇸🇳', color: 'bg-emerald-500/10 border-emerald-500/20' },
-  { name: 'Afrique Centrale', slug: 'central', flag: '🇬🇦', color: 'bg-primary/10 border-primary/20' },
-  { name: 'Afrique de l\'Est', slug: 'east', flag: '🇰🇪', color: 'bg-blue-500/10 border-blue-500/20' },
-  { name: 'Afrique Australe', slug: 'south', flag: '🇿🇦', color: 'bg-amber-500/10 border-amber-500/20' },
-];
 
 export default function RootHomePage() {
   const { currentUser, profile } = useAuth();
@@ -153,10 +146,10 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                   <p className="text-stone-300 text-sm md:text-lg font-light italic line-clamp-2">"{featured.description}"</p>
                   <div className="flex gap-4 pt-4">
                     <Button asChild size="lg" className="rounded-full font-black px-8 gold-shimmer h-14">
-                      <Link href={`/read/${featured.id}`} prefetch={true}><Play className="mr-2 h-5 w-5 fill-current" /> {t('common.read')}</Link>
+                      <Link href={`/read/${featured.id}`}><Play className="mr-2 h-5 w-5 fill-current" /> {t('common.read')}</Link>
                     </Button>
                     <Button asChild variant="outline" size="lg" className="rounded-full border-white/20 text-white hover:bg-white/10 backdrop-blur-md h-14 px-8">
-                      <Link href={`/read/${featured.id}`} prefetch={true}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
+                      <Link href={`/read/${featured.id}`}><Headphones className="mr-2 h-5 w-5" /> Mode Sonore</Link>
                     </Button>
                   </div>
                 </div>
@@ -191,7 +184,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Link href="/stories" className="group" prefetch={true}>
+                <Link href="/stories" className="group">
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-primary/50 transition-all h-full space-y-4">
                     <div className="bg-primary/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><BookOpen className="h-6 w-6 text-primary" /></div>
                     <div>
@@ -200,7 +193,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     </div>
                   </div>
                 </Link>
-                <Link href="/settings" className="group" prefetch={true}>
+                <Link href="/settings" className="group">
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-emerald-500/50 transition-all h-full space-y-4">
                     <div className="bg-emerald-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Settings className="h-6 w-6 text-emerald-500" /></div>
                     <div>
@@ -209,7 +202,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     </div>
                   </div>
                 </Link>
-                <Link href="/africoins" className="group" prefetch={true}>
+                <Link href="/africoins" className="group">
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-amber-500/50 transition-all h-full space-y-4">
                     <div className="bg-amber-500/10 p-3 rounded-2xl w-fit group-hover:scale-110 transition-transform"><Coins className="h-6 w-6 text-amber-500" /></div>
                     <div>
@@ -256,7 +249,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             </div>
             <h2 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Continuer la lecture</h2>
           </div>
-          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors" prefetch={true}>{t('nav.library')}</Link>
+          <Link href="/library" className="text-[10px] font-black text-stone-500 uppercase hover:text-primary transition-colors">{t('nav.library')}</Link>
         </div>
 
         {isLoadingLibrary ? (
@@ -289,7 +282,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
                     <div className="h-full bg-primary" style={{ width: `${entry.progress}%` }} />
                   </div>
                   <Button asChild size="sm" variant="ghost" className="h-7 w-full rounded-lg text-[9px] font-black uppercase bg-white/5 hover:bg-primary hover:text-black">
-                    <Link href={`/read/${entry.storyId}`} prefetch={true}>{t('common.read')}</Link>
+                    <Link href={`/read/${entry.storyId}`}>{t('common.read')}</Link>
                   </Button>
                 </div>
               </div>
@@ -364,10 +357,10 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
                   </div>
                   <div className="flex flex-wrap gap-4 pt-8">
                     <Button asChild size="lg" className="h-16 px-12 rounded-full font-black text-xl shadow-2xl shadow-primary/30 bg-primary text-black gold-shimmer">
-                      <Link href={`/read/${featured.id}`} prefetch={true}>{t('home.start_adventure')}</Link>
+                      <Link href={`/read/${featured.id}`}>{t('home.start_adventure')}</Link>
                     </Button>
                     <Button asChild variant="outline" size="lg" className="h-16 px-12 rounded-full font-bold border-white/15 text-white hover:bg-white/10 backdrop-blur-md">
-                      <Link href="/signup" prefetch={true}>{t('home.free_signup')}</Link>
+                      <Link href="/signup">{t('home.free_signup')}</Link>
                     </Button>
                   </div>
                 </div>
@@ -390,7 +383,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
               <div className="bg-primary/10 p-2 rounded-lg"><TrendingUp className="h-6 w-6 text-primary" /></div>
               <h2 className="text-3xl font-display font-black text-white uppercase tracking-tighter">{t('home.trending')}</h2>
             </div>
-            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline" prefetch={true}>{t('home.popular')} <ChevronRight className="h-3 w-3" /></Link>
+            <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline">{t('home.popular')} <ChevronRight className="h-3 w-3" /></Link>
           </div>
 
           {isLoading ? (

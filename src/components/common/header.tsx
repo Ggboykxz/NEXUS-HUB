@@ -7,7 +7,7 @@ import {
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings,
   ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, 
   Cloud, Zap, Flame, LayoutGrid, Bell, Coins, Layers, Book, 
-  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic
+  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic, Headphones
 } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
