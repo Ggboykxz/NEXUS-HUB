@@ -9,22 +9,53 @@ const db = admin.firestore();
 
 /**
  * Déclencheur : Création automatique du profil Firestore lors de l'inscription Auth.
+ * Initialise les compteurs et les objets de stats pour éviter les erreurs UI.
  */
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const userRef = db.collection('users').doc(user.uid);
   
+  // Génération d'un slug de secours si le displayName est absent
+  const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
+  const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+
   return userRef.set({
     uid: user.uid,
     email: user.email,
     displayName: user.displayName || 'Nouveau Voyageur',
-    photoURL: user.photoURL || 'https://picsum.photos/seed/default/200/200',
-    role: 'reader',
+    photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
+    slug: slug,
+    role: 'reader', // Rôle par défaut, sera mis à jour par le client si nécessaire
+    level: 1,
     afriCoins: 0,
+    subscribersCount: 0,
+    followedCount: 0,
+    isCertified: false,
+    isBanned: false,
+    isVerified: false,
+    onboardingCompleted: false,
     bio: '',
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    favorites: [],
-    following: []
+    readingStats: {
+      preferredGenres: {},
+      totalReadTime: 0,
+      chaptersRead: 0,
+      favoriteArtists: []
+    },
+    readingStreak: {
+      currentCount: 0,
+      lastReadDate: '',
+      longestStreak: 0,
+      weeklyCoins: 0
+    },
+    preferences: {
+      theme: 'dark',
+      language: 'fr',
+      privacy: {
+        showCurrentReading: true,
+        showHistory: true
+      }
+    }
   }, { merge: true });
 });
 
@@ -39,12 +70,10 @@ const StorySchema = z.object({
 });
 
 export const submitStory = functions.https.onCall(async (data, context) => {
-  // Vérification de l'authentification
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Vous devez être connecté.');
   }
 
-  // Validation du schéma
   const validation = StorySchema.safeParse(data);
   if (!validation.success) {
     throw new functions.https.HttpsError('invalid-argument', 'Données de l\'œuvre invalides.');
@@ -53,7 +82,6 @@ export const submitStory = functions.https.onCall(async (data, context) => {
   const { title, description, genre, format } = validation.data;
   const artistId = context.auth.uid;
 
-  // Vérification du rôle artiste
   const userDoc = await db.collection('users').doc(artistId).get();
   const userData = userDoc.data();
   if (!userData || !['artist_draft', 'artist_pro', 'artist_elite'].includes(userData.role)) {
@@ -76,6 +104,7 @@ export const submitStory = functions.https.onCall(async (data, context) => {
     status: 'En cours',
     views: 0,
     likes: 0,
+    chapterCount: 0,
     isPremium: false,
     isPublished: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -86,9 +115,6 @@ export const submitStory = functions.https.onCall(async (data, context) => {
   return { id: storyRef.id, slug };
 });
 
-/**
- * Fonction Callable : Achat d'AfriCoins.
- */
 export const purchaseAfriCoins = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Session expirée.');
