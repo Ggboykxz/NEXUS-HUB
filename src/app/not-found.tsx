@@ -12,7 +12,6 @@ import type { Story } from '@/lib/types';
 /**
  * Page 404 personnalisée pour NexusHub.
  * S'affiche lorsqu'un utilisateur accède à une route inexistante.
- * Propose désormais des recommandations pour garder l'utilisateur sur la plateforme.
  */
 export default function NotFound() {
   const [recommendations, setRecommendations] = useState<Story[]>([]);
@@ -38,19 +37,17 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center p-6 py-20 text-center relative overflow-hidden">
-      {/* Éléments de design en arrière-plan */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.1),transparent_70%)]" />
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
       
       <div className="relative z-10 space-y-12 animate-in fade-in zoom-in duration-700 w-full max-w-6xl">
-        {/* Message d'erreur principal */}
         <div className="space-y-8">
           <div className="mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(212,168,67,0.2)]">
             <Compass className="h-12 w-12 text-primary animate-[spin_10s_linear_infinite]" />
           </div>
           
           <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-display font-black text-white leading-tight drop-shadow-[0_0_20px_rgba(212,168,67,0.4)]">
+            <h1 className="text-5xl md:text-7xl font-display font-black text-white leading-tight drop-shadow-[0_0_20px_rgba(212,168,67,0.4)] tracking-tighter">
               404 – Égaré ?
             </h1>
             <p className="text-xl text-stone-300 font-light max-w-lg mx-auto leading-relaxed italic">
@@ -81,7 +78,6 @@ export default function NotFound() {
           </div>
         </div>
 
-        {/* Section de recommandations (Réduction du Bounce Rate) */}
         {recommendations.length > 0 && (
           <div className="pt-16 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
             <div className="flex flex-col items-center gap-2">

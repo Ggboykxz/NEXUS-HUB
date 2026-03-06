@@ -26,9 +26,10 @@ import {
   GoogleAuthProvider, 
   FacebookAuthProvider, 
   OAuthProvider,
-  getRedirectResult
+  getRedirectResult,
+  User
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -42,6 +43,55 @@ const formSchema = z.object({
   }),
 });
 
+// Helper to create the full user document
+const createFullUserDocument = (user: User, role: "reader" | "artist_draft" | "artist_pro", additionals: Partial<{displayName: string, email: string}> = {}) => {
+  const slug = (additionals.displayName || user.displayName || "user").toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+  
+  return {
+    uid: user.uid,
+    email: additionals.email || user.email || '',
+    displayName: additionals.displayName || user.displayName || 'Nouveau Membre',
+    photoURL: user.photoURL || '',
+    slug: slug,
+    role: role,
+    afriCoins: 0,
+    level: 1,
+    subscribersCount: 0,
+    followedCount: 0,
+    isCertified: false,
+    isBanned: false,
+    isVerified: false,
+    onboardingCompleted: false,
+    bio: '',
+    country: '',
+    languages: [],
+    socialLinks: {},
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastActive: serverTimestamp(),
+    readingStats: {
+      preferredGenres: {},
+      totalReadTime: 0,
+      chaptersRead: 0,
+      favoriteArtists: []
+    },
+    readingStreak: {
+      currentCount: 0,
+      lastReadDate: '',
+      longestStreak: 0,
+      weeklyCoins: 0
+    },
+    preferences: {
+      theme: 'dark',
+      language: 'fr',
+      privacy: {
+        showCurrentReading: true,
+        showHistory: true
+      }
+    }
+  };
+};
+
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +100,7 @@ function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [pendingUid, setPendingUid] = useState<string | null>(null);
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   const callbackUrl = searchParams.get('callbackUrl');
@@ -72,10 +122,12 @@ function SignupForm() {
   useEffect(() => {
     getRedirectResult(auth).then(async (result) => {
       if (result) {
-        await checkUserRoleAndRedirect(result.user.uid);
+        setIsSocialLoading('redirect');
+        await checkUserRoleAndRedirect(result.user);
       }
     }).catch((error) => {
       console.error("Redirect auth error:", error);
+      setIsSocialLoading(null);
     });
   }, []);
 
@@ -124,12 +176,16 @@ function SignupForm() {
     }
   }, [passwordStrength]);
 
-  const checkUserRoleAndRedirect = async (uid: string) => {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (!userDoc.exists() || !userDoc.data()?.role) {
-      setPendingUid(uid);
+  const checkUserRoleAndRedirect = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (!userDoc.exists()) {
+      // User exists in Auth, but not in Firestore. Start the role selection.
+      setPendingUser(user);
       setShowRoleSelection(true);
     } else {
+      // User exists, complete login
       const role = userDoc.data()?.role || 'reader';
       await setSessionCookie(role);
       router.push(redirectTo);
@@ -139,53 +195,16 @@ function SignupForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    let user: User | null = null;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
+      user = userCredential.user;
 
       await updateProfile(user, { displayName: values.name });
 
-      const slug = values.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
-
-      // Création du document avec le schéma complet par défaut
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: values.email,
-        displayName: values.name,
-        slug: slug,
-        role: values.accountType,
-        afriCoins: 0,
-        level: 1,
-        subscribersCount: 0,
-        followedCount: 0,
-        isCertified: false,
-        isBanned: false,
-        isVerified: false,
-        onboardingCompleted: false,
-        bio: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        readingStats: {
-          preferredGenres: {},
-          totalReadTime: 0,
-          chaptersRead: 0,
-          favoriteArtists: []
-        },
-        readingStreak: {
-          currentCount: 0,
-          lastReadDate: '',
-          longestStreak: 0,
-          weeklyCoins: 0
-        },
-        preferences: {
-          theme: 'dark',
-          language: 'fr',
-          privacy: {
-            showCurrentReading: true,
-            showHistory: true
-          }
-        }
-      });
+      const userDoc = createFullUserDocument(user, values.accountType, { displayName: values.name, email: values.email });
+      
+      await setDoc(doc(db, 'users', user.uid), userDoc);
 
       await setSessionCookie(values.accountType);
       toast({
@@ -200,6 +219,16 @@ function SignupForm() {
       let errorMessage = "Une erreur est survenue lors de l'inscription.";
       if (error.code === 'auth/email-already-in-use') errorMessage = "Cet email est déjà utilisé.";
       if (error.message.includes('App Check')) errorMessage = "Vérification de sécurité échouée. Veuillez réessayer.";
+
+      // Rollback user creation in Auth if Firestore fails
+      if (user && error.code !== 'auth/email-already-in-use') {
+        try {
+          await user.delete();
+          console.log("Auth user rolled back successfully.");
+        } catch (rollbackError) {
+          console.error("Failed to rollback Auth user:", rollbackError);
+        }
+      }
 
       toast({
         title: "Échec de l'inscription",
@@ -223,7 +252,7 @@ function SignupForm() {
     try {
       const result = await signInWithPopup(auth, provider!);
       if (result.user) {
-        await checkUserRoleAndRedirect(result.user.uid);
+        await checkUserRoleAndRedirect(result.user);
       }
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -235,21 +264,23 @@ function SignupForm() {
   };
 
   const handleRoleChoice = async (role: 'reader' | 'artist_draft') => {
-    if (!pendingUid) return;
+    if (!pendingUser) return;
     setIsLoading(true);
     try {
-      await updateDoc(doc(db, 'users', pendingUid), { 
-        role,
-        updatedAt: serverTimestamp()
-      });
+      const userDocData = createFullUserDocument(pendingUser, role);
+      await setDoc(doc(db, 'users', pendingUser.uid), userDocData);
+      
       await setSessionCookie(role);
       toast({ title: "Profil configuré !", description: "Bienvenue au Hub." });
       router.push(redirectTo);
       router.refresh();
     } catch (e) {
-      toast({ title: "Erreur", description: "Action impossible.", variant: "destructive" });
+      console.error("Error setting role and creating user doc:", e);
+      toast({ title: "Erreur", description: "La création de votre profil a échoué.", variant: "destructive" });
     } finally {
       setIsLoading(false);
+      setShowRoleSelection(false);
+      setPendingUser(null);
     }
   };
 
@@ -276,6 +307,7 @@ function SignupForm() {
 
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
+      {/* ... The rest of the JSX is unchanged ... */}
       <section className="relative min-h-[40vh] flex flex-col items-center justify-center overflow-hidden px-4 py-8 md:py-12">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_70%)]" />

@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Story } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
-import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2, Plus } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2, Plus, Filter, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ function StoriesContent() {
       const snap = await getDocs(q);
       return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    staleTime: 2 * 60 * 1000,
   });
 
   const displayedStories = useMemo(() => {
@@ -130,7 +130,7 @@ function StoriesContent() {
                             <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
                                 <SelectValue placeholder="Type d'œuvre" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-stone-900 border-white/10">
                                 <SelectItem value="all">Toutes les œuvres</SelectItem>
                                 <SelectItem value="public">Publiques</SelectItem>
                                 <SelectItem value="premium">Premium Pro</SelectItem>
@@ -144,7 +144,7 @@ function StoriesContent() {
                             <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
                                 <SelectValue placeholder="Genre" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-stone-900 border-white/10">
                                 <SelectItem value="all">Tous les genres</SelectItem>
                                 {uniqueGenres.map(genre => (
                                     <SelectItem key={genre.slug} value={genre.slug}>{genre.name}</SelectItem>
@@ -159,7 +159,7 @@ function StoriesContent() {
                             <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
                                 <SelectValue placeholder="Tri" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-stone-900 border-white/10">
                                 <SelectItem value="popular">Popularité (Vues)</SelectItem>
                                 <SelectItem value="newest">Date de mise à jour</SelectItem>
                                 <SelectItem value="likes">Engagement (Likes)</SelectItem>
@@ -172,7 +172,7 @@ function StoriesContent() {
        </Card>
 
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
             <LayoutGrid className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-display font-bold">
                 {displayedStories.length} résultats chargés
@@ -187,13 +187,17 @@ function StoriesContent() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-32 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
-          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-          <h3 className="text-xl font-bold mb-2">Aucune œuvre trouvée</h3>
-          <p className="text-muted-foreground max-w-xs mx-auto mb-8">Réinitialisez les filtres ou changez vos critères de recherche.</p>
+        <div className="text-center py-32 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/10 space-y-6">
+          <div className="mx-auto w-20 h-20 bg-white/5 rounded-full flex items-center justify-center opacity-20">
+            <BookOpen className="h-10 w-10 text-stone-500" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold mb-2">Aucune œuvre trouvée</h3>
+            <p className="text-muted-foreground max-w-xs mx-auto italic font-light">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Réessayez avec d'autres filtres.</p>
+          </div>
           <Button 
             variant="outline" 
-            className="rounded-full"
+            className="rounded-full border-primary text-primary"
             onClick={() => {setGenreFilter('all'); setTypeFilter('all'); setSortFilter('popular'); setSearchQuery('');}}
           >
             Réinitialiser tout
@@ -213,9 +217,9 @@ export default function StoriesPage() {
                 <BookOpen className="w-10 h-10 text-primary" />
             </div>
             <div>
-                <h1 className="text-4xl md:text-5xl font-bold font-display">Toutes les œuvres</h1>
-                <p className="text-lg text-muted-foreground font-light mt-1">
-                    Explorez notre collection complète de récits épiques et de mondes imaginaires.
+                <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight text-white">Toutes les œuvres</h1>
+                <p className="text-lg text-muted-foreground font-light mt-1 max-w-2xl italic">
+                  Explorez notre collection complète de récits épiques et de mondes imaginaires panafricains.
                 </p>
             </div>
         </div>

@@ -40,7 +40,7 @@ export default function RootHomePage() {
     queryKey: ['stories', 'popular'],
     queryFn: async () => {
       try {
-        const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(15));
+        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(15));
         const snap = await getDocs(q);
         return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
       } catch (error) {
@@ -88,7 +88,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
     if (profile && !profile.onboardingCompleted) {
       const createdAtDate = (profile.createdAt as any)?.toDate
         ? (profile.createdAt as any).toDate()
-        : new Date(profile.createdAt as string);
+        : profile.createdAt ? new Date(profile.createdAt as string) : new Date();
 
       const hoursSinceCreation = (new Date().getTime() - createdAtDate.getTime()) / (1000 * 60 * 60);
 
@@ -237,9 +237,13 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
 
         {isLoadingPopular ? (
           <StoryGridSkeleton />
-        ) : (
+        ) : popular.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {popular.slice(0, 5).map(s => <StoryCard key={s.id} story={s} />)}
+          </div>
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-[2.5rem]">
+            <p className="text-stone-500 italic">"Explorez le catalogue pour obtenir des recommandations."</p>
           </div>
         )}
       </section>
@@ -340,7 +344,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             </div>
           ) : (
             <div className="absolute inset-0">
-              <Skeleton className="w-full h-full h-[85vh] bg-stone-900 animate-pulse rounded-none" />
+              <Skeleton className="w-full h-full min-h-[85vh] bg-stone-900 animate-pulse rounded-none" />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent" />
             </div>
           )}

@@ -250,7 +250,7 @@ function ChaptersTab({ story, currentChapterIndex }: { story: Story, currentChap
         </div>
         <div className="flex flex-col gap-2">
           {story.chapters?.map((chap, index) => (
-            <Link key={chap.id} href="#" className={cn(
+            <Link key={chap.id} href={`/read/${story.id}?chapter=${chap.id}`} className={cn(
               "flex items-center gap-3 p-3 rounded-2xl transition-all border-2 border-transparent",
               index === currentChapterIndex ? "bg-primary/10 border-primary/20" : "hover:bg-white/5"
             )}>
@@ -498,7 +498,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
                   </Button>
                   <Dialog open={reportCommentId === c.id} onOpenChange={(open) => !open && setReportCommentId(null)}>
                     <DialogTrigger asChild>
-                      <Button onClick={() => setReportCommentId(c.id)} variant="ghost" size="icon" className="h-7 7-7 text-stone-600 hover:text-orange-500 rounded-lg">
+                      <Button onClick={() => setReportCommentId(c.id)} variant="ghost" size="icon" className="h-7 w-7 text-stone-600 hover:text-orange-500 rounded-lg">
                         <Flag className="h-3 w-3" />
                       </Button>
                     </DialogTrigger>
@@ -563,7 +563,7 @@ function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, i
   )
 }
 
-export default function ReaderClient({ storyId }: { storyId: string }) {
+export default function ReaderClient({ story, chapters }: { story: Story, chapters: Chapter[] }) {
   const { toast } = useToast();
   const { openAuthModal } = useAuthModal();
   const searchParams = useSearchParams();
@@ -592,37 +592,14 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
 
   const initialChapterId = searchParams.get('chapter');
 
-  const { data: story, isLoading: loadingStory } = useQuery<Story>({
-    queryKey: ['reader-story', storyId],
-    queryFn: async () => {
-      const snap = await getDoc(doc(db, 'stories', storyId));
-      if (!snap.exists()) throw new Error('Not Found');
-      const data = snap.data();
-      
-      const chaptersSnap = await getDocs(query(collection(db, 'stories', storyId, 'chapters'), orderBy('chapterNumber', 'asc')));
-      const chapters = chaptersSnap.docs.map(d => ({ id: d.id, ...d.data() } as Chapter));
-      
-      return { id: snap.id, ...data, chapters } as Story;
-    }
-  });
-
-  const { data: artist } = useQuery<UserProfile | null>({
-    queryKey: ['reader-artist', story?.artistId],
-    enabled: !!story?.artistId,
-    queryFn: async () => {
-      const snap = await getDoc(doc(db, 'users', story!.artistId));
-      return snap.exists() ? (snap.data() as UserProfile) : null;
-    }
-  });
-
   useEffect(() => {
-    if (story?.chapters && initialChapterId) {
-      const idx = story.chapters.findIndex(c => c.id === initialChapterId);
+    if (chapters && initialChapterId) {
+      const idx = chapters.findIndex(c => c.id === initialChapterId);
       if (idx !== -1) setCurrentChapterIndex(idx);
     }
-  }, [story, initialChapterId]);
+  }, [chapters, initialChapterId]);
 
-  const currentChapter = story?.chapters?.[currentChapterIndex];
+  const currentChapter = chapters?.[currentChapterIndex];
 
   // --- PREMIUM GATE CHECK ---
   const { data: isUnlocked, isLoading: loadingUnlock } = useQuery({
@@ -655,14 +632,12 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
         const currentCoins = userSnap.data().afriCoins || 0;
         if (currentCoins < price) throw new Error("Solde d'AfriCoins insuffisant.");
 
-        // Débiter les coins
         transaction.update(userRef, { afriCoins: increment(-price) });
         
-        // Créer l'accès débloqué
         const unlockRef = doc(db, 'users', currentUser.uid, 'unlockedChapters', currentChapter.id);
         transaction.set(unlockRef, {
           unlockedAt: serverTimestamp(),
-          storyId,
+          storyId: story.id,
           chapterId: currentChapter.id,
           pricePaid: price
         });
@@ -677,9 +652,9 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
     }
   };
 
-  // --- ANALYTICS: TRACK PAGE VISIBILITY ---
+  // --- ANALYTICS ---
   useEffect(() => {
-    if (!currentChapter || !story || (currentChapter.isPremium && !isUnlocked)) return;
+    if (!currentChapter || (currentChapter.isPremium && !isUnlocked)) return;
     
     viewedPages.current.clear();
 
@@ -692,7 +667,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
             viewedPages.current.add(pageIndex);
             
             try {
-              const chapterRef = doc(db, 'stories', storyId, 'chapters', currentChapter.id);
+              const chapterRef = doc(db, 'stories', story.id, 'chapters', currentChapter.id);
               await updateDoc(chapterRef, {
                 [`pageStats.${pageIndex}.views`]: increment(1)
               });
@@ -708,51 +683,10 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
     pageElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [currentChapter, storyId, isUnlocked]);
-
-  // --- STREAK REWARD TIMER ---
-  useEffect(() => {
-    if (!currentUser || !story || !currentChapter || (currentChapter.isPremium && !isUnlocked)) return;
-
-    const rewardTimer = setTimeout(async () => {
-      try {
-        await runTransaction(db, async (transaction) => {
-          const userRef = doc(db, 'users', currentUser.uid);
-          const userDoc = await transaction.get(userRef);
-          
-          if (!userDoc.exists()) return;
-          
-          const userData = userDoc.data() as UserProfile;
-          const today = new Date().toISOString().split('T')[0];
-          
-          if (userData.readingStreak?.lastReadDate === today) return;
-          
-          const weeklyCoins = (userData as any).readingStreak?.weeklyCoins || 0;
-          if (weeklyCoins >= 14) return;
-
-          transaction.update(userRef, {
-            afriCoins: increment(2),
-            'readingStreak.currentCount': increment(1),
-            'readingStreak.lastReadDate': today,
-            'readingStreak.weeklyCoins': increment(2),
-            updatedAt: serverTimestamp()
-          });
-          
-          toast({
-            title: "🔥 Streak actif !",
-            description: "+2 🪙 AfriCoins gagnés pour votre fidélité.",
-          });
-        });
-      } catch (e) {
-        console.error("Streak reward error:", e);
-      }
-    }, 300000);
-
-    return () => clearTimeout(rewardTimer);
-  }, [currentUser, story, currentChapter, toast, isUnlocked]);
+  }, [currentChapter, story.id, isUnlocked]);
 
   const handleNextChapter = useCallback(() => {
-    if (story?.chapters && currentChapterIndex < story.chapters.length - 1) {
+    if (chapters && currentChapterIndex < chapters.length - 1) {
       setSwipeIndicator('next');
       setTimeout(() => {
         setSwipeIndicator(null);
@@ -762,7 +696,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
     } else {
       toast({ title: "Fin du récit", description: "Vous avez atteint le dernier chapitre publié." });
     }
-  }, [story, currentChapterIndex, toast]);
+  }, [chapters, currentChapterIndex, toast]);
 
   const handlePrevChapter = useCallback(() => {
     if (currentChapterIndex > 0) {
@@ -779,7 +713,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
     if (val === 'next') handleNextChapter();
     else if (val === 'prev') handlePrevChapter();
     else {
-      const idx = story?.chapters?.findIndex(c => c.id === val);
+      const idx = chapters?.findIndex(c => c.id === val);
       if (idx !== undefined && idx !== -1) {
         setCurrentChapterIndex(idx);
         window.scrollTo({ top: 0, behavior: 'instant' });
@@ -789,11 +723,11 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
 
   const handleShare = async () => {
     const currentChapterId = currentChapter?.id;
-    const shareUrl = window.location.origin + '/read/' + storyId + '?chapter=' + currentChapterId;
+    const shareUrl = window.location.origin + '/read/' + story.id + '?chapter=' + currentChapterId;
     
     const shareData = {
-      title: story?.title || 'NexusHub',
-      text: `Je lis "${currentChapter?.title || story?.title}" sur NexusHub !`,
+      title: story.title || 'NexusHub',
+      text: `Je lis "${currentChapter?.title || story.title}" sur NexusHub !`,
       url: shareUrl,
     };
 
@@ -801,23 +735,14 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Error sharing:', err);
-        }
+        if ((err as Error).name !== 'AbortError') console.error('Error sharing:', err);
       }
     } else {
       try {
         await navigator.clipboard.writeText(shareUrl);
-        toast({ 
-          title: "Lien copié !", 
-          description: "Le lien vers ce chapitre a été copié dans votre presse-papiers." 
-        });
+        toast({ title: "Lien copié !", description: "Le lien vers ce chapitre a été copié." });
       } catch (err) {
-        toast({ 
-          title: "Erreur", 
-          description: "Impossible de copier le lien.", 
-          variant: "destructive" 
-        });
+        toast({ title: "Erreur", description: "Impossible de copier le lien.", variant: "destructive" });
       }
     }
   };
@@ -858,12 +783,12 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
         lastScrollY.current = scrollPosition;
       }
 
-      if (currentUser && story && currentChapter && (!currentChapter.isPremium || isUnlocked)) {
+      if (currentUser && currentChapter && (!currentChapter.isPremium || isUnlocked)) {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(async () => {
           try {
-            await setDoc(doc(db, 'users', currentUser.uid, 'library', storyId), {
-              storyId: storyId,
+            await setDoc(doc(db, 'users', currentUser.uid, 'library', story.id), {
+              storyId: story.id,
               storyTitle: story.title,
               storyCover: story.coverImage.imageUrl,
               lastReadChapterId: currentChapter.id,
@@ -882,21 +807,10 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       window.removeEventListener('scroll', handleScroll); 
       if (debounceTimer.current) clearTimeout(debounceTimer.current); 
     };
-  }, [currentUser, story, currentChapter, storyId, isUnlocked]);
+  }, [currentUser, story, currentChapter, isUnlocked]);
 
-  if (loadingStory) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 gap-6">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-stone-500 font-display font-black uppercase tracking-[0.3em] text-[10px]">Ouverture du manuscrit...</p>
-      </div>
-    );
-  }
-
-  if (!story || !currentChapter) notFound();
-  
-  const pages = currentChapter.pages || [];
-  const showPremiumGate = currentChapter.isPremium && !isUnlocked && !loadingUnlock;
+  const pages = currentChapter?.pages || [];
+  const showPremiumGate = currentChapter?.isPremium && !isUnlocked && !loadingUnlock;
 
   return (
     <div className="min-h-screen relative" style={{ backgroundColor: readerBg }}>
@@ -1008,7 +922,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
           </SheetHeader>
           <div className="space-y-12">
             <div className="space-y-6">
-              <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Fond de lecture</Label>
+              <label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Fond de lecture</label>
               <div className="grid grid-cols-3 gap-3">
                 {[{ id: 'noir', color: '#0a0a0a' }, { id: 'sepia', color: '#1a1208' }, { id: 'gris', color: '#1a1a1a' }].map((opt) => (
                   <button key={opt.id} onClick={() => { setReaderBg(opt.color); localStorage.setItem('reader-bg', opt.color); }} className={cn("h-12 rounded-2xl border-2", readerBg === opt.color ? "border-primary bg-primary/10" : "border-white/5 bg-white/5")} style={{ backgroundColor: opt.color }} />
@@ -1016,7 +930,7 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
               </div>
             </div>
             <div className="space-y-6">
-              <div className="flex justify-between items-center"><Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Luminosité</Label><span>{brightness}%</span></div>
+              <div className="flex justify-between items-center"><label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Luminosité</label><span>{brightness}%</span></div>
               <Slider min={70} max={100} step={1} value={[brightness]} onValueChange={(val) => { setBrightness(val[0]); localStorage.setItem('reader-brightness', val[0].toString()); }} />
             </div>
           </div>
@@ -1024,8 +938,4 @@ export default function ReaderClient({ storyId }: { storyId: string }) {
       </Sheet>
     </div>
   );
-}
-
-function Label({ children, className }: any) {
-  return <label className={cn("text-xs font-bold text-foreground", className)}>{children}</label>;
 }

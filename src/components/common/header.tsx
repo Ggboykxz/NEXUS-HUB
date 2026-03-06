@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings,
-  ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, PenSquare,
-  MoreHorizontal, Database, Cloud, Zap, Flame, Mic, LayoutGrid,
-  Bell, Coins, Layers, Book, Clock, CheckCircle2, TrendingUp, Eye
+  ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, 
+  Cloud, Zap, Flame, LayoutGrid, Bell, Coins, Layers, Book, 
+  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic
 } from 'lucide-react';
 import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
