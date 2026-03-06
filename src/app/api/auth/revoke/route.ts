@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API pour révoquer tous les jetons de rafraîchissement d'un utilisateur.
  * Utilisé pour la déconnexion de tous les appareils.
  */
 export async function POST(request: Request) {
+  const { adminAuth } = getAdminServices();
+
   try {
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -17,7 +19,6 @@ export async function POST(request: Request) {
     const uid = decodedToken.uid;
 
     // 1. Révocation des jetons dans Firebase Auth (Côté Serveur)
-    // Cela invalidera toutes les sessions existantes sous 1h (ou immédiatement pour les nouveaux rafraîchissements)
     await adminAuth.revokeRefreshTokens(uid);
 
     const response = NextResponse.json({ 
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
       message: 'Toutes les sessions ont été révoquées.' 
     });
     
-    // 2. Nettoyage des cookies de session NexusHub
-    response.cookies.set('nexushub-session', '', {
+    // 2. Nettoyage du cookie de session principal
+    response.cookies.set('session', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       path: '/',
     });
 
+    // 3. Nettoyage du cookie de rôle accessible au client
     response.cookies.set('nexushub-role', '', {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

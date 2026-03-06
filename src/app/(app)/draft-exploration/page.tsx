@@ -1,12 +1,13 @@
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { PenSquare, Sparkles, Rocket, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Story } from '@/lib/types';
 
-export const revalidate = 3600;
+export const revalidate = 3600; // 1 hour
 
-export default async function DraftExplorationPage() {
+async function getDraftStories() {
+  const { adminDb } = getAdminServices();
   const snap = await adminDb.collection('stories')
     .where('isPublished', '==', true)
     .where('tier', '==', 'draft')
@@ -14,7 +15,11 @@ export default async function DraftExplorationPage() {
     .limit(40)
     .get();
 
-  const draftStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+}
+
+export default async function DraftExplorationPage() {
+  const draftStories = await getDraftStories();
 
   return (
     <div className="container mx-auto max-w-7xl px-6 py-12">
@@ -30,7 +35,7 @@ export default async function DraftExplorationPage() {
                 Nouveaux Talents
               </Badge>
             </div>
-            <h1 className="text-4xl md:text-6xl font-display font-black tracking-tighter">
+            <h1 className="text-4xl md:text-6xl font-display font-black tracking-tighter text-white">
               Exploration <span className="text-orange-500">NexusHub Draft</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed italic">
@@ -51,14 +56,14 @@ export default async function DraftExplorationPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
-        {draftStories.map((story) => (
-          <StoryCard key={story.id} story={story} />
-        ))}
-      </div>
-
-      {draftStories.length === 0 && (
-        <div className="text-center py-24 border-2 border-dashed rounded-3xl">
+      {draftStories.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
+          {draftStories.map((story) => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
           <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
           <p className="text-muted-foreground italic">Aucune œuvre draft pour le moment. Soyez le premier à publier !</p>
         </div>
@@ -69,21 +74,21 @@ export default async function DraftExplorationPage() {
           <div className="bg-white rounded-full p-4 w-fit mx-auto shadow-xl">
             <Rocket className="h-8 w-8 text-orange-500" />
           </div>
-          <h2 className="text-3xl font-display font-bold">Votre œuvre mérite d'être lue</h2>
+          <h2 className="text-3xl font-display font-bold text-white">Votre œuvre mérite d'être lue</h2>
           <p className="text-lg text-muted-foreground">
             L'espace Draft est conçu pour supprimer toutes les barrières entre vous et votre public. Publiez vos planches, recevez des avis constructifs et progressez jusqu'au statut Pro.
           </p>
-          <div className="flex flex-wrap justify-center gap-8">
+          <div className="flex flex-wrap justify-center gap-8 text-white">
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-orange-100 p-3 rounded-2xl"><Users className="h-6 w-6 text-orange-600" /></div>
+              <div className="bg-orange-500/10 p-3 rounded-2xl"><Users className="h-6 w-6 text-orange-500" /></div>
               <span className="font-bold text-sm">Feedback Direct</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-orange-100 p-3 rounded-2xl"><Sparkles className="h-6 w-6 text-orange-600" /></div>
+              <div className="bg-orange-500/10 p-3 rounded-2xl"><Sparkles className="h-6 w-6 text-orange-500" /></div>
               <span className="font-bold text-sm">Visibilité Immédiate</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-orange-100 p-3 rounded-2xl"><PenSquare className="h-6 w-6 text-orange-600" /></div>
+              <div className="bg-orange-500/10 p-3 rounded-2xl"><PenSquare className="h-6 w-6 text-orange-500" /></div>
               <span className="font-bold text-sm">Mentorat Possible</span>
             </div>
           </div>

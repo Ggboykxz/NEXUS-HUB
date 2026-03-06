@@ -1,61 +1,95 @@
-import { adminDb } from '@/lib/firebase-admin';
-import { Metadata } from 'next';
+import { getAdminServices } from '@/lib/firebase-admin';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ReaderClient from './reader-client';
+import type { Story, Chapter } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
 
-type Props = {
-  params: Promise<{ storyId: string }>;
-};
-
-/**
- * Composant serveur pour la route /read/[storyId].
- * Gère la génération des métadonnées SEO/OG et délègue l'interactivité au ReaderClient.
- */
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { storyId } = await params;
-  
-  try {
-    const storyDoc = await adminDb.collection('stories').doc(storyId).get();
-    
-    if (!storyDoc.exists) {
-      return { title: 'Histoire introuvable - NexusHub' };
-    }
-
-    const story = storyDoc.data();
-    const title = `${story?.title} - Lecture en ligne | NexusHub`;
-    const description = story?.description?.slice(0, 160) || "Plongez au cœur des légendes africaines sur NexusHub.";
-
-    return {
-      title,
-      description,
-      openGraph: {
-        title,
-        description,
-        images: story?.coverImage?.imageUrl ? [{ url: story.coverImage.imageUrl }] : [],
-        type: 'article',
-        siteName: 'NexusHub',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title,
-        description,
-        images: story?.coverImage?.imageUrl ? [story.coverImage.imageUrl] : [],
-      }
-    };
-  } catch (error) {
-    console.error("Metadata generation error:", error);
-    return { title: 'Lecture - NexusHub' };
-  }
+interface PageProps {
+  params: { storyId: string };
 }
 
-export default async function ReadPage({ params }: Props) {
-  const { storyId } = await params;
-  
-  // On vérifie l'existence côté serveur pour éviter un flash 404
+async function getReaderData(storyId: string): Promise<{ story: Story; chapters: Chapter[] } | null> {
+  const { adminDb } = getAdminServices();
+
+  // 1. Fetch the story with security checks
   const storyDoc = await adminDb.collection('stories').doc(storyId).get();
-  if (!storyDoc.exists) {
+
+  if (!storyDoc.exists) return null;
+
+  const storyData = storyDoc.data() as Omit<Story, 'id'>;
+
+  // Security Gate: Do not show if not published or banned
+  if (!storyData.isPublished || storyData.isBanned) {
+    return null;
+  }
+
+  // 2. Fetch all published chapters for that story
+  const chaptersSnap = await adminDb.collection('stories').doc(storyId).collection('chapters')
+    .where('isPublished', '==', true)
+    .orderBy('chapterNumber', 'asc')
+    .get();
+
+  const chapters = chaptersSnap.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      publishedAt: (data.publishedAt as Timestamp).toDate(),
+    } as Chapter;
+  });
+  
+  // 3. Assemble the data
+  const story: Story = {
+    id: storyDoc.id,
+    ...storyData,
+    createdAt: (storyData.createdAt as Timestamp).toDate(),
+    updatedAt: (storyData.updatedAt as Timestamp).toDate(),
+  };
+
+  return { story, chapters };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const data = await getReaderData(params.storyId);
+
+  if (!data) {
+    return { title: 'Histoire Introuvable | NexusHub' };
+  }
+
+  const { story } = data;
+  const title = `${story.title} - Lecture en ligne | NexusHub`;
+  const description = story.synopsis?.slice(0, 160) || "Plongez dans un univers d'histoires captivantes sur NexusHub.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: story.coverImage ? [{ url: story.coverImage }] : [],
+      type: 'article',
+      siteName: 'NexusHub',
+      authors: [story.artistName],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: story.coverImage ? [story.coverImage] : [],
+    },
+  };
+}
+
+export default async function ReadPage({ params }: PageProps) {
+  const data = await getReaderData(params.storyId);
+
+  if (!data) {
     notFound();
   }
 
-  return <ReaderClient storyId={storyId} />;
+  const { story, chapters } = data;
+
+  // Pass all required data to the client to avoid re-fetching
+  return <ReaderClient story={story} chapters={chapters} />;
 }

@@ -1,11 +1,12 @@
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { CheckCircle2 } from 'lucide-react';
 import type { Story } from '@/lib/types';
 
-export const revalidate = 3600;
+export const revalidate = 3600; // 1 hour
 
-export default async function CompletedStoriesPage() {
+async function getCompletedStories() {
+  const { adminDb } = getAdminServices();
   const snap = await adminDb.collection('stories')
     .where('status', '==', 'Terminé')
     .where('isPublished', '==', true)
@@ -13,29 +14,35 @@ export default async function CompletedStoriesPage() {
     .orderBy('updatedAt', 'desc')
     .get();
   
-  const completedStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+}
+
+export default async function CompletedStoriesPage() {
+  const completedStories = await getCompletedStories();
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex items-center gap-4 mb-8">
+      <header className="flex items-center gap-4 mb-8">
         <div className="bg-green-500/10 p-3 rounded-full">
-            <CheckCircle2 className="w-10 h-10 text-green-500" />
+          <CheckCircle2 className="w-10 h-10 text-green-500" />
         </div>
-        <h1 className="text-4xl font-bold font-display">Séries Terminées</h1>
-      </div>
-      <p className="text-lg text-muted-foreground mb-12">
-        Plongez dans des histoires complètes du début à la fin. Pas d'attente, juste le plaisir de la lecture intégrale.
-      </p>
+        <div>
+          <h1 className="text-4xl font-bold font-display text-white">Séries Terminées</h1>
+          <p className="text-lg text-muted-foreground mt-1 max-w-2xl">
+            Plongez dans des histoires complètes du début à la fin. Pas d'attente, juste le plaisir de la lecture intégrale.
+          </p>
+        </div>
+      </header>
 
       {completedStories.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
           {completedStories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 border rounded-xl bg-card/50">
-            <p className="text-muted-foreground italic">Aucune série terminée pour le moment. Revenez bientôt !</p>
+        <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
+          <p className="text-stone-500 italic font-light">Aucune série n'est encore terminée. Revenez bientôt pour des aventures complètes !</p>
         </div>
       )}
     </div>

@@ -1,10 +1,32 @@
 import type { Metadata, Viewport } from 'next';
+import { DM_Sans, Cinzel_Decorative, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/components/providers/language-provider';
 import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
 import { GenresProvider } from '@/components/providers/genres-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
+
+const cinzel = Cinzel_Decorative({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-cinzel',
+  weight: ['400', '700', '900'],
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-playfair',
+  weight: ['400', '600', '700', '900'],
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-dm-sans',
+  weight: ['300', '400', '500', '600'],
+});
 
 export const metadata: Metadata = {
   title: 'NexusHub | Plongez au Cœur des Histoires Africaines',
@@ -24,8 +46,6 @@ export const viewport: Viewport = {
   themeColor: '#D4A843',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -34,23 +54,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark" suppressHydrationWarning>
+    <html
+      lang="fr"
+      className={`${cinzel.variable} ${playfair.variable} ${dmSans.variable} dark`}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Preload the main stylesheet for critical path rendering of Cinzel Decorative */}
-        <link
-          rel="preload"
-          as="style"
-          href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
-          rel="stylesheet"
-        />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground" suppressHydrationWarning>
+      <body
+        className="font-sans antialiased overflow-x-hidden min-h-screen bg-background text-foreground"
+        suppressHydrationWarning
+      >
         <QueryProvider>
           <LanguageProvider>
             <AuthModalProvider>
@@ -61,24 +76,7 @@ export default function RootLayout({
             </AuthModalProvider>
           </LanguageProvider>
         </QueryProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('Nexus ServiceWorker: Enregistré avec succès !');
-                    },
-                    function(err) {
-                      console.log('Nexus ServiceWorker: Échec de l\\'enregistrement.', err);
-                    }
-                  );
-                });
-              }
-            `,
-          }}
-        />
+        <script src="/register-sw.js" defer></script>
       </body>
     </html>
   );

@@ -1,7 +1,8 @@
+
 import { Timestamp } from 'firebase/firestore';
 
 /**
- * @fileOverview NexusHub Core Type Definitions - Version 4.2.0
+ * @fileOverview NexusHub Core Type Definitions - Version 4.3.0
  * Schéma consolidé pour Firestore incluant slugs uniques, rôles avancés et statistiques.
  */
 
@@ -21,6 +22,7 @@ export type StoryTier = 'free' | 'draft' | 'pro' | 'premium';
 export type ChapterStatus = 'Brouillon' | 'Programmé' | 'Publié';
 export type MessageType = 'text' | 'image' | 'africoins' | 'sticker';
 export type UniverseRelation = 'Préquel' | 'Séquelle' | 'Spin-off' | 'Original';
+export type PublicationStatus = 'brouillon' | 'publié';
 
 // ==================== USER ====================
 export interface UserProfile {
@@ -87,6 +89,7 @@ export interface Story {
   coverImage: {
     imageUrl: string;
     blurHash?: string;
+    imageHint?: string;
   };
   bannerImage?: string;
   genre: string;                    // Principal
@@ -132,6 +135,16 @@ export interface Chapter {
   publishedAt: Timestamp | string;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
+}
+
+export interface ComicPage {
+  id: string;
+  storyId: string;
+  chapterId: string;
+  pageNumber: number;
+  imageUrl: string;
+  width: number;
+  height: number;
 }
 
 // ==================== SUB-COLLECTIONS ====================
@@ -208,6 +221,52 @@ export interface Product {
   universe?: string;
   isCollectible?: boolean;
   printfulUrl?: string;
+}
+
+
+// ==================== BLOG & FORUM ====================
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  status: PublicationStatus;
+  excerpt: string;
+  content: string; // HTML ou Markdown
+  coverImage: {
+    imageUrl: string;
+    imageHint?: string;
+  };
+  authorName: string; // Dénormalisé pour un accès simple
+  authorId: string;
+  category: string;
+  tags: string[];
+  views: number;
+  readTime: number; // en minutes
+  publishedAt: Timestamp | string;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+}
+
+export interface Forum {
+  id: string;
+  name: string;
+  description: string;
+  threadCount: number;
+  postCount: number;
+}
+
+export interface Thread {
+  id: string;
+  forumId: string;
+  title: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+  isLocked: boolean;
+  isPinned: boolean;
+  postCount: number;
 }
 
 // ==================== HELPERS ====================

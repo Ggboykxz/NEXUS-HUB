@@ -1,40 +1,47 @@
 import * as admin from 'firebase-admin';
 
-/**
- * Initialisation sécurisée du Firebase Admin SDK.
- * Utilise les variables d'environnement pour une configuration flexible.
- */
-if (!admin.apps.length) {
-  try {
-    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-6915614597-eca66';
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    const databaseURL = process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app`;
+let app: admin.app.App;
 
-    if (privateKey && clientEmail) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-        databaseURL,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
+if (!admin.apps.length) {
+  const serviceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  };
+
+  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+    console.warn(
+      'Firebase Admin credentials are not fully set. Some functionalities might be disabled.'
+    );
+    // In a production environment, you should throw an error here.
+    // throw new Error('Firebase Admin credentials are not set.');
+  } else {
+    try {
+      app = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
-    } else {
-      // Mode dégradé pour le build ou le développement sans clés privées
-      // Permet au build Next.js de passer sans crasher si les secrets ne sont pas injectés
-      admin.initializeApp({
-        projectId: projectId,
-        databaseURL,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`
-      });
+    } catch (error: any) {
+      console.error('Firebase Admin initialization error:', error.message);
+      // throw new Error(`Firebase Admin initialization failed: ${error.message}`);
     }
-  } catch (error) {
-    console.error('Firebase Admin init error:', error);
   }
+} else {
+  app = admin.apps[0]!;
 }
 
-export const adminAuth = admin.auth();
-export const adminDb = admin.firestore();
-export const adminStorage = admin.storage();
+function getAdminServices() {
+  if (!app) {
+    // This will now be a more explicit error.
+    throw new Error('Firebase Admin SDK has not been initialized. Check your environment variables.');
+  }
+  return {
+    adminDb: admin.firestore(),
+    adminAuth: admin.auth(),
+    adminStorage: admin.storage(),
+    adminApp: app,
+  };
+}
+
+// We export a function that returns the services. This ensures the app is initialized before use.
+export { getAdminServices };

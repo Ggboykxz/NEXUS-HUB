@@ -1,11 +1,18 @@
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { StoryCard } from '@/components/story-card';
 import { TrendingUp } from 'lucide-react';
 import type { Story } from '@/lib/types';
+import type { Metadata } from 'next';
 
-export const revalidate = 3600;
+export const revalidate = 3600; // 1 hour
 
-export default async function PopularStoriesPage() {
+export const metadata: Metadata = {
+  title: 'Les Plus Populaires - Tendances sur NexusHub',
+  description: 'Découvrez les œuvres, webtoons et séries qui passionnent notre communauté en ce moment. Le classement des histoires les plus lues.',
+};
+
+async function getPopularStories() {
+  const { adminDb } = getAdminServices();
   const snap = await adminDb.collection('stories')
     .where('isPublished', '==', true)
     .where('isBanned', '==', false)
@@ -13,29 +20,41 @@ export default async function PopularStoriesPage() {
     .limit(40)
     .get();
   
-  const popularStories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+}
+
+export default async function PopularStoriesPage() {
+  const popularStories = await getPopularStories();
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="bg-primary/10 p-3 rounded-full">
-            <TrendingUp className="w-10 h-10 text-primary" />
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <div className="flex items-center gap-4">
+                <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
+                    <TrendingUp className="w-8 h-8 text-red-400" />
+                </div>
+                <div>
+                    <h1 className="text-4xl font-bold font-display text-white">Les Plus Populaires</h1>
+                    <p className="text-lg text-muted-foreground mt-1 max-w-2xl">
+                        Découvrez les œuvres qui passionnent notre communauté en ce moment.
+                    </p>
+                </div>
+            </div>
         </div>
-        <h1 className="text-4xl font-bold font-display">Les Plus Populaires</h1>
-      </div>
-      <p className="text-lg text-muted-foreground mb-12">
-        Découvrez les œuvres qui passionnent notre communauté en ce moment.
-      </p>
+      </header>
 
       {popularStories.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
           {popularStories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 border rounded-xl bg-card/50">
-            <p className="text-muted-foreground italic">Aucune œuvre populaire pour le moment.</p>
+        <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
+            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+            <p className="text-stone-400 font-bold text-xl mb-2">Le Hall de la Gloire est vide</p>
+            <p className="text-stone-500 italic font-light">Aucune œuvre n'a encore atteint le sommet.<br/>La compétition est ouverte !</p>
         </div>
       )}
     </div>

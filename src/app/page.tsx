@@ -7,20 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { StoryCard } from '@/components/story-card';
-import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Story, UserProfile, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
-import { onAuthStateChanged } from 'firebase/auth';
 import Header from '@/components/common/header';
 import Footer from '@/components/common/footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/components/providers/language-provider';
-import { 
-  Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit, 
-  Headphones, Film, Star, Flame, Gift, History, Bookmark, 
-  Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin, 
+import { useAuth } from '@/hooks/use-auth';
+import {
+  Play, TrendingUp, Sparkles, Trophy, ChevronRight, BrainCircuit,
+  Headphones, Film, Star, Flame, Gift, History, Bookmark,
+  Users, Zap, LayoutGrid, Globe, Coins, Mic2, MapPin,
   Activity, Timer, Languages, Map, MessageSquare, CheckCircle2,
   ArrowUpRight, Heart, Share2, PlayCircle, Clock, BookOpen, UserCheck, X, Settings
 } from 'lucide-react';
@@ -33,28 +33,20 @@ const REGIONS = [
 ];
 
 export default function RootHomePage() {
-  const { t } = useTranslation();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { currentUser, profile } = useAuth();
   const [heroLoaded, setHeroLoaded] = useState(false);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if (snap.exists()) setUserProfile(snap.data() as UserProfile);
-      }
-    });
-    return unsub;
-  }, []);
 
   const { data: popular = [], isLoading } = useQuery<Story[]>({
     queryKey: ['stories', 'popular'],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(15));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+      try {
+        const q = query(collection(db, 'stories'), orderBy('views', 'desc'), limit(15));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+      } catch (error) {
+        console.error("Error fetching popular stories: ", error);
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -64,7 +56,7 @@ export default function RootHomePage() {
       <Header />
 
       {currentUser ? (
-        <UserHomeView profile={userProfile} currentUser={currentUser} popular={popular} isLoadingPopular={isLoading} />
+        <UserHomeView profile={profile} currentUser={currentUser} popular={popular} isLoadingPopular={isLoading} />
       ) : (
         <LandingView popular={popular} isLoading={isLoading} heroLoaded={heroLoaded} setHeroLoaded={setHeroLoaded} />
       )}
@@ -94,12 +86,12 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
 
   useEffect(() => {
     if (profile && !profile.onboardingCompleted) {
-      const createdAtDate = (profile.createdAt as any)?.toDate 
-        ? (profile.createdAt as any).toDate() 
+      const createdAtDate = (profile.createdAt as any)?.toDate
+        ? (profile.createdAt as any).toDate()
         : new Date(profile.createdAt as string);
-      
+
       const hoursSinceCreation = (new Date().getTime() - createdAtDate.getTime()) / (1000 * 60 * 60);
-      
+
       if (hoursSinceCreation < 48) {
         setOnboardingVisible(true);
       }
@@ -109,10 +101,14 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
   const handleDismissOnboarding = async () => {
     setOnboardingVisible(false);
     if (currentUser) {
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        onboardingCompleted: true,
-        updatedAt: serverTimestamp()
-      });
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          onboardingCompleted: true,
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error updating user onboarding status: ", error);
+      }
     }
   };
 
@@ -120,13 +116,18 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
     queryKey: ['user-library-home', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
-      const q = query(
-        collection(db, 'users', currentUser.uid, 'library'),
-        orderBy('lastReadAt', 'desc'),
-        limit(3)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as LibraryEntry);
+      try {
+        const q = query(
+          collection(db, 'users', currentUser.uid, 'library'),
+          orderBy('lastReadAt', 'desc'),
+          limit(3)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(d => d.data() as LibraryEntry);
+      } catch (error) {
+        console.error("Error fetching user library: ", error);
+        return [];
+      }
     }
   });
 
@@ -138,10 +139,10 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
         <div className="relative w-full aspect-[16/9] md:aspect-[21/8] rounded-[2.5rem] overflow-hidden shadow-2xl border border-primary/10 bg-stone-950">
           {featured ? (
             <>
-              <Image 
-                src={featured.coverImage.imageUrl} 
-                alt={featured.title} 
-                fill 
+              <Image
+                src={featured.coverImage.imageUrl}
+                alt={featured.title}
+                fill
                 className="object-cover opacity-50 transition-transform duration-[10000ms] hover:scale-110"
                 priority
               />
@@ -173,7 +174,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
         <section className="animate-in slide-in-from-top-10 duration-700">
           <Card className="bg-stone-900 border-primary/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 p-8 opacity-5"><Sparkles className="h-64 w-64 text-primary" /></div>
-            <button 
+            <button
               onClick={handleDismissOnboarding}
               className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-stone-500 hover:text-white transition-all z-20"
             >
@@ -183,7 +184,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
             <div className="relative z-10 space-y-10">
               <div className="space-y-4 text-center md:text-left max-w-xl">
                 <Badge className="bg-primary text-black uppercase text-[10px] font-black tracking-widest px-4 py-1">NOUVEAU VOYAGEUR</Badge>
-                <h2 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter">Bienvenue au Hub, {profile?.displayName} !</h2>
+                <h2 className="text-3xl md:text-5xl font-display font-black text-white tracking-tighter">Bienvenue au Hub, {profile?.displayName}!</h2>
                 <p className="text-stone-400 text-lg font-light italic max-w-2xl mx-auto md:mx-0">
                   "Votre quête commence ici. Voici quelques étapes pour maîtriser l'univers du Nexus."
                 </p>
@@ -233,7 +234,7 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
           </div>
           <Badge variant="outline" className="border-primary/20 text-primary text-[8px] font-black uppercase px-3">Algorithme Nexus v4</Badge>
         </div>
-        
+
         {isLoadingPopular ? (
           <StoryGridSkeleton />
         ) : (
@@ -311,7 +312,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
       setHeroIndex((prev: number) => (prev + 1) % Math.min(5, popular.length));
     }, 8000);
     return () => clearInterval(interval);
-  }, [popular.length, setHeroLoaded]);
+  }, [popular, setHeroLoaded]);
 
   const featured = popular[heroIndex];
 
@@ -387,7 +388,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             </div>
             <Link href="/rankings" className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline" prefetch={true}>{t('home.popular')} <ChevronRight className="h-3 w-3" /></Link>
           </div>
-          
+
           {isLoading ? (
             <StoryGridSkeleton count={5} />
           ) : (

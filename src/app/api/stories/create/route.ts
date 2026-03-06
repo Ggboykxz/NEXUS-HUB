@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin';
+import { getAdminServices } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 
 const CreateStorySchema = z.object({
@@ -12,6 +13,8 @@ const CreateStorySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const { adminAuth, adminDb, adminStorage } = getAdminServices();
+
   try {
     // 1. Authentification
     const authHeader = request.headers.get('Authorization');
@@ -25,26 +28,26 @@ export async function POST(request: Request) {
 
     // 2. Récupération des données (FormData)
     const formData = await request.formData();
-    const coverFile = formData.get('cover') as File;
+    const coverFile = formData.get('cover');
     
-    if (!coverFile) {
-      return NextResponse.json({ error: 'Image de couverture manquante' }, { status: 400 });
+    if (!(coverFile instanceof File)) {
+      return NextResponse.json({ error: 'Image de couverture manquante ou invalide' }, { status: 400 });
     }
 
-    if (coverFile.size > 10 * 1024 * 1024) {
+    if (coverFile.size > 10 * 1024 * 1024) { // 10 Mo
       return NextResponse.json({ error: 'Fichier trop lourd (max 10Mo)' }, { status: 400 });
     }
 
     const rawData = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      genre: formData.get('genre') as string,
-      format: formData.get('format') as any,
-      universeId: formData.get('universeId') as string || undefined,
-      universeRelation: formData.get('universeRelation') as any || 'Original',
+      title: formData.get('title'),
+      description: formData.get('description'),
+      genre: formData.get('genre'),
+      format: formData.get('format'),
+      universeId: formData.get('universeId') || undefined,
+      universeRelation: formData.get('universeRelation') || 'Original',
     };
 
-    // 3. Validation du schéma
+    // 3. Validation du schéma Zod
     const validation = CreateStorySchema.safeParse(rawData);
     if (!validation.success) {
       return NextResponse.json({ error: 'Données invalides', details: validation.error.format() }, { status: 400 });
@@ -54,29 +57,30 @@ export async function POST(request: Request) {
 
     // 4. Génération et vérification du slug
     let slug = title.toLowerCase().trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^\w\s-]/g, '')       // Supprime les caractères non alphanumériques
+      .replace(/[\s_-]+/g, '-')        // Remplace les espaces et tirets par un seul tiret
+      .replace(/^-+|-+$/g, '');        // Supprime les tirets de début et de fin
     
     const existingSnap = await adminDb.collection('stories').where('slug', '==', slug).get();
     if (!existingSnap.empty) {
-      slug = `${slug}-${Math.floor(1000 + Math.random() * 9000)}`;
+      slug = `${slug}-${Date.now()}`; // Ajoute un timestamp pour garantir l'unicité
     }
 
-    // 5. Upload de l'image vers Storage via Admin SDK
+    // 5. Upload de l'image vers Cloud Storage
     const buffer = Buffer.from(await coverFile.arrayBuffer());
     const bucket = adminStorage.bucket();
-    const filePath = `covers/${uid}/${Date.now()}_cover.jpg`;
+    const filePath = `covers/${uid}/${slug}-${coverFile.name}`;
     const file = bucket.file(filePath);
 
     await file.save(buffer, {
-      metadata: { contentType: 'image/jpeg' },
-      public: true
+      metadata: { contentType: coverFile.type },
+      public: true, // Le fichier est accessible publiquement
     });
 
+    // L'URL publique est standard et prédictible avec Firebase Storage
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-    // 6. Écriture finale dans Firestore
+    // 6. Écriture des métadonnées de l'histoire dans Firestore
     const storyRef = adminDb.collection('stories').doc();
     const storyData = {
       id: storyRef.id,
@@ -88,16 +92,12 @@ export async function POST(request: Request) {
       format,
       artistId: uid,
       artistName: decodedToken.name || 'Artiste Nexus',
-      coverImage: {
-        imageUrl: publicUrl,
-        width: 0,
-        height: 0
-      },
+      coverImage: { imageUrl: publicUrl },
       universeId: universeId || null,
       universeRelation: universeId ? universeRelation : 'Original',
       isPublished: false,
       isBanned: false,
-      isOriginal: false,
+      isOriginal: true,
       isPremium: false,
       views: 0,
       likes: 0,
@@ -105,8 +105,8 @@ export async function POST(request: Request) {
       chapterCount: 0,
       rating: 0,
       tags: [genre],
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     await storyRef.set(storyData);
@@ -114,7 +114,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ id: storyRef.id, slug }, { status: 201 });
 
   } catch (error: any) {
-    console.error('API Creation Error:', error);
+    console.error('API Story Creation Error:', error);
+    if (error.code === 'auth/id-token-expired') {
+      return NextResponse.json({ error: 'Le jeton d\'authentification a expiré.' }, { status: 401 });
+    }
     return NextResponse.json({ error: 'Erreur interne du serveur', message: error.message }, { status: 500 });
   }
 }

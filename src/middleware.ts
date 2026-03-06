@@ -1,69 +1,65 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Middleware de sécurité pour NexusHub.
- * 1. Protection contre le CSRF sur les méthodes de mutation.
- * 2. Protection des routes sensibles par session et rôle.
- * 3. Redirection des utilisateurs connectés hors des pages d'auth.
+ * Middleware pour la sécurité et la gestion des routes.
+ * 1. Protection des routes basées sur le rôle via un cookie de session vérifié.
+ * 2. Redirection des utilisateurs connectés hors des pages d'authentification.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const { method, headers } = request;
 
-  // --- 1. PROTECTION CSRF ---
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-    const origin = headers.get('origin');
-    const host = headers.get('host');
-    if (origin && host && !origin.includes(host)) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Accès refusé : origine non autorisée (CSRF protection)' }),
-        { status: 403, headers: { 'content-type': 'application/json' } }
-      );
-    }
-  }
-
-  // --- 2. GESTION DE LA SESSION VIA COOKIE ---
-  const session = request.cookies.get('nexushub-session');
+  // Récupérer les cookies de session et de rôle
+  // Le cookie 'session' est HttpOnly et sécurisé, défini par notre API.
+  // Le cookie 'nexushub-role' est accessible côté client.
+  const sessionCookie = request.cookies.get('session');
   const role = request.cookies.get('nexushub-role')?.value || '';
 
-  // Routes nécessitant une authentification simple
-  const protectedRoutes = ['/dashboard', '/settings', '/messages', '/library'];
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-
-  // Routes nécessitant le rôle ARTISTE
+  // Définition des routes avec leurs exigences d'accès
+  const protectedRoutes = ['/dashboard', '/settings', '/messages', '/library', '/profile'];
   const artistRoutes = ['/submit', '/dashboard/creations', '/dashboard/ai-studio'];
-  const isArtistRoute = artistRoutes.some(route => pathname.startsWith(route));
-
-  // Routes d'authentification (à éviter si déjà connecté)
   const authRoutes = ['/login', '/signup', '/forgot-password'];
+
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isArtistRoute = artistRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
-  // -- LOGIQUE DE REDIRECTION --
+  // --- LOGIQUE DE REDIRECTION ---
 
-  // 1. Redirection si non connecté sur une route protégée (Simple ou Artiste)
-  if ((isProtectedRoute || isArtistRoute) && !session) {
-    const url = new URL('/login', request.url);
-    url.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(url);
+  // 1. Si l'utilisateur est sur une route d'authentification mais est déjà connecté,
+  // le rediriger vers la page d'accueil.
+  if (isAuthRoute && sessionCookie) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 2. Redirection si connecté mais PAS artiste sur une route d'artiste
+  // 2. Si l'utilisateur essaie d'accéder à une route protégée (standard ou artiste)
+  // sans session, le rediriger vers la page de connexion.
+  if ((isProtectedRoute || isArtistRoute) && !sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname); // Garder en mémoire la page de destination
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 3. Si l'utilisateur essaie d'accéder à une route d'artiste mais n'a pas le bon rôle,
+  // le rediriger vers une page d'erreur ou la page d'accueil.
   if (isArtistRoute && !role.startsWith('artist')) {
-    // On redirige vers la racine si l'utilisateur n'a pas les droits
+    // Note: on pourrait rediriger vers une page `/unauthorized` à l'avenir.
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 3. Redirection si déjà connecté sur une route d'auth
-  if (isAuthRoute && session) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
+  // Si aucune des conditions ci-dessus n'est remplie, la requête est autorisée.
   return NextResponse.next();
 }
 
 export const config = {
+  /*
+   * Faire correspondre tous les chemins de requête, à l'exception de ceux qui commencent par :
+   * - api (routes API)
+   * - _next/static (fichiers statiques)
+   * - _next/image (optimisation d'images)
+   * - favicon.ico (icône de favori)
+   * Cela évite d'exécuter le middleware sur des ressources non pertinentes.
+   */
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|.*\.png$|.*\.svg$|.*\.jpeg$|.*\.jpg$|favicon.ico).*)',
   ],
-}
+};
