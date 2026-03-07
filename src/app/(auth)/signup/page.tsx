@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -20,7 +20,9 @@ import {
   BookOpen, 
   Crown,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Globe,
+  Star
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -33,8 +35,9 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { setRoleCookie } from '@/lib/actions/auth-actions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const step1Schema = z.object({
+const signupSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
   slug: z.string().min(3, { message: "Le @slug doit faire 3 caractères min." }).regex(/^[a-z0-9-]+$/, { message: "Lettres minuscules, chiffres et tirets uniquement." }),
@@ -42,7 +45,13 @@ const step1Schema = z.object({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "L'acceptation est obligatoire.",
   }),
+  // Champs optionnels pour l'étape 2 (rôles)
+  portfolioUrl: z.string().url().optional().or(z.literal('')),
+  country: z.string().optional(),
+  targetLang: z.string().optional(),
 });
+
+type SignupValues = z.infer<typeof signupSchema>;
 
 export function SignupForm() {
   const router = useRouter();
@@ -52,13 +61,23 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'reader' | 'artist_draft' | 'translator'>('reader');
 
-  const form = useForm<z.infer<typeof step1Schema>>({
-    resolver: zodResolver(step1Schema),
-    defaultValues: { name: "", email: "", slug: "", password: "", acceptTerms: false },
+  const form = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { 
+      name: "", 
+      email: "", 
+      slug: "", 
+      password: "", 
+      acceptTerms: false,
+      portfolioUrl: "",
+      country: "Gabon",
+      targetLang: "sw"
+    },
   });
 
   const handleNextStep = async () => {
-    const isValid = await form.trigger();
+    const fieldsToValidate = ['name', 'email', 'slug', 'password', 'acceptTerms'] as const;
+    const isValid = await form.trigger(fieldsToValidate);
     if (isValid) setStep(2);
   };
 
@@ -68,23 +87,22 @@ export function SignupForm() {
     { id: 'translator', label: 'Traducteur', icon: Award, color: 'text-emerald-500', bonus: '75 🪙' },
   ];
 
-  async function onSubmit(values: z.infer<typeof step1Schema>) {
+  async function onSubmit(values: SignupValues) {
     setIsLoading(true);
     try {
+      // 1. Création Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
       await updateProfile(user, { displayName: values.name });
       
-      const userRef = doc(db, 'users', user.uid);
-      
-      const profileData = {
+      // 2. Construction du profil Firestore (Sanitisation des 'undefined')
+      const commonData = {
         uid: user.uid,
         email: user.email,
         displayName: values.name,
         slug: values.slug.toLowerCase(),
         role: selectedRole,
-        afriCoins: selectedRole === 'artist_draft' ? 100 : (selectedRole === 'translator' ? 75 : 50),
         level: 1,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -94,17 +112,51 @@ export function SignupForm() {
         preferences: { language: 'fr', theme: 'dark' }
       };
 
-      await setDoc(userRef, profileData, { merge: true });
+      let roleSpecificData = {};
+
+      if (selectedRole === 'reader') {
+        roleSpecificData = {
+          afriCoins: 50,
+          readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] }
+        };
+      } else if (selectedRole === 'artist_draft') {
+        roleSpecificData = {
+          afriCoins: 100,
+          country: values.country ?? "Non spécifié",
+          portfolioUrl: values.portfolioUrl ?? "",
+          subscribersCount: 0,
+          followedCount: 0,
+          createdGenres: []
+        };
+      } else if (selectedRole === 'translator') {
+        roleSpecificData = {
+          afriCoins: 75,
+          translatorLanguages: ['fr', values.targetLang ?? 'en'],
+          translationsCount: 0,
+          experience: "Débutant"
+        };
+      }
+
+      const finalProfile = { ...commonData, ...roleSpecificData };
+
+      // 3. Sauvegarde Firestore
+      await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
+      
+      // 4. Synchronisation Cookie
       await setRoleCookie(selectedRole);
 
       toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
       
-      const target = selectedRole === 'artist_draft' ? '/dashboard/creations' : '/';
-      window.location.href = target;
+      // 5. Redirection direct par rôle
+      if (selectedRole === 'admin') router.push('/admin');
+      else if (selectedRole.startsWith('artist')) router.push('/dashboard/creations');
+      else if (selectedRole === 'translator') router.push('/translators');
+      else router.push('/');
+
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = "Une erreur est survenue.";
-      if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
+      let message = "Une erreur est survenue lors de l'invocation de votre profil.";
+      if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé par un autre voyageur.";
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }
@@ -175,8 +227,8 @@ export function SignupForm() {
                         </FormItem>
                       )} />
 
-                      <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer">
-                        Suivant <ChevronRight className="ml-2 h-5 w-5" />
+                      <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer shadow-xl shadow-primary/20">
+                        Choisir ma Destinée <ChevronRight className="ml-2 h-5 w-5" />
                       </Button>
                     </div>
                   ) : (
@@ -203,6 +255,62 @@ export function SignupForm() {
                           </button>
                         ))}
                       </div>
+
+                      {/* Champs spécifiques par rôle */}
+                      {selectedRole === 'artist_draft' && (
+                        <div className="space-y-4 p-6 bg-white/5 border border-white/5 rounded-3xl animate-in zoom-in-95 duration-300">
+                          <FormField control={form.control} name="portfolioUrl" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Lien Portfolio / Réseaux</FormLabel>
+                              <FormControl><Input placeholder="https://..." {...field} className="bg-black/40 border-white/10 text-white" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name="country" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Pays d'origine</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                                    <SelectValue placeholder="Choisir un pays" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-stone-900 border-white/10">
+                                  <SelectItem value="Gabon">Gabon 🇬🇦</SelectItem>
+                                  <SelectItem value="Sénégal">Sénégal 🇸🇳</SelectItem>
+                                  <SelectItem value="Nigeria">Nigeria 🇳🇬</SelectItem>
+                                  <SelectItem value="Cameroun">Cameroun 🇨🇲</SelectItem>
+                                  <SelectItem value="Côte d'Ivoire">Côte d'Ivoire 🇨🇮</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                      )}
+
+                      {selectedRole === 'translator' && (
+                        <div className="space-y-4 p-6 bg-white/5 border border-white/5 rounded-3xl animate-in zoom-in-95 duration-300">
+                          <FormField control={form.control} name="targetLang" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Langue de prédilection</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                                    <SelectValue placeholder="Choisir une langue" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-stone-900 border-white/10">
+                                  <SelectItem value="en">Anglais (EN)</SelectItem>
+                                  <SelectItem value="sw">Swahili (SW)</SelectItem>
+                                  <SelectItem value="ha">Hausa (HA)</SelectItem>
+                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                  <SelectItem value="wo">Wolof (WO)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                      )}
 
                       <div className="flex gap-4">
                         <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl font-bold text-stone-500">
