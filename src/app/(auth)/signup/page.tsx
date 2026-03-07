@@ -73,17 +73,15 @@ function SignupForm() {
     let success = false;
     let attempts = 0;
 
-    // Routine de création de profil avec réessais pour parer aux délais Firestore
     while (attempts < 5 && !success) {
       try {
-        // 1. On s'assure d'avoir les permissions fraîches
+        // Rafraîchir le token pour s'assurer que les règles Firestore voient l'utilisateur authentifié
         await getIdToken(user, true);
         
         const userRef = doc(db, 'users', user.uid);
         const baseName = name || 'Voyageur';
         const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
-        // 2. Création du document profil selon le rôle
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -118,7 +116,6 @@ function SignupForm() {
           }
         }, { merge: true });
 
-        // 3. Appel de l'API de session qui attend que Firestore soit prêt
         const idToken = await getIdToken(user);
         const res = await fetch('/api/auth/session', {
           method: 'POST',
@@ -127,14 +124,14 @@ function SignupForm() {
 
         if (res.ok) {
           success = true;
-          // Redirection forcée vers la destination finale
+          // Redirection forcée avec rechargement complet pour propager les cookies
           const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
           window.location.href = target;
         } else {
-          throw new Error("Session API failed");
+          throw new Error("Session API fail");
         }
       } catch (e) {
-        console.warn(`Tentative ${attempts + 1} échouée pour le profil...`, e);
+        console.warn(`Tentative de création de profil ${attempts + 1} échouée...`, e);
         attempts++;
         if (attempts < 5) await new Promise(r => setTimeout(r, 1000));
       }
@@ -144,8 +141,8 @@ function SignupForm() {
       setIsRitualActive(false);
       setIsLoading(false);
       toast({ 
-        title: "Synchronisation lente", 
-        description: "Le Hub est encombré. Votre profil sera finalisé à votre prochaine connexion.", 
+        title: "Initialisation lente", 
+        description: "Votre compte est créé mais le profil prend du temps. Connectez-vous pour finaliser.", 
         variant: "destructive" 
       });
       router.push('/login');
