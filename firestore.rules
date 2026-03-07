@@ -11,9 +11,14 @@ service cloud.firestore {
     match /users/{userId} {
       // Lecture autorisée pour voir les profils
       allow read: if request.auth != null;
-      // Création et mise à jour simplifiées pour le propriétaire
-      // On retire la dépendance à isAdmin() ici pour éviter les échecs de lecture récursive lors du premier write
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      
+      // CRÉATION : Permettre à un utilisateur authentifié de créer son propre document.
+      // On simplifie au maximum pour éviter les échecs lors du premier write.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // MISE À JOUR : Seulement par le propriétaire
+      allow update: if request.auth != null && request.auth.uid == userId;
+      
       allow delete: if isAdmin();
 
       // Sous-collections privées (Bibliothèque, Favoris, etc.)
