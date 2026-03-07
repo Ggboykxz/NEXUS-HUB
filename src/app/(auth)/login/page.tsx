@@ -126,18 +126,46 @@ function LoginForm() {
     try {
       const userRef = doc(db, 'users', pendingUid);
       const user = auth.currentUser;
+      const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
+      const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
+      // Profil complet lors du choix manuel du rôle
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || 'Nouveau Voyageur',
-        slug: (user.displayName || 'voyageur').toLowerCase().replace(/ /g, '-') + '-' + Math.floor(1000 + Math.random() * 9000),
+        slug,
         role,
         afriCoins: role === 'premium_reader' ? 50 : 0,
+        level: 1,
+        subscribersCount: 0,
+        followedCount: 0,
+        isCertified: role === 'artist_pro' || role === 'artist_elite',
+        isBanned: false,
+        isVerified: false,
+        onboardingCompleted: false,
+        bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        readingStats: { chaptersRead: 0, totalReadTime: 0 },
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+        readingStats: { 
+          preferredGenres: {}, 
+          totalReadTime: 0, 
+          chaptersRead: 0,
+          favoriteArtists: []
+        },
+        readingStreak: { 
+          currentCount: 0, 
+          lastReadDate: '', 
+          longestStreak: 0 
+        },
+        preferences: { 
+          language: 'fr', 
+          theme: 'dark', 
+          privacy: { 
+            showCurrentReading: true, 
+            showHistory: true 
+          } 
+        }
       }, { merge: true });
 
       const sessionCreated = await createSession(user);

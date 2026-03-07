@@ -103,19 +103,18 @@ function SignupForm() {
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     setIsCreatingProfile(true);
     
-    // On tente la création de profil avec plusieurs essais pour parer aux délais de propagation Auth -> Firestore
     let attempts = 0;
     const maxAttempts = 5;
     let success = false;
 
     while (attempts < maxAttempts && !success) {
       try {
-        // Rafraîchir le token pour forcer l'identité
         await getIdToken(user, true);
         
         const userRef = doc(db, 'users', user.uid);
         const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
+        // Initialisation complète du profil avec tous les champs requis
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -123,33 +122,49 @@ function SignupForm() {
           photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
           slug,
           role,
-          afriCoins: role === 'premium_reader' ? 50 : 0,
+          afriCoins: role === 'premium_reader' ? 50 : 0, // Bonus de bienvenue pour les Premium
           level: 1,
           subscribersCount: 0,
           followedCount: 0,
-          isCertified: role.includes('pro') || role.includes('elite'),
+          isCertified: role === 'artist_pro' || role === 'artist_elite',
           isBanned: false,
           isVerified: false,
           onboardingCompleted: false,
           bio: '',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          readingStats: { chaptersRead: 0, totalReadTime: 0 },
-          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+          readingStats: { 
+            preferredGenres: {}, 
+            totalReadTime: 0, 
+            chaptersRead: 0,
+            favoriteArtists: []
+          },
+          readingStreak: { 
+            currentCount: 0, 
+            lastReadDate: '', 
+            longestStreak: 0 
+          },
+          preferences: { 
+            language: 'fr', 
+            theme: 'dark', 
+            privacy: { 
+              showCurrentReading: true, 
+              showHistory: true 
+            } 
+          }
         }, { merge: true });
 
         success = true;
       } catch (error) {
         attempts++;
         console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} échouée...`);
-        await new Promise(r => setTimeout(r, 1000)); // Attendre 1s avant de réessayer
+        await new Promise(r => setTimeout(r, 1000));
       }
     }
 
     if (success) {
       const sessionCreated = await createSession(user);
       if (sessionCreated) {
-        // Petit délai pour laisser le mini-jeu/chargement être vu
         setTimeout(() => {
           window.location.href = getRedirectForRole(role);
         }, 1500);
@@ -159,7 +174,7 @@ function SignupForm() {
     } else {
       toast({ 
         title: "Compte créé, profil en attente", 
-        description: "Connexion nécessaire pour finaliser le profil.", 
+        description: "Veuillez vous reconnecter pour finaliser votre profil.", 
         variant: "default" 
       });
       window.location.href = '/login';

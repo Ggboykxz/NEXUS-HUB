@@ -24,7 +24,7 @@ export function useAuth() {
             setProfile(snapshot.data() as UserProfile);
             setLoading(false);
           } else if (!isRepairing) {
-            // Repair orphan profile: Auth exists but Firestore is empty
+            // Réparation de profil : Auth existe maisFirestore est vide
             setIsRepairing(true);
             try {
               const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
@@ -39,11 +39,34 @@ export function useAuth() {
                 role: 'reader',
                 level: 1,
                 afriCoins: 0,
+                subscribersCount: 0,
+                followedCount: 0,
+                isCertified: false,
+                isBanned: false,
+                isVerified: false,
+                onboardingCompleted: false,
+                bio: '',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-                readingStats: { chaptersRead: 0, totalReadTime: 0 },
-                readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
-                preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+                readingStats: { 
+                  preferredGenres: {}, 
+                  totalReadTime: 0, 
+                  chaptersRead: 0,
+                  favoriteArtists: []
+                },
+                readingStreak: { 
+                  currentCount: 0, 
+                  lastReadDate: '', 
+                  longestStreak: 0 
+                },
+                preferences: { 
+                  language: 'fr', 
+                  theme: 'dark', 
+                  privacy: { 
+                    showCurrentReading: true, 
+                    showHistory: true 
+                  } 
+                }
               }, { merge: true });
             } catch (err: any) {
               console.error("Failed to repair profile:", err);
@@ -54,7 +77,6 @@ export function useAuth() {
         }, (error) => {
           if (error.code === 'permission-denied') {
             console.warn("Permission denied on user doc, waiting for propagation...");
-            // Don't set loading to false yet, wait for potential retry or auth state refresh
           } else {
             console.error("Error fetching user profile:", error);
             setProfile(null);
