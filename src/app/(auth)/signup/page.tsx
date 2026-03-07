@@ -108,11 +108,12 @@ function SignupForm() {
 
     while (attempts < maxAttempts && !success) {
       try {
-        // Forcer la propagation des claims auth
+        // Forcer la propagation des claims auth et s'assurer que Firebase Auth est stable
         await getIdToken(user, true);
         
         const userRef = doc(db, 'users', user.uid);
-        const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+        const baseName = name || user.displayName || user.email?.split('@')[0] || 'voyageur';
+        const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
         await setDoc(userRef, {
           uid: user.uid,
@@ -154,11 +155,12 @@ function SignupForm() {
         }, { merge: true });
 
         success = true;
-      } catch (error) {
+      } catch (error: any) {
         attempts++;
-        console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} échouée...`);
+        console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} : ${error.message}`);
         if (attempts === maxAttempts) throw error;
-        await new Promise(r => setTimeout(r, 1000));
+        // Attendre un peu plus longtemps à chaque tentative pour laisser Firestore se synchroniser
+        await new Promise(r => setTimeout(r, 500 * attempts));
       }
     }
 
@@ -167,9 +169,9 @@ function SignupForm() {
       if (sessionCreated) {
         setTimeout(() => {
           window.location.href = getRedirectForRole(role);
-        }, 1500);
+        }, 1000);
       } else {
-        toast({ title: "Erreur de session", description: "Veuillez vous connecter manuellement.", variant: "destructive" });
+        toast({ title: "Session expirée", description: "Veuillez vous connecter manuellement.", variant: "destructive" });
         window.location.href = '/login';
       }
     }
@@ -182,10 +184,14 @@ function SignupForm() {
       await updateProfile(userCredential.user, { displayName: values.name });
       await handleSuccessfulSignup(userCredential.user, values.accountType, values.name);
     } catch (error: any) {
+      console.error("Signup error:", error);
       let msg = "Erreur lors de l'inscription.";
       if (error.code === 'auth/email-already-in-use') msg = "Cet email est déjà utilisé.";
+      if (error.code === 'permission-denied') msg = "Délai de synchronisation. Réessayez la connexion.";
+      
       toast({ title: "Échec", description: msg, variant: "destructive" });
       setIsLoading(false);
+      setIsRitualActive(false);
     }
   }
 

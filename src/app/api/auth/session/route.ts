@@ -1,10 +1,9 @@
-
 import { NextResponse, NextRequest } from 'next/server';
 import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API pour échanger un ID Token Firebase contre un cookie de session sécurisé.
- * Supporte le rafraîchissement des rôles pour le middleware.
+ * Supporte le rafraîchissement des rôles pour le middleware avec une logique de réessai.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -23,16 +22,17 @@ export async function POST(request: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Retry logic pour l'initialisation Firestore (race condition mitigation)
+    // Retry logic pour l'initialisation Firestore (mitigation des délais de propagation)
     let role = 'reader';
     let attempts = 0;
-    while (attempts < 5) {
+    while (attempts < 8) { // On attend jusqu'à 4 secondes au total
       const userDoc = await adminDb.collection('users').doc(uid).get();
       if (userDoc.exists && userDoc.data()?.role) {
         role = userDoc.data()?.role;
         break;
       }
-      await new Promise(r => setTimeout(r, 250));
+      // Attente progressive (500ms par essai)
+      await new Promise(r => setTimeout(r, 500));
       attempts++;
     }
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: expiresIn,
+      maxAge: expiresIn / 1000,
       path: '/',
     });
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: expiresIn,
+      maxAge: expiresIn / 1000,
       path: '/',
     });
 
