@@ -11,7 +11,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award, Sparkles, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, User, getIdToken } from 'firebase/auth';
@@ -70,6 +70,7 @@ function LoginForm() {
         const sessionCreated = await createSession(user);
         if (sessionCreated) {
           toast({ title: "Bon retour au Hub !" });
+          // Redirection forcée pour garantir la prise en compte du cookie par le middleware
           window.location.href = getRedirectForRole(role);
         } else {
           toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });

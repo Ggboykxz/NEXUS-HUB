@@ -3,8 +3,8 @@ import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API de Session NexusHub
- * Transforme un Token Firebase en cookie de session sécurisé instantanément.
- * Inclut une petite attente pour garantir que le profil Firestore est visible par le SDK Admin.
+ * Transforme un Token Firebase en cookie de session sécurisé.
+ * Utilise le nom de cookie '__session' requis par Firebase App Hosting.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -19,15 +19,15 @@ export async function POST(request: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Petite attente pour parer à la latence de réplication Firestore
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Attente stratégique pour laisser Firestore se synchroniser
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // On récupère le rôle. Si le doc n'est pas encore là, on assume 'reader' par défaut
-    // pour ne pas bloquer la session, le client rafraîchira plus tard.
+    // Récupération du rôle pour le cookie middleware
     const userDoc = await adminDb.collection('users').doc(uid).get();
     const role = userDoc.exists ? userDoc.data()?.role : 'reader';
 
-    const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 jours
+    // Session de 14 jours
+    const expiresIn = 60 * 60 * 24 * 14 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const response = NextResponse.json({ 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       role
     });
 
-    // Configuration du cookie de session (obligatoire pour Firebase App Hosting)
+    // Configuration du cookie de session principal
     response.cookies.set('__session', sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Stockage du rôle dans un cookie accessible au middleware
+    // Cookie de rôle pour le middleware (accessible au client)
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

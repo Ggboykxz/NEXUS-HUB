@@ -104,7 +104,7 @@ function SignupForm() {
       }, { merge: true });
 
       // Petite pause pour laisser Firestore se stabiliser avant l'appel session
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       // 4. Appel à l'API de session
       const idToken = await getIdToken(user);
@@ -119,7 +119,7 @@ function SignupForm() {
       if (res.ok) {
         toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
         const target = values.accountType.startsWith('artist') ? '/dashboard/creations' : '/';
-        // Redirection "Hard" pour forcer la prise en compte des cookies
+        // Redirection forcée par le navigateur pour garantir l'accès au profil
         window.location.href = target;
       } else {
         const errorData = await res.json();
