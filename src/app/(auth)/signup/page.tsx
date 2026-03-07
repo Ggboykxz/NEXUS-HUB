@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,10 +18,8 @@ import {
   Loader2, 
   Brush, 
   BookOpen, 
-  Crown,
   ChevronRight,
   ArrowLeft,
-  Globe,
   Star
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +29,6 @@ import { auth, db } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   updateProfile, 
-  User
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { setRoleCookie } from '@/lib/actions/auth-actions';
@@ -45,8 +42,7 @@ const signupSchema = z.object({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "L'acceptation est obligatoire.",
   }),
-  // Champs optionnels pour l'étape 2 (rôles)
-  portfolioUrl: z.string().url().optional().or(z.literal('')),
+  portfolioUrl: z.string().optional().or(z.literal('')),
   country: z.string().optional(),
   targetLang: z.string().optional(),
 });
@@ -96,7 +92,7 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore (Sanitisation des 'undefined')
+      // 2. Construction du profil Firestore (SÉCURISATION DES UNDEFINED)
       const commonData = {
         uid: user.uid,
         email: user.email,
@@ -104,26 +100,33 @@ export function SignupForm() {
         slug: values.slug.toLowerCase(),
         role: selectedRole,
         level: 1,
+        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         onboardingCompleted: false,
         isBanned: false,
         isCertified: false,
-        preferences: { language: 'fr', theme: 'dark' }
+        bio: "",
+        preferences: { 
+          language: 'fr', 
+          theme: 'dark',
+          privacy: { showCurrentReading: true, showHistory: true }
+        }
       };
 
-      let roleSpecificData = {};
+      let roleSpecificData: any = {};
 
       if (selectedRole === 'reader') {
         roleSpecificData = {
           afriCoins: 50,
-          readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] }
+          readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] },
+          readingStreak: { currentCount: 0, lastReadDate: "", longestStreak: 0 }
         };
       } else if (selectedRole === 'artist_draft') {
         roleSpecificData = {
           afriCoins: 100,
-          country: values.country ?? "Non spécifié",
-          portfolioUrl: values.portfolioUrl ?? "",
+          country: values.country || "Non spécifié",
+          portfolioUrl: values.portfolioUrl || "",
           subscribersCount: 0,
           followedCount: 0,
           createdGenres: []
@@ -131,7 +134,7 @@ export function SignupForm() {
       } else if (selectedRole === 'translator') {
         roleSpecificData = {
           afriCoins: 75,
-          translatorLanguages: ['fr', values.targetLang ?? 'en'],
+          translatorLanguages: ['fr', values.targetLang || 'en'],
           translationsCount: 0,
           experience: "Débutant"
         };
@@ -139,19 +142,19 @@ export function SignupForm() {
 
       const finalProfile = { ...commonData, ...roleSpecificData };
 
-      // 3. Sauvegarde Firestore
-      await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
+      // 3. Sauvegarde Firestore - Await obligatoire avant la suite
+      await setDoc(doc(db, 'users', user.uid), finalProfile);
       
-      // 4. Synchronisation Cookie
+      // 4. Synchronisation Cookie Serveur
       await setRoleCookie(selectedRole);
 
       toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
       
-      // 5. Redirection direct par rôle
-      if (selectedRole === 'admin') router.push('/admin');
-      else if (selectedRole.startsWith('artist')) router.push('/dashboard/creations');
-      else if (selectedRole === 'translator') router.push('/translators');
-      else router.push('/');
+      // 5. Redirection forcée avec refresh pour le Middleware
+      router.refresh();
+      
+      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : (selectedRole === 'translator' ? '/translators' : '/');
+      router.push(target);
 
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -256,7 +259,6 @@ export function SignupForm() {
                         ))}
                       </div>
 
-                      {/* Champs spécifiques par rôle */}
                       {selectedRole === 'artist_draft' && (
                         <div className="space-y-4 p-6 bg-white/5 border border-white/5 rounded-3xl animate-in zoom-in-95 duration-300">
                           <FormField control={form.control} name="portfolioUrl" render={({ field }) => (

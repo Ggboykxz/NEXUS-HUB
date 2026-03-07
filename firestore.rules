@@ -1,110 +1,64 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Fonction utilitaire pour vérifier si l'utilisateur est admin
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // --- PROFILS UTILISATEURS ---
     match /users/{userId} {
-      // Lecture autorisée pour voir les profils
-      allow read: if request.auth != null;
-      
-      // CRÉATION : Permettre à un utilisateur authentifié de créer son propre document.
-      // On simplifie au maximum pour éviter les échecs lors du premier write.
-      allow create: if request.auth != null && request.auth.uid == userId;
-      
-      // MISE À JOUR : Seulement par le propriétaire
-      allow update: if request.auth != null && request.auth.uid == userId;
-      
-      allow delete: if isAdmin();
+      allow read: if isAuth();
+      // On simplifie la règle de création pour éviter les erreurs de structure au premier write
+      allow create: if isSelf(userId);
+      allow update: if isSelf(userId) && !request.resource.data.keys().hasAny(['role', 'isBanned', 'isCertified', 'afriCoins']);
+      allow update, delete: if isAdmin();
 
-      // Sous-collections privées (Bibliothèque, Favoris, etc.)
       match /{allSubcollections=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      
-      // Notifications
-      match /notifications/{notifId} {
-        allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-        allow create: if request.auth != null;
+        allow read, write: if isSelf(userId);
       }
     }
 
-    // --- RÉCITS & CHAPITRES ---
     match /stories/{storyId} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.resource.data.artistId == request.auth.uid || 
-        resource.data.artistId == request.auth.uid ||
-        isAdmin()
-      );
-      
-      match /chapters/{chapterId} {
-        allow read: if true;
-        allow write: if request.auth != null && (
-          get(/databases/$(database)/documents/stories/$(storyId)).data.artistId == request.auth.uid ||
-          isAdmin()
-        );
-        
-        match /comments/{commentId} {
-          allow read: if true;
-          allow create: if request.auth != null;
-          allow update, delete: if request.auth != null && (
-            request.auth.uid == resource.data.authorId || 
-            isAdmin()
-          );
-        }
-      }
-
-      match /likes/{userId} {
-        allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-
-    // --- MESSAGERIE PRIVÉE ---
-    match /conversations/{convId} {
-      allow read, write: if request.auth != null && request.auth.uid in convId.split('_');
-      match /messages/{msgId} {
-        allow read, write: if request.auth != null && request.auth.uid in convId.split('_');
-      }
-    }
-
-    // --- FORUMS & CLUBS ---
-    match /forumThreads/{threadId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (resource.data.authorId == request.auth.uid || isAdmin());
-      
-      match /replies/{replyId} {
-        allow read: if true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && (resource.data.authorId == request.auth.uid || isAdmin());
-      }
-    }
-    
-    match /readingClubs/{clubId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      allow write: if isAuth();
       
       match /{allSub=**} {
         allow read: if true;
-        allow create: if request.auth != null;
+        allow write: if isAuth();
       }
     }
 
-    // --- SYSTÈME ---
-    match /reports/{reportId} { allow create: if request.auth != null; allow read, update: if isAdmin(); }
+    match /readingClubs/{clubId} {
+      allow read: if true;
+      allow write: if isAuth();
+      match /{allSub=**} {
+        allow read, write: if isAuth();
+      }
+    }
+
+    match /forumThreads/{threadId} {
+      allow read: if true;
+      allow write: if isAuth();
+      match /{allSub=**} {
+        allow read, write: if isAuth();
+      }
+    }
+
+    match /reports/{reportId} { allow create: if isAuth(); allow read, update: if isAdmin(); }
     match /contactMessages/{msgId} { allow create: if true; allow read, update: if isAdmin(); }
     match /products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /playlists/{id} {
-      allow read: if resource.data.isPublic == true || (request.auth != null && request.auth.uid == resource.data.ownerId);
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow read: if resource.data.isPublic == true || (isAuth() && request.auth.uid == resource.data.ownerId);
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.ownerId;
     }
   }
 }

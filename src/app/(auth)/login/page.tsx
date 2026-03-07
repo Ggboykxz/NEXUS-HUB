@@ -35,14 +35,20 @@ function LoginForm() {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const role = userDoc.data()?.role || 'reader';
+        
+        // 1. Définir le cookie de rôle
         await setRoleCookie(role);
         
         toast({ title: "Bon retour au Hub !" });
         
-        // Redirection immédiate
+        // 2. Refresh pour le Middleware
+        router.refresh();
+        
+        // 3. Redirection fluide
         const target = role === 'admin' ? '/admin' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
-        window.location.href = target; // Utilisation de window.location pour forcer le refresh du middleware avec le nouveau cookie
+        router.push(target);
       } else {
+        // Si Auth OK mais pas de doc, on renvoie vers le signup pour compléter
         router.push('/signup');
       }
     } catch (error) {
