@@ -99,31 +99,42 @@ function SignupForm() {
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     try {
-      // 1. Initialisation Firestore
+      // 1. Initialisation Firestore with retry logic
       const userRef = doc(db, 'users', user.uid);
       const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: name,
-        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
-        slug,
-        role,
-        afriCoins: role === 'premium_reader' ? 50 : 0,
-        level: 1,
-        subscribersCount: 0,
-        followedCount: 0,
-        isCertified: role.includes('pro') || role.includes('elite'),
-        isBanned: false,
-        isVerified: false,
-        onboardingCompleted: false,
-        bio: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        readingStats: { chaptersRead: 0, totalReadTime: 0 },
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      }, { merge: true });
+      let success = false;
+      let attempts = 0;
+      while (!success && attempts < 3) {
+        try {
+          await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: name,
+            photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
+            slug,
+            role,
+            afriCoins: role === 'premium_reader' ? 50 : 0,
+            level: 1,
+            subscribersCount: 0,
+            followedCount: 0,
+            isCertified: role.includes('pro') || role.includes('elite'),
+            isBanned: false,
+            isVerified: false,
+            onboardingCompleted: false,
+            bio: '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            readingStats: { chaptersRead: 0, totalReadTime: 0 },
+            preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+          }, { merge: true });
+          success = true;
+        } catch (e) {
+          attempts++;
+          if (attempts >= 3) throw e;
+          await new Promise(r => setTimeout(r, 500)); // wait before retry
+        }
+      }
 
       // 2. Création de la session serveur
       const sessionCreated = await createSession(user);
@@ -132,17 +143,15 @@ function SignupForm() {
       }
 
       toast({ title: "Bienvenue au Hub !", description: "Votre compte et votre profil ont été initialisés." });
-      
-      // Utilisation de window.location pour forcer le chargement avec les nouveaux cookies
       window.location.href = getRedirectForRole(role);
     } catch (error: any) {
-      console.error("Firestore/Session init error:", error);
+      console.error("Signup handling error:", error);
       toast({ 
         title: "Erreur d'initialisation", 
-        description: "Votre compte est créé mais le profil a rencontré un problème. Reconnectez-vous pour réparer.", 
+        description: "Votre compte est créé mais le profil a rencontré un problème. Redirection vers l'accueil.", 
         variant: "destructive" 
       });
-      setIsLoading(false);
+      window.location.href = '/';
     }
   };
 

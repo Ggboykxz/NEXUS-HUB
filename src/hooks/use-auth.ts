@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
 
@@ -10,7 +10,7 @@ export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -23,11 +23,10 @@ export function useAuth() {
           if (snapshot.exists()) {
             setProfile(snapshot.data() as UserProfile);
             setLoading(false);
-          } else if (!isInitializing) {
-            // Détection d'un compte orphelin : Auth existe mais Firestore est vide
-            setIsInitializing(true);
+          } else if (!isRepairing) {
+            // Repair orphan profile: Auth exists but Firestore is empty
+            setIsRepairing(true);
             try {
-              console.log("Repairing orphan profile for:", user.uid);
               const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
               const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
               
@@ -47,24 +46,17 @@ export function useAuth() {
                 preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
               }, { merge: true });
             } catch (err: any) {
-              // Si c'est une erreur de permission, on attend que les règles se propagent
-              if (err.code === 'permission-denied') {
-                console.warn("Permission denied during profile repair, retrying later...");
-              } else {
-                console.error("Failed to repair profile:", err);
-              }
+              console.error("Failed to repair profile:", err);
             } finally {
-              setIsInitializing(false);
+              setIsRepairing(false);
             }
           }
         }, (error) => {
-          // Si l'erreur est 'insufficient permissions', cela peut arriver si le doc n'existe pas encore
-          // et que les règles restreignent la lecture aux docs existants appartenant à l'UID.
           if (error.code === 'permission-denied') {
-            setProfile(null);
-            // On laisse le chargement à true pour permettre au bloc de réparation de s'exécuter
+            console.warn("Permission denied on user doc, waiting for propagation...");
+            // Don't set loading to false yet, wait for potential retry or auth state refresh
           } else {
-            console.error("Error fetching user profile: ", error);
+            console.error("Error fetching user profile:", error);
             setProfile(null);
             setLoading(false);
           }
@@ -78,7 +70,7 @@ export function useAuth() {
     });
 
     return () => unsubscribe();
-  }, [isInitializing]);
+  }, [isRepairing]);
 
-  return { currentUser, profile, loading: loading || isInitializing };
+  return { currentUser, profile, loading: loading || isRepairing };
 }

@@ -1,29 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Profils utilisateurs
+    // User Profiles
     match /users/{userId} {
+      // Allow any authenticated user to read profiles (needed for search/artist pages)
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
       
-      match /library/{storyId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /favorites/{storyId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /notifications/{notifId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /subscriptions/{artistId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /unlockedChapters/{chapterId} {
+      // Explicit split for write permissions to be more robust
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Users cannot delete their profiles directly
+      
+      // Generic match for all sub-collections belonging to a user
+      match /{allSubcollections=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Histoires et Chapitres
+    // Stories and Chapters
     match /stories/{storyId} {
       allow read: if true;
       allow write: if request.auth != null && (
@@ -46,14 +40,14 @@ service cloud.firestore {
       }
     }
 
-    // Signalements (Admin seulement)
+    // Reports (Admin only for management)
     match /reports/{reportId} {
       allow create: if request.auth != null;
       allow read, update, delete: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Forums et Clubs
+    // Forums and Clubs
     match /forumThreads/{threadId} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -80,14 +74,14 @@ service cloud.firestore {
       }
     }
 
-    // Collections publiques
+    // Public Collections
     match /products/{id} { allow read: if true; allow write: if false; }
     match /blogPosts/{id} { allow read: if true; allow write: if false; }
     match /festivals/{id} { allow read: if true; allow write: if false; }
     match /translationMissions/{id} { allow read: if true; allow write: if false; }
     match /masterclasses/{id} { allow read: if true; allow write: if false; }
     
-    // Status de frappe
+    // Typing status
     match /typing/{convId} {
       allow read, write: if request.auth != null;
     }

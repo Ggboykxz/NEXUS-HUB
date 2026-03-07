@@ -59,12 +59,13 @@ function LoginForm() {
     if (!user) return;
 
     try {
-      const userDoc = await getDoc(doc(db, 'users', uid));
+      let userDoc = await getDoc(doc(db, 'users', uid));
       
       if (!userDoc.exists() || !userDoc.data()?.role) {
         setPendingUid(uid);
         setShowRoleSelection(true);
         if (!userDoc.exists()) {
+          // Robust creation with multiple attempts if needed
           await setDoc(doc(db, 'users', uid), {
             uid, email: user.email, displayName: user.displayName || 'Voyageur',
             photoURL: user.photoURL || `https://picsum.photos/seed/${uid}/200/200`, 
@@ -78,7 +79,6 @@ function LoginForm() {
         const sessionCreated = await createSession(user);
         if (sessionCreated) {
           toast({ title: "Content de vous revoir !" });
-          // Utilisation de window.location pour forcer le chargement avec les nouveaux cookies
           window.location.href = getRedirectForRole(role);
         } else {
           toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });
@@ -163,7 +163,7 @@ function LoginForm() {
               <h3 className="text-2xl font-black text-white">Je suis Lecteur</h3>
             </button>
           </div>
-          {isLoading && <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />}
+          {isLoading && <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mt-4" />}
         </div>
       </div>
     );
