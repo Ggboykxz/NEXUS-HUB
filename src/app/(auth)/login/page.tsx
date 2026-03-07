@@ -11,11 +11,11 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, User, getIdToken } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Email invalide." }),
@@ -59,21 +59,12 @@ function LoginForm() {
     if (!user) return;
 
     try {
-      let userDoc = await getDoc(doc(db, 'users', uid));
+      const userDoc = await getDoc(doc(db, 'users', uid));
       
       if (!userDoc.exists() || !userDoc.data()?.role) {
         setPendingUid(uid);
         setShowRoleSelection(true);
-        if (!userDoc.exists()) {
-          // Robust creation with multiple attempts if needed
-          await setDoc(doc(db, 'users', uid), {
-            uid, email: user.email, displayName: user.displayName || 'Voyageur',
-            photoURL: user.photoURL || `https://picsum.photos/seed/${uid}/200/200`, 
-            afriCoins: 0, createdAt: serverTimestamp(),
-            readingStats: { chaptersRead: 0, totalReadTime: 0 },
-            preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-          }, { merge: true });
-        }
+        setIsLoading(false);
       } else {
         const role = userDoc.data()?.role;
         const sessionCreated = await createSession(user);
@@ -82,11 +73,13 @@ function LoginForm() {
           window.location.href = getRedirectForRole(role);
         } else {
           toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });
+          setIsLoading(false);
         }
       }
     } catch (error) {
       console.error("Error in checkUserRoleAndRedirect:", error);
       toast({ title: "Erreur d'authentification", variant: "destructive" });
+      setIsLoading(false);
     }
   };
 
@@ -107,6 +100,7 @@ function LoginForm() {
   }
 
   const handleSocialLogin = async (platform: 'Google' | 'Facebook' | 'Apple') => {
+    setIsLoading(true);
     let provider;
     if (platform === 'Google') provider = new GoogleAuthProvider();
     else if (platform === 'Facebook') provider = new FacebookAuthProvider();
@@ -117,6 +111,7 @@ function LoginForm() {
       if (result.user) await checkUserRoleAndRedirect(result.user.uid);
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') toast({ title: "Échec de connexion", variant: "destructive" });
+      setIsLoading(false);
     }
   };
 
@@ -124,8 +119,24 @@ function LoginForm() {
     if (!pendingUid || !auth.currentUser) return;
     setIsLoading(true);
     try {
-      await updateDoc(doc(db, 'users', pendingUid), { role, updatedAt: serverTimestamp() });
-      const sessionCreated = await createSession(auth.currentUser);
+      const userRef = doc(db, 'users', pendingUid);
+      const user = auth.currentUser;
+      
+      // S'assurer que le profil est créé ou mis à jour avec setDoc (merge)
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || 'Nouveau Voyageur',
+        slug: (user.displayName || 'voyageur').toLowerCase().replace(/ /g, '-') + '-' + Math.floor(1000 + Math.random() * 9000),
+        role,
+        afriCoins: role === 'premium_reader' ? 50 : 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        readingStats: { chaptersRead: 0, totalReadTime: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+      }, { merge: true });
+
+      const sessionCreated = await createSession(user);
       if (sessionCreated) {
         toast({ title: "Destinée choisie !" });
         window.location.href = getRedirectForRole(role);
@@ -135,33 +146,35 @@ function LoginForm() {
       }
     } catch (e) {
       console.error("Role choice error:", e);
-      toast({ title: "Erreur", variant: "destructive" });
+      toast({ title: "Action impossible", description: "Veuillez réessayer plus tard.", variant: "destructive" });
       setIsLoading(false);
     }
   };
 
   if (showRoleSelection) {
+    const roles = [
+      { id: 'reader', label: 'Lecteur', icon: BookOpen, color: 'text-stone-400' },
+      { id: 'premium_reader', label: 'Premium', icon: Crown, color: 'text-amber-500' },
+      { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, color: 'text-orange-500' },
+      { id: 'artist_pro', label: 'Artiste Pro', icon: Award, color: 'text-emerald-500' },
+    ];
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950 p-6">
         <div className="max-w-4xl w-full text-center space-y-12 animate-in zoom-in-95 duration-700">
           <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <button 
-              disabled={isLoading}
-              onClick={() => handleRoleChoice('artist_draft')} 
-              className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all group space-y-6 disabled:opacity-50"
-            >
-              <Brush className="h-16 w-16 mx-auto text-primary group-hover:scale-110 transition-transform" />
-              <h3 className="text-2xl font-black text-white">Je suis Artiste</h3>
-            </button>
-            <button 
-              disabled={isLoading}
-              onClick={() => handleRoleChoice('reader')} 
-              className="p-10 rounded-[3rem] bg-stone-900 border-2 border-white/5 hover:border-emerald-500 transition-all group space-y-6 disabled:opacity-50"
-            >
-              <BookOpen className="h-16 w-16 mx-auto text-emerald-500 group-hover:scale-110 transition-transform" />
-              <h3 className="text-2xl font-black text-white">Je suis Lecteur</h3>
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {roles.map((r) => (
+              <button 
+                key={r.id}
+                disabled={isLoading}
+                onClick={() => handleRoleChoice(r.id)} 
+                className="p-8 rounded-[2rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all group space-y-4 disabled:opacity-50"
+              >
+                <r.icon className={cn("h-10 w-10 mx-auto group-hover:scale-110 transition-transform", r.color)} />
+                <h3 className="text-xs font-black text-white uppercase">{r.label}</h3>
+              </button>
+            ))}
           </div>
           {isLoading && <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mt-4" />}
         </div>
@@ -179,8 +192,8 @@ function LoginForm() {
           </div>
 
           <div className="space-y-4">
-            <Button onClick={() => handleSocialLogin('Google')} variant="outline" size="lg" className="w-full h-12 rounded-xl border-white/10 bg-white/5 text-white font-bold gap-4">
-              Connexion avec Google
+            <Button onClick={() => handleSocialLogin('Google')} disabled={isLoading} variant="outline" size="lg" className="w-full h-12 rounded-xl border-white/10 bg-white/5 text-white font-bold gap-4">
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Connexion avec Google"}
             </Button>
 
             <div className="flex items-center gap-4 py-2">

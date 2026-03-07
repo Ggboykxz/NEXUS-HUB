@@ -99,59 +99,50 @@ function SignupForm() {
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     try {
-      // 1. Initialisation Firestore with retry logic
+      // 1. Force refresh token to ensure Firestore knows who we are
+      await getIdToken(user, true);
+      
       const userRef = doc(db, 'users', user.uid);
       const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      let success = false;
-      let attempts = 0;
-      while (!success && attempts < 3) {
-        try {
-          await setDoc(userRef, {
-            uid: user.uid,
-            email: user.email,
-            displayName: name,
-            photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
-            slug,
-            role,
-            afriCoins: role === 'premium_reader' ? 50 : 0,
-            level: 1,
-            subscribersCount: 0,
-            followedCount: 0,
-            isCertified: role.includes('pro') || role.includes('elite'),
-            isBanned: false,
-            isVerified: false,
-            onboardingCompleted: false,
-            bio: '',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            readingStats: { chaptersRead: 0, totalReadTime: 0 },
-            preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-          }, { merge: true });
-          success = true;
-        } catch (e) {
-          attempts++;
-          if (attempts >= 3) throw e;
-          await new Promise(r => setTimeout(r, 500)); // wait before retry
-        }
-      }
+      // 2. Initialisation Firestore avec setDoc (plus robuste que updateDoc)
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: name,
+        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
+        slug,
+        role,
+        afriCoins: role === 'premium_reader' ? 50 : 0,
+        level: 1,
+        subscribersCount: 0,
+        followedCount: 0,
+        isCertified: role.includes('pro') || role.includes('elite'),
+        isBanned: false,
+        isVerified: false,
+        onboardingCompleted: false,
+        bio: '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        readingStats: { chaptersRead: 0, totalReadTime: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+      }, { merge: true });
 
-      // 2. Création de la session serveur
+      // 3. Création de la session serveur
       const sessionCreated = await createSession(user);
-      if (!sessionCreated) {
-        throw new Error("Échec de création de la session serveur.");
-      }
-
+      
       toast({ title: "Bienvenue au Hub !", description: "Votre compte et votre profil ont été initialisés." });
+      
+      // Utiliser window.location pour forcer le rechargement des cookies côté serveur
       window.location.href = getRedirectForRole(role);
     } catch (error: any) {
       console.error("Signup handling error:", error);
       toast({ 
-        title: "Erreur d'initialisation", 
-        description: "Votre compte est créé mais le profil a rencontré un problème. Redirection vers l'accueil.", 
-        variant: "destructive" 
+        title: "Compte créé, profil en attente", 
+        description: "Votre compte est prêt. Si le profil n'apparaît pas, connectez-vous pour le finaliser.", 
+        variant: "default" 
       });
-      window.location.href = '/';
+      window.location.href = '/login';
     }
   };
 
