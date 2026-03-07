@@ -42,13 +42,14 @@ function LoginForm() {
         
         toast({ title: "Bon retour au Hub !" });
         
-        // 2. Redirection forcée
+        // 2. Redirection forcée avec rechargement
         const target = role === 'admin' ? '/dashboard' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
         
         setTimeout(() => {
           window.location.replace(target);
-        }, 500);
+        }, 100);
       } else {
+        // Rediriger vers l'inscription si le doc n'existe pas dans 'users'
         window.location.replace('/signup');
       }
     } catch (error) {

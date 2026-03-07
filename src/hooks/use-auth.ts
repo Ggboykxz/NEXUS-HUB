@@ -8,7 +8,7 @@ import type { UserProfile } from '@/lib/types';
 
 /**
  * Hook d'authentification centralisé utilisant exclusivement le SDK Client.
- * Gère l'état de l'utilisateur et de son profil Firestore.
+ * Écoute en temps réel les changements du profil dans la collection 'users'.
  */
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -28,9 +28,9 @@ export function useAuth() {
             setProfile(profileData);
             setLoading(false);
           } else {
-            // Le profil n'existe pas encore (en cours de création par Signup)
+            // Document absent pour le moment (cours de création)
             setProfile(null);
-            // On ne met pas loading à false ici car le profil va arriver
+            // On laisse loading=true pour attendre que setDoc finisse côté signup
           }
         }, (error) => {
           if (error.code !== 'permission-denied') {

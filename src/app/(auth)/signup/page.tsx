@@ -81,7 +81,7 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore (Sanitisation stricte pour Firestore)
+      // 2. Construction du profil Firestore (Sanitisation stricte pour éviter les 'undefined')
       const commonData = {
         uid: user.uid,
         email: user.email || "",
@@ -116,7 +116,7 @@ export function SignupForm() {
           afriCoins: 100,
           subscribersCount: 0,
           followedCount: 0,
-          createdGenres: []
+          portfolioUrl: ""
         };
       } else if (selectedRole === 'translator') {
         roleSpecificData = {
@@ -128,27 +128,26 @@ export function SignupForm() {
 
       const finalProfile = { ...commonData, ...roleSpecificData };
 
-      // 3. Sauvegarde Firestore (On utilise { merge: true } au cas où la Cloud Function a déjà créé le doc)
+      // 3. Sauvegarde dans la collection 'users'
       await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
       
-      // 4. Synchronisation Cookie (Client + Serveur)
-      // On définit le cookie côté client immédiatement pour le Middleware
+      // 4. Synchronisation Cookies (Client + Serveur)
       document.cookie = `nexushub-role=${selectedRole}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-      // On appelle aussi l'action serveur pour la persistance
       await setRoleCookie(selectedRole);
 
-      toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
+      toast({ title: "Bienvenue au Hub !", description: "Votre profil a été initialisé." });
       
-      // 5. Redirection avec un léger délai pour garantir l'enregistrement du cookie
+      // 5. Redirection immédiate
       const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : (selectedRole === 'translator' ? '/dashboard/translations' : '/');
       
+      // Petit délai pour laisser les cookies se propager
       setTimeout(() => {
         window.location.replace(target);
-      }, 500);
+      }, 100);
 
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = "Une erreur est survenue lors de la création de votre profil.";
+      let message = "Une erreur est survenue.";
       if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
@@ -176,14 +175,14 @@ export function SignupForm() {
                       <div className="grid md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="name" render={({ field }) => (
                           <FormItem className="space-y-2">
-                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Nom Public</FormLabel>
+                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Pseudo</FormLabel>
                             <FormControl><Input placeholder="Ex: Scribe du Nil" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
                         <FormField control={form.control} name="slug" render={({ field }) => (
                           <FormItem className="space-y-2">
-                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">@slug unique</FormLabel>
+                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">@slug</FormLabel>
                             <FormControl><Input placeholder="scribe-nil" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -216,12 +215,12 @@ export function SignupForm() {
                       <FormField control={form.control} name="acceptTerms" render={({ field }) => (
                         <FormItem className="flex items-start space-x-3 space-y-0 p-4 rounded-2xl bg-white/5 border border-white/5">
                           <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                          <FormLabel className="text-[10px] text-stone-400 font-light italic">J'accepte de respecter la bienveillance du Hub.</FormLabel>
+                          <FormLabel className="text-[10px] text-stone-400 font-light italic leading-tight">J'accepte de respecter la charte de bienveillance du Hub.</FormLabel>
                         </FormItem>
                       )} />
 
                       <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer shadow-xl shadow-primary/20">
-                        Choisir ma Destinée <ChevronRight className="ml-2 h-5 w-5" />
+                        Étape suivante <ChevronRight className="ml-2 h-5 w-5" />
                       </Button>
                     </div>
                   ) : (
