@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -20,7 +20,9 @@ import {
   Loader2, 
   Brush, 
   BookOpen, 
-  Crown
+  Crown,
+  Zap,
+  ShieldCheck
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -58,6 +60,7 @@ function SignupForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   const callbackUrl = searchParams.get('callbackUrl');
@@ -98,48 +101,65 @@ function SignupForm() {
   };
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
-    try {
-      // 1. Force refresh token to ensure Firestore knows who we are
-      await getIdToken(user, true);
-      
-      const userRef = doc(db, 'users', user.uid);
-      const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
-      
-      // 2. Initialisation Firestore avec setDoc (plus robuste que updateDoc)
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: name,
-        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
-        slug,
-        role,
-        afriCoins: role === 'premium_reader' ? 50 : 0,
-        level: 1,
-        subscribersCount: 0,
-        followedCount: 0,
-        isCertified: role.includes('pro') || role.includes('elite'),
-        isBanned: false,
-        isVerified: false,
-        onboardingCompleted: false,
-        bio: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        readingStats: { chaptersRead: 0, totalReadTime: 0 },
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      }, { merge: true });
+    setIsCreatingProfile(true);
+    
+    // On tente la création de profil avec plusieurs essais pour parer aux délais de propagation Auth -> Firestore
+    let attempts = 0;
+    const maxAttempts = 5;
+    let success = false;
 
-      // 3. Création de la session serveur
+    while (attempts < maxAttempts && !success) {
+      try {
+        // Rafraîchir le token pour forcer l'identité
+        await getIdToken(user, true);
+        
+        const userRef = doc(db, 'users', user.uid);
+        const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+        
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: name,
+          photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
+          slug,
+          role,
+          afriCoins: role === 'premium_reader' ? 50 : 0,
+          level: 1,
+          subscribersCount: 0,
+          followedCount: 0,
+          isCertified: role.includes('pro') || role.includes('elite'),
+          isBanned: false,
+          isVerified: false,
+          onboardingCompleted: false,
+          bio: '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          readingStats: { chaptersRead: 0, totalReadTime: 0 },
+          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+        }, { merge: true });
+
+        success = true;
+      } catch (error) {
+        attempts++;
+        console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} échouée...`);
+        await new Promise(r => setTimeout(r, 1000)); // Attendre 1s avant de réessayer
+      }
+    }
+
+    if (success) {
       const sessionCreated = await createSession(user);
-      
-      toast({ title: "Bienvenue au Hub !", description: "Votre compte et votre profil ont été initialisés." });
-      
-      // Utiliser window.location pour forcer le rechargement des cookies côté serveur
-      window.location.href = getRedirectForRole(role);
-    } catch (error: any) {
-      console.error("Signup handling error:", error);
+      if (sessionCreated) {
+        // Petit délai pour laisser le mini-jeu/chargement être vu
+        setTimeout(() => {
+          window.location.href = getRedirectForRole(role);
+        }, 1500);
+      } else {
+        window.location.href = '/login';
+      }
+    } else {
       toast({ 
         title: "Compte créé, profil en attente", 
-        description: "Votre compte est prêt. Si le profil n'apparaît pas, connectez-vous pour le finaliser.", 
+        description: "Connexion nécessaire pour finaliser le profil.", 
         variant: "default" 
       });
       window.location.href = '/login';
@@ -158,6 +178,54 @@ function SignupForm() {
       toast({ title: "Échec", description: msg, variant: "destructive" });
       setIsLoading(false);
     }
+  }
+
+  if (isCreatingProfile) {
+    return (
+      <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
+        
+        <div className="relative z-10 text-center space-y-12 animate-in fade-in zoom-in duration-1000">
+          <div className="relative mx-auto w-32 h-32">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-ping" />
+            <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin" />
+            <div className="absolute inset-4 bg-primary/10 rounded-full flex items-center justify-center backdrop-blur-xl">
+              <Sparkles className="h-12 w-12 text-primary animate-pulse" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
+            <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse leading-relaxed">
+              "Les scribes du Nexus gravent votre nom dans les annales éternelles du Hub. Veuillez patienter..."
+            </p>
+          </div>
+
+          <div className="pt-8 space-y-6">
+            <div className="flex gap-2 justify-center">
+              {[...Array(5)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className="w-3 h-12 bg-white/5 rounded-full overflow-hidden border border-white/10"
+                >
+                  <div 
+                    className="w-full bg-primary animate-bounce" 
+                    style={{ 
+                      height: '100%', 
+                      animationDelay: `${i * 0.15}s`,
+                      animationDuration: '1.5s' 
+                    }} 
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-2 text-stone-600 text-[8px] font-black uppercase tracking-[0.4em]">
+              <ShieldCheck className="h-3 w-3" /> Chiffrement du profil actif
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const roles = [

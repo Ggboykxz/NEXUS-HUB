@@ -11,7 +11,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award, Sparkles, ShieldCheck } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, User, getIdToken } from 'firebase/auth';
@@ -28,6 +28,7 @@ function LoginForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRitualActive, setIsRitualActive] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [pendingUid, setPendingUid] = useState<string | null>(null);
 
@@ -67,13 +68,16 @@ function LoginForm() {
         setIsLoading(false);
       } else {
         const role = userDoc.data()?.role;
+        setIsRitualActive(true);
         const sessionCreated = await createSession(user);
         if (sessionCreated) {
-          toast({ title: "Content de vous revoir !" });
-          window.location.href = getRedirectForRole(role);
+          setTimeout(() => {
+            window.location.href = getRedirectForRole(role);
+          }, 1500);
         } else {
           toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });
           setIsLoading(false);
+          setIsRitualActive(false);
         }
       }
     } catch (error) {
@@ -118,11 +122,11 @@ function LoginForm() {
   const handleRoleChoice = async (role: string) => {
     if (!pendingUid || !auth.currentUser) return;
     setIsLoading(true);
+    setIsRitualActive(true);
     try {
       const userRef = doc(db, 'users', pendingUid);
       const user = auth.currentUser;
       
-      // S'assurer que le profil est créé ou mis à jour avec setDoc (merge)
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
@@ -138,18 +142,49 @@ function LoginForm() {
 
       const sessionCreated = await createSession(user);
       if (sessionCreated) {
-        toast({ title: "Destinée choisie !" });
-        window.location.href = getRedirectForRole(role);
+        setTimeout(() => {
+          window.location.href = getRedirectForRole(role);
+        }, 1500);
       } else {
         toast({ title: "Erreur de session", variant: "destructive" });
         setIsLoading(false);
+        setIsRitualActive(false);
       }
     } catch (e) {
       console.error("Role choice error:", e);
       toast({ title: "Action impossible", description: "Veuillez réessayer plus tard.", variant: "destructive" });
       setIsLoading(false);
+      setIsRitualActive(false);
     }
   };
+
+  if (isRitualActive) {
+    return (
+      <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
+        <div className="relative z-10 text-center space-y-12 animate-in fade-in zoom-in duration-1000">
+          <div className="relative mx-auto w-32 h-32">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-ping" />
+            <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin" />
+            <div className="absolute inset-4 bg-primary/10 rounded-full flex items-center justify-center backdrop-blur-xl">
+              <Sparkles className="h-12 w-12 text-primary animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant uppercase tracking-tighter">Ouverture du Portail</h2>
+            <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse">
+              "Le Nexus reconnaît votre aura. Transition vers votre sanctuaire en cours..."
+            </p>
+          </div>
+          <div className="pt-8 flex gap-2 justify-center">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showRoleSelection) {
     const roles = [
