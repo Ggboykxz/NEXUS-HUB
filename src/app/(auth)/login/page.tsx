@@ -124,12 +124,14 @@ function LoginForm() {
     setIsLoading(true);
     setIsRitualActive(true);
     try {
-      const userRef = doc(db, 'users', pendingUid);
       const user = auth.currentUser;
+      // Forcer la propagation des claims
+      await getIdToken(user, true);
+      
+      const userRef = doc(db, 'users', pendingUid);
       const baseName = user.displayName || user.email?.split('@')[0] || 'voyageur';
       const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      // Profil complet lors du choix manuel du rôle
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
@@ -147,25 +149,9 @@ function LoginForm() {
         bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        readingStats: { 
-          preferredGenres: {}, 
-          totalReadTime: 0, 
-          chaptersRead: 0,
-          favoriteArtists: []
-        },
-        readingStreak: { 
-          currentCount: 0, 
-          lastReadDate: '', 
-          longestStreak: 0 
-        },
-        preferences: { 
-          language: 'fr', 
-          theme: 'dark', 
-          privacy: { 
-            showCurrentReading: true, 
-            showHistory: true 
-          } 
-        }
+        readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
+        readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
 
       const sessionCreated = await createSession(user);
@@ -174,9 +160,7 @@ function LoginForm() {
           window.location.href = getRedirectForRole(role);
         }, 1500);
       } else {
-        toast({ title: "Erreur de session", variant: "destructive" });
-        setIsLoading(false);
-        setIsRitualActive(false);
+        throw new Error("Session fail");
       }
     } catch (e) {
       console.error("Role choice error:", e);

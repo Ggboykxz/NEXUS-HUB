@@ -21,7 +21,6 @@ import {
   Brush, 
   BookOpen, 
   Crown,
-  Zap,
   ShieldCheck
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +59,7 @@ function SignupForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [isRitualActive, setIsRitualActive] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   const callbackUrl = searchParams.get('callbackUrl');
@@ -101,7 +100,7 @@ function SignupForm() {
   };
 
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
-    setIsCreatingProfile(true);
+    setIsRitualActive(true);
     
     let attempts = 0;
     const maxAttempts = 5;
@@ -109,6 +108,7 @@ function SignupForm() {
 
     while (attempts < maxAttempts && !success) {
       try {
+        // Forcer la propagation des claims auth
         await getIdToken(user, true);
         
         const userRef = doc(db, 'users', user.uid);
@@ -157,6 +157,7 @@ function SignupForm() {
       } catch (error) {
         attempts++;
         console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} échouée...`);
+        if (attempts === maxAttempts) throw error;
         await new Promise(r => setTimeout(r, 1000));
       }
     }
@@ -168,15 +169,9 @@ function SignupForm() {
           window.location.href = getRedirectForRole(role);
         }, 1500);
       } else {
+        toast({ title: "Erreur de session", description: "Veuillez vous connecter manuellement.", variant: "destructive" });
         window.location.href = '/login';
       }
-    } else {
-      toast({ 
-        title: "Compte créé, profil en attente", 
-        description: "Veuillez vous reconnecter pour finaliser votre profil.", 
-        variant: "default" 
-      });
-      window.location.href = '/login';
     }
   };
 
@@ -194,7 +189,7 @@ function SignupForm() {
     }
   }
 
-  if (isCreatingProfile) {
+  if (isRitualActive) {
     return (
       <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
