@@ -73,9 +73,10 @@ function SignupForm() {
     let success = false;
     let attempts = 0;
 
+    // Routine de création de profil avec réessais
     while (attempts < 5 && !success) {
       try {
-        await getIdToken(user, true); // Force refresh token for permissions
+        await getIdToken(user, true); // Force rafraîchissement des droits
         const userRef = doc(db, 'users', user.uid);
         const baseName = name || 'Voyageur';
         const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
@@ -100,7 +101,7 @@ function SignupForm() {
           preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
         }, { merge: true });
 
-        // Créer la session serveur
+        // Création de la session serveur (Cookie)
         const idToken = await getIdToken(user);
         const res = await fetch('/api/auth/session', {
           method: 'POST',
@@ -110,16 +111,21 @@ function SignupForm() {
         if (res.ok) {
           success = true;
           const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
-          window.location.href = target; // Hard redirect pour forcer les cookies
+          // Rechargement forcé pour assurer la propagation des cookies au serveur
+          window.location.href = target;
+        } else {
+          throw new Error("API Session fail");
         }
       } catch (e) {
         attempts++;
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1000)); // Attente 1s avant réessai
       }
     }
 
     if (!success) {
-      toast({ title: "Synchronisation lente", description: "Veuillez vous reconnecter manuellement.", variant: "destructive" });
+      setIsRitualActive(false);
+      setIsLoading(false);
+      toast({ title: "Synchronisation lente", description: "Le Hub est encombré. Veuillez essayer de vous connecter manuellement.", variant: "destructive" });
       router.push('/login');
     }
   };
@@ -131,7 +137,7 @@ function SignupForm() {
       await updateProfile(userCredential.user, { displayName: values.name });
       await handleSuccessfulSignup(userCredential.user, values.accountType, values.name);
     } catch (error: any) {
-      toast({ title: "Échec", description: error.message, variant: "destructive" });
+      toast({ title: "Échec de l'inscription", description: "Cet email est peut-être déjà utilisé ou le réseau est instable.", variant: "destructive" });
       setIsLoading(false);
     }
   }

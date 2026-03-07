@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
         role = userDoc.data()?.role;
         break;
       }
+      // On attend 500ms avant de réessayer
       await new Promise(r => setTimeout(r, 500));
       attempts++;
     }
