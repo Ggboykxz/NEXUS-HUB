@@ -39,15 +39,7 @@ const formSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
-  accountType: z.enum([
-    "reader", 
-    "premium_reader", 
-    "artist_draft", 
-    "artist_pro", 
-    "artist_elite", 
-    "admin", 
-    "translator"
-  ]),
+  accountType: z.enum(["reader", "premium_reader", "artist_draft", "artist_pro"]),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "L'acceptation des conditions est obligatoire.",
   }),
@@ -61,9 +53,6 @@ function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRitualActive, setIsRitualActive] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
-
-  const callbackUrl = searchParams.get('callbackUrl');
-  const redirectTo = (callbackUrl && callbackUrl.startsWith('/')) ? callbackUrl : '/';
 
   useEffect(() => {
     const newParticles = [...Array(15)].map((_, i) => ({
@@ -79,101 +68,59 @@ function SignupForm() {
     defaultValues: { name: "", email: "", password: "", accountType: "reader", acceptTerms: false },
   });
 
-  const getRedirectForRole = (role: string) => {
-    if (role.startsWith('artist')) return '/dashboard/creations';
-    if (role === 'admin') return '/dashboard';
-    return redirectTo;
-  };
-
-  const createSession = async (user: User) => {
-    try {
-      const idToken = await getIdToken(user, true);
-      const response = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      });
-      return response.ok;
-    } catch (e) {
-      console.error("Session creation error", e);
-      return false;
-    }
-  };
-
   const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
     setIsRitualActive(true);
-    
-    let attempts = 0;
-    const maxAttempts = 5;
     let success = false;
+    let attempts = 0;
 
-    while (attempts < maxAttempts && !success) {
+    while (attempts < 5 && !success) {
       try {
-        // Forcer la propagation des claims auth et s'assurer que Firebase Auth est stable
-        await getIdToken(user, true);
-        
+        await getIdToken(user, true); // Force refresh token for permissions
         const userRef = doc(db, 'users', user.uid);
-        const baseName = name || user.displayName || user.email?.split('@')[0] || 'voyageur';
+        const baseName = name || 'Voyageur';
         const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
           displayName: name,
-          photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
           slug,
           role,
           afriCoins: role === 'premium_reader' ? 50 : 0,
           level: 1,
           subscribersCount: 0,
           followedCount: 0,
-          isCertified: role === 'artist_pro' || role === 'artist_elite',
+          isCertified: role === 'artist_pro',
           isBanned: false,
           isVerified: false,
-          onboardingCompleted: false,
-          bio: '',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          readingStats: { 
-            preferredGenres: {}, 
-            totalReadTime: 0, 
-            chaptersRead: 0,
-            favoriteArtists: []
-          },
-          readingStreak: { 
-            currentCount: 0, 
-            lastReadDate: '', 
-            longestStreak: 0 
-          },
-          preferences: { 
-            language: 'fr', 
-            theme: 'dark', 
-            privacy: { 
-              showCurrentReading: true, 
-              showHistory: true 
-            } 
-          }
+          readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
+          readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
+          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
         }, { merge: true });
 
-        success = true;
-      } catch (error: any) {
+        // Créer la session serveur
+        const idToken = await getIdToken(user);
+        const res = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+
+        if (res.ok) {
+          success = true;
+          const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
+          window.location.href = target; // Hard redirect pour forcer les cookies
+        }
+      } catch (e) {
         attempts++;
-        console.warn(`Tentative de création de profil ${attempts}/${maxAttempts} : ${error.message}`);
-        if (attempts === maxAttempts) throw error;
-        // Attendre un peu plus longtemps à chaque tentative pour laisser Firestore se synchroniser
-        await new Promise(r => setTimeout(r, 500 * attempts));
+        await new Promise(r => setTimeout(r, 1000));
       }
     }
 
-    if (success) {
-      const sessionCreated = await createSession(user);
-      if (sessionCreated) {
-        setTimeout(() => {
-          window.location.href = getRedirectForRole(role);
-        }, 1000);
-      } else {
-        toast({ title: "Session expirée", description: "Veuillez vous connecter manuellement.", variant: "destructive" });
-        window.location.href = '/login';
-      }
+    if (!success) {
+      toast({ title: "Synchronisation lente", description: "Veuillez vous reconnecter manuellement.", variant: "destructive" });
+      router.push('/login');
     }
   };
 
@@ -184,14 +131,8 @@ function SignupForm() {
       await updateProfile(userCredential.user, { displayName: values.name });
       await handleSuccessfulSignup(userCredential.user, values.accountType, values.name);
     } catch (error: any) {
-      console.error("Signup error:", error);
-      let msg = "Erreur lors de l'inscription.";
-      if (error.code === 'auth/email-already-in-use') msg = "Cet email est déjà utilisé.";
-      if (error.code === 'permission-denied') msg = "Délai de synchronisation. Réessayez la connexion.";
-      
-      toast({ title: "Échec", description: msg, variant: "destructive" });
+      toast({ title: "Échec", description: error.message, variant: "destructive" });
       setIsLoading(false);
-      setIsRitualActive(false);
     }
   }
 
@@ -199,8 +140,7 @@ function SignupForm() {
     return (
       <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
-        
-        <div className="relative z-10 text-center space-y-12 animate-in fade-in zoom-in duration-1000">
+        <div className="relative z-10 text-center space-y-12 animate-in fade-in duration-1000">
           <div className="relative mx-auto w-32 h-32">
             <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-ping" />
             <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin" />
@@ -208,35 +148,9 @@ function SignupForm() {
               <Sparkles className="h-12 w-12 text-primary animate-pulse" />
             </div>
           </div>
-
           <div className="space-y-4">
             <h2 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
-            <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse leading-relaxed">
-              "Les scribes du Nexus gravent votre nom dans les annales éternelles du Hub. Veuillez patienter..."
-            </p>
-          </div>
-
-          <div className="pt-8 space-y-6">
-            <div className="flex gap-2 justify-center">
-              {[...Array(5)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className="w-3 h-12 bg-white/5 rounded-full overflow-hidden border border-white/10"
-                >
-                  <div 
-                    className="w-full bg-primary animate-bounce" 
-                    style={{ 
-                      height: '100%', 
-                      animationDelay: `${i * 0.15}s`,
-                      animationDuration: '1.5s' 
-                    }} 
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-center gap-2 text-stone-600 text-[8px] font-black uppercase tracking-[0.4em]">
-              <ShieldCheck className="h-3 w-3" /> Chiffrement du profil actif
-            </div>
+            <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse">"Les scribes gravent votre nom dans les annales du Hub. Veuillez patienter..."</p>
           </div>
         </div>
       </div>
@@ -244,10 +158,10 @@ function SignupForm() {
   }
 
   const roles = [
-    { id: 'reader', label: 'Lecteur', icon: BookOpen, desc: 'Accès standard', color: 'text-stone-400' },
-    { id: 'premium_reader', label: 'Premium', icon: Crown, desc: 'Avantages exclusifs', color: 'text-amber-500' },
-    { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, desc: 'Publiez librement', color: 'text-orange-500' },
-    { id: 'artist_pro', label: 'Artiste Pro', icon: Award, desc: 'Monétisation active', color: 'text-emerald-500' },
+    { id: 'reader', label: 'Lecteur', icon: BookOpen, color: 'text-stone-400' },
+    { id: 'premium_reader', label: 'Premium', icon: Crown, color: 'text-amber-500' },
+    { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, color: 'text-orange-500' },
+    { id: 'artist_pro', label: 'Artiste Pro', icon: Award, color: 'text-emerald-500' },
   ];
 
   return (

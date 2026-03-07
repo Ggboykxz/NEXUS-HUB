@@ -3,7 +3,7 @@ import { getAdminServices } from '@/lib/firebase-admin';
 
 /**
  * API pour échanger un ID Token Firebase contre un cookie de session sécurisé.
- * Supporte le rafraîchissement des rôles pour le middleware avec une logique de réessai.
+ * Attend activement que le document Firestore soit créé pour garantir la cohérence du rôle.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -14,24 +14,19 @@ export async function POST(request: NextRequest) {
   }
 
   const idToken = authorization.split('Bearer ')[1];
-  if (!idToken) {
-    return NextResponse.json({ success: false, error: 'No token provided' }, { status: 401 });
-  }
-
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Retry logic pour l'initialisation Firestore (mitigation des délais de propagation)
+    // ATTENTE ACTIVE DU PROFIL FIRESTORE (Max 5 secondes)
     let role = 'reader';
     let attempts = 0;
-    while (attempts < 8) { // On attend jusqu'à 4 secondes au total
+    while (attempts < 10) {
       const userDoc = await adminDb.collection('users').doc(uid).get();
       if (userDoc.exists && userDoc.data()?.role) {
         role = userDoc.data()?.role;
         break;
       }
-      // Attente progressive (500ms par essai)
       await new Promise(r => setTimeout(r, 500));
       attempts++;
     }
@@ -49,7 +44,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Cookie non-httpOnly pour que le client puisse lire le rôle sans appel API
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -68,22 +62,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
-  
-  response.cookies.set('__session', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/',
-  });
-
-  response.cookies.set('nexushub-role', '', {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 0,
-    path: '/',
-  });
-  
+  response.cookies.delete('__session');
+  response.cookies.delete('nexushub-role');
   return response;
 }
