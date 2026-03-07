@@ -25,11 +25,12 @@ export default function ProfileMePage() {
             // Si c'est un artiste, on privilégie sa vitrine publique via son slug
             if (data.role?.startsWith('artist') && data.slug) {
               router.replace(`/artiste/${data.slug}`);
+            } else if (data.role === 'translator') {
+              router.replace(`/dashboard/translations`);
             } else {
               router.replace(`/profile/${user.uid}`);
             }
           } else {
-            // Fallback si le doc n'est pas encore prêt
             router.replace(`/profile/${user.uid}`);
           }
         } catch (e) {

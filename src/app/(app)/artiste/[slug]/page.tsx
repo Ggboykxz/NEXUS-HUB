@@ -1,93 +1,89 @@
-import { getAdminServices } from '@/lib/firebase-admin';
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
-import type { Story, UserProfile } from '@/lib/types';
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from 'firebase/firestore';
+import type { Story, UserProfile, Chapter } from '@/lib/types';
 import ArtistDetailClient from './artist-detail-client';
+import { Loader2 } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 /**
- * Récupère les données d'un artiste par son slug ou son UID (fallback).
- * Sécurisé pour ne retourner que les artistes non-bannis.
- * @param identifier Le slug ou l'UID de l'artiste.
+ * Page de détails des artistes utilisant le SDK Client pour éviter la complexité Admin.
  */
-async function getArtistData(identifier: string) {
-  const { adminDb } = getAdminServices();
+export default function ArtistProfilePage(props: PageProps) {
+  const { slug } = use(props.params);
+  const [data, setData] = useState<{ artist: UserProfile; artistStories: Story[] } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // 1. Tentative par slug
-  let usersSnap = await adminDb.collection('users')
-    .where('slug', '==', identifier)
-    .where('isBanned', '==', false)
-    .limit(1)
-    .get();
-  
-  // 2. Fallback par UID si non trouvé par slug
-  if (usersSnap.empty) {
-    const directDoc = await adminDb.collection('users').doc(identifier).get();
-    if (directDoc.exists && !directDoc.data()?.isBanned && (directDoc.data()?.role?.startsWith('artist'))) {
-      const artist = { uid: directDoc.id, ...directDoc.data() } as UserProfile;
-      return fetchStories(adminDb, artist);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // 1. Trouver l'artiste par son slug
+        const usersRef = collection(db, 'users');
+        const q = query(
+          usersRef, 
+          where('slug', '==', slug), 
+          where('isBanned', '==', false),
+          limit(1)
+        );
+        
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+          // Fallback par UID si le slug n'est pas trouvé
+          const directDoc = await getDoc(doc(db, 'users', slug));
+          if (directDoc.exists() && !directDoc.data().isBanned) {
+            const artist = { uid: directDoc.id, ...directDoc.data() } as UserProfile;
+            await loadStories(artist);
+          } else {
+            setLoading(false);
+          }
+          return;
+        }
+
+        const artistDoc = snap.docs[0];
+        const artist = { uid: artistDoc.id, ...artistDoc.data() } as UserProfile;
+        await loadStories(artist);
+      } catch (e) {
+        console.error("Error fetching artist:", e);
+        setLoading(false);
+      }
     }
-    return null;
-  }
-  
-  const artistDoc = usersSnap.docs[0];
-  const artist = { uid: artistDoc.id, ...artistDoc.data() } as UserProfile;
-  return fetchStories(adminDb, artist);
-}
 
-/**
- * Helper pour récupérer les histoires d'un artiste trouvé.
- */
-async function fetchStories(adminDb: any, artist: UserProfile) {
-  const storiesSnap = await adminDb.collection('stories')
-    .where('artistId', '==', artist.uid)
-    .where('isPublished', '==', true)
-    .orderBy('updatedAt', 'desc')
-    .get();
-    
-  const artistStories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-  return { artist, artistStories };
-}
-
-export async function generateMetadata(props: PageProps): Promise<Metadata> {
-  const params = await props.params;
-  const data = await getArtistData(params.slug);
-
-  if (!data) {
-    return { title: 'Artiste introuvable' };
-  }
-
-  const description = data.artist.bio?.slice(0, 160) || `Découvrez toutes les créations de ${data.artist.displayName} sur NexusHub.`;
-
-  return {
-    title: `${data.artist.displayName} - Artiste sur NexusHub`,
-    description,
-    openGraph: {
-      title: data.artist.displayName,
-      description,
-      images: [{ url: data.artist.photoURL }],
-      type: 'profile',
-      username: data.artist.displayName 
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: `${data.artist.displayName} - Artiste sur NexusHub`,
-        description,
-        images: [data.artist.photoURL],
+    async function loadStories(artist: UserProfile) {
+      const storiesRef = collection(db, 'stories');
+      const qStories = query(
+        storiesRef,
+        where('artistId', '==', artist.uid),
+        where('isPublished', '==', true),
+        orderBy('updatedAt', 'desc')
+      );
+      
+      const storiesSnap = await getDocs(qStories);
+      const stories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+      
+      setData({ artist, artistStories: stories });
+      setLoading(false);
     }
-  };
-}
 
-export default async function ArtistProfilePage(props: PageProps) {
-  const params = await props.params;
-  const data = await getArtistData(params.slug);
+    fetchData();
+  }, [slug]);
 
-  if (!data) {
-    notFound(); 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Appel du créateur...</p>
+      </div>
+    );
   }
+
+  if (!data) return notFound();
 
   return <ArtistDetailClient artist={data.artist} artistStories={data.artistStories} />;
 }
