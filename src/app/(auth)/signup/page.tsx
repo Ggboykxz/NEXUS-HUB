@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -114,7 +114,6 @@ function SignupForm() {
         const userRef = doc(db, 'users', user.uid);
         const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
-        // Initialisation complète du profil avec tous les champs requis
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -122,7 +121,7 @@ function SignupForm() {
           photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`,
           slug,
           role,
-          afriCoins: role === 'premium_reader' ? 50 : 0, // Bonus de bienvenue pour les Premium
+          afriCoins: role === 'premium_reader' ? 50 : 0,
           level: 1,
           subscribersCount: 0,
           followedCount: 0,
