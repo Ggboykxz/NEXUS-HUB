@@ -240,7 +240,9 @@ function LoginForm() {
           </div>
 
           <div className="pt-8 border-t border-white/5 text-center">
-            <Button asChild variant="outline" className="h-11 rounded-xl border-primary text-primary font-black uppercase text-[10px]"><Link href="/signup">Créer mon Compte Gratuit <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            <CardFooter className="flex justify-center p-0">
+              <Button asChild variant="outline" className="h-11 rounded-xl border-primary text-primary font-black uppercase text-[10px]"><Link href="/signup">Créer mon Compte Gratuit <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            </CardFooter>
           </div>
         </div>
       </div>

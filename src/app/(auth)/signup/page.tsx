@@ -68,19 +68,20 @@ function SignupForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
+      // 1. Création du compte Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
       await updateProfile(user, { displayName: values.name });
       
-      // Rafraîchissement forcé pour Firestore
+      // 2. Rafraîchissement forcé des droits pour Firestore
       await getIdToken(user, true);
       
       const userRef = doc(db, 'users', user.uid);
       const baseName = values.name || 'Voyageur';
       const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      // Création immédiate du profil
+      // 3. Création immédiate du profil Firestore
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
@@ -102,19 +103,27 @@ function SignupForm() {
         preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
 
-      // Appel à l'API de session
+      // Petite pause pour laisser Firestore se stabiliser avant l'appel session
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 4. Appel à l'API de session
       const idToken = await getIdToken(user);
       const res = await fetch('/api/auth/session', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}` }
+        headers: { 
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (res.ok) {
         toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
         const target = values.accountType.startsWith('artist') ? '/dashboard/creations' : '/';
+        // Redirection "Hard" pour forcer la prise en compte des cookies
         window.location.href = target;
       } else {
-        throw new Error("Échec de création de session");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Échec de création de session");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -122,7 +131,7 @@ function SignupForm() {
       if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
       if (error.code === 'auth/weak-password') message = "Le mot de passe est trop faible.";
       
-      toast({ title: "Action impossible", description: message, variant: "destructive" });
+      toast({ title: "Action impossible", description: error.message || message, variant: "destructive" });
       setIsLoading(false);
     }
   }

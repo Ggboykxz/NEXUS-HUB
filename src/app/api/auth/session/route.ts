@@ -4,6 +4,7 @@ import { getAdminServices } from '@/lib/firebase-admin';
 /**
  * API de Session NexusHub
  * Transforme un Token Firebase en cookie de session sécurisé instantanément.
+ * Inclut une petite attente pour garantir que le profil Firestore est visible par le SDK Admin.
  */
 export async function POST(request: NextRequest) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -18,7 +19,11 @@ export async function POST(request: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // On récupère le rôle immédiatement sans boucle d'attente
+    // Petite attente pour parer à la latence de réplication Firestore
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // On récupère le rôle. Si le doc n'est pas encore là, on assume 'reader' par défaut
+    // pour ne pas bloquer la session, le client rafraîchira plus tard.
     const userDoc = await adminDb.collection('users').doc(uid).get();
     const role = userDoc.exists ? userDoc.data()?.role : 'reader';
 
@@ -52,7 +57,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[Session API] Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 403 });
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || 'Authentication failed' 
+    }, { status: 403 });
   }
 }
 
