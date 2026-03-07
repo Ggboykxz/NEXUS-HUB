@@ -16,8 +16,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuth();
-      // On simplifie la règle de création pour éviter les erreurs de structure au premier write
+      // On simplifie la règle de création pour garantir que setDoc() réussisse au premier coup
       allow create: if isSelf(userId);
+      // L'utilisateur peut tout mettre à jour SAUF les champs sensibles
       allow update: if isSelf(userId) && !request.resource.data.keys().hasAny(['role', 'isBanned', 'isCertified', 'afriCoins']);
       allow update, delete: if isAdmin();
 

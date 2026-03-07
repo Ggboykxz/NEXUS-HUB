@@ -19,8 +19,7 @@ import {
   Brush, 
   BookOpen, 
   ChevronRight,
-  ArrowLeft,
-  Star
+  ArrowLeft
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -42,7 +41,7 @@ const signupSchema = z.object({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "L'acceptation est obligatoire.",
   }),
-  portfolioUrl: z.string().optional().or(z.literal('')),
+  portfolioUrl: z.string().optional(),
   country: z.string().optional(),
   targetLang: z.string().optional(),
 });
@@ -92,10 +91,11 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore (SÉCURISATION DES UNDEFINED)
+      // 2. Construction du profil Firestore (SÉCURISATION TOTALE)
+      // On s'assure qu'AUCUN champ n'est undefined pour Firestore
       const commonData = {
         uid: user.uid,
-        email: user.email,
+        email: user.email || "",
         displayName: values.name,
         slug: values.slug.toLowerCase(),
         role: selectedRole,
@@ -105,7 +105,7 @@ export function SignupForm() {
         updatedAt: serverTimestamp(),
         onboardingCompleted: false,
         isBanned: false,
-        isCertified: false,
+        isCertified: selectedRole === 'artist_pro',
         bio: "",
         preferences: { 
           language: 'fr', 
@@ -125,7 +125,7 @@ export function SignupForm() {
       } else if (selectedRole === 'artist_draft') {
         roleSpecificData = {
           afriCoins: 100,
-          country: values.country || "Non spécifié",
+          country: values.country || "Gabon",
           portfolioUrl: values.portfolioUrl || "",
           subscribersCount: 0,
           followedCount: 0,
@@ -134,7 +134,7 @@ export function SignupForm() {
       } else if (selectedRole === 'translator') {
         roleSpecificData = {
           afriCoins: 75,
-          translatorLanguages: ['fr', values.targetLang || 'en'],
+          translatorLanguages: ['fr', values.targetLang || 'sw'],
           translationsCount: 0,
           experience: "Débutant"
         };
@@ -142,24 +142,23 @@ export function SignupForm() {
 
       const finalProfile = { ...commonData, ...roleSpecificData };
 
-      // 3. Sauvegarde Firestore - Await obligatoire avant la suite
+      // 3. Sauvegarde Firestore - Indispensable avant la suite
       await setDoc(doc(db, 'users', user.uid), finalProfile);
       
-      // 4. Synchronisation Cookie Serveur
+      // 4. Synchronisation Cookie Serveur pour le Middleware
       await setRoleCookie(selectedRole);
 
       toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
       
-      // 5. Redirection forcée avec refresh pour le Middleware
+      // 5. Redirection forcée
       router.refresh();
-      
-      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : (selectedRole === 'translator' ? '/translators' : '/');
+      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : '/';
       router.push(target);
 
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = "Une erreur est survenue lors de l'invocation de votre profil.";
-      if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé par un autre voyageur.";
+      let message = "Une erreur est survenue lors de la création de votre profil.";
+      if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }
@@ -258,61 +257,6 @@ export function SignupForm() {
                           </button>
                         ))}
                       </div>
-
-                      {selectedRole === 'artist_draft' && (
-                        <div className="space-y-4 p-6 bg-white/5 border border-white/5 rounded-3xl animate-in zoom-in-95 duration-300">
-                          <FormField control={form.control} name="portfolioUrl" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Lien Portfolio / Réseaux</FormLabel>
-                              <FormControl><Input placeholder="https://..." {...field} className="bg-black/40 border-white/10 text-white" /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name="country" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Pays d'origine</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
-                                    <SelectValue placeholder="Choisir un pays" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="bg-stone-900 border-white/10">
-                                  <SelectItem value="Gabon">Gabon 🇬🇦</SelectItem>
-                                  <SelectItem value="Sénégal">Sénégal 🇸🇳</SelectItem>
-                                  <SelectItem value="Nigeria">Nigeria 🇳🇬</SelectItem>
-                                  <SelectItem value="Cameroun">Cameroun 🇨🇲</SelectItem>
-                                  <SelectItem value="Côte d'Ivoire">Côte d'Ivoire 🇨🇮</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
-                        </div>
-                      )}
-
-                      {selectedRole === 'translator' && (
-                        <div className="space-y-4 p-6 bg-white/5 border border-white/5 rounded-3xl animate-in zoom-in-95 duration-300">
-                          <FormField control={form.control} name="targetLang" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] font-black uppercase text-stone-500">Langue de prédilection</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-black/40 border-white/10 text-white">
-                                    <SelectValue placeholder="Choisir une langue" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="bg-stone-900 border-white/10">
-                                  <SelectItem value="en">Anglais (EN)</SelectItem>
-                                  <SelectItem value="sw">Swahili (SW)</SelectItem>
-                                  <SelectItem value="ha">Hausa (HA)</SelectItem>
-                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
-                                  <SelectItem value="wo">Wolof (WO)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
-                        </div>
-                      )}
 
                       <div className="flex gap-4">
                         <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl font-bold text-stone-500">

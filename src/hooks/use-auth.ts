@@ -28,8 +28,9 @@ export function useAuth() {
             setProfile(profileData);
             setLoading(false);
           } else {
+            // Le profil n'existe pas encore (en cours de création par Signup)
             setProfile(null);
-            setLoading(false);
+            // On ne met pas loading à false ici car le profil va arriver
           }
         }, (error) => {
           if (error.code !== 'permission-denied') {
