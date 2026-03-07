@@ -61,13 +61,11 @@ export default function Header() {
     queryFn: async () => {
       try {
         const storiesRef = collection(db, 'stories');
-        // Protection contre les erreurs d'index ou de permissions sur les nouvelles bases
         try {
           const q = query(storiesRef, where('isPublished', '==', true), orderBy('views', 'desc'), limit(3));
           const snap = await getDocs(q);
           return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
         } catch (e) {
-          // Fallback simple si l'index n'existe pas encore
           const qSimple = query(storiesRef, limit(3));
           const snapSimple = await getDocs(qSimple);
           return snapSimple.docs.map(d => ({ id: d.id, ...d.data() } as Story));
@@ -126,9 +124,7 @@ export default function Header() {
       });
 
       return () => unsubscribeNotifications();
-    } catch (e) {
-      // Sourdine sur les erreurs de permission lors de la création de compte
-    }
+    } catch (e) {}
   }, [currentUser]);
 
   const handleLogout = async () => {
@@ -139,7 +135,7 @@ export default function Header() {
       router.refresh();
     } catch (e) {
       console.error("Erreur lors de la déconnexion", e);
-      toast({ title: "Erreur", description: "Impossible de se déconnecter. Veuillez réessayer.", variant: "destructive" });
+      toast({ title: "Erreur", description: "Impossible de se déconnecter.", variant: "destructive" });
     }
   };
 
@@ -410,7 +406,13 @@ export default function Header() {
                         <Badge variant="outline" className="text-[8px] h-4 uppercase border-primary/30 text-primary font-black">{profile?.role === 'reader' ? 'Lecteur' : 'Artiste'}</Badge>
                       </div>
                     </div>
-                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/profile/me"><UserCircle className="h-4 w-4 text-muted-foreground" />{t('nav.profile')}</Link></DropdownMenuItem>
+                    {/* Lien dynamique : Vitrine publique pour les artistes, profil privé pour les lecteurs */}
+                    <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs">
+                      <Link href={profile?.role?.startsWith('artist') ? `/artiste/${profile.slug}` : `/profile/${currentUser.uid}`}>
+                        <UserCircle className="h-4 w-4 text-muted-foreground" />
+                        {t('nav.profile')}
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/library"><Library className="h-4 w-4 text-muted-foreground" />{t('nav.library')}</Link></DropdownMenuItem>
                     {profile?.role?.includes('artist') && <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/dashboard/creations"><Brush className="h-4 w-4 text-muted-foreground" />{t('nav.workshop')}</Link></DropdownMenuItem>}
                     <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs"><Link href="/settings"><Settings className="h-4 w-4 text-muted-foreground" />{t('nav.settings')}</Link></DropdownMenuItem>
