@@ -72,17 +72,17 @@ function SignupForm() {
     let success = false;
     let attempts = 0;
 
-    // Routine de création de profil avec réessais silencieux
+    // Routine de création de profil robuste
     while (attempts < 5 && !success) {
       try {
-        // On force le rafraîchissement du token pour que les règles Firestore reconnaissent l'auth
+        // 1. Rafraîchissement forcé pour Firestore
         await getIdToken(user, true);
         
         const userRef = doc(db, 'users', user.uid);
         const baseName = name || 'Voyageur';
         const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
-        // setDoc avec merge: true pour être résilient aux écritures partielles
+        // 2. Écriture du profil
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -104,7 +104,7 @@ function SignupForm() {
           preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
         }, { merge: true });
 
-        // Appel à l'API de session qui va attendre que le doc soit visible
+        // 3. Appel à l'API de session (qui va attendre que le doc soit visible)
         const idToken = await getIdToken(user);
         const res = await fetch('/api/auth/session', {
           method: 'POST',
@@ -113,14 +113,13 @@ function SignupForm() {
 
         if (res.ok) {
           success = true;
-          // Redirection forcée (full reload) pour garantir la prise en compte des cookies par le middleware
+          // Redirection forcée (full reload)
           const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
           window.location.href = target;
         } else {
           throw new Error("Session creation failed");
         }
       } catch (e) {
-        console.warn(`Tentative d'initialisation ${attempts + 1} en cours...`);
         attempts++;
         if (attempts < 5) await new Promise(r => setTimeout(r, 1000));
       }
@@ -131,7 +130,7 @@ function SignupForm() {
       setIsLoading(false);
       toast({ 
         title: "Initialisation lente", 
-        description: "Votre compte est prêt, mais le profil prend du temps. Redirection vers la connexion...", 
+        description: "Votre compte est prêt. Redirection vers la connexion...", 
         variant: "destructive" 
       });
       router.push('/login');
