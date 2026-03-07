@@ -7,19 +7,21 @@ import { getAdminServices } from '@/lib/firebase-admin';
  * Utilise le nom de cookie '__session' requis par Firebase App Hosting.
  */
 export async function POST(request: NextRequest) {
-  const { adminAuth, adminDb } = getAdminServices();
-  
-  const authorization = request.headers.get('Authorization');
-  if (!authorization?.startsWith('Bearer ')) {
-    return NextResponse.json({ success: false, error: 'Authorization header missing' }, { status: 401 });
-  }
-
-  const idToken = authorization.split('Bearer ')[1];
   try {
+    const { adminAuth, adminDb } = getAdminServices();
+    
+    const authorization = request.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+      return NextResponse.json({ success: false, error: 'En-tête d\'autorisation manquant' }, { status: 401 });
+    }
+
+    const idToken = authorization.split('Bearer ')[1];
+    
+    // Vérification du token
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Attente stratégique pour laisser Firestore se synchroniser
+    // Attente stratégique pour laisser Firestore se synchroniser si nécessaire
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Récupération du rôle pour le cookie middleware
@@ -32,10 +34,11 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ 
       success: true, 
-      role
+      role,
+      uid
     });
 
-    // Configuration du cookie de session principal
+    // Configuration du cookie de session principal (__session pour App Hosting)
     response.cookies.set('__session', sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Cookie de rôle pour le middleware (accessible au client)
+    // Cookie de rôle pour le middleware (accessible au client pour la navigation)
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.error('[Session API] Error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: error.message || 'Authentication failed' 
+      error: error.message || 'Échec de l\'authentification' 
     }, { status: 403 });
   }
 }

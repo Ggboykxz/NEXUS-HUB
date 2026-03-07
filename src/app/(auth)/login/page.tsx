@@ -47,7 +47,17 @@ function LoginForm() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
       });
-      return response.ok;
+      
+      if (!response.ok) {
+        try {
+          const errData = await response.json();
+          console.error("Session creation error details:", errData);
+        } catch (e) {
+          console.error("Session creation failed with non-JSON response");
+        }
+        return false;
+      }
+      return true;
     } catch (e) {
       console.error("Session creation error", e);
       return false;
@@ -70,7 +80,6 @@ function LoginForm() {
         const sessionCreated = await createSession(user);
         if (sessionCreated) {
           toast({ title: "Bon retour au Hub !" });
-          // Redirection forcée pour garantir la prise en compte du cookie par le middleware
           window.location.href = getRedirectForRole(role);
         } else {
           toast({ title: "Erreur de session", description: "Veuillez réessayer.", variant: "destructive" });

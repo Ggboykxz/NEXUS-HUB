@@ -81,7 +81,7 @@ function SignupForm() {
       const baseName = values.name || 'Voyageur';
       const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      // 3. Création immédiate du profil Firestore
+      // 3. Création immédiate du profil Firestore avec structure complète
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
@@ -96,6 +96,7 @@ function SignupForm() {
         isBanned: false,
         isVerified: false,
         onboardingCompleted: false,
+        bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
@@ -103,15 +104,15 @@ function SignupForm() {
         preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
 
-      // Petite pause pour laisser Firestore se stabiliser avant l'appel session
+      // Pause pour laisser Firestore se stabiliser
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // 4. Appel à l'API de session
-      const idToken = await getIdToken(user);
+      // 4. Appel à l'API de session avec un nouveau token frais
+      const freshToken = await getIdToken(user, true);
       const res = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 
-          'Authorization': `Bearer ${idToken}`,
+          'Authorization': `Bearer ${freshToken}`,
           'Content-Type': 'application/json'
         }
       });
@@ -119,19 +120,23 @@ function SignupForm() {
       if (res.ok) {
         toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
         const target = values.accountType.startsWith('artist') ? '/dashboard/creations' : '/';
-        // Redirection forcée par le navigateur pour garantir l'accès au profil
         window.location.href = target;
       } else {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Échec de création de session");
+        let errorMsg = "Échec de création de session";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          console.error("Session API returned non-JSON error");
+        }
+        throw new Error(errorMsg);
       }
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = "Une erreur est survenue lors de l'inscription.";
+      let message = error.message || "Une erreur est survenue lors de l'inscription.";
       if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
-      if (error.code === 'auth/weak-password') message = "Le mot de passe est trop faible.";
       
-      toast({ title: "Action impossible", description: error.message || message, variant: "destructive" });
+      toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }
   }
