@@ -2,6 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ─── FONCTIONS UTILITAIRES ───────────────────────────────────────────────
+
     function isAuth() {
       return request.auth != null;
     }
@@ -14,52 +16,123 @@ service cloud.firestore {
       return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isArtist() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in
+        ['artist_draft', 'artist_pro', 'artist_elite'];
+    }
+
+    // Valide le profil à la création
+    function validNewProfile(userId) {
+      let d = request.resource.data;
+      return d.uid == userId
+        && d.keys().hasAll(['uid', 'email', 'displayName', 'slug', 'role', 'level', 'createdAt'])
+        && d.role in ['reader', 'premium_reader', 'artist_draft', 'artist_pro', 'artist_elite', 'translator']
+        && d.displayName.size() >= 2
+        && d.slug.size() >= 3;
+    }
+
+    // ─── PROFILS UTILISATEURS ────────────────────────────────────────────────
+
     match /users/{userId} {
       allow read: if isAuth();
-      // On simplifie la règle de création pour garantir que setDoc() réussisse au premier coup
-      allow create: if isSelf(userId);
-      // L'utilisateur peut tout mettre à jour SAUF les champs sensibles
-      allow update: if isSelf(userId) && !request.resource.data.keys().hasAny(['role', 'isBanned', 'isCertified', 'afriCoins']);
+
+      // Autorise la création initiale
+      allow create: if isSelf(userId) && validNewProfile(userId);
+
+      // Autorise la mise à jour
+      allow update: if isSelf(userId) && (
+        // Cas 1 : Pendant l'onboarding, on peut tout configurer (rôle, bonus, etc.)
+        // Note: 'resource' est le document existant
+        resource.data.onboardingCompleted == false ||
+        // Cas 2 : Profil déjà établi, on interdit de toucher aux champs sensibles
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isBanned', 'isCertified', 'afriCoins'])
+      );
+
+      // L'admin a les pleins pouvoirs
       allow update, delete: if isAdmin();
 
+      // Sous-collections privées
       match /{allSubcollections=**} {
         allow read, write: if isSelf(userId);
       }
+
+      // Notifications : créables par le système/autres, gérables par le propriétaire
+      match /notifications/{notifId} {
+        allow read, update, delete: if isSelf(userId);
+        allow create: if isAuth();
+      }
     }
+
+    // ─── RÉCITS & CHAPITRES ──────────────────────────────────────────────────
 
     match /stories/{storyId} {
       allow read: if true;
-      allow write: if isAuth();
-      
-      match /{allSub=**} {
+      allow create: if (isArtist() || isAdmin()) && request.resource.data.artistId == request.auth.uid;
+      allow update, delete: if isAuth() && (resource.data.artistId == request.auth.uid || isAdmin());
+
+      match /chapters/{chapterId} {
         allow read: if true;
-        allow write: if isAuth();
+        allow write: if isAuth() && (get(/databases/$(database)/documents/stories/$(storyId)).data.artistId == request.auth.uid || isAdmin());
+
+        match /comments/{commentId} {
+          allow read: if true;
+          allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+          allow update, delete: if isAuth() && (request.auth.uid == resource.data.authorId || isAdmin());
+        }
+      }
+
+      match /likes/{userId} {
+        allow read: if true;
+        allow write: if isAuth() && request.auth.uid == userId;
+      }
+    }
+
+    // ─── MESSAGERIE PRIVÉE ──────────────────────────────────────────────────
+
+    match /conversations/{convId} {
+      allow read, write: if isAuth() && request.auth.uid in convId.split('_');
+      match /messages/{msgId} {
+        allow read, write: if isAuth() && request.auth.uid in convId.split('_');
+      }
+    }
+
+    // ─── FORUMS & CLUBS ──────────────────────────────────────────────────────
+
+    match /forumThreads/{threadId} {
+      allow read: if true;
+      allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isAuth() && (resource.data.authorId == request.auth.uid || isAdmin());
+
+      match /replies/{replyId} {
+        allow read: if true;
+        allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isAuth() && (resource.data.authorId == request.auth.uid || isAdmin());
       }
     }
 
     match /readingClubs/{clubId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && (resource.data.ownerId == request.auth.uid || isAdmin());
       match /{allSub=**} {
-        allow read, write: if isAuth();
+        allow read, create: if isAuth();
       }
     }
 
-    match /forumThreads/{threadId} {
-      allow read: if true;
-      allow write: if isAuth();
-      match /{allSub=**} {
-        allow read, write: if isAuth();
-      }
-    }
+    // ─── SYSTÈME ────────────────────────────────────────────────────────────
 
     match /reports/{reportId} { allow create: if isAuth(); allow read, update: if isAdmin(); }
     match /contactMessages/{msgId} { allow create: if true; allow read, update: if isAdmin(); }
     match /products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /playlists/{id} {
       allow read: if resource.data.isPublic == true || (isAuth() && request.auth.uid == resource.data.ownerId);
-      allow create: if isAuth();
+      allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /transactions/{txId} {
+      allow read: if isAuth() && request.auth.uid == resource.data.userId;
+      allow write: if false; 
     }
   }
 }

@@ -36,17 +36,20 @@ function LoginForm() {
       if (userDoc.exists()) {
         const role = userDoc.data()?.role || 'reader';
         
-        // 1. Définir le cookie de rôle
+        // 1. Synchronisation Cookie (Client + Serveur)
+        document.cookie = `nexushub-role=${role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
         await setRoleCookie(role);
         
         toast({ title: "Bon retour au Hub !" });
         
-        // 2. Redirection fluide avec window.location pour le Middleware
+        // 2. Redirection forcée
         const target = role === 'admin' ? '/dashboard' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
-        window.location.href = target;
+        
+        setTimeout(() => {
+          window.location.replace(target);
+        }, 500);
       } else {
-        // Si Auth OK mais pas de doc, on renvoie vers le signup pour compléter
-        window.location.href = '/signup';
+        window.location.replace('/signup');
       }
     } catch (error) {
       console.error(error);

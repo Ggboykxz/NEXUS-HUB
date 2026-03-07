@@ -81,7 +81,7 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore
+      // 2. Construction du profil Firestore (Sanitisation stricte pour Firestore)
       const commonData = {
         uid: user.uid,
         email: user.email || "",
@@ -128,17 +128,23 @@ export function SignupForm() {
 
       const finalProfile = { ...commonData, ...roleSpecificData };
 
-      // 3. Sauvegarde Firestore
-      await setDoc(doc(db, 'users', user.uid), finalProfile);
+      // 3. Sauvegarde Firestore (On utilise { merge: true } au cas où la Cloud Function a déjà créé le doc)
+      await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
       
-      // 4. Synchronisation Cookie Serveur (indispensable pour le Middleware)
+      // 4. Synchronisation Cookie (Client + Serveur)
+      // On définit le cookie côté client immédiatement pour le Middleware
+      document.cookie = `nexushub-role=${selectedRole}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      // On appelle aussi l'action serveur pour la persistance
       await setRoleCookie(selectedRole);
 
       toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
       
-      // 5. Redirection forcée avec window.location pour garantir que le cookie est lu par le middleware
-      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : '/';
-      window.location.href = target;
+      // 5. Redirection avec un léger délai pour garantir l'enregistrement du cookie
+      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : (selectedRole === 'translator' ? '/dashboard/translations' : '/');
+      
+      setTimeout(() => {
+        window.location.replace(target);
+      }, 500);
 
     } catch (error: any) {
       console.error("Signup error:", error);
