@@ -35,7 +35,10 @@ if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
       try {
-        analytics = getAnalytics(app);
+        // Double check configuration before initializing to avoid 404 App Not Found
+        if (firebaseConfig.appId) {
+          analytics = getAnalytics(app);
+        }
       } catch (e) {
         console.warn("Firebase Analytics failed to initialize (likely due to ad-blocker or config migration):", e);
       }
