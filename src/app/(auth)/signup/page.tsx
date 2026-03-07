@@ -4,12 +4,10 @@ import { useState, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Award, 
@@ -31,7 +29,6 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { setRoleCookie } from '@/lib/actions/auth-actions';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -41,15 +38,11 @@ const signupSchema = z.object({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "L'acceptation est obligatoire.",
   }),
-  portfolioUrl: z.string().optional(),
-  country: z.string().optional(),
-  targetLang: z.string().optional(),
 });
 
 type SignupValues = z.infer<typeof signupSchema>;
 
 export function SignupForm() {
-  const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -64,9 +57,6 @@ export function SignupForm() {
       slug: "", 
       password: "", 
       acceptTerms: false,
-      portfolioUrl: "",
-      country: "Gabon",
-      targetLang: "sw"
     },
   });
 
@@ -91,8 +81,7 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore (SÉCURISATION TOTALE)
-      // On s'assure qu'AUCUN champ n'est undefined pour Firestore
+      // 2. Construction du profil Firestore
       const commonData = {
         uid: user.uid,
         email: user.email || "",
@@ -105,7 +94,7 @@ export function SignupForm() {
         updatedAt: serverTimestamp(),
         onboardingCompleted: false,
         isBanned: false,
-        isCertified: selectedRole === 'artist_pro',
+        isCertified: false,
         bio: "",
         preferences: { 
           language: 'fr', 
@@ -125,8 +114,6 @@ export function SignupForm() {
       } else if (selectedRole === 'artist_draft') {
         roleSpecificData = {
           afriCoins: 100,
-          country: values.country || "Gabon",
-          portfolioUrl: values.portfolioUrl || "",
           subscribersCount: 0,
           followedCount: 0,
           createdGenres: []
@@ -134,26 +121,24 @@ export function SignupForm() {
       } else if (selectedRole === 'translator') {
         roleSpecificData = {
           afriCoins: 75,
-          translatorLanguages: ['fr', values.targetLang || 'sw'],
+          translatorLanguages: ['fr'],
           translationsCount: 0,
-          experience: "Débutant"
         };
       }
 
       const finalProfile = { ...commonData, ...roleSpecificData };
 
-      // 3. Sauvegarde Firestore - Indispensable avant la suite
+      // 3. Sauvegarde Firestore
       await setDoc(doc(db, 'users', user.uid), finalProfile);
       
-      // 4. Synchronisation Cookie Serveur pour le Middleware
+      // 4. Synchronisation Cookie Serveur (indispensable pour le Middleware)
       await setRoleCookie(selectedRole);
 
       toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
       
-      // 5. Redirection forcée
-      router.refresh();
+      // 5. Redirection forcée avec window.location pour garantir que le cookie est lu par le middleware
       const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : '/';
-      router.push(target);
+      window.location.href = target;
 
     } catch (error: any) {
       console.error("Signup error:", error);

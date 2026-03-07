@@ -41,15 +41,12 @@ function LoginForm() {
         
         toast({ title: "Bon retour au Hub !" });
         
-        // 2. Refresh pour le Middleware
-        router.refresh();
-        
-        // 3. Redirection fluide
-        const target = role === 'admin' ? '/admin' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
-        router.push(target);
+        // 2. Redirection fluide avec window.location pour le Middleware
+        const target = role === 'admin' ? '/dashboard' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
+        window.location.href = target;
       } else {
         // Si Auth OK mais pas de doc, on renvoie vers le signup pour compléter
-        router.push('/signup');
+        window.location.href = '/signup';
       }
     } catch (error) {
       console.error(error);
