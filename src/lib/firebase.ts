@@ -14,9 +14,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Guard against missing config
-const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
-
 // Initialize Firebase for SSR and Client
 const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
@@ -27,19 +24,23 @@ const storage: FirebaseStorage = getStorage(app);
 const functions: Functions = getFunctions(app);
 
 // Configure Auth persistence
-if (typeof window !== 'undefined' && isConfigValid) {
+if (typeof window !== 'undefined') {
   setPersistence(auth, browserLocalPersistence).catch(console.error);
 }
 
 let analytics: Analytics | null = null;
 
 // Initialize Analytics only on the client side if supported
-if (typeof window !== 'undefined' && isConfigValid) {
+if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
-      analytics = getAnalytics(app);
+      try {
+        analytics = getAnalytics(app);
+      } catch (e) {
+        console.warn("Firebase Analytics failed to initialize (likely due to ad-blocker or config migration):", e);
+      }
     }
-  });
+  }).catch(e => console.warn("Firebase Analytics isSupported check failed:", e));
 }
 
 export { app, auth, db, storage, functions, analytics };
