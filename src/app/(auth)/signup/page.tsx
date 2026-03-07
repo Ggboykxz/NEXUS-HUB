@@ -169,7 +169,7 @@ function SignupForm() {
           </div>
           <div className="space-y-4">
             <h2 className="text-3xl md:text-5xl font-display font-black gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
-            <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse">
+            <p className="text-stone-400 italic font-light max-sm mx-auto animate-pulse">
               "Les scribes gravent votre nom dans les annales du Hub. Votre destinée est en marche..."
             </p>
           </div>
