@@ -20,8 +20,7 @@ import {
   Loader2, 
   Brush, 
   BookOpen, 
-  Crown,
-  ShieldCheck
+  Crown
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -50,7 +49,6 @@ function SignupForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRitualActive, setIsRitualActive] = useState(false);
   const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
 
   useEffect(() => {
@@ -67,82 +65,57 @@ function SignupForm() {
     defaultValues: { name: "", email: "", password: "", accountType: "reader", acceptTerms: false },
   });
 
-  const handleSuccessfulSignup = async (user: User, role: string, name: string) => {
-    setIsRitualActive(true);
-    let success = false;
-    let attempts = 0;
-
-    // Routine de création de profil robuste
-    while (attempts < 5 && !success) {
-      try {
-        // 1. Rafraîchissement forcé pour Firestore
-        await getIdToken(user, true);
-        
-        const userRef = doc(db, 'users', user.uid);
-        const baseName = name || 'Voyageur';
-        const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
-        
-        // 2. Écriture du profil
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: name,
-          slug,
-          role,
-          afriCoins: role === 'premium_reader' ? 50 : 0,
-          level: 1,
-          subscribersCount: 0,
-          followedCount: 0,
-          isCertified: role === 'artist_pro',
-          isBanned: false,
-          isVerified: false,
-          onboardingCompleted: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
-          readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
-          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-        }, { merge: true });
-
-        // 3. Appel à l'API de session (qui va attendre que le doc soit visible)
-        const idToken = await getIdToken(user);
-        const res = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-
-        if (res.ok) {
-          success = true;
-          // Redirection forcée (full reload)
-          const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
-          window.location.href = target;
-        } else {
-          throw new Error("Session creation failed");
-        }
-      } catch (e) {
-        attempts++;
-        if (attempts < 5) await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-
-    if (!success) {
-      setIsRitualActive(false);
-      setIsLoading(false);
-      toast({ 
-        title: "Initialisation lente", 
-        description: "Votre compte est prêt. Redirection vers la connexion...", 
-        variant: "destructive" 
-      });
-      router.push('/login');
-    }
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      await updateProfile(userCredential.user, { displayName: values.name });
-      await handleSuccessfulSignup(userCredential.user, values.accountType, values.name);
+      const user = userCredential.user;
+      
+      await updateProfile(user, { displayName: values.name });
+      
+      // Rafraîchissement forcé pour Firestore
+      await getIdToken(user, true);
+      
+      const userRef = doc(db, 'users', user.uid);
+      const baseName = values.name || 'Voyageur';
+      const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+      
+      // Création immédiate du profil
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: values.name,
+        slug,
+        role: values.accountType,
+        afriCoins: values.accountType === 'premium_reader' ? 50 : 0,
+        level: 1,
+        subscribersCount: 0,
+        followedCount: 0,
+        isCertified: values.accountType === 'artist_pro',
+        isBanned: false,
+        isVerified: false,
+        onboardingCompleted: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
+        readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+      }, { merge: true });
+
+      // Appel à l'API de session
+      const idToken = await getIdToken(user);
+      const res = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
+
+      if (res.ok) {
+        toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
+        const target = values.accountType.startsWith('artist') ? '/dashboard/creations' : '/';
+        window.location.href = target;
+      } else {
+        throw new Error("Échec de création de session");
+      }
     } catch (error: any) {
       console.error("Signup error:", error);
       let message = "Une erreur est survenue lors de l'inscription.";
@@ -152,29 +125,6 @@ function SignupForm() {
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }
-  }
-
-  if (isRitualActive) {
-    return (
-      <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden text-white text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
-        <div className="relative z-10 space-y-12 animate-in fade-in duration-1000">
-          <div className="relative mx-auto w-32 h-32">
-            <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-ping" />
-            <div className="absolute inset-0 border-t-4 border-primary rounded-full animate-spin" />
-            <div className="absolute inset-4 bg-primary/10 rounded-full flex items-center justify-center backdrop-blur-xl">
-              <Sparkles className="h-12 w-12 text-primary animate-pulse" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-3xl md:text-5xl font-display font-black gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
-            <p className="text-stone-400 italic font-light max-sm mx-auto animate-pulse">
-              "Les scribes gravent votre nom dans les annales du Hub. Votre destinée est en marche..."
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   const roles = [

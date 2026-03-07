@@ -163,7 +163,6 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
       const baseName = pendingUser.displayName || pendingUser.email?.split('@')[0] || 'voyageur';
       const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      // Initialisation complète du profil lors du choix de rôle via la modale
       await setDoc(userRef, {
         uid: pendingUser.uid,
         email: pendingUser.email,
@@ -181,25 +180,9 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
         bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        readingStats: { 
-          preferredGenres: {}, 
-          totalReadTime: 0, 
-          chaptersRead: 0,
-          favoriteArtists: []
-        },
-        readingStreak: { 
-          currentCount: 0, 
-          lastReadDate: '', 
-          longestStreak: 0 
-        },
-        preferences: { 
-          language: 'fr', 
-          theme: 'dark', 
-          privacy: { 
-            showCurrentReading: true, 
-            showHistory: true 
-          } 
-        }
+        readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
+        readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
+        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
       }, { merge: true });
 
       const sessionOk = await createSession(pendingUser);
