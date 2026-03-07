@@ -1,110 +1,54 @@
-import { getAdminServices } from '@/lib/firebase-admin';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from 'firebase/firestore';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
 import StoryDetailClient from '../../webtoon/[slug]/story-detail-client';
-import type { Metadata } from 'next';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Loader2 } from 'lucide-react';
 
-interface PageProps {
-  params: { slug: string };
-}
+/**
+ * Page de détails des webtoons utilisant le SDK Client pour plus de simplicité.
+ */
+export default function WebtoonDetailPage(props: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(props.params);
+  const [data, setData] = useState<{ story: Story; artist: UserProfile | null; similarStories: Story[] } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-async function getStoryDetails(slug: string) {
-  const { adminDb } = getAdminServices();
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // 1. Récupérer l'histoire
+        const q = query(collection(db, 'stories'), where('slug', '==', slug), where('isPublished', '==', true), limit(1));
+        const snap = await getDocs(q);
+        if (snap.empty) return setLoading(false);
 
-  // 1. Fetch Story with security checks
-  const storySnap = await adminDb.collection('stories')
-    .where('slug', '==', slug)
-    .where('isPublished', '==', true)
-    .where('isBanned', '==', false)
-    .limit(1)
-    .get();
+        const storyDoc = snap.docs[0];
+        const story = { id: storyDoc.id, ...storyDoc.data() } as Story;
 
-  if (storySnap.empty) {
-    return null;
-  }
+        // 2. Récupérer l'artiste et les chapitres
+        const [artistSnap, chaptersSnap, similarSnap] = await Promise.all([
+          getDoc(doc(db, 'users', story.artistId)),
+          getDocs(query(collection(db, 'stories', story.id, 'chapters'), where('status', '==', 'Publié'), orderBy('chapterNumber', 'asc'))),
+          getDocs(query(collection(db, 'stories'), where('genreSlug', '==', story.genreSlug), where('isPublished', '==', true), limit(6)))
+        ]);
 
-  const storyDoc = storySnap.docs[0];
-  const storyData = storyDoc.data();
-  const story: Story = {
-    id: storyDoc.id,
-    ...storyData,
-    createdAt: (storyData.createdAt as Timestamp).toDate(),
-    updatedAt: (storyData.updatedAt as Timestamp).toDate(),
-  } as Story;
+        const artist = artistSnap.exists() ? (artistSnap.data() as UserProfile) : null;
+        const chapters = chaptersSnap.docs.map(d => ({ id: d.id, ...d.data() } as Chapter));
+        const similarStories = similarSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story)).filter(s => s.id !== story.id);
 
-  // 2. Fetch Artist, Chapters, and Similar Stories in parallel for performance
-  const [artistSnap, chaptersSnap, similarSnap] = await Promise.all([
-    adminDb.collection('users').doc(story.artistId).get(),
-    adminDb.collection('stories').doc(story.id).collection('chapters')
-      .where('isPublished', '==', true)
-      .orderBy('chapterNumber', 'asc')
-      .get(),
-    adminDb.collection('stories')
-      .where('genreSlug', '==', story.genreSlug)
-      .where('isPublished', '==', true)
-      .where('isBanned', '==', false)
-      .orderBy('views', 'desc')
-      .limit(7)
-      .get()
-  ]);
-
-  // 3. Process data
-  const artist = artistSnap.exists ? (artistSnap.data() as UserProfile) : null;
-
-  const chapters = chaptersSnap.docs.map(doc => {
-      const chapterData = doc.data();
-      return {
-          id: doc.id,
-          ...chapterData,
-          publishedAt: (chapterData.publishedAt as Timestamp).toDate(),
-      } as Chapter;
-  });
-
-  const similarStories = similarSnap.docs
-    .map(d => ({ id: d.id, ...d.data() } as Story))
-    .filter(s => s.id !== story.id)
-    .slice(0, 6);
-
-  return {
-    story: { ...story, chapters },
-    artist,
-    similarStories
-  };
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const data = await getStoryDetails(params.slug);
-  if (!data) return { title: 'Histoire Introuvable' };
-
-  const { story } = data;
-  const description = `Lisez ${story.title}, un ${story.type} de ${story.genreName}. ${story.synopsis.substring(0, 120)}...`;
-
-  return {
-    title: `${story.title} - ${story.artistName}`,
-    description,
-    openGraph: {
-      title: story.title,
-      description: story.synopsis,
-      images: [{ url: story.coverImage, width: 1200, height: 630 }],
-      type: 'article',
-      authors: [story.artistName],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: story.title,
-      description: story.synopsis,
-      images: [story.coverImage],
+        setData({ story: { ...story, chapters }, artist, similarStories });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
-}
+    fetchData();
+  }, [slug]);
 
-export default async function WebtoonDetailPage({ params }: PageProps) {
-  const data = await getStoryDetails(params.slug);
+  if (loading) return <div className="h-screen flex items-center justify-center bg-stone-950"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
+  if (!data) return <div className="h-screen flex items-center justify-center text-stone-500">Histoire introuvable</div>;
 
-  if (!data) {
-    notFound();
-  }
-  
   return <StoryDetailClient story={data.story} artist={data.artist} similarStories={data.similarStories} />;
 }

@@ -1,61 +1,56 @@
-import { getAdminServices } from '@/lib/firebase-admin';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import type { Story } from '@/lib/types';
-import type { Metadata } from 'next';
 
-export const revalidate = 3600; // 1 hour
+export default function NewReleasesPage() {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export const metadata: Metadata = {
-  title: 'Nouveautés - Les Dernières Sorties NexusHub',
-  description: 'Soyez les premiers à découvrir les dernières pépites, les nouveaux chapitres et les séries fraîchement publiées sur la plateforme NexusHub.',
-};
+  useEffect(() => {
+    async function fetchNew() {
+      try {
+        const q = query(
+          collection(db, 'stories'),
+          where('isPublished', '==', true),
+          orderBy('updatedAt', 'desc'),
+          limit(40)
+        );
+        const snap = await getDocs(q);
+        setStories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNew();
+  }, []);
 
-async function getNewStories() {
-  const { adminDb } = getAdminServices();
-  const snap = await adminDb.collection('stories')
-    .where('isPublished', '==', true)
-    .where('isBanned', '==', false)
-    .orderBy('updatedAt', 'desc')
-    .limit(40)
-    .get();
-  
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
-}
-
-export default async function NewReleasesPage() {
-  const newStories = await getNewStories();
+  if (loading) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <header className="flex items-center gap-4 mb-8">
+        <div className="bg-primary/10 p-3 rounded-full">
+          <Sparkles className="w-8 h-8 text-primary" />
+        </div>
         <div>
-            <div className="flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-full border border-primary/20">
-                    <Sparkles className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                    <h1 className="text-4xl font-bold font-display text-white">Nouveautés</h1>
-                    <p className="text-lg text-muted-foreground mt-1 max-w-2xl">
-                        Les dernières mises à jour et sorties de la communauté NexusHub.
-                    </p>
-                </div>
-            </div>
+          <h1 className="text-4xl font-bold font-display text-white">Nouveautés</h1>
+          <p className="text-lg text-muted-foreground mt-1">Découvrez les dernières sorties de la communauté.</p>
         </div>
       </header>
 
-      {newStories.length > 0 ? (
+      {stories.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
-            {newStories.map((story) => (
-            <StoryCard key={story.id} story={story} showUpdateDate={true} />
-            ))}
+          {stories.map((story) => <StoryCard key={story.id} story={story} showUpdateDate={true} />)}
         </div>
-       ) : (
-        <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
-            <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <p className="text-stone-400 font-bold text-xl mb-2">Rien de neuf pour l'instant</p>
-            <p className="text-stone-500 italic font-light">Les auteurs sont sûrement en train de préparer leurs prochaines œuvres.<br/>Revenez bientôt !</p>
-        </div>
+      ) : (
+        <p className="text-stone-500 italic text-center py-20">Rien de neuf pour l'instant.</p>
       )}
     </div>
   );

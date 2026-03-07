@@ -1,31 +1,19 @@
-import { getAdminServices } from './firebase-admin';
-import { cookies } from 'next/headers';
+import { auth, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from './types';
 
 /**
- * Retrieves the currently authenticated user's profile from Firestore.
- * This is a server-side utility.
- * @returns {Promise<UserProfile | null>} The user profile object or null if not authenticated.
+ * Utilitaires d'authentification client.
+ * Note: Dans les composants serveurs, utilisez useAuth() ou vérifiez l'état côté client.
  */
-export async function getCurrentUser(): Promise<UserProfile | null> {
-  const { adminAuth, adminDb } = getAdminServices();
-  const sessionCookie = cookies().get("__session")?.value;
-
-  if (!sessionCookie) {
-    return null;
-  }
-
+export async function getClientUserProfile(uid: string): Promise<UserProfile | null> {
+  if (!uid) return null;
   try {
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-
-    if (!userDoc.exists) {
-      return null;
-    }
-
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (!userDoc.exists()) return null;
     return userDoc.data() as UserProfile;
-  } catch (error) {
-    // Session cookie is invalid or expired. The user is effectively logged out.
+  } catch (e) {
+    console.error("Error fetching client profile:", e);
     return null;
   }
 }

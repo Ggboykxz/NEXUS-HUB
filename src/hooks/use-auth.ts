@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User, getIdToken } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
+import { setRoleCookie } from '@/lib/actions/auth-actions';
 
 /**
- * Hook personnalisé pour gérer l'état d'authentification et le profil Firestore.
- * Gère les permissions insuffisantes avec patience.
+ * Hook d'authentification centralisé utilisant exclusivement le SDK Client.
  */
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -16,27 +16,27 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       
       if (user) {
         const userDocRef = doc(db, 'users', user.uid);
         
-        // On écoute les changements du profil en temps réel
         const unsubscribeSnapshot = onSnapshot(userDocRef, (snapshot) => {
           if (snapshot.exists() && snapshot.data()?.role) {
-            setProfile(snapshot.data() as UserProfile);
+            const profileData = snapshot.data() as UserProfile;
+            setProfile(profileData);
+            
+            // Synchronisation du cookie de rôle pour le middleware Next.js
+            setRoleCookie(profileData.role).catch(console.error);
+            
             setLoading(false);
           } else {
-            // Si le doc n'existe pas encore, on attend le processus de création initié par signup/login
             setProfile(null);
-            // On ne passe pas loading à false ici pour laisser le temps au rituel de finir
+            // On laisse loading=true si le doc n'existe pas encore (en cours de création)
           }
         }, (error) => {
-          // Erreur de permission courante lors de la connexion initiale avant que le doc soit prêt
-          if (error.code !== 'permission-denied') {
-            console.warn("Auth snapshot error:", error.code);
-          }
+          console.warn("Firestore profile sync error:", error.code);
           setLoading(false);
         });
         
@@ -47,7 +47,7 @@ export function useAuth() {
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   return { currentUser, profile, loading };
