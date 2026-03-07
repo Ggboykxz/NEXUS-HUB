@@ -33,14 +33,11 @@ let analytics: Analytics | null = null;
 // Initialize Analytics only on the client side if supported
 if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
-    if (supported) {
+    if (supported && firebaseConfig.appId) {
       try {
-        // Double check configuration before initializing to avoid 404 App Not Found
-        if (firebaseConfig.appId) {
-          analytics = getAnalytics(app);
-        }
+        analytics = getAnalytics(app);
       } catch (e) {
-        console.warn("Firebase Analytics failed to initialize (likely due to ad-blocker or config migration):", e);
+        console.warn("Firebase Analytics failed to initialize:", e);
       }
     }
   }).catch(e => console.warn("Firebase Analytics isSupported check failed:", e));
