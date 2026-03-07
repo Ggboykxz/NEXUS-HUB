@@ -19,15 +19,18 @@ export async function POST(request: NextRequest) {
     const uid = decodedToken.uid;
 
     // ATTENTE ACTIVE DU PROFIL FIRESTORE (Max 5 secondes)
+    // C'est crucial pour que le rôle soit disponible pour le middleware immédiatement
     let role = 'reader';
+    let profileExists = false;
     let attempts = 0;
-    while (attempts < 10) {
+    
+    while (attempts < 10 && !profileExists) {
       const userDoc = await adminDb.collection('users').doc(uid).get();
       if (userDoc.exists && userDoc.data()?.role) {
         role = userDoc.data()?.role;
+        profileExists = true;
         break;
       }
-      // On attend 500ms avant de réessayer
       await new Promise(r => setTimeout(r, 500));
       attempts++;
     }
@@ -35,8 +38,9 @@ export async function POST(request: NextRequest) {
     const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 jours
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
-    const response = NextResponse.json({ success: true, role });
+    const response = NextResponse.json({ success: true, role, profileReady: profileExists });
 
+    // Firebase App Hosting et les règles de sécurité exigent souvent le nom '__session'
     response.cookies.set('__session', sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -45,6 +49,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
+    // On stocke le rôle dans un cookie accessible (en lecture seule pour le middleware)
     response.cookies.set('nexushub-role', role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',

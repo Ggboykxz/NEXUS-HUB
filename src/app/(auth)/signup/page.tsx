@@ -73,14 +73,17 @@ function SignupForm() {
     let success = false;
     let attempts = 0;
 
-    // Routine de création de profil avec réessais
+    // Routine de création de profil avec réessais pour parer aux délais Firestore
     while (attempts < 5 && !success) {
       try {
-        await getIdToken(user, true); // Force rafraîchissement des droits
+        // 1. On s'assure d'avoir les permissions fraîches
+        await getIdToken(user, true);
+        
         const userRef = doc(db, 'users', user.uid);
         const baseName = name || 'Voyageur';
         const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
         
+        // 2. Création du document profil selon le rôle
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -94,14 +97,28 @@ function SignupForm() {
           isCertified: role === 'artist_pro',
           isBanned: false,
           isVerified: false,
+          onboardingCompleted: false,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
-          readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
-          preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
+          readingStats: { 
+            preferredGenres: {}, 
+            totalReadTime: 0, 
+            chaptersRead: 0, 
+            favoriteArtists: [] 
+          },
+          readingStreak: { 
+            currentCount: 0, 
+            lastReadDate: '', 
+            longestStreak: 0 
+          },
+          preferences: { 
+            language: 'fr', 
+            theme: 'dark', 
+            privacy: { showCurrentReading: true, showHistory: true } 
+          }
         }, { merge: true });
 
-        // Création de la session serveur (Cookie)
+        // 3. Appel de l'API de session qui attend que Firestore soit prêt
         const idToken = await getIdToken(user);
         const res = await fetch('/api/auth/session', {
           method: 'POST',
@@ -110,22 +127,27 @@ function SignupForm() {
 
         if (res.ok) {
           success = true;
+          // Redirection forcée vers la destination finale
           const target = role.startsWith('artist') ? '/dashboard/creations' : '/';
-          // Rechargement forcé pour assurer la propagation des cookies au serveur
           window.location.href = target;
         } else {
-          throw new Error("API Session fail");
+          throw new Error("Session API failed");
         }
       } catch (e) {
+        console.warn(`Tentative ${attempts + 1} échouée pour le profil...`, e);
         attempts++;
-        await new Promise(r => setTimeout(r, 1000)); // Attente 1s avant réessai
+        if (attempts < 5) await new Promise(r => setTimeout(r, 1000));
       }
     }
 
     if (!success) {
       setIsRitualActive(false);
       setIsLoading(false);
-      toast({ title: "Synchronisation lente", description: "Le Hub est encombré. Veuillez essayer de vous connecter manuellement.", variant: "destructive" });
+      toast({ 
+        title: "Synchronisation lente", 
+        description: "Le Hub est encombré. Votre profil sera finalisé à votre prochaine connexion.", 
+        variant: "destructive" 
+      });
       router.push('/login');
     }
   };
@@ -137,14 +159,19 @@ function SignupForm() {
       await updateProfile(userCredential.user, { displayName: values.name });
       await handleSuccessfulSignup(userCredential.user, values.accountType, values.name);
     } catch (error: any) {
-      toast({ title: "Échec de l'inscription", description: "Cet email est peut-être déjà utilisé ou le réseau est instable.", variant: "destructive" });
+      console.error("Signup error:", error);
+      toast({ 
+        title: "Échec de l'inscription", 
+        description: error.code === 'auth/email-already-in-use' ? "Cet email est déjà utilisé." : "Le réseau est instable, réessayez.", 
+        variant: "destructive" 
+      });
       setIsLoading(false);
     }
   }
 
   if (isRitualActive) {
     return (
-      <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden">
+      <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-950 p-6 overflow-hidden text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2),transparent_70%)]" />
         <div className="relative z-10 text-center space-y-12 animate-in fade-in duration-1000">
           <div className="relative mx-auto w-32 h-32">
@@ -155,7 +182,7 @@ function SignupForm() {
             </div>
           </div>
           <div className="space-y-4">
-            <h2 className="text-3xl md:text-5xl font-display font-black text-white gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
+            <h2 className="text-3xl md:text-5xl font-display font-black gold-resplendant uppercase tracking-tighter">Rituel d'Initialisation</h2>
             <p className="text-stone-400 italic font-light max-w-sm mx-auto animate-pulse">"Les scribes gravent votre nom dans les annales du Hub. Veuillez patienter..."</p>
           </div>
         </div>

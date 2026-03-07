@@ -1,4 +1,3 @@
-
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
@@ -14,7 +13,7 @@ export function middleware(request: NextRequest) {
 
   // Définition des zones d'accès
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].some(r => pathname.startsWith(r));
-  const isProtectedRoute = ['/dashboard', '/settings', '/messages', '/library', '/profile/me'].some(r => pathname.startsWith(r));
+  const isProtectedRoute = ['/dashboard', '/settings', '/messages', '/library', '/profile/me', '/notifications'].some(r => pathname.startsWith(r));
   const isArtistRoute = ['/submit', '/dashboard/creations', '/dashboard/ai-studio', '/dashboard/stats', '/dashboard/world-building'].some(r => pathname.startsWith(r));
   const isAdminRoute = pathname.startsWith('/admin') || (pathname === '/dashboard' && role === 'admin');
 
@@ -27,6 +26,7 @@ export function middleware(request: NextRequest) {
   // 2. Redirection pour les utilisateurs non connectés accédant aux zones protégées
   if ((isProtectedRoute || isArtistRoute) && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
+    // On garde l'URL d'origine pour rediriger après connexion
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
