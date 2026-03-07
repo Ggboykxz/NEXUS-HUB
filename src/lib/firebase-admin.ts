@@ -1,55 +1,52 @@
 import * as admin from 'firebase-admin';
 
-let app: admin.app.App;
+/**
+ * Fournit l'accès aux services Firebase Admin avec initialisation paresseuse.
+ * Doit être appelé uniquement dans du code exécuté côté serveur (Route Handlers, Server Actions).
+ */
+export function getAdminServices() {
+  // Vérifie si une application est déjà initialisée pour éviter les erreurs de doublons
+  if (!admin.apps.length) {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-// On récupère les variables d'environnement pour le SDK Admin
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-if (!admin.apps.length) {
-  if (!projectId || !clientEmail || !privateKey) {
-    console.warn(
-      'Firebase Admin credentials are not fully set. Server-side features like session cookies or direct Firestore access may fail.'
-    );
-    // On ne crash pas l'app ici pour permettre au client de fonctionner, mais on prévient
-  } else {
     try {
-      app = admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`,
-      });
+      if (projectId && clientEmail && privateKey) {
+        // Configuration manuelle via variables d'environnement (Développement / Production externe)
+        admin.initializeApp({
+          credential: admin.credential.cert({
+            projectId,
+            clientEmail,
+            privateKey,
+          }),
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`,
+        });
+      } else {
+        // Tentative d'initialisation via Identifiants Par Défaut (Application Default Credentials)
+        // Idéal pour Firebase App Hosting, Cloud Run ou Cloud Functions.
+        admin.initializeApp({
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        });
+      }
     } catch (error: any) {
-      console.error('Firebase Admin initialization error:', error.message);
+      console.error('Firebase Admin initialization error:', error);
+      throw new Error('Le SDK Admin Firebase n\'a pas pu être initialisé. Vérifiez vos variables d\'environnement ou les permissions du compte de service.');
     }
   }
-} else {
-  app = admin.apps[0]!;
-}
 
-/**
- * Fournit l'accès aux services Firebase Admin.
- * Doit être appelé dans des Server Components, Server Actions ou API Routes uniquement.
- */
-function getAdminServices() {
-  // @ts-ignore - app est initialisé si les variables sont présentes
-  if (!admin.apps.length && !app) {
-    throw new Error('Firebase Admin SDK has not been initialized. Check your environment variables.');
-  }
-  
+  // Utilise l'application par défaut
+  const app = admin.app();
+
   return {
-    adminDb: admin.firestore(),
-    adminAuth: admin.auth(),
-    adminStorage: admin.storage(),
-    adminApp: app!,
+    adminDb: admin.firestore(app),
+    adminAuth: admin.auth(app),
+    adminStorage: admin.storage(app),
+    adminApp: app,
   };
 }
 
-export { getAdminServices };
-export const adminDb = admin.apps.length ? admin.firestore() : null as any;
-export const adminAuth = admin.apps.length ? admin.auth() : null as any;
-export const adminStorage = admin.apps.length ? admin.storage() : null as any;
+// Variables pour compatibilité descendante (peuvent être null au chargement du module)
+export const adminDb = typeof window === 'undefined' ? admin.firestore : null as any;
+export const adminAuth = typeof window === 'undefined' ? admin.auth : null as any;
+export const adminStorage = typeof window === 'undefined' ? admin.storage : null as any;
