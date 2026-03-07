@@ -12,15 +12,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Sparkles, 
   Award, 
   Eye, 
   EyeOff, 
-  ArrowRight, 
   Loader2, 
   Brush, 
   BookOpen, 
-  Crown
+  Crown,
+  ChevronRight,
+  ArrowLeft
 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/checkbox-ui-fix';
@@ -29,214 +29,194 @@ import { auth, db } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   updateProfile, 
-  User,
-  getIdToken
+  User
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { setRoleCookie } from '@/lib/actions/auth-actions';
 
-const formSchema = z.object({
+const step1Schema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
   email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
+  slug: z.string().min(3, { message: "Le @slug doit faire 3 caractères min." }).regex(/^[a-z0-9-]+$/, { message: "Lettres minuscules, chiffres et tirets uniquement." }),
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
-  accountType: z.enum(["reader", "premium_reader", "artist_draft", "artist_pro"]),
   acceptTerms: z.boolean().refine(val => val === true, {
-    message: "L'acceptation des conditions est obligatoire.",
+    message: "L'acceptation est obligatoire.",
   }),
 });
 
-function SignupForm() {
+export function SignupForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [particles, setParticles] = useState<{id: number, top: string, left: string, dur: string, del: string, tx: string, ty: string}[]>([]);
+  const [selectedRole, setSelectedRole] = useState<'reader' | 'artist_draft' | 'translator'>('reader');
 
-  useEffect(() => {
-    const newParticles = [...Array(15)].map((_, i) => ({
-      id: i, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
-      dur: `${5 + Math.random() * 5}s`, del: `${Math.random() * 5}s`,
-      tx: `${Math.random() * 100 - 50}px`, ty: `${Math.random() * -200}px`
-    }));
-    setParticles(newParticles);
-  }, []);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: "", email: "", password: "", accountType: "reader", acceptTerms: false },
+  const form = useForm<z.infer<typeof step1Schema>>({
+    resolver: zodResolver(step1Schema),
+    defaultValues: { name: "", email: "", slug: "", password: "", acceptTerms: false },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleNextStep = async () => {
+    const isValid = await form.trigger();
+    if (isValid) setStep(2);
+  };
+
+  const roles = [
+    { id: 'reader', label: 'Lecteur', icon: BookOpen, color: 'text-stone-400', bonus: '50 🪙' },
+    { id: 'artist_draft', label: 'Artiste', icon: Brush, color: 'text-orange-500', bonus: '100 🪙' },
+    { id: 'translator', label: 'Traducteur', icon: Award, color: 'text-emerald-500', bonus: '75 🪙' },
+  ];
+
+  async function onSubmit(values: z.infer<typeof step1Schema>) {
     setIsLoading(true);
     try {
-      // 1. Création du compte Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Rafraîchissement forcé des droits pour Firestore
-      await getIdToken(user, true);
-      
       const userRef = doc(db, 'users', user.uid);
-      const baseName = values.name || 'Voyageur';
-      const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
       
-      // 3. Création immédiate du profil Firestore avec structure complète
-      await setDoc(userRef, {
+      const profileData = {
         uid: user.uid,
         email: user.email,
         displayName: values.name,
-        slug,
-        role: values.accountType,
-        afriCoins: values.accountType === 'premium_reader' ? 50 : 0,
+        slug: values.slug.toLowerCase(),
+        role: selectedRole,
+        afriCoins: selectedRole === 'artist_draft' ? 100 : (selectedRole === 'translator' ? 75 : 50),
         level: 1,
-        subscribersCount: 0,
-        followedCount: 0,
-        isCertified: values.accountType === 'artist_pro',
-        isBanned: false,
-        isVerified: false,
-        onboardingCompleted: false,
-        bio: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
-        readingStreak: { currentCount: 0, lastReadDate: '', longestStreak: 0 },
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      }, { merge: true });
+        onboardingCompleted: false,
+        isBanned: false,
+        isCertified: false,
+        preferences: { language: 'fr', theme: 'dark' }
+      };
 
-      // Pause pour laisser Firestore se stabiliser
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await setDoc(userRef, profileData, { merge: true });
+      await setRoleCookie(selectedRole);
 
-      // 4. Appel à l'API de session avec un nouveau token frais
-      const freshToken = await getIdToken(user, true);
-      const res = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${freshToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (res.ok) {
-        toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
-        const target = values.accountType.startsWith('artist') ? '/dashboard/creations' : '/';
-        window.location.href = target;
-      } else {
-        let errorMsg = "Échec de création de session";
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          console.error("Session API returned non-JSON error");
-        }
-        throw new Error(errorMsg);
-      }
+      toast({ title: "Bienvenue au Hub !", description: "Votre destinée commence maintenant." });
+      
+      const target = selectedRole === 'artist_draft' ? '/dashboard/creations' : '/';
+      window.location.href = target;
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = error.message || "Une erreur est survenue lors de l'inscription.";
+      let message = "Une erreur est survenue.";
       if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
-      
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }
   }
 
-  const roles = [
-    { id: 'reader', label: 'Lecteur', icon: BookOpen, color: 'text-stone-400' },
-    { id: 'premium_reader', label: 'Premium', icon: Crown, color: 'text-amber-500' },
-    { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, color: 'text-orange-500' },
-    { id: 'artist_pro', label: 'Artiste Pro', icon: Award, color: 'text-emerald-500' },
-  ];
-
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
-      <section className="relative min-h-[30vh] flex flex-col items-center justify-center overflow-hidden px-4 py-12">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.2),transparent_70%)]" />
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {particles.map((p) => (
-              <div key={p.id} className="particle bg-primary/20" style={{ top: p.top, left: p.left, '--dur': p.dur, '--del': p.del, '--tx': p.tx, '--ty': p.ty } as any} />
-            ))}
-          </div>
-        </div>
-        <div className="relative z-10 text-center space-y-4">
-          <Badge variant="outline" className="border-primary/20 text-primary uppercase text-[10px] font-black px-4 py-1">Éclosion Légendaire</Badge>
-          <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter gold-resplendant">Forgez votre Histoire</h1>
-        </div>
-      </section>
-
-      <section className="relative py-12 px-4 md:px-6 bg-stone-950 border-t border-primary/10 flex-1">
-        <div className="max-w-2xl mx-auto">
+      <section className="relative py-12 px-4 md:px-6 flex-1 flex items-center justify-center">
+        <div className="max-w-xl w-full">
           <Card className="border-white/10 bg-stone-900/50 backdrop-blur-2xl shadow-2xl rounded-[2.5rem] overflow-hidden">
             <div className="h-1.5 w-full bg-primary" />
             <CardContent className="p-8 md:p-12">
+              <div className="text-center mb-10">
+                <Badge variant="outline" className="border-primary/20 text-primary uppercase text-[10px] font-black px-4 py-1 mb-4">Étape {step} sur 2</Badge>
+                <h1 className="text-3xl font-display font-black text-white gold-resplendant">
+                  {step === 1 ? "Identité du Voyageur" : "Choisissez votre Destinée"}
+                </h1>
+              </div>
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Pseudo</FormLabel>
-                        <FormControl><Input placeholder="Scribe_du_Kasaï" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Email</FormLabel>
-                        <FormControl><Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
+                  {step === 1 ? (
+                    <div className="space-y-6 animate-in fade-in duration-500">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Nom Public</FormLabel>
+                            <FormControl><Input placeholder="Ex: Scribe du Nil" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="slug" render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">@slug unique</FormLabel>
+                            <FormControl><Input placeholder="scribe-nil" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
 
-                  <FormField control={form.control} name="password" render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Mot de passe</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input type={showPassword ? "text" : "password"} {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white pr-12" />
-                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Email</FormLabel>
+                          <FormControl><Input type="email" placeholder="voyageur@nexus.hub" {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="password" render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Mot de passe</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input type={showPassword ? "text" : "password"} {...field} className="bg-white/5 border-white/10 h-12 rounded-xl text-white pr-12" />
+                              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500" onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="acceptTerms" render={({ field }) => (
+                        <FormItem className="flex items-start space-x-3 space-y-0 p-4 rounded-2xl bg-white/5 border border-white/5">
+                          <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                          <FormLabel className="text-[10px] text-stone-400 font-light italic">J'accepte de respecter la bienveillance du Hub.</FormLabel>
+                        </FormItem>
+                      )} />
+
+                      <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer">
+                        Suivant <ChevronRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                      <div className="grid grid-cols-1 gap-4">
+                        {roles.map((r) => (
+                          <button 
+                            key={r.id} 
+                            type="button" 
+                            onClick={() => setSelectedRole(r.id as any)} 
+                            className={cn(
+                              "flex items-center p-6 rounded-[2rem] border-2 transition-all gap-6 text-left", 
+                              selectedRole === r.id ? "bg-primary/10 border-primary shadow-2xl" : "bg-white/5 border-white/5 opacity-60 hover:opacity-100"
+                            )}
+                          >
+                            <div className={cn("p-4 rounded-2xl bg-white/5", selectedRole === r.id && r.color)}>
+                              <r.icon className="h-8 w-8" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-display font-black text-xl text-white">{r.label}</h3>
+                              <p className="text-[10px] uppercase font-bold text-stone-500">Bonus initial : {r.bonus}</p>
+                            </div>
+                            {selectedRole === r.id && <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-black font-black">✓</div>}
                           </button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                        ))}
+                      </div>
 
-                  <FormField control={form.control} name="accountType" render={({ field }) => (
-                    <FormItem className="space-y-4">
-                      <FormLabel className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Votre destinée</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-2 gap-3">
-                          {roles.map((r) => (
-                            <button key={r.id} type="button" onClick={() => field.onChange(r.id)} className={cn("flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all text-center gap-2", field.value === r.id ? "bg-primary/10 border-primary" : "bg-white/5 border-white/5 text-stone-500")}>
-                              <r.icon className={cn("h-5 w-5", field.value === r.id ? r.color : "text-stone-600")} />
-                              <span className="text-[9px] font-black uppercase">{r.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-
-                  <FormField control={form.control} name="acceptTerms" render={({ field }) => (
-                    <FormItem className="flex items-start space-x-3 space-y-0 p-4 rounded-2xl bg-white/5 border border-white/5">
-                      <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      <FormLabel className="text-[10px] text-stone-400 font-light italic">J'accepte les conditions et je jure de respecter la bienveillance du Hub.</FormLabel>
-                    </FormItem>
-                  )} />
-
-                  <Button type="submit" disabled={isLoading} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer">
-                    {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "S'inscrire au Hub"}
-                  </Button>
+                      <div className="flex gap-4">
+                        <Button type="button" variant="ghost" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl font-bold text-stone-500">
+                          <ArrowLeft className="mr-2 h-5 w-5" /> Retour
+                        </Button>
+                        <Button type="submit" disabled={isLoading} className="flex-[2] h-16 rounded-2xl font-black text-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-500/20">
+                          {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Invoquer mon Profil"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="border-t border-white/5 py-6 bg-white/5">
-              <div className="text-center w-full text-xs text-stone-500">Déjà un compte ? <Link href="/login" className="font-black text-primary hover:underline uppercase ml-2">Connexion</Link></div>
-            </CardFooter>
           </Card>
         </div>
       </section>

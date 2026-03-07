@@ -9,6 +9,7 @@ import { setRoleCookie } from '@/lib/actions/auth-actions';
 
 /**
  * Hook d'authentification centralisé utilisant exclusivement le SDK Client.
+ * Synchronise le cookie de rôle pour le middleware.
  */
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -27,13 +28,14 @@ export function useAuth() {
             const profileData = snapshot.data() as UserProfile;
             setProfile(profileData);
             
-            // Synchronisation du cookie de rôle pour le middleware Next.js
-            setRoleCookie(profileData.role).catch(console.error);
+            // Synchronisation du cookie de rôle en tâche de fond
+            setRoleCookie(profileData.role).catch(() => {});
             
             setLoading(false);
           } else {
+            // Le profil n'existe pas encore ou est en cours de création
             setProfile(null);
-            // On laisse loading=true si le doc n'existe pas encore (en cours de création)
+            // On ne stoppe pas le loading ici pour laisser le temps au signup de finir
           }
         }, (error) => {
           console.warn("Firestore profile sync error:", error.code);

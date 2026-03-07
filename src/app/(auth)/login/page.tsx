@@ -10,11 +10,10 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowRight, Loader2, BookOpen, Brush, Crown, Award } from "lucide-react";
-import { cn } from '@/lib/utils';
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { setRoleCookie } from '@/lib/actions/auth-actions';
 
 const formSchema = z.object({
@@ -28,35 +27,26 @@ function LoginForm() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
-  const [pendingUser, setPendingUser] = useState<User | null>(null);
 
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
-  const redirectByRole = (role: string) => {
-    if (role === 'admin') return router.push('/admin');
-    if (role.startsWith('artist')) return router.push('/dashboard/creations');
-    if (role === 'translator') return router.push('/dashboard/translations');
-    return router.push(callbackUrl);
-  };
-
-  const checkUserAndRedirect = async (user: User) => {
+  const performRedirect = async (user: User) => {
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
-      if (!userDoc.exists() || !userDoc.data()?.role) {
-        setPendingUser(user);
-        setShowRoleSelection(true);
-        setIsLoading(false);
-      } else {
-        const role = userDoc.data()?.role;
-        await setRoleCookie(role); // Informe le middleware
+      if (userDoc.exists()) {
+        const role = userDoc.data()?.role || 'reader';
+        await setRoleCookie(role);
+        
         toast({ title: "Bon retour au Hub !" });
-        redirectByRole(role);
+        
+        // Redirection immédiate
+        const target = role === 'admin' ? '/admin' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
+        window.location.href = target; // Utilisation de window.location pour forcer le refresh du middleware avec le nouveau cookie
+      } else {
+        router.push('/signup');
       }
     } catch (error) {
       console.error(error);
-      toast({ title: "Erreur d'accès", variant: "destructive" });
       setIsLoading(false);
     }
   };
@@ -70,7 +60,7 @@ function LoginForm() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await checkUserAndRedirect(userCredential.user);
+      await performRedirect(userCredential.user);
     } catch (error: any) {
       toast({ title: "Erreur", description: "Email ou mot de passe incorrect.", variant: "destructive" });
       setIsLoading(false);
@@ -82,64 +72,12 @@ function LoginForm() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      if (result.user) await checkUserAndRedirect(result.user);
+      if (result.user) await performRedirect(result.user);
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') toast({ title: "Échec de connexion", variant: "destructive" });
       setIsLoading(false);
     }
   };
-
-  const handleRoleChoice = async (role: string) => {
-    if (!pendingUser) return;
-    setIsLoading(true);
-    try {
-      const userRef = doc(db, 'users', pendingUser.uid);
-      const baseName = pendingUser.displayName || pendingUser.email?.split('@')[0] || 'voyageur';
-      const slug = baseName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
-      
-      await setDoc(userRef, {
-        uid: pendingUser.uid,
-        email: pendingUser.email,
-        displayName: pendingUser.displayName || 'Nouveau Voyageur',
-        slug,
-        role,
-        afriCoins: role === 'premium_reader' ? 50 : 0,
-        level: 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        preferences: { language: 'fr', theme: 'dark', privacy: { showCurrentReading: true, showHistory: true } }
-      }, { merge: true });
-
-      await setRoleCookie(role);
-      redirectByRole(role);
-    } catch (e) {
-      toast({ title: "Erreur", variant: "destructive" });
-      setIsLoading(false);
-    }
-  };
-
-  if (showRoleSelection) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950 p-6">
-        <div className="max-w-4xl w-full text-center space-y-12">
-          <h2 className="text-4xl md:text-6xl font-display font-black text-white gold-resplendant">Quelle est votre destinée ?</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { id: 'reader', label: 'Lecteur', icon: BookOpen, color: 'text-stone-400' },
-              { id: 'premium_reader', label: 'Premium', icon: Crown, color: 'text-amber-500' },
-              { id: 'artist_draft', label: 'Artiste Draft', icon: Brush, color: 'text-orange-500' },
-              { id: 'artist_pro', label: 'Artiste Pro', icon: Award, color: 'text-emerald-500' },
-            ].map((r) => (
-              <button key={r.id} disabled={isLoading} onClick={() => handleRoleChoice(r.id)} className="p-8 rounded-[2rem] bg-stone-900 border-2 border-white/5 hover:border-primary transition-all group space-y-4">
-                <r.icon className={cn("h-10 w-10 mx-auto group-hover:scale-110 transition-transform", r.color)} />
-                <h3 className="text-xs font-black text-white uppercase">{r.label}</h3>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen bg-stone-950 w-full justify-center items-center p-6">
