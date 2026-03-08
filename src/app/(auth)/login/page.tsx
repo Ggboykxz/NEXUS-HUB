@@ -13,8 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { setRoleCookie } from '@/lib/actions/auth-actions';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Email invalide." }),
@@ -32,28 +31,35 @@ function LoginForm() {
 
   const performRedirect = async (user: User) => {
     try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      let role = 'reader'; // Default role
+
       if (userDoc.exists()) {
-        const role = userDoc.data()?.role || 'reader';
-        
-        // 1. Synchronisation Cookie (Client + Serveur)
-        document.cookie = `nexushub-role=${role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-        await setRoleCookie(role);
-        
-        toast({ title: "Bon retour au Hub !" });
-        
-        // 2. Redirection forcée avec rechargement
-        const target = role === 'admin' ? '/dashboard' : (role.startsWith('artist') ? '/dashboard/creations' : callbackUrl);
-        
-        setTimeout(() => {
-          window.location.replace(target);
-        }, 100);
+        role = userDoc.data()?.role || 'reader';
       } else {
-        // Rediriger vers l'inscription si le doc n'existe pas dans 'users'
-        window.location.replace('/signup');
+        // If the user document doesn't exist, create it (for social logins)
+        await setDoc(userDocRef, { 
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || user.email?.split('@')[0],
+            role: 'reader', 
+            createdAt: serverTimestamp(),
+        });
       }
+
+      toast({ title: "Bon retour au Hub !" });
+      
+      // Redirect based on role, prioritizing callbackUrl
+      const target = callbackUrl && callbackUrl !== '/' 
+        ? callbackUrl 
+        : (role.startsWith('artist') ? '/dashboard/creations' : '/');
+      
+      window.location.replace(target);
+
     } catch (error) {
-      console.error(error);
+      console.error("Login redirect error:", error);
+      toast({ title: "Erreur de redirection", description: "Impossible de finaliser la connexion.", variant: "destructive" });
       setIsLoading(false);
     }
   };

@@ -28,7 +28,6 @@ import {
   updateProfile, 
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { setRoleCookie } from '@/lib/actions/auth-actions';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -75,14 +74,14 @@ export function SignupForm() {
   async function onSubmit(values: SignupValues) {
     setIsLoading(true);
     try {
-      // 1. Création Auth
+      // 1. Création de l'utilisateur dans Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction du profil Firestore (Sanitisation stricte pour éviter les 'undefined')
-      const commonData = {
+      // 2. Construction de l'objet profil pour Firestore
+      const finalProfile = {
         uid: user.uid,
         email: user.email || "",
         displayName: values.name,
@@ -100,55 +99,29 @@ export function SignupForm() {
           language: 'fr', 
           theme: 'dark',
           privacy: { showCurrentReading: true, showHistory: true }
-        }
+        },
+        ...(selectedRole === 'reader' && { afriCoins: 50, readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] }, readingStreak: { currentCount: 0, lastReadDate: "", longestStreak: 0 } }),
+        ...(selectedRole === 'artist_draft' && { afriCoins: 100, subscribersCount: 0, followedCount: 0, portfolioUrl: "" }),
+        ...(selectedRole === 'translator' && { afriCoins: 75, translatorLanguages: ['fr'], translationsCount: 0 }),
       };
 
-      let roleSpecificData: any = {};
-
-      if (selectedRole === 'reader') {
-        roleSpecificData = {
-          afriCoins: 50,
-          readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] },
-          readingStreak: { currentCount: 0, lastReadDate: "", longestStreak: 0 }
-        };
-      } else if (selectedRole === 'artist_draft') {
-        roleSpecificData = {
-          afriCoins: 100,
-          subscribersCount: 0,
-          followedCount: 0,
-          portfolioUrl: ""
-        };
-      } else if (selectedRole === 'translator') {
-        roleSpecificData = {
-          afriCoins: 75,
-          translatorLanguages: ['fr'],
-          translationsCount: 0,
-        };
-      }
-
-      const finalProfile = { ...commonData, ...roleSpecificData };
-
-      // 3. Sauvegarde dans la collection 'users'
+      // 3. Sauvegarde du profil complet dans la base de données Firestore
       await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
       
-      // 4. Synchronisation Cookies (Client + Serveur)
-      document.cookie = `nexushub-role=${selectedRole}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-      await setRoleCookie(selectedRole);
-
-      toast({ title: "Bienvenue au Hub !", description: "Votre profil a été initialisé." });
+      toast({ title: "Bienvenue au Hub !", description: "Votre profil a été initialisé. Redirection en cours..." });
       
-      // 5. Redirection immédiate
-      const target = selectedRole.startsWith('artist') ? '/dashboard/creations' : (selectedRole === 'translator' ? '/dashboard/translations' : '/');
-      
-      // Petit délai pour laisser les cookies se propager
-      setTimeout(() => {
-        window.location.replace(target);
-      }, 100);
+      // 4. Redirection vers la salle d'attente /profile/me qui gèrera la redirection finale
+      // C'est le fix définitif qui résout la race condition.
+      window.location.replace('/profile/me');
 
     } catch (error: any) {
       console.error("Signup error:", error);
-      let message = "Une erreur est survenue.";
-      if (error.code === 'auth/email-already-in-use') message = "Cet email est déjà utilisé.";
+      let message = "Une erreur est survenue lors de l'inscription.";
+      if (error.code === 'auth/email-already-in-use') {
+        message = "Cette adresse email est déjà utilisée par un autre compte.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "L'adresse email n'est pas valide.";
+      }
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
     }

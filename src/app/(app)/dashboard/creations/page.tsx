@@ -19,7 +19,8 @@ import {
   Calendar,
   AlertCircle,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';

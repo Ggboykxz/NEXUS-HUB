@@ -1,89 +1,72 @@
-'use client';
-
-import { use, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from 'firebase/firestore';
-import type { Story, UserProfile, Chapter } from '@/lib/types';
+import { collection, query, where, getDocs, limit, Timestamp } from 'firebase/firestore';
+import type { Story, UserProfile } from '@/lib/types';
 import ArtistDetailClient from './artist-detail-client';
-import { Loader2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
 /**
- * Page de détails des artistes utilisant le SDK Client pour éviter la complexité Admin.
+ * Récupère les données de l'artiste côté serveur, avec tri côté serveur pour éviter les erreurs d'index.
  */
-export default function ArtistProfilePage(props: PageProps) {
-  const { slug } = use(props.params);
-  const [data, setData] = useState<{ artist: UserProfile; artistStories: Story[] } | null>(null);
-  const [loading, setLoading] = useState(true);
+async function getArtistData(slug: string): Promise<{ artist: UserProfile; artistStories: Story[] } | null> {
+  try {
+    const usersRef = collection(db, 'users');
+    const userQuery = query(usersRef, where('slug', '==', slug), limit(1));
+    const userSnap = await getDocs(userQuery);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // 1. Trouver l'artiste par son slug
-        const usersRef = collection(db, 'users');
-        const q = query(
-          usersRef, 
-          where('slug', '==', slug), 
-          where('isBanned', '==', false),
-          limit(1)
-        );
-        
-        const snap = await getDocs(q);
-        
-        if (snap.empty) {
-          // Fallback par UID si le slug n'est pas trouvé
-          const directDoc = await getDoc(doc(db, 'users', slug));
-          if (directDoc.exists() && !directDoc.data().isBanned) {
-            const artist = { uid: directDoc.id, ...directDoc.data() } as UserProfile;
-            await loadStories(artist);
-          } else {
-            setLoading(false);
-          }
-          return;
-        }
-
-        const artistDoc = snap.docs[0];
-        const artist = { uid: artistDoc.id, ...artistDoc.data() } as UserProfile;
-        await loadStories(artist);
-      } catch (e) {
-        console.error("Error fetching artist:", e);
-        setLoading(false);
-      }
+    if (userSnap.empty) {
+      return null;
     }
 
-    async function loadStories(artist: UserProfile) {
-      const storiesRef = collection(db, 'stories');
-      const qStories = query(
-        storiesRef,
-        where('artistId', '==', artist.uid),
-        where('isPublished', '==', true),
-        orderBy('updatedAt', 'desc')
-      );
-      
-      const storiesSnap = await getDocs(qStories);
-      const stories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-      
-      setData({ artist, artistStories: stories });
-      setLoading(false);
+    const userDoc = userSnap.docs[0];
+    const userData = userDoc.data();
+
+    const isArtist = userData.role?.startsWith('artist');
+    if (!isArtist || userData.isBanned) {
+      return null;
     }
 
-    fetchData();
-  }, [slug]);
+    const artist = { uid: userDoc.id, ...userData } as UserProfile;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Appel du créateur...</p>
-      </div>
+    const storiesRef = collection(db, 'stories');
+    // FIX: Suppression de `orderBy` pour éviter la dépendance à un index composite.
+    const qStories = query(
+      storiesRef,
+      where('artistId', '==', artist.uid),
+      where('isPublished', '==', true)
     );
-  }
+    
+    const storiesSnap = await getDocs(qStories);
+    const stories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
 
-  if (!data) return notFound();
+    // FIX: Tri des œuvres côté serveur (dans le code) après la récupération.
+    stories.sort((a, b) => {
+        const timeA = a.updatedAt instanceof Timestamp ? a.updatedAt.toMillis() : 0;
+        const timeB = b.updatedAt instanceof Timestamp ? b.updatedAt.toMillis() : 0;
+        return timeB - timeA; // Tri décroissant
+    });
+
+    return { artist, artistStories: stories };
+  } catch (error) {
+    console.error(`[Server Fetch] Erreur critique lors de la récupération pour ${slug}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Page Artiste côté Serveur, maintenant entièrement résiliente aux erreurs d'index.
+ */
+export default async function ArtistProfilePage({ params }: PageProps) {
+  const data = await getArtistData(params.slug);
+
+  if (!data) {
+    notFound();
+  }
 
   return <ArtistDetailClient artist={data.artist} artistStories={data.artistStories} />;
 }
