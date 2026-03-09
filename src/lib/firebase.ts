@@ -24,20 +24,17 @@ let app: FirebaseApp;
 if (getApps().length > 0) {
   app = getApp();
 } else {
-  // On n'initialise QUE si la config est valide. 
-  // Sinon on crée une application "fantôme" pour éviter les erreurs d'importation,
-  // mais les services ne seront pas fonctionnels.
   if (isConfigValid) {
     app = initializeApp(firebaseConfig);
   } else {
     // Fallback minimal pour éviter le crash au build/import
     // @ts-ignore
     app = { name: '[DEFAULT]', options: {}, automaticDataCollectionEnabled: false };
-    console.warn("⚠️ Firebase: Configuration manquante (apiKey ou projectId). Vérifiez votre fichier .env");
+    console.warn("⚠️ Firebase: Configuration manquante. Vérifiez votre fichier .env");
   }
 }
 
-// Initialisation des services avec protection contre l'absence d'initialisation réelle
+// Initialisation des services
 const auth: Auth = isConfigValid ? getAuth(app) : ({} as Auth);
 const db: Firestore = isConfigValid ? getFirestore(app) : ({} as Firestore);
 const storage: FirebaseStorage = isConfigValid ? getStorage(app) : ({} as FirebaseStorage);
