@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, Suspense, useEffect } from 'react';
@@ -105,7 +106,7 @@ function StoriesContent() {
               <p className="text-amber-500/70">L'affichage fonctionne sans tri pour cette combinaison de filtres.</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="h-8 text-[9px] uppercase font-black border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-black" asChild>
+          <Button variant="outline" size="sm" className="h-8 text-[9px] font-black uppercase border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-black" asChild>
             <a href="https://console.firebase.google.com/v1/r/project/studio-7543974359-3b6f7/firestore/indexes" target="_blank" rel="noopener noreferrer">Gérer les Index</a>
           </Button>
         </div>
@@ -115,7 +116,7 @@ function StoriesContent() {
         <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
         <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row items-center gap-6">
-                <div className="flex items-center gap-3 font-bold text-lg flex-shrink-0 min-w-[120px]">
+                <div className="flex items-center gap-3 font-bold text-lg flex-shrink-0 min-w-[120px] text-white">
                     <SlidersHorizontal className="w-5 h-5 text-primary" />
                     <span>Filtres</span>
                     {activeFiltersCount > 0 && (
@@ -129,19 +130,19 @@ function StoriesContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Recherche</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Recherche</label>
                         <div className="relative">
-                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-600" />
                             <Input 
                                 placeholder="Titre, résumé..." 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all"
+                                className="pl-9 h-11 bg-stone-900/50 rounded-xl border-white/5 focus:border-primary/50 text-white transition-all text-xs"
                             />
                             {searchQuery && (
                                 <button 
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 hover:text-white"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -150,9 +151,9 @@ function StoriesContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Catégorie</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Catégorie</label>
                         <Select value={typeFilter} onValueChange={setTypeFilter}>
-                            <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
+                            <SelectTrigger className="w-full h-11 bg-stone-900/50 rounded-xl border-white/5 text-white text-xs font-bold">
                                 <SelectValue placeholder="Type d'œuvre" />
                             </SelectTrigger>
                             <SelectContent className="bg-stone-900 border-white/10">
@@ -164,9 +165,9 @@ function StoriesContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Genre</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Genre</label>
                         <Select value={genreFilter} onValueChange={setGenreFilter}>
-                            <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
+                            <SelectTrigger className="w-full h-11 bg-stone-900/50 rounded-xl border-white/5 text-white text-xs font-bold">
                                 <SelectValue placeholder="Genre" />
                             </SelectTrigger>
                             <SelectContent className="bg-stone-900 border-white/10">
@@ -179,9 +180,9 @@ function StoriesContent() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Trier par</label>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Trier par</label>
                         <Select value={sortFilter} onValueChange={setSortFilter}>
-                            <SelectTrigger className="w-full h-11 bg-background/50 rounded-xl border-border/50 focus:ring-primary/20 transition-all">
+                            <SelectTrigger className="w-full h-11 bg-stone-900/50 rounded-xl border-white/5 text-white text-xs font-bold">
                                 <SelectValue placeholder="Tri" />
                             </SelectTrigger>
                             <SelectContent className="bg-stone-900 border-white/10">
@@ -196,10 +197,10 @@ function StoriesContent() {
         </CardContent>
        </Card>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-3">
-            <LayoutGrid className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-display font-bold">
+            <div className="p-2 rounded-xl bg-primary/10"><LayoutGrid className="h-5 w-5 text-primary" /></div>
+            <h2 className="text-xl font-display font-black text-white uppercase tracking-tighter">
                 {displayedStories.length} résultats chargés
             </h2>
         </div>
@@ -212,17 +213,17 @@ function StoriesContent() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-32 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/10 space-y-6">
-          <div className="mx-auto w-20 h-20 bg-white/5 rounded-full flex items-center justify-center opacity-20">
+        <div className="text-center py-32 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-6">
+          <div className="mx-auto w-24 h-24 bg-white/5 rounded-full flex items-center justify-center opacity-20">
             <BookOpen className="h-10 w-10 text-stone-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-bold mb-2">Aucune œuvre trouvée</h3>
-            <p className="text-muted-foreground max-w-xs mx-auto italic font-light">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Réessayez avec d'autres filtres.</p>
+            <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Aucune œuvre trouvée</h3>
+            <p className="text-stone-500 max-w-xs mx-auto italic font-light leading-relaxed">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Réessayez avec d'autres filtres.</p>
           </div>
           <Button 
             variant="outline" 
-            className="rounded-full border-primary text-primary"
+            className="rounded-full px-10 h-12 border-primary text-primary font-black uppercase text-xs tracking-widest"
             onClick={() => {setGenreFilter('all'); setTypeFilter('all'); setSortFilter('popular'); setSearchQuery('');}}
           >
             Réinitialiser tout
@@ -242,8 +243,8 @@ export default function StoriesPage() {
                 <BookOpen className="w-10 h-10 text-primary" />
             </div>
             <div>
-                <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight text-white">Toutes les œuvres</h1>
-                <p className="text-lg text-muted-foreground font-light mt-1 max-w-2xl italic">
+                <h1 className="text-4xl md:text-5xl font-black font-display tracking-tighter text-white">Toutes les œuvres</h1>
+                <p className="text-lg text-stone-400 font-light mt-1 max-w-2xl italic">
                   Explorez notre collection complète de récits épiques et de mondes imaginaires panafricains.
                 </p>
             </div>

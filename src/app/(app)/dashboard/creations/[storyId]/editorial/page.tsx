@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, use } from 'react';
@@ -15,6 +16,10 @@ import { useToast } from '@/hooks/use-toast';
 import { editorialAction } from '@/ai/flows/editorial-ai-flow';
 import { cn } from '@/lib/utils';
 
+/**
+ * Assistant Éditorial IA pour les auteurs.
+ * Analyse les scripts pour optimiser la narration visuelle.
+ */
 export default function EditorialStudioPage(props: { params: Promise<{ storyId: string }> }) {
   const { storyId } = use(props.params);
   const { toast } = useToast();
@@ -36,14 +41,14 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
     try {
       const output = await editorialAction({
         type: activeTool,
-        genre: 'Mythologie', // Simulation - À récupérer depuis la story
+        genre: 'Mythologie', 
         content: content,
-        context: "Une série épique se déroulant dans le futur du Gabon."
+        context: "Une série épique en cours de développement dans l'Atelier Nexus."
       });
       setResult(output);
       toast({ title: "Analyse terminée", description: "L'IA a généré ses recommandations." });
     } catch (e) {
-      toast({ title: "Erreur IA", variant: "destructive" });
+      toast({ title: "Erreur IA", description: "Impossible de contacter l'Éditeur Central.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -60,9 +65,9 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
             <div className="bg-primary/10 p-2.5 rounded-2xl">
               <BrainCircuit className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold font-display tracking-tight">Atelier Éditorial AI</h1>
+            <h1 className="text-4xl font-bold font-display tracking-tight text-white">Atelier Éditorial AI</h1>
           </div>
-          <p className="text-muted-foreground text-lg italic font-light">"Affinez votre narration avec l'œil expert de l'IA Nexus."</p>
+          <p className="text-stone-500 text-lg italic font-light">"Affinez votre narration avec l'œil expert de l'IA Nexus."</p>
         </div>
       </div>
 
@@ -80,7 +85,7 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
                   activeTool === tool.id && "bg-white text-black shadow-xl"
                 )}
               >
-                <tool.icon className="h-5 w-5" />
+                <tool.icon className={cn("h-5 w-5", activeTool === tool.id ? "text-stone-900" : "text-primary")} />
                 <div className="text-left hidden sm:block">
                   <p className="text-[10px] font-black uppercase leading-tight">{tool.label}</p>
                   <p className="text-[8px] opacity-60 leading-tight">{tool.desc}</p>
@@ -91,15 +96,15 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
 
           <Card className="bg-card/50 border-border/50 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <CardHeader className="p-8 pb-4">
-              <CardTitle className="text-2xl font-display font-bold">Zone de Rédaction</CardTitle>
-              <CardDescription>Collez votre script ou le texte de votre chapitre ci-dessous.</CardDescription>
+              <CardTitle className="text-2xl font-display font-bold text-white">Zone de Rédaction</CardTitle>
+              <CardDescription className="italic">Collez votre script ou le texte de votre chapitre ci-dessous.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <Textarea 
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Il était une fois dans les sables du temps..."
-                className="min-h-[250px] bg-background/50 border-none rounded-[2rem] p-8 text-lg font-light italic focus-visible:ring-primary"
+                placeholder="Ex: Dans les sables du temps, le guerrier s'avance..."
+                className="min-h-[250px] bg-background/50 border-none rounded-[2rem] p-8 text-lg font-light italic focus-visible:ring-primary text-white"
               />
               <Button 
                 onClick={handleAnalyze}
@@ -113,7 +118,7 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
 
           {result && (
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-              <Card className="bg-stone-900 border-primary/20 rounded-[2.5rem] p-8 text-white">
+              <Card className="bg-stone-900 border-primary/20 rounded-[2.5rem] p-8 text-white shadow-2xl">
                 <h3 className="text-xl font-display font-black text-primary mb-4 flex items-center gap-2">
                   <Wand2 className="h-5 w-5" /> Diagnostic de l'Éditeur
                 </h3>
@@ -121,24 +126,24 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
                   {result.analysis}
                 </p>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <h4 className="text-xs font-black uppercase text-emerald-500 tracking-widest">Suggestions Concrètes</h4>
+                    <h4 className="text-xs font-black uppercase text-emerald-500 tracking-[0.2em]">Suggestions Concrètes</h4>
                     <ul className="space-y-3">
                       {result.suggestions.map((s: string, i: number) => (
-                        <li key={i} className="flex gap-3 text-sm text-stone-400">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> {s}
+                        <li key={i} className="flex gap-3 text-sm text-stone-400 font-light leading-snug">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /> {s}
                         </li>
                       ))}
                     </ul>
                   </div>
                   {result.warnings && result.warnings.length > 0 && (
                     <div className="space-y-4">
-                      <h4 className="text-xs font-black uppercase text-rose-500 tracking-widest">Points de Vigilance</h4>
+                      <h4 className="text-xs font-black uppercase text-rose-500 tracking-[0.2em]">Points de Vigilance</h4>
                       <ul className="space-y-3">
                         {result.warnings.map((w: string, i: number) => (
-                          <li key={i} className="flex gap-3 text-sm text-stone-400">
-                            <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0" /> {w}
+                          <li key={i} className="flex gap-3 text-sm text-stone-400 font-light leading-snug">
+                            <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" /> {w}
                           </li>
                         ))}
                       </ul>
@@ -151,20 +156,26 @@ export default function EditorialStudioPage(props: { params: Promise<{ storyId: 
         </div>
 
         <aside className="space-y-8">
-          <Card className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8">
-            <h4 className="font-bold text-primary mb-4">Le Saviez-vous ?</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed italic">
+          <Card className="bg-stone-950 border-none rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl">
+            <div className="absolute top-0 right-0 p-6 opacity-5"><Zap className="h-32 w-32" /></div>
+            <h4 className="text-sm font-black uppercase text-primary mb-6 tracking-widest">Le Saviez-vous ?</h4>
+            <p className="text-stone-400 text-xs leading-relaxed italic font-light mb-8">
               "L'IA de NexusHub ne remplace pas votre voix unique. Elle agit comme un miroir pour vous aider à voir ce que vos yeux, fatigués par la création, pourraient manquer."
             </p>
+            <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+              <Languages className="h-5 w-5 text-emerald-500" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase text-white truncate">Prêt pour l'export ?</p>
+                <p className="text-[8px] text-stone-500 italic">Traduisez en 5+ langues.</p>
+              </div>
+            </div>
           </Card>
 
-          <Card className="bg-stone-950 border-white/5 rounded-[2.5rem] p-8 text-center space-y-4">
-            <div className="bg-emerald-500/10 p-3 rounded-full w-fit mx-auto">
-              <Languages className="h-6 w-6 text-emerald-500" />
-            </div>
-            <h4 className="text-sm font-bold text-white">Prêt pour l'export ?</h4>
-            <p className="text-[10px] text-stone-500">Une fois votre texte affiné, passez au Studio de Traduction pour toucher une audience mondiale.</p>
-            <Button variant="outline" className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest border-white/10 text-white">Ouvrir Traduction</Button>
+          <Card className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8">
+            <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest">Guide Qualité Pro</h4>
+            <p className="text-[10px] text-stone-400 leading-relaxed italic font-light">
+              "Les séries 'Originals' utilisent cet outil à chaque étape du script pour garantir une cohérence maximale et un engagement lecteur optimal."
+            </p>
           </Card>
         </aside>
       </div>

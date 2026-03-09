@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useState, useEffect } from 'react';
@@ -21,6 +22,10 @@ import type { Story, Chapter } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 
+/**
+ * L'Atelier : Le centre de commande d'une série.
+ * Interface professionnelle et interactive pour les créateurs.
+ */
 export default function StoryDashboardPage(props: { params: Promise<{ storyId: string }> }) {
   const { storyId } = use(props.params);
   const router = useRouter();
@@ -109,7 +114,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <Badge className="bg-primary text-black font-black text-[8px] uppercase tracking-widest px-3">ATELIER PRO</Badge>
-              <Badge variant={story.isPublished ? "default" : "secondary"} className={cn("text-[8px] uppercase px-3", story.isPublished ? "bg-emerald-500" : "bg-amber-500 text-black")}>
+              <Badge variant={story.isPublished ? "default" : "secondary"} className={cn("text-[8px] uppercase px-3", story.isPublished ? "bg-emerald-500 text-white" : "bg-amber-500 text-black")}>
                 {story.isPublished ? 'En Ligne' : 'Brouillon'}
               </Badge>
             </div>
@@ -125,7 +130,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
             <Link href={`/dashboard/creations/${storyId}/edit`}><PenSquare className="h-5 w-5" /> Éditer</Link>
           </Button>
           <Button asChild className="flex-1 md:flex-none rounded-2xl h-14 bg-white text-black font-black px-10 shadow-xl hover:bg-stone-200">
-            <Link href={`/read/${storyId}`}><Eye className="mr-2 h-5 w-5" /> Aperçu Public</Link>
+            <Link href={`/read/${story.id}`}><Eye className="mr-2 h-5 w-5" /> Aperçu Public</Link>
           </Button>
         </div>
       </div>
@@ -169,7 +174,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
             
             <div className="space-y-4">
               {chapters.map((chap) => (
-                <div key={chap.id} className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-[2rem] bg-stone-900/30 border border-white/5 hover:border-primary/20 transition-all group">
+                <div key={chap.id} className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-[2rem] bg-stone-900/30 border border-white/5 hover:border-primary/20 transition-all group shadow-sm">
                   <div className="h-14 w-14 rounded-2xl bg-black flex items-center justify-center font-display font-black text-xl text-stone-600 group-hover:text-primary transition-colors border border-white/5">
                     {chap.chapterNumber}
                   </div>
@@ -177,7 +182,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
                     <p className="font-bold text-lg text-white truncate">{chap.title}</p>
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-4 mt-1">
                       <p className="text-[10px] text-stone-500 font-bold uppercase flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3" /> {chap.publishedAt ? new Date(chap.publishedAt as any).toLocaleDateString() : 'Brouillon'}
+                        <Calendar className="h-3 w-3" /> {chap.publishedAt ? new Date((chap.publishedAt as any).seconds * 1000).toLocaleDateString() : 'Brouillon'}
                       </p>
                       <Badge className={cn("text-[8px] font-black uppercase px-2 h-4", chap.isPremium ? "bg-primary/10 text-primary border-primary/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20")}>
                         {chap.isPremium ? 'Premium' : 'Gratuit'}
@@ -189,14 +194,14 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
                       {downloadingId === chap.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-4 w-4 text-primary" />} Archivage
                     </Button>
                     <Button asChild variant="ghost" size="icon" className="h-11 w-11 rounded-xl text-stone-500 hover:text-white hover:bg-white/5">
-                      <Link href={`/read/${storyId}?chapter=${chap.id}`}><Eye className="h-5 w-5" /></Link>
+                      <Link href={`/read/${story.id}?chapter=${chap.id}`}><Eye className="h-5 w-5" /></Link>
                     </Button>
                   </div>
                 </div>
               ))}
               
               <Button asChild className="w-full h-20 rounded-[2rem] bg-stone-900 border-2 border-dashed border-white/10 text-stone-500 hover:text-primary hover:border-primary/50 transition-all font-display font-black text-xl gap-4">
-                <Link href={`/dashboard/creations/${storyId}/add-chapter`}>
+                <Link href={`/dashboard/creations/${story.id}/add-chapter`}>
                   <div className="bg-primary/10 p-2 rounded-xl"><Plus className="h-6 w-6 text-primary" /></div>
                   Nouvel Épisode
                 </Link>
