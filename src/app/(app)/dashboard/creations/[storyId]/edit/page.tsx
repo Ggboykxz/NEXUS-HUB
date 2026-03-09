@@ -27,13 +27,14 @@ import {
   BookOpen,
   Zap,
   Globe,
-  AlertCircle
+  AlertCircle,
+  Cloud
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getCloudinarySignature } from '@/lib/actions/cloudinary-actions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,36 +45,6 @@ interface PageProps {
   params: Promise<{ storyId: string }>;
 }
 
-const compressImage = (file: File, maxWidth: number, quality: number): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new (window as any).Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = (maxWidth / width) * height;
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('La conversion de l\'image a échoué.'));
-        }, 'image/jpeg', quality);
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
-};
-
 export default function EditStoryPage(props: PageProps) {
   const { storyId } = use(props.params);
   const router = useRouter();
@@ -81,7 +52,7 @@ export default function EditStoryPage(props: PageProps) {
   
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -153,25 +124,34 @@ export default function EditStoryPage(props: PageProps) {
       let finalCoverUrl = formData.coverUrl;
 
       if (newCoverFile) {
-        setIsCompressing(true);
+        setIsUploading(true);
         try {
-          const compressedBlob = await compressImage(newCoverFile, 1200, 0.85);
-          const storagePath = `stories/${storyId}/cover_${Date.now()}.jpg`;
-          const storageRef = ref(storage, storagePath);
-          const uploadTask = uploadBytesResumable(storageRef, compressedBlob);
-          await uploadTask;
-          finalCoverUrl = await getDownloadURL(uploadTask.snapshot.ref);
-        } catch (storageErr: any) {
-          console.error("Storage upload failed:", storageErr);
-          toast({ 
-            title: "Erreur de stockage", 
-            description: "Impossible d'uploader la nouvelle couverture. Vérifiez la configuration de votre bucket Firebase.",
-            variant: "destructive" 
+          const { timestamp, signature } = await getCloudinarySignature();
+          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+          const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+          const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+          const uploadData = new FormData();
+          uploadData.append('file', newCoverFile);
+          uploadData.append('api_key', apiKey!);
+          uploadData.append('timestamp', timestamp.toString());
+          uploadData.append('signature', signature);
+          uploadData.append('upload_preset', uploadPreset!);
+          uploadData.append('folder', `nexushub/covers/${storyId}`);
+
+          const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: uploadData
           });
-          // On continue quand même si possible ou on stop
-          throw new Error("L'envoi de l'image a échoué. Vérifiez vos permissions Storage.");
+
+          if (!response.ok) throw new Error('Échec Cloudinary');
+          const result = await response.json();
+          finalCoverUrl = result.secure_url;
+        } catch (error) {
+          console.error("Cloudinary error:", error);
+          throw new Error("L'envoi de la couverture a échoué.");
         } finally {
-          setIsCompressing(false);
+          setIsUploading(false);
         }
       }
 
@@ -189,7 +169,7 @@ export default function EditStoryPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Modifications enregistrées" });
+      toast({ title: "Légende mise à jour sur Cloudinary !" });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -206,8 +186,8 @@ export default function EditStoryPage(props: PageProps) {
         <Link href={`/dashboard/creations/${storyId}`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary font-bold text-xs uppercase tracking-widest">
           <ArrowLeft className="h-4 w-4" /> Retour
         </Link>
-        <Button onClick={handleSave} disabled={isSaving || isCompressing} className="rounded-xl h-14 bg-primary text-black font-black px-10 shadow-xl">
-          {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : "Enregistrer"}
+        <Button onClick={handleSave} disabled={isSaving || isUploading} className="rounded-xl h-14 bg-primary text-black font-black px-10 shadow-xl">
+          {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : "Enregistrer les modifications"}
         </Button>
       </div>
 
@@ -227,7 +207,7 @@ export default function EditStoryPage(props: PageProps) {
 
         <aside className="space-y-8">
           <Card className="bg-stone-900 border-white/5 rounded-[2.5rem] p-8 text-center space-y-6">
-            <Label className="text-[10px] uppercase font-black text-stone-500">Couverture</Label>
+            <Label className="text-[10px] uppercase font-black text-stone-500">Couverture via CDN</Label>
             <div className="relative group mx-auto w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10">
               {coverPreview && <Image src={coverPreview} alt="Preview" fill className="object-cover" />}
               <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer">
@@ -236,11 +216,12 @@ export default function EditStoryPage(props: PageProps) {
                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
               </label>
             </div>
+            {isUploading && <p className="text-[10px] font-black text-primary animate-pulse uppercase">Upload Cloudinary...</p>}
           </Card>
           
-          <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] flex gap-3">
-            <AlertCircle className="h-5 w-5 text-primary shrink-0" />
-            <p className="text-[10px] text-stone-400 italic">Si vous voyez une erreur liée à la région des données, assurez-vous d'avoir créé un bucket Cloud Storage dans la console Firebase.</p>
+          <div className="p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] flex gap-3">
+            <Cloud className="h-5 w-5 text-emerald-500 shrink-0" />
+            <p className="text-[10px] text-stone-400 italic">Cloudinary remplace désormais Firebase Storage pour une meilleure gestion des médias.</p>
           </div>
         </aside>
       </div>

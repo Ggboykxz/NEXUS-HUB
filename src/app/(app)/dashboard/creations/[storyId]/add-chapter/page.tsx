@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Plus, 
   UploadCloud, 
@@ -28,23 +27,23 @@ import {
   Clock,
   Calendar,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Cloud
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
   doc, 
   getDoc, 
   collection, 
-  addDoc, 
   serverTimestamp, 
   updateDoc, 
   increment, 
   setDoc, 
   Timestamp 
 } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getCloudinarySignature } from '@/lib/actions/cloudinary-actions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { Story } from '@/lib/types';
@@ -203,39 +202,39 @@ export default function AddChapterPage(props: PageProps) {
       const newChapterDocRef = doc(collection(db, 'stories', storyId, 'chapters'));
       
       const pagesData = [];
-      const totalSize = selectedImages.reduce((acc, img) => acc + img.size, 0);
-      let uploadedSize = 0;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
-        const storagePath = `chapters/${storyId}/${newChapterDocRef.id}/page_${i}.jpg`;
         
-        try {
-          const storageRef = ref(storage, storagePath);
-          const uploadTask = uploadBytesResumable(storageRef, img.file as Blob);
+        // Obtenir la signature du serveur
+        const { timestamp, signature } = await getCloudinarySignature();
 
-          await new Promise<void>((resolve, reject) => {
-            uploadTask.on('state_changed',
-              (snapshot) => {
-                const overallProgress = ((uploadedSize + snapshot.bytesTransferred) / totalSize) * 100;
-                setUploadProgress(overallProgress);
-              },
-              (error) => reject(error),
-              async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                pagesData.push({ imageUrl: downloadURL, width: 0, height: 0 });
-                uploadedSize += img.size;
-                resolve();
-              }
-            );
-          });
-        } catch (storageErr: any) {
-          console.error("Storage Error:", storageErr);
-          if (storageErr.code === 'storage/unauthorized' || storageErr.code === 'storage/unknown') {
-            throw new Error("Configuration de stockage Firebase manquante ou incorrecte. Veuillez contacter l'administrateur.");
-          }
-          throw storageErr;
-        }
+        const formData = new FormData();
+        formData.append('file', img.file);
+        formData.append('api_key', apiKey!);
+        formData.append('timestamp', timestamp.toString());
+        formData.append('signature', signature);
+        formData.append('upload_preset', uploadPreset!);
+        formData.append('folder', `nexushub/chapters/${storyId}`);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Échec de l\'envoi vers Cloudinary');
+
+        const result = await response.json();
+        pagesData.push({ 
+          imageUrl: result.secure_url, 
+          width: result.width, 
+          height: result.height 
+        });
+        
+        setUploadProgress(((i + 1) / selectedImages.length) * 100);
       }
 
       const chapterStatus = pubMode === 'now' ? 'Publié' : 'Programmé';
@@ -264,13 +263,13 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Chapitre publié avec succès !" });
+      toast({ title: "Épisode publié via Cloudinary !" });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
       toast({ 
         title: "Échec de la publication", 
-        description: error.message || "Une erreur est survenue lors de l'envoi des planches.",
+        description: error.message || "Une erreur est survenue lors de l'envoi vers Cloudinary.",
         variant: "destructive" 
       });
     } finally {
@@ -297,7 +296,7 @@ export default function AddChapterPage(props: PageProps) {
           disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
           className="rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-10 shadow-xl"
         >
-          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Sparkles className="mr-2 h-5 w-5" /> Publier</>}
+          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi direct ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-2 h-5 w-5" /> Publier via Cloudinary</>}
         </Button>
       </div>
 
@@ -349,24 +348,23 @@ export default function AddChapterPage(props: PageProps) {
         <aside className="space-y-8">
           <Card className="bg-stone-950 border-none rounded-[2rem] p-8 text-white">
             <h4 className="text-sm font-black uppercase text-primary mb-6 tracking-widest flex items-center gap-2">
-              <Info className="h-4 w-4" /> Détails
+              <Zap className="h-4 w-4" /> Cloud CDN Actif
             </h4>
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Épisode</span>
-                <span className="text-xl font-black text-white">#{ (story?.chapterCount || 0) + 1 }</span>
+                <span className="text-xs text-stone-500 font-bold uppercase">Système</span>
+                <span className="text-sm font-black text-emerald-500">Cloudinary Signed</span>
               </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Pages</span>
-                <span className="text-xl font-black text-white">{selectedImages.length}</span>
-              </div>
+              <p className="text-[10px] text-stone-500 italic leading-relaxed">
+                Vos images sont désormais stockées sur Cloudinary et distribuées via un CDN mondial pour une lecture instantanée.
+              </p>
             </div>
           </Card>
 
-          <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] flex gap-4">
-            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-            <p className="text-[10px] text-amber-200/70 italic leading-relaxed">
-              En cas d'erreur de stockage, vérifiez que votre bucket Firebase Storage est bien initialisé dans votre console Firebase.
+          <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] flex gap-4">
+            <Sparkles className="h-5 w-5 text-primary shrink-0" />
+            <p className="text-[10px] text-stone-400 italic leading-relaxed">
+              La clé secrète est protégée sur le serveur. Seule une signature temporaire est envoyée au client.
             </p>
           </div>
         </aside>

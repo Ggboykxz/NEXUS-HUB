@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
@@ -14,24 +15,43 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase for SSR and Client
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Vérification de la validité de la configuration
+const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 
-// Initialize services
-const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
-const storage: FirebaseStorage = getStorage(app);
-const functions: Functions = getFunctions(app);
+// Initialisation sécurisée de Firebase
+let app: FirebaseApp;
 
-// Configure Auth persistence
-if (typeof window !== 'undefined') {
+if (getApps().length > 0) {
+  app = getApp();
+} else {
+  // On n'initialise QUE si la config est valide. 
+  // Sinon on crée une application "fantôme" pour éviter les erreurs d'importation,
+  // mais les services ne seront pas fonctionnels.
+  if (isConfigValid) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    // Fallback minimal pour éviter le crash au build/import
+    // @ts-ignore
+    app = { name: '[DEFAULT]', options: {}, automaticDataCollectionEnabled: false };
+    console.warn("⚠️ Firebase: Configuration manquante (apiKey ou projectId). Vérifiez votre fichier .env");
+  }
+}
+
+// Initialisation des services avec protection contre l'absence d'initialisation réelle
+const auth: Auth = isConfigValid ? getAuth(app) : ({} as Auth);
+const db: Firestore = isConfigValid ? getFirestore(app) : ({} as Firestore);
+const storage: FirebaseStorage = isConfigValid ? getStorage(app) : ({} as FirebaseStorage);
+const functions: Functions = isConfigValid ? getFunctions(app) : ({} as Functions);
+
+// Configuration de la persistance Auth (uniquement côté client)
+if (typeof window !== 'undefined' && isConfigValid) {
   setPersistence(auth, browserLocalPersistence).catch(console.error);
 }
 
 let analytics: Analytics | null = null;
 
-// Initialize Analytics only on the client side if supported
-if (typeof window !== 'undefined') {
+// Initialisation des Analytics (uniquement côté client)
+if (typeof window !== 'undefined' && isConfigValid) {
   isSupported().then((supported) => {
     if (supported && firebaseConfig.appId) {
       try {
@@ -43,4 +63,4 @@ if (typeof window !== 'undefined') {
   }).catch(e => console.warn("Firebase Analytics isSupported check failed:", e));
 }
 
-export { app, auth, db, storage, functions, analytics };
+export { app, auth, db, storage, functions, analytics, isConfigValid };
