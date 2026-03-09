@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
@@ -7,16 +6,16 @@ import { getFunctions, Functions } from "firebase/functions";
 import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCPiYedBMdzZ78_m-9e7kWpoxHgFGWEzYc",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "studio-7543974359-3b6f7.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "studio-7543974359-3b6f7",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "studio-7543974359-3b6f7.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "655952198289",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:655952198289:web:8681abd587d89a92fe1d30",
 };
 
 // Vérification de la validité de la configuration
-const isConfigValid = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "placeholder" && !!firebaseConfig.projectId;
 
 // Initialisation sécurisée de Firebase
 let app: FirebaseApp;
@@ -30,7 +29,7 @@ if (getApps().length > 0) {
     // Fallback minimal pour éviter le crash au build/import
     // @ts-ignore
     app = { name: '[DEFAULT]', options: {}, automaticDataCollectionEnabled: false };
-    console.warn("⚠️ Firebase: Configuration manquante. Vérifiez votre fichier .env");
+    console.warn("⚠️ Firebase: Configuration manquante ou invalide. Vérifiez votre fichier .env");
   }
 }
 

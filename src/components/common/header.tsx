@@ -7,7 +7,7 @@ import {
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings,
   ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, 
   Cloud, Zap, Flame, LayoutGrid, Bell, Coins, Layers, Book, 
-  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic, Headphones, ShoppingCart, MessageSquare
+  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, MessageSquare, ShoppingCart, Mic
 } from 'lucide-react';
 import { navLinks as defaultNavLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -47,6 +47,7 @@ export default function Header() {
   const router = useRouter();
   const { currentUser, profile } = useAuth();
 
+  const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +56,10 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isCoinFlashing, setIsCoinFlashing] = useState(false);
   const prevCoinsRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const navLinks = defaultNavLinks.map(link => {
     if (link.label === 'Artistes') {
@@ -89,7 +94,7 @@ export default function Header() {
           return snapSimple.docs.map(d => ({ id: d.id, ...d.data() } as Story));
         }
       } catch (error) {
-        console.error("Error fetching trending stories for mega menu: ", error);
+        console.error("Error fetching trending stories: ", error);
         return [];
       }
     },
@@ -152,7 +157,7 @@ export default function Header() {
       router.push('/');
       router.refresh();
     } catch (e) {
-      console.error("Erreur lors de la déconnexion", e);
+      console.error("Erreur déconnexion", e);
       toast({ title: "Erreur", description: "Impossible de se déconnecter.", variant: "destructive" });
     }
   };
@@ -264,10 +269,10 @@ export default function Header() {
                     {trendingStories.map((story) => (
                       <Link key={story.id} href={`/webtoon-hub/${story.slug}`} className="flex items-center gap-4 group/item transition-all hover:translate-x-1">
                         <div className="relative h-16 w-12 rounded-lg overflow-hidden border border-white/10 shadow-lg shrink-0">
-                          <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                          <Image src={story.coverImage.imageUrl} alt={story.title} fill className="object-cover group/item:scale-110 transition-transform duration-500" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-white truncate group-hover/item:text-primary transition-colors">{story.title}</h4>
+                          <h4 className="text-xs font-bold text-white truncate group/item:text-primary transition-colors">{story.title}</h4>
                           <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">{story.genre}</p>
                           <div className="flex items-center gap-1 mt-1">
                             <Eye className="h-2.5 w-2.5 text-stone-600" />
@@ -348,7 +353,7 @@ export default function Header() {
             <LanguageSwitcher />
 
             <div className="hidden md:flex items-center gap-3">
-              {currentUser && profile && (
+              {mounted && currentUser && profile && (
                 <div className="flex items-center gap-3 mr-2 px-3 py-1.5 bg-primary/5 rounded-full border border-primary/10 group cursor-help" title="Votre série de lecture actuelle">
                   <div className="flex items-center gap-1.5">
                     <Flame className="h-4 w-4 text-orange-500 group-hover:scale-110 transition-transform" />
@@ -366,7 +371,7 @@ export default function Header() {
                 <Search className="h-4 w-4" />
               </Button>
 
-              {currentUser && (
+              {mounted && currentUser && (
                 <>
                   <Link href="/notifications" className="relative">
                     <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-full">
@@ -396,12 +401,12 @@ export default function Header() {
                 </>
               )}
 
-              {!currentUser ? (
+              {mounted && !currentUser ? (
                 <div className="flex items-center gap-1">
                   <Button asChild variant="ghost" size="sm" className="h-9 px-4 text-xs font-black uppercase tracking-widest rounded-full"><Link href="/login">{t('nav.login')}</Link></Button>
                   <Button asChild size="sm" className="h-9 px-5 text-xs font-black uppercase tracking-widest rounded-full shadow-lg shadow-primary/20 bg-primary text-black hover:bg-primary/90"><Link href="/signup">{t('nav.signup')}</Link></Button>
                 </div>
-              ) : (
+              ) : mounted && currentUser ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 ring-2 ring-primary/20 ring-offset-2 ring-offset-background hover:ring-primary transition-all">
@@ -422,7 +427,6 @@ export default function Header() {
                         <Badge variant="outline" className="text-[8px] h-4 uppercase border-primary/30 text-primary font-black">{profile?.role === 'reader' ? 'Lecteur' : 'Artiste'}</Badge>
                       </div>
                     </div>
-                    {/* Lien dynamique : Vitrine publique pour les artistes, profil privé pour les lecteurs */}
                     <DropdownMenuItem asChild className="rounded-xl h-10 gap-3 font-bold text-xs">
                       <Link href={profile?.role?.startsWith('artist') ? `/artiste/${profile.slug}` : `/profile/${currentUser.uid}`}>
                         <UserCircle className="h-4 w-4 text-muted-foreground" />
@@ -436,7 +440,7 @@ export default function Header() {
                     <DropdownMenuItem onClick={handleLogout} className="rounded-xl h-10 gap-3 text-destructive focus:bg-destructive/10 focus:text-destructive font-black text-xs"><LogOut className="h-4 w-4" />{t('nav.logout')}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
+              ) : null}
             </div>
 
             <Sheet>

@@ -23,7 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc, limit } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Story } from '@/lib/types';
@@ -56,17 +56,33 @@ export default function CreationsDashboardPage() {
     return () => unsubscribe();
   }, []);
 
-  const { data: myStories = [], isLoading: fetchingStories } = useQuery({
+  const { data: myStories = [], isLoading: fetchingStories, error } = useQuery({
     queryKey: ['my-creations', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
-      const q = query(
-        collection(db, 'stories'),
-        where('artistId', '==', currentUser.uid),
-        orderBy('updatedAt', 'desc')
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      const storiesRef = collection(db, 'stories');
+      try {
+        // Tentative avec tri (nécessite index)
+        const q = query(
+          storiesRef,
+          where('artistId', '==', currentUser.uid),
+          orderBy('updatedAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (e: any) {
+        // Fallback sans tri si l'index manque
+        if (e.code === 'failed-precondition' || e.message.includes('index')) {
+          const fallbackQ = query(
+            storiesRef,
+            where('artistId', '==', currentUser.uid),
+            limit(50)
+          );
+          const snap = await getDocs(fallbackQ);
+          return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+        }
+        throw e;
+      }
     }
   });
 
