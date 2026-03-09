@@ -1,91 +1,92 @@
-import { getAdminServices } from '@/lib/firebase-admin';
+
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { StoryCard } from '@/components/story-card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2, Filter } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Story } from '@/lib/types';
-import type { Metadata } from 'next';
-import { GENRES } from '@/lib/genres'; // Importer la liste des genres
+import { GENRES } from '@/lib/genres';
+import { Badge } from '@/components/ui/badge';
 
-export const revalidate = 3600; // 1 hour
-
-interface PageProps {
-  params: { slug: string };
-}
-
-// Générer les métadonnées dynamiques pour un meilleur SEO
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = params;
-  const genre = GENRES.find(g => g.slug === slug);
-  const genreName = genre ? genre.name : 'Genre inconnu';
-
-  if (!genre) {
-    return { title: 'Genre introuvable' };
-  }
-
-  return {
-    title: `Séries du genre ${genreName}`,
-    description: `Explorez toutes nos œuvres exclusives du genre ${genreName} sur NexusHub.`,
-  };
-}
-
-async function getStoriesByGenre(slug: string) {
-  const { adminDb } = getAdminServices();
-  const snap = await adminDb.collection('stories')
-    .where('genreSlug', '==', slug)
-    .where('isPublished', '==', true)
-    .orderBy('rating', 'desc') // Trier par note pour mettre en avant le meilleur contenu
-    .orderBy('views', 'desc')
-    .limit(50)
-    .get();
+/**
+ * Page par genre convertie en Client Component.
+ */
+export default function GenrePage(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
-}
+  const genre = GENRES.find(g => g.slug === params.slug);
 
-export default async function GenrePage({ params }: PageProps) {
-  const { slug } = params;
-  const genre = GENRES.find(g => g.slug === slug);
+  useEffect(() => {
+    if (!genre) return;
 
-  // Si le slug ne correspond à aucun genre connu, renvoyer une erreur 404
-  if (!genre) {
-    notFound();
+    async function fetchStories() {
+      try {
+        const storiesRef = collection(db, 'stories');
+        const q = query(
+          storiesRef,
+          where('genreSlug', '==', params.slug),
+          where('isPublished', '==', true),
+          orderBy('views', 'desc'),
+          limit(40)
+        );
+        const snap = await getDocs(q);
+        setStories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story)));
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStories();
+  }, [params.slug, genre]);
+
+  if (!genre) notFound();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-950">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
-
-  const genreStories = await getStoriesByGenre(slug);
-
-  // Même si le genre existe, il se peut qu'aucune histoire ne soit encore publiée dedans.
-  // Dans ce cas, nous affichons la page avec un message, plutôt qu'un 404.
-  const genreName = genre.name;
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
+    <div className="container mx-auto max-w-7xl px-6 py-12 space-y-12">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+        <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full border border-primary/20">
-              <Sparkles className="w-8 h-8 text-primary" />
+            <div className="bg-primary/10 p-3 rounded-2xl border border-primary/20">
+              <Filter className="w-8 h-8 text-primary" />
             </div>
             <div>
-                <p className="text-sm font-bold text-primary uppercase tracking-widest">Genre</p>
-                <h1 className="text-4xl font-bold font-display text-white">{genreName}</h1>
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Exploration par Genre</p>
+                <h1 className="text-4xl md:text-5xl font-bold font-display text-white tracking-tighter">{genre.name}</h1>
             </div>
           </div>
-          <p className="text-lg text-muted-foreground mt-4 max-w-2xl">
-            Explorez toutes les œuvres exclusives de NexusHub classées dans la catégorie {genreName}.
+          <p className="text-lg text-stone-400 max-w-2xl italic font-light leading-relaxed">
+            "{genre.description || `Explorez toutes les œuvres exclusives de NexusHub classées dans la catégorie ${genre.name}.`}"
           </p>
         </div>
+        <Badge variant="secondary" className="bg-white/5 text-stone-500 border-none px-4 py-1.5 font-black uppercase text-[10px] tracking-widest">
+          {stories.length} œuvres trouvées
+        </Badge>
       </header>
 
-      {genreStories.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12">
-          {genreStories.map((story) => (
+      {stories.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-12 animate-in fade-in duration-700">
+          {stories.map((story) => (
             <StoryCard key={story.id} story={story} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
-            <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <p className="text-stone-400 font-bold text-xl mb-2">Aucune œuvre trouvée</p>
-            <p className="text-stone-500 italic font-light">Il n'y a pas encore d'histoire dans le genre \"{genreName}\".<br/>Revenez plus tard !</p>
+        <div className="text-center py-32 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-6">
+            <Sparkles className="h-12 w-12 text-stone-700 mx-auto opacity-20" />
+            <p className="text-stone-500 italic font-light">Il n'y a pas encore d'histoire publiée dans le genre "{genre.name}".<br/>Revenez plus tard !</p>
         </div>
       )}
     </div>

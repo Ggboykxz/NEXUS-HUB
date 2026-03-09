@@ -1,79 +1,64 @@
-import { getAdminServices } from '@/lib/firebase-admin';
-import { notFound } from 'next/navigation';
+
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Calendar, ArrowLeft, Share2, MessageSquare, Tag } from 'lucide-react';
+import { Calendar, ArrowLeft, Share2, MessageSquare, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import type { BlogPost } from '@/lib/types';
-import type { Metadata } from 'next';
-import { Timestamp } from 'firebase-admin/firestore';
-
-// Revalidation toutes les heures
-export const revalidate = 3600;
-
-interface PageProps {
-  params: { slug: string };
-}
+import { notFound } from 'next/navigation';
 
 /**
- * Récupère un article de blog publié depuis Firestore par son slug.
- * @param slug Le slug de l'article.
- * @returns L'objet BlogPost ou null si non trouvé ou non publié.
+ * Page de détail d'un article convertie en Client Component.
  */
-async function getPost(slug: string): Promise<BlogPost | null> {
-  const { adminDb } = getAdminServices();
-  const snap = await adminDb.collection('blogPosts')
-    .where('slug', '==', slug)
-    .where('status', '==', 'publié') // Sécurité: Ne récupérer que les articles publiés
-    .limit(1)
-    .get();
-    
-  if (snap.empty) return null;
-  
-  const postData = snap.docs[0].data();
-  
-  return {
-    id: snap.docs[0].id,
-    ...postData
-  } as BlogPost;
-}
+export default function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const post = await getPost(params.slug);
-  if (!post) return { title: 'Article introuvable' };
+  useEffect(() => {
+    async function fetchPost() {
+      try {
+        const q = query(
+          collection(db, 'blogPosts'),
+          where('slug', '==', params.slug),
+          where('status', '==', 'publié'),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setPost({ id: snap.docs[0].id, ...snap.docs[0].data() } as BlogPost);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPost();
+  }, [params.slug]);
 
-  return {
-    title: `${post.title} - Blog NexusHub`,
-    description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: [{ url: post.coverImage.imageUrl }],
-      type: 'article',
-      publishedTime: (post.publishedAt as Timestamp).toDate().toISOString(),
-      authors: [post.authorName],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description: post.excerpt,
-      images: [post.coverImage.imageUrl],
-    },
-  };
-}
-
-export default async function BlogPostPage({ params }: PageProps) {
-  const post = await getPost(params.slug);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-950">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!post) notFound();
 
-  // Conversion sécurisée du timestamp
-  const date = (post.publishedAt as Timestamp).toDate();
+  const date = post.publishedAt && (post.publishedAt as any).toDate 
+    ? (post.publishedAt as any).toDate() 
+    : new Date(post.publishedAt as string);
 
   return (
-    <article className="min-h-screen bg-stone-950 text-white">
+    <article className="min-h-screen bg-stone-950 text-white animate-in fade-in duration-1000">
       <div className="relative h-[65vh] min-h-[450px] w-full overflow-hidden">
         <Image
           src={post.coverImage.imageUrl}
@@ -81,12 +66,11 @@ export default async function BlogPostPage({ params }: PageProps) {
           fill
           className="object-cover opacity-40 scale-105"
           priority
-          data-ai-hint={post.coverImage.imageHint || 'Image de couverture d\'article de blog'}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent" />
         <div className="absolute inset-0 flex items-end">
           <div className="container mx-auto max-w-4xl px-6 pb-16">
-            <Link href="/blog" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-black text-[10px] uppercase tracking-widest mb-8 transition-colors bg-white/5 px-4 py-2 rounded-full border border-white/10">
+            <Link href="/blog" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-black text-[10px] uppercase tracking-widest mb-8 transition-all bg-white/5 px-4 py-2 rounded-full border border-white/10">
               <ArrowLeft className="h-4 w-4" /> Retour au blog
             </Link>
             <Badge className="bg-primary text-black mb-6 shadow-2xl uppercase font-black text-[10px] tracking-widest px-4">{post.category}</Badge>
@@ -96,7 +80,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="flex flex-wrap items-center gap-8">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12 border-2 border-primary/30 shadow-2xl">
-                  <AvatarFallback className="bg-primary/5 text-primary font-black uppercase text-sm">{post.authorName.slice(0, 2)}</AvatarFallback>
+                  <AvatarFallback className="bg-stone-800 text-primary font-black uppercase text-sm">{post.authorName.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="text-sm font-black text-white">{post.authorName}</p>
@@ -118,7 +102,6 @@ export default async function BlogPostPage({ params }: PageProps) {
             <p className="lead text-2xl font-serif italic text-primary/80 border-l-4 border-primary/30 pl-8 mb-16 leading-relaxed">
               {post.excerpt}
             </p>
-            {/* Correction: Affichage du contenu dynamique depuis Firestore */}
             <div dangerouslySetInnerHTML={{ __html: post.content }} />
           </div>
 
@@ -138,11 +121,6 @@ export default async function BlogPostPage({ params }: PageProps) {
                     <Badge key={tag} variant="secondary" className="text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 text-stone-400 border-white/5 hover:text-primary transition-colors cursor-pointer">{tag}</Badge>
                   ))}
                 </div>
-              </div>
-               <div className="bg-primary/5 border border-primary/10 rounded-[2rem] p-6 text-center space-y-4">
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Auteur à suivre</p>
-                <p className="text-xs text-stone-300 italic">{`Intéressé par les articles de ${post.authorName}? Suivez-le pour plus de contenu!`}</p>
-                <Button className="w-full rounded-xl bg-primary text-black font-black text-[10px] uppercase h-10 gold-shimmer">S'abonner à l'auteur</Button>
               </div>
             </div>
           </aside>

@@ -1,94 +1,69 @@
-import { getAdminServices } from '@/lib/firebase-admin';
-import type { Metadata } from 'next';
+
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import ReaderClient from './reader-client';
 import type { Story, Chapter } from '@/lib/types';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Loader2 } from 'lucide-react';
 
-interface PageProps {
-  params: { storyId: string };
-}
+/**
+ * Page de lecture convertie en Client Component pour une expérience interactive sans SDK Admin.
+ */
+export default function ReadPage(props: { params: Promise<{ storyId: string }> }) {
+  const params = use(props.params);
+  const [data, setData] = useState<{ story: Story; chapters: Chapter[] } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-async function getReaderData(storyId: string): Promise<{ story: Story; chapters: Chapter[] } | null> {
-  const { adminDb } = getAdminServices();
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // 1. Récupérer l'histoire
+        const storyRef = doc(db, 'stories', params.storyId);
+        const storySnap = await getDoc(storyRef);
 
-  // 1. Fetch the story with security checks
-  const storyDoc = await adminDb.collection('stories').doc(storyId).get();
+        if (!storySnap.exists()) return setLoading(false);
+        const storyData = { id: storySnap.id, ...storySnap.data() } as Story;
 
-  if (!storyDoc.exists) return null;
+        // Sécurité : Ne pas afficher si banni
+        if (storyData.isBanned) return setLoading(false);
 
-  const storyData = storyDoc.data() as Omit<Story, 'id'>;
+        // 2. Récupérer les chapitres publiés
+        const chaptersRef = collection(db, 'stories', params.storyId, 'chapters');
+        const q = query(chaptersRef, where('status', '==', 'Publié'), orderBy('chapterNumber', 'asc'));
+        const chaptersSnap = await getDocs(q);
+        
+        const chapters = chaptersSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Chapter));
 
-  // Security Gate: Do not show if not published or banned
-  if (!storyData.isPublished || storyData.isBanned) {
-    return null;
+        setData({ story: storyData, chapters });
+      } catch (e) {
+        console.error("Error loading reader data:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [params.storyId]);
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-stone-950 flex flex-col items-center justify-center gap-6">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-stone-500 font-display font-black uppercase tracking-[0.3em] text-[10px]">
+          Ouverture des manuscrits sacrés...
+        </p>
+      </div>
+    );
   }
-
-  // 2. Fetch all published chapters for that story
-  const chaptersSnap = await adminDb.collection('stories').doc(storyId).collection('chapters')
-    .where('isPublished', '==', true)
-    .orderBy('chapterNumber', 'asc')
-    .get();
-
-  const chapters = chaptersSnap.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      publishedAt: (data.publishedAt as Timestamp).toDate(),
-    } as Chapter;
-  });
-  
-  // 3. Assemble the data
-  const story: Story = {
-    id: storyDoc.id,
-    ...storyData,
-    createdAt: (storyData.createdAt as Timestamp).toDate(),
-    updatedAt: (storyData.updatedAt as Timestamp).toDate(),
-  };
-
-  return { story, chapters };
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const data = await getReaderData(params.storyId);
-
-  if (!data) {
-    return { title: 'Histoire Introuvable | NexusHub' };
-  }
-
-  const { story } = data;
-  const title = `${story.title} - Lecture en ligne | NexusHub`;
-  const description = story.synopsis?.slice(0, 160) || "Plongez dans un univers d'histoires captivantes sur NexusHub.";
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: story.coverImage ? [{ url: story.coverImage.imageUrl }] : [],
-      type: 'article',
-      siteName: 'NexusHub',
-      authors: [story.artistName],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: story.coverImage ? [story.coverImage.imageUrl] : [],
-    },
-  };
-}
-
-export default async function ReadPage({ params }: PageProps) {
-  const data = await getReaderData(params.storyId);
 
   if (!data) {
     notFound();
   }
 
-  const { story, chapters } = data;
-
-  return <ReaderClient story={story} chapters={chapters} />;
+  return <ReaderClient story={data.story} chapters={data.chapters} />;
 }

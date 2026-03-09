@@ -1,91 +1,101 @@
-import { getAdminServices } from '@/lib/firebase-admin';
-import { getCurrentUser } from '@/lib/auth-utils';
+
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { db, auth } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, documentId, getDocs } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import { StoryCard } from '@/components/story-card';
-import { ListMusic, Lock, Globe, Sparkles, Bookmark } from 'lucide-react';
+import { ListMusic, Lock, Globe, Sparkles, Bookmark, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { Playlist, Story } from '@/lib/types';
-import type { Metadata } from 'next';
+import { onAuthStateChanged } from 'firebase/auth';
 
-interface PageProps {
-  params: { playlistId: string };
-}
+/**
+ * Page détail de playlist convertie en Client Component.
+ */
+export default function PlaylistDetailPage(props: { params: Promise<{ playlistId: string }> }) {
+  const params = use(props.params);
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
-// Increased revalidation time for playlists as they might be updated by users
-export const revalidate = 60; // 1 minute
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      try {
+        const playlistRef = doc(db, 'playlists', params.playlistId);
+        const playlistSnap = await getDoc(playlistRef);
+        
+        if (!playlistSnap.exists()) {
+          setLoading(false);
+          return;
+        }
 
-async function getPlaylistData(playlistId: string) {
-  const { adminDb } = getAdminServices();
-  // User is fetched to check for private playlist access
-  const user = await getCurrentUser();
+        const data = { id: playlistSnap.id, ...playlistSnap.data() } as Playlist;
 
-  const playlistSnap = await adminDb.collection('playlists').doc(playlistId).get();
-  
-  if (!playlistSnap.exists) return null;
+        // Vérification de sécurité
+        if (!data.isPublic && data.ownerId !== user?.uid) {
+          setAccessDenied(true);
+          setLoading(false);
+          return;
+        }
 
-  const playlist = { id: playlistSnap.id, ...playlistSnap.data() } as Playlist;
+        setPlaylist(data);
 
-  // Security Gate: If the playlist is private, only the owner can see it.
-  if (!playlist.isPublic && playlist.userId !== user?.uid) {
-    return { playlist: null, stories: [] }; // Return null playlist to signify access denied
-  }
+        // Récupérer les histoires
+        if (data.storyIds && data.storyIds.length > 0) {
+          const storiesRef = collection(db, 'stories');
+          const q = query(storiesRef, where(documentId(), 'in', data.storyIds.slice(0, 30)));
+          const storiesSnap = await getDocs(q);
+          const fetchedStories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+          
+          // Respecter l'ordre
+          const orderedStories = data.storyIds
+            .map(id => fetchedStories.find(s => s.id === id))
+            .filter(Boolean) as Story[];
+            
+          setStories(orderedStories);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    });
 
-  let stories: Story[] = [];
-  if (playlist.storyIds && playlist.storyIds.length > 0) {
-    // Firestore 'in' query is limited to 30 elements. Chunking is required for > 30.
-    const storyIdsToFetch = playlist.storyIds.slice(0, 30);
-    
-    const storiesSnap = await adminDb.collection('stories').where('__name__', 'in', storyIdsToFetch).get();
-    
-    // Filter out non-existent or banned stories
-    const storiesData = storiesSnap.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as Story))
-      .filter(story => story && !story.isBanned);
+    return () => unsubAuth();
+  }, [params.playlistId]);
 
-    // Preserve the order from the playlist array
-    stories = storyIdsToFetch
-      .map(id => storiesData.find(s => s.id === id))
-      .filter(Boolean) as Story[];
-  }
-
-  return { playlist, stories };
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const data = await getPlaylistData(params.playlistId);
-  if (!data || !data.playlist) return { title: 'Playlist Introuvable' };
-
-  const { playlist } = data;
-  return {
-    title: `Playlist : ${playlist.title}`,
-    description: playlist.description || `Découvrez la sélection d'histoires incluses dans la playlist "${playlist.title}".`,
-  };
-}
-
-export default async function PlaylistDetailPage({ params }: PageProps) {
-  const data = await getPlaylistData(params.playlistId);
-
-  // notFound() is for content that doesn't exist. 
-  // Here, the playlist might exist but be private, so we show a specific message.
-  if (!data) notFound(); 
-
-  const { playlist, stories } = data;
-
-  if (!playlist) { 
-    // Custom component for access denied scenario
+  if (loading) {
     return (
-        <div className="container mx-auto max-w-4xl text-center py-24">
-            <Lock className="h-16 w-16 mx-auto text-stone-600 mb-6"/>
-            <h1 className="text-3xl font-display font-bold text-white">Playlist Privée</h1>
-            <p className="text-stone-400 mt-2">Cette playlist est privée. Vous devez être le propriétaire pour la consulter.</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-950">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
     );
   }
 
+  if (accessDenied) {
+    return (
+      <div className="container mx-auto max-w-4xl text-center py-32 space-y-6">
+        <div className="bg-white/5 p-6 rounded-full w-fit mx-auto border border-white/10">
+          <Lock className="h-12 w-12 text-stone-700" />
+        </div>
+        <h1 className="text-3xl font-display font-black text-white uppercase tracking-tighter">Collection Privée</h1>
+        <p className="text-stone-500 italic max-w-sm mx-auto">"Ce sanctuaire est réservé à son propriétaire. Explorez les collections publiques du Hub."</p>
+        <Button asChild variant="outline" className="rounded-full border-primary text-primary">
+          <Link href="/playlists">Retour aux Playlists</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (!playlist) notFound();
+
   return (
-    <div className="container mx-auto max-w-7xl px-6 py-12 space-y-16">
+    <div className="container mx-auto max-w-7xl px-6 py-12 space-y-16 animate-in fade-in duration-1000">
       <header className="relative p-12 rounded-[3.5rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
@@ -94,9 +104,6 @@ export default async function PlaylistDetailPage({ params }: PageProps) {
               <div className="bg-primary/10 p-2.5 rounded-2xl">
                 <ListMusic className="h-6 w-6 text-primary" />
               </div>
-              <Badge variant="secondary" className="bg-white/5 text-stone-400 border-none uppercase text-[9px] font-black tracking-widest px-3">
-                Playlist
-              </Badge>
               {playlist.isPublic ? (
                 <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-black uppercase px-3 gap-1.5">
                   <Globe className="h-3 w-3" /> Publique
@@ -108,19 +115,17 @@ export default async function PlaylistDetailPage({ params }: PageProps) {
               )}
             </div>
             
-            <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter leading-[0.9]">
+            <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter leading-[0.9] gold-resplendant">
               {playlist.title}
             </h1>
             
-            {playlist.description && (
-              <p className="text-xl text-stone-400 font-light italic leading-relaxed max-w-2xl border-l-4 border-primary/20 pl-8">
-                "{playlist.description}"
-              </p>
-            )}
+            <p className="text-xl text-stone-400 font-light italic leading-relaxed max-w-2xl border-l-4 border-primary/20 pl-8">
+              "{playlist.description || "Une sélection de récits soigneusement archivés."}"
+            </p>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4">
-              <Button size="lg" className="rounded-full px-10 h-14 font-black text-lg bg-primary text-black">
-                Tout Lire
+              <Button size="lg" className="rounded-full px-10 h-14 font-black text-lg bg-primary text-black gold-shimmer">
+                Lancer la Lecture
               </Button>
             </div>
           </div>
@@ -153,13 +158,8 @@ export default async function PlaylistDetailPage({ params }: PageProps) {
             </div>
             <div className="space-y-2">
               <h3 className="text-2xl font-display font-black text-white tracking-tighter">Playlist Vide</h3>
-              <p className="text-stone-500 max-w-xs mx-auto italic font-light leading-relaxed">
-                Cette playlist ne contient pas encore d'histoires. Explorez le catalogue pour l'enrichir.
-              </p>
+              <p className="text-stone-500 max-xs mx-auto italic font-light">Cette collection ne contient pas encore d'histoires.</p>
             </div>
-            <Button asChild variant="outline" className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase text-xs tracking-widest transition-all">
-              <Link href="/">Explorer</Link>
-            </Button>
           </div>
         )}
       </div>
