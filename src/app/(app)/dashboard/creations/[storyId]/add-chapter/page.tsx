@@ -136,7 +136,7 @@ export default function AddChapterPage(props: PageProps) {
           toast({ title: "Accès refusé", variant: "destructive" });
           return;
         }
-        setStory({ id: storySnap.id, ...data });
+        setStory({ ...data, id: storySnap.id });
       } else {
         router.push('/dashboard/creations');
       }

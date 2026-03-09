@@ -96,6 +96,7 @@ export interface Story {
   genreSlug: string;
   genres: string[];                 // Multiple tags
   tags: string[];
+  region?: string;                  // Nouveau: Région d'origine
   isPublished: boolean;
   isBanned: boolean;
   isOriginal: boolean;
@@ -108,7 +109,6 @@ export interface Story {
   createdAt: Timestamp | string;
   publishedAt?: Timestamp | string;
   updatedAt: Timestamp | string;
-  region?: string;                  // Region d'origine (WA, CA, EA, etc.)
   universeId?: string;              // Identifiant de l'univers partagé
   universeRelation?: UniverseRelation; // Type de relation dans l'univers
   sponsoredBy?: {
@@ -132,6 +132,7 @@ export interface Chapter {
   pages: { imageUrl: string; width: number; height: number }[];
   isLocked: boolean;
   isPremium?: boolean;
+  afriCoinsPrice?: number;          // Nouveau: Prix en coins
   publishedAt: Timestamp | string;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
