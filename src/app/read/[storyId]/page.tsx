@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
-      images: story.coverImage ? [{ url: story.coverImage }] : [],
+      images: story.coverImage ? [{ url: story.coverImage.imageUrl }] : [],
       type: 'article',
       siteName: 'NexusHub',
       authors: [story.artistName],
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title,
       description,
-      images: story.coverImage ? [story.coverImage] : [],
+      images: story.coverImage ? [story.coverImage.imageUrl] : [],
     },
   };
 }
@@ -90,6 +90,5 @@ export default async function ReadPage({ params }: PageProps) {
 
   const { story, chapters } = data;
 
-  // Pass all required data to the client to avoid re-fetching
   return <ReaderClient story={story} chapters={chapters} />;
 }

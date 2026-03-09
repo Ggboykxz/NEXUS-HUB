@@ -53,11 +53,11 @@ export const navLinks: NavLink[] = [
     ]
   },
   { 
-    href: "/artists", 
-    label: "Artistes", 
-    icon: Users,
+    href: "/forums", 
+    label: "Forums", 
+    icon: MessageSquare,
     subLinks: [
-        { href: "/artists", label: "Tous les artistes" },
+        { href: "/forums", label: "Tous les forums" },
         { href: "/mentorship", label: "Programme de Mentorat" },
         { href: "/dashboard/world-building", label: "Outils de World Building" },
         { href: "/blog", label: "Blog & Ressources" },
@@ -75,6 +75,5 @@ export const navLinks: NavLink[] = [
       { href: "/submit", label: "Soumettre une œuvre" },
     ]
   },
-  { href: "/forums", label: "Forums", icon: MessageSquare },
   { href: "/shop", label: "Boutique", icon: Store },
 ];

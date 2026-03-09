@@ -218,7 +218,7 @@ export default function CreationsDashboardPage() {
                     </Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10">
-                    <Link href={`/dashboard/creations/${story.id}`}>
+                    <Link href={`/dashboard/creations/${story.id}/add-chapter`}>
                       <PlusCircle className="mr-2 h-4 w-4" /> Ajouter un chapitre
                     </Link>
                   </Button>

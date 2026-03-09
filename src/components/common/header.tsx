@@ -7,9 +7,9 @@ import {
   Menu, Search, ArrowLeft, UserCircle, LogOut, Settings,
   ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, 
   Cloud, Zap, Flame, LayoutGrid, Bell, Coins, Layers, Book, 
-  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic, Headphones
+  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, Mic, Headphones, ShoppingCart, MessageSquare
 } from 'lucide-react';
-import { navLinks, type NavLink } from '@/lib/navigation';
+import { navLinks as defaultNavLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
@@ -55,6 +55,24 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isCoinFlashing, setIsCoinFlashing] = useState(false);
   const prevCoinsRef = useRef<number | undefined>(undefined);
+  
+  const navLinks = defaultNavLinks.map(link => {
+    if (link.label === 'Artistes') {
+      return {
+        label: 'Forums',
+        href: '/forums',
+        icon: MessageSquare
+      };
+    }
+    if (link.label === 'AI Studio') {
+      return {
+        label: 'Boutique',
+        href: '/shop',
+        icon: ShoppingCart
+      };
+    }
+    return link;
+  });
 
   const { data: trendingStories = [] } = useQuery({
     queryKey: ['mega-menu-trending'],
@@ -176,11 +194,9 @@ export default function Header() {
     const keyMap: Record<string, string> = {
       "Parcourir": "nav.browse",
       "Classements": "nav.rankings",
-      "Artistes": "nav.artists",
       "Forums": "nav.forums",
       "Boutique": "nav.shop",
       "Originals": "nav.originals",
-      "AI Studio": "nav.ai_studio",
       "NexusHub Pro": "nav.pro"
     };
     return t(keyMap[link.label] || link.label);

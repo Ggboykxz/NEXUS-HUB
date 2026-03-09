@@ -1,72 +1,40 @@
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit, Timestamp } from 'firebase/firestore';
-import type { Story, UserProfile } from '@/lib/types';
+import { db } from '@/lib/firebase-admin';
+import type { UserProfile, Story } from '@/lib/types';
 import ArtistDetailClient from './artist-detail-client';
 import { notFound } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
+async function getArtistAndStories(slug: string) {
+    // Get artist data
+    const usersRef = db.collection('users');
+    const userQuery = usersRef.where('slug', '==', slug).limit(1);
+    const userSnapshot = await userQuery.get();
 
-interface PageProps {
-  params: { slug: string };
-}
-
-/**
- * Récupère les données de l'artiste côté serveur, avec tri côté serveur pour éviter les erreurs d'index.
- */
-async function getArtistData(slug: string): Promise<{ artist: UserProfile; artistStories: Story[] } | null> {
-  try {
-    const usersRef = collection(db, 'users');
-    const userQuery = query(usersRef, where('slug', '==', slug), limit(1));
-    const userSnap = await getDocs(userQuery);
-
-    if (userSnap.empty) {
-      return null;
+    if (userSnapshot.empty) {
+        return null;
     }
 
-    const userDoc = userSnap.docs[0];
-    const userData = userDoc.data();
+    const artistDoc = userSnapshot.docs[0];
+    const artist = { uid: artistDoc.id, ...artistDoc.data() } as UserProfile;
 
-    const isArtist = userData.role?.startsWith('artist');
-    if (!isArtist || userData.isBanned) {
-      return null;
-    }
-
-    const artist = { uid: userDoc.id, ...userData } as UserProfile;
-
-    const storiesRef = collection(db, 'stories');
-    // FIX: Suppression de `orderBy` pour éviter la dépendance à un index composite.
-    const qStories = query(
-      storiesRef,
-      where('artistId', '==', artist.uid),
-      where('isPublished', '==', true)
-    );
+    // Get published stories for the artist
+    const storiesRef = db.collection('stories');
+    const storiesQuery = storiesRef
+        .where('artistId', '==', artist.uid)
+        .where('isPublished', '==', true)
+        .orderBy('updatedAt', 'desc');
     
-    const storiesSnap = await getDocs(qStories);
-    const stories = storiesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+    const storiesSnapshot = await storiesQuery.get();
+    const stories = storiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Story[];
 
-    // FIX: Tri des œuvres côté serveur (dans le code) après la récupération.
-    stories.sort((a, b) => {
-        const timeA = a.updatedAt instanceof Timestamp ? a.updatedAt.toMillis() : 0;
-        const timeB = b.updatedAt instanceof Timestamp ? b.updatedAt.toMillis() : 0;
-        return timeB - timeA; // Tri décroissant
-    });
-
-    return { artist, artistStories: stories };
-  } catch (error) {
-    console.error(`[Server Fetch] Erreur critique lors de la récupération pour ${slug}:`, error);
-    return null;
-  }
+    return { artist, stories };
 }
 
-/**
- * Page Artiste côté Serveur, maintenant entièrement résiliente aux erreurs d'index.
- */
-export default async function ArtistProfilePage({ params }: PageProps) {
-  const data = await getArtistData(params.slug);
+export default async function ArtistPage({ params }: { params: { slug: string } }) {
+    const data = await getArtistAndStories(params.slug);
 
-  if (!data) {
-    notFound();
-  }
+    if (!data) {
+        notFound();
+    }
 
-  return <ArtistDetailClient artist={data.artist} artistStories={data.artistStories} />;
+    return <ArtistDetailClient artist={data.artist} artistStories={data.stories} />;
 }
