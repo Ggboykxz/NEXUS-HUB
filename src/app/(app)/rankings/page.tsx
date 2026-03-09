@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Crown, Eye, Heart, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Loader2, Star, Zap, Users, UserPlus, Check } from 'lucide-react';
+import { Crown, Eye, Heart, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Loader2, Star, Zap, Users, UserPlus, Check, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -121,14 +121,26 @@ function PodiumCard({ story, rank, metric }: { story: Story, rank: number, metri
   );
 }
 
-function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt' }) {
+function RankingList({ stories, metric, indexError }: { stories: Story[], metric: 'views' | 'likes' | 'updatedAt', indexError?: boolean }) {
   const top3 = stories.slice(0, 3);
   const others = stories.slice(3);
 
   return (
     <div className="space-y-20 animate-in fade-in duration-1000">
+      {indexError && process.env.NODE_ENV === 'development' && (
+        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <p className="text-xs text-amber-200 font-medium">Mode Dégradé : Tri désactivé (Index manquant)</p>
+          </div>
+          <Button variant="outline" size="sm" className="h-8 text-[9px] font-black uppercase" asChild>
+            <a href="https://console.firebase.google.com/v1/r/project/studio-7543974359-3b6f7/firestore/indexes" target="_blank">Créer Index</a>
+          </Button>
+        </div>
+      )}
+
       {/* PODIUM SECTION */}
-      {top3.length > 0 && (
+      {top3.length > 0 && !indexError && (
         <section className="pt-12">
           <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-8 md:gap-4 max-w-6xl mx-auto px-4">
             {top3[1] && <PodiumCard story={top3[1]} rank={2} metric={metric} />}
@@ -140,9 +152,9 @@ function RankingList({ stories, metric }: { stories: Story[], metric: 'views' | 
 
       {/* OTHERS LIST */}
       <div className="grid gap-6">
-        {others.map((story, index) => {
+        {(indexError ? stories : others).map((story, index) => {
           const storyUrl = getStoryUrl(story);
-          const rank = index + 4;
+          const rank = indexError ? index + 1 : index + 4;
 
           return (
             <Card key={story.id} className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl rounded-[2rem] border-white/5 bg-card/50">
@@ -340,17 +352,28 @@ function ArtistRankingList() {
   );
 }
 
-export default function RankingsPage() {
+function RankingsContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'popular';
+  const [indexError, setIndexError] = useState(false);
   
   // 1. FETCH POPULAR (BY VIEWS)
   const { data: popular = [], isLoading: loadingPopular } = useQuery<Story[]>({
     queryKey: ['rankings-popular'],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(50));
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      try {
+        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('views', 'desc'), limit(50));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (e: any) {
+        if (e.code === 'failed-precondition' || e.message.includes('index')) {
+          setIndexError(true);
+          const fallbackQ = query(collection(db, 'stories'), where('isPublished', '==', true), limit(50));
+          const snap = await getDocs(fallbackQ);
+          return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+        }
+        throw e;
+      }
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -359,9 +382,13 @@ export default function RankingsPage() {
   const { data: trending = [], isLoading: loadingTrending } = useQuery<Story[]>({
     queryKey: ['rankings-trending'],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('likes', 'desc'), limit(50));
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      try {
+        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('likes', 'desc'), limit(50));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (e: any) {
+        return popular; // Fallback silent
+      }
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -370,13 +397,74 @@ export default function RankingsPage() {
   const { data: newest = [], isLoading: loadingNewest } = useQuery<Story[]>({
     queryKey: ['rankings-newest'],
     queryFn: async () => {
-      const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('updatedAt', 'desc'), limit(30));
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      try {
+        const q = query(collection(db, 'stories'), where('isPublished', '==', true), orderBy('updatedAt', 'desc'), limit(30));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (e: any) {
+        return popular; // Fallback silent
+      }
     },
     staleTime: 10 * 60 * 1000,
   });
 
+  return (
+    <Tabs defaultValue={defaultTab} className="w-full">
+      <div className="flex justify-center mb-16">
+        <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl w-full overflow-x-auto">
+            <TabsTrigger value="popular" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
+                <Trophy className="h-4 w-4" /> Par Vues
+            </TabsTrigger>
+            <TabsTrigger value="trending" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
+                <Heart className="h-4 w-4" /> Par Likes
+            </TabsTrigger>
+            <TabsTrigger value="newest" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
+                <Sparkles className="h-4 w-4" /> Nouveaux
+            </TabsTrigger>
+            <TabsTrigger value="artists" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                <Users className="h-4 w-4" /> Artistes
+            </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="popular">
+        {loadingPopular ? (
+          <div className="space-y-6">
+            {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+          </div>
+        ) : (
+          <RankingList stories={popular} metric="views" indexError={indexError} />
+        )}
+      </TabsContent>
+
+      <TabsContent value="trending">
+        {loadingTrending ? (
+          <div className="space-y-6">
+            {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+          </div>
+        ) : (
+          <RankingList stories={trending} metric="likes" />
+        )}
+      </TabsContent>
+
+      <TabsContent value="newest">
+        {loadingNewest ? (
+          <div className="space-y-6">
+            {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
+          </div>
+        ) : (
+          <RankingList stories={newest} metric="updatedAt" />
+        )}
+      </TabsContent>
+
+      <TabsContent value="artists">
+        <ArtistRankingList />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+export default function RankingsPage() {
   return (
     <div className="container max-w-7xl mx-auto px-6 py-12 space-y-16">
       <header className="relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
@@ -405,58 +493,9 @@ export default function RankingsPage() {
         </div>
       </header>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <div className="flex justify-center mb-16">
-          <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-2xl w-full overflow-x-auto">
-              <TabsTrigger value="popular" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-                  <Trophy className="h-4 w-4" /> Par Vues
-              </TabsTrigger>
-              <TabsTrigger value="trending" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-rose-500 data-[state=active]:text-white">
-                  <Heart className="h-4 w-4" /> Par Likes
-              </TabsTrigger>
-              <TabsTrigger value="newest" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-cyan-500 data-[state=active]:text-white">
-                  <Sparkles className="h-4 w-4" /> Nouveaux
-              </TabsTrigger>
-              <TabsTrigger value="artists" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-                  <Users className="h-4 w-4" /> Artistes
-              </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="popular">
-          {loadingPopular ? (
-            <div className="space-y-6">
-              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
-            </div>
-          ) : (
-            <RankingList stories={popular} metric="views" />
-          )}
-        </TabsContent>
-
-        <TabsContent value="trending">
-          {loadingTrending ? (
-            <div className="space-y-6">
-              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
-            </div>
-          ) : (
-            <RankingList stories={trending} metric="likes" />
-          )}
-        </TabsContent>
-
-        <TabsContent value="newest">
-          {loadingNewest ? (
-            <div className="space-y-6">
-              {[...Array(5)].map((_, i) => <RankingRowSkeleton key={i} />)}
-            </div>
-          ) : (
-            <RankingList stories={newest} metric="updatedAt" />
-          )}
-        </TabsContent>
-
-        <TabsContent value="artists">
-          <ArtistRankingList />
-        </TabsContent>
-      </Tabs>
+      <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>}>
+        <RankingsContent />
+      </Suspense>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Story } from '@/lib/types';
 import { StoryCard } from '@/components/story-card';
-import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2, Plus, Filter, Sparkles } from 'lucide-react';
+import { BookOpen, SlidersHorizontal, LayoutGrid, Search as SearchIcon, X, Loader2, Plus, Filter, Sparkles, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,10 +40,12 @@ function StoriesContent() {
   const [sortFilter, setSortFilter] = useState('popular');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [indexError, setIndexError] = useState(false);
 
   const { data: stories = [], isLoading } = useQuery({
     queryKey: ['stories-list', genreFilter, typeFilter, sortFilter],
     queryFn: async () => {
+      setIndexError(false);
       const storiesRef = collection(db, 'stories');
       let constraints: any[] = [where('isPublished', '==', true)];
 
@@ -55,12 +57,20 @@ function StoriesContent() {
       if (sortFilter === 'newest') orderField = 'updatedAt';
       if (sortFilter === 'likes') orderField = 'likes';
       
-      constraints.push(orderBy(orderField, 'desc'));
-      constraints.push(limit(40));
-
-      const q = query(storiesRef, ...constraints);
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      try {
+        const q = query(storiesRef, ...constraints, orderBy(orderField, 'desc'), limit(40));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (e: any) {
+        if (e.code === 'failed-precondition' || e.message.includes('index')) {
+          console.warn("Index manquant pour cette combinaison de filtres. Passage en mode dégradé.");
+          setIndexError(true);
+          const fallbackQ = query(storiesRef, ...constraints, limit(40));
+          const snap = await getDocs(fallbackQ);
+          return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+        }
+        throw e;
+      }
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -86,6 +96,21 @@ function StoriesContent() {
 
   return (
     <>
+      {indexError && process.env.NODE_ENV === 'development' && (
+        <div className="mb-8 bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between gap-4 animate-in slide-in-from-top-2 duration-500">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <div className="text-xs">
+              <p className="text-amber-200 font-bold">Mode Dégradé : Index Firestore Manquant</p>
+              <p className="text-amber-500/70">L'affichage fonctionne sans tri pour cette combinaison de filtres.</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="h-8 text-[9px] uppercase font-black border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-black" asChild>
+            <a href="https://console.firebase.google.com/v1/r/project/studio-7543974359-3b6f7/firestore/indexes" target="_blank" rel="noopener noreferrer">Gérer les Index</a>
+          </Button>
+        </div>
+      )}
+
       <Card className="mb-12 bg-card/50 backdrop-blur-md border-primary/10 shadow-xl overflow-hidden">
         <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
         <CardContent className="p-6">
