@@ -1,37 +1,57 @@
-import { getCurrentUser } from '@/lib/auth-service';
-import { db } from '@/lib/firebase-admin';
-import type { Story, UserProfile } from '@/lib/types';
-import ProfileClient from './profile-client';
-import { redirect } from 'next/navigation';
+'use client';
 
-async function getUserData(userId: string) {
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc.exists) {
-        return null; // Should not happen for a logged-in user
-    }
-    const user = { uid: userDoc.id, ...userDoc.data() } as UserProfile;
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
 
-    const storiesRef = db.collection('stories');
-    const creationsSnapshot = await storiesRef.where('artistId', '==', userId).orderBy('updatedAt', 'desc').get();
-    const creations = creationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Story[];
+/**
+ * Page de redirection /profile/me.
+ * Utilise exclusivement le SDK Client pour identifier l'utilisateur
+ * et le rediriger vers son profil spécifique selon son rôle.
+ */
+export default function ProfileMePage() {
+  const { currentUser, profile, loading } = useAuth();
+  const router = useRouter();
 
-    return { user, creations };
-}
+  useEffect(() => {
+    // On attend que l'état d'authentification soit chargé
+    if (loading) return;
 
-export default async function ProfileMePage() {
-    const self = await getCurrentUser();
-
-    if (!self) {
-        // This page is protected, redirect to login if not authenticated
-        redirect('/auth?callbackUrl=/profile/me');
+    // Si aucun utilisateur n'est connecté, direction le login
+    if (!currentUser) {
+      router.replace('/login?callbackUrl=/profile/me');
+      return;
     }
 
-    const data = await getUserData(self.uid);
-
-    if (!data) {
-        // This case would be unusual, but handle it.
-        return <p>Impossible de charger les données de l'utilisateur.</p>;
+    // Une fois le profil chargé, on redirige selon le rôle
+    if (profile) {
+      if (profile.role?.startsWith('artist')) {
+        // Les artistes vont sur leur vitrine publique (qui contient leurs outils de gestion)
+        router.replace(`/artiste/${profile.slug}`);
+      } else if (profile.role === 'translator') {
+        // Les traducteurs vont sur leur dashboard spécifique
+        router.replace('/dashboard/translations');
+      } else {
+        // Les lecteurs vont sur leur page de profil privée
+        router.replace(`/profile/${currentUser.uid}`);
+      }
+    } else {
+      // Cas rare : l'utilisateur existe en Auth mais pas en Firestore
+      // On redirige vers l'accueil pour déclencher l'onboarding si nécessaire
+      router.replace('/');
     }
+  }, [currentUser, profile, loading, router]);
 
-    return <ProfileClient user={data.user} creations={data.creations} />;
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-stone-950">
+      <div className="relative">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse rounded-full" />
+      </div>
+      <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-[0.3em]">
+        Accès à votre sanctuaire...
+      </p>
+    </div>
+  );
 }
