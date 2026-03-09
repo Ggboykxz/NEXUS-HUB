@@ -93,7 +93,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       link.click();
       toast({ title: "Terminé !", description: "L'archive a été sauvegardée." });
     } catch (e) {
-      toast({ title: "Erreur", variant: "destructive" });
+      toast({ title: "Erreur lors de l'archivage", variant: "destructive" });
     } finally {
       setDownloadingId(null);
     }
