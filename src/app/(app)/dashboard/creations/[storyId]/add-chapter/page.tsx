@@ -27,7 +27,8 @@ import {
   Coins,
   Clock,
   Calendar,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
@@ -41,10 +42,6 @@ import {
   updateDoc, 
   increment, 
   setDoc, 
-  writeBatch, 
-  query, 
-  where, 
-  getDocs,
   Timestamp 
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -135,17 +132,11 @@ export default function AddChapterPage(props: PageProps) {
       
       if (storySnap.exists()) {
         const data = storySnap.data() as Story;
-        
         if (data.artistId !== user.uid) {
           router.push('/dashboard/creations');
-          toast({ 
-            title: "Accès refusé", 
-            description: "Vous n'avez pas les droits pour modifier ce récit.",
-            variant: "destructive" 
-          });
+          toast({ title: "Accès refusé", variant: "destructive" });
           return;
         }
-        
         setStory({ id: storySnap.id, ...data });
       } else {
         router.push('/dashboard/creations');
@@ -160,8 +151,6 @@ export default function AddChapterPage(props: PageProps) {
     if (files.length === 0) return;
 
     setIsCompressing(true);
-    toast({ title: "Compression des planches en cours...", description: "Veuillez patienter, cette opération peut prendre quelques instants." });
-
     const compressedImages: ImageFile[] = [];
     try {
       const compressionPromises = files.map(async (file) => {
@@ -178,23 +167,19 @@ export default function AddChapterPage(props: PageProps) {
 
       const results = await Promise.all(compressionPromises);
       setSelectedImages(prev => [...prev, ...results]);
-      toast({ title: "✅ Planches prêtes !", description: "Les images ont été optimisées pour le web.", duration: 3000 });
     } catch (error) {
-      console.error(error);
-      toast({ title: "Erreur de compression", description: "Une ou plusieurs images n'ont pas pu être traitées.", variant: "destructive" });
+      toast({ title: "Erreur de traitement", variant: "destructive" });
     } finally {
       setIsCompressing(false);
     }
-    
     e.target.value = '';
   };
 
   const removeImage = (id: string) => {
     setSelectedImages(prev => {
-      const filtered = prev.filter(img => img.id !== id);
       const removed = prev.find(img => img.id === id);
       if (removed) URL.revokeObjectURL(removed.preview);
-      return filtered;
+      return prev.filter(img => img.id !== id);
     });
   };
 
@@ -202,19 +187,13 @@ export default function AddChapterPage(props: PageProps) {
     const newImages = [...selectedImages];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newImages.length) return;
-    
     [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
     setSelectedImages(newImages);
   };
 
   const handleSubmit = async () => {
     if (!title.trim() || selectedImages.length === 0) {
-      toast({ title: "Données manquantes", description: "Veuillez donner un titre et ajouter au moins une page.", variant: "destructive" });
-      return;
-    }
-
-    if (pubMode === 'scheduled' && !scheduledDate) {
-      toast({ title: "Date manquante", description: "Veuillez choisir une date de publication.", variant: "destructive" });
+      toast({ title: "Données manquantes", variant: "destructive" });
       return;
     }
 
@@ -230,27 +209,33 @@ export default function AddChapterPage(props: PageProps) {
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
         const storagePath = `chapters/${storyId}/${newChapterDocRef.id}/page_${i}.jpg`;
-        const storageRef = ref(storage, storagePath);
         
-        const uploadTask = uploadBytesResumable(storageRef, img.file as Blob);
+        try {
+          const storageRef = ref(storage, storagePath);
+          const uploadTask = uploadBytesResumable(storageRef, img.file as Blob);
 
-        await new Promise<void>((resolve, reject) => {
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              const overallProgress = ((uploadedSize + snapshot.bytesTransferred) / totalSize) * 100;
-              setUploadProgress(overallProgress);
-              setSelectedImages(prev => prev.map(p => p.id === img.id ? { ...p, progress } : p));
-            },
-            (error) => reject(error),
-            async () => {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              pagesData.push({ imageUrl: downloadURL, width: 0, height: 0 });
-              uploadedSize += img.size;
-              resolve();
-            }
-          );
-        });
+          await new Promise<void>((resolve, reject) => {
+            uploadTask.on('state_changed',
+              (snapshot) => {
+                const overallProgress = ((uploadedSize + snapshot.bytesTransferred) / totalSize) * 100;
+                setUploadProgress(overallProgress);
+              },
+              (error) => reject(error),
+              async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                pagesData.push({ imageUrl: downloadURL, width: 0, height: 0 });
+                uploadedSize += img.size;
+                resolve();
+              }
+            );
+          });
+        } catch (storageErr: any) {
+          console.error("Storage Error:", storageErr);
+          if (storageErr.code === 'storage/unauthorized' || storageErr.code === 'storage/unknown') {
+            throw new Error("Configuration de stockage Firebase manquante ou incorrecte. Veuillez contacter l'administrateur.");
+          }
+          throw storageErr;
+        }
       }
 
       const chapterStatus = pubMode === 'now' ? 'Publié' : 'Programmé';
@@ -265,15 +250,13 @@ export default function AddChapterPage(props: PageProps) {
         pages: pagesData,
         isPremium,
         afriCoinsPrice: isPremium ? afriCoinsPrice : 0,
-        isLocked: false,
         status: chapterStatus,
         scheduledAt: scheduledTimestamp,
         views: 0,
         likes: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        publishedAt: pubMode === 'now' ? serverTimestamp() : null,
-        releaseDate: pubMode === 'now' ? serverTimestamp() : scheduledTimestamp
+        publishedAt: pubMode === 'now' ? serverTimestamp() : null
       });
 
       await updateDoc(doc(db, 'stories', storyId), {
@@ -281,17 +264,15 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      if (story && pubMode === 'now') {
-        // Simplified notification logic for brevity
-        toast({ title: `✅ Publié ! Notifications envoyées.` });
-      } else if (pubMode === 'scheduled') {
-        toast({ title: "📅 Épisode programmé", description: `Sortie prévue le ${new Date(scheduledDate).toLocaleString()}.` });
-      }
-
+      toast({ title: "Chapitre publié avec succès !" });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
-      toast({ title: "Erreur de publication", description: error.message, variant: "destructive" });
+      toast({ 
+        title: "Échec de la publication", 
+        description: error.message || "Une erreur est survenue lors de l'envoi des planches.",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
@@ -299,46 +280,25 @@ export default function AddChapterPage(props: PageProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <Loader2 className="animate-spin text-primary h-12 w-12" />
-        <p className="text-stone-500 font-display font-black uppercase tracking-widest text-[10px]">Chargement de l'Atelier...</p>
-      </div>
-    );
+    return <div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
   }
 
   return (
     <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
       <div className="flex flex-col md:flex-row justify-between items-start gap-6">
         <div className="space-y-2">
-          <Link href={`/dashboard/creations/${storyId}`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-bold text-xs uppercase tracking-widest mb-2">
-            <ArrowLeft className="h-4 w-4" /> Retour à l'Atelier
+          <Link href={`/dashboard/creations/${storyId}`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary font-bold text-xs uppercase tracking-widest">
+            <ArrowLeft className="h-4 w-4" /> Retour
           </Link>
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-2xl">
-              <Layers className="w-10 h-10 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold font-display tracking-tighter text-white">Nouveau Chapitre</h1>
-              <p className="text-stone-500 italic font-light">Ajoutez un nouvel épisode à "{story?.title}".</p>
-            </div>
-          </div>
+          <h1 className="text-4xl font-bold font-display tracking-tighter text-white">Nouveau Chapitre</h1>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
-            className="flex-1 md:flex-none rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black gold-shimmer px-10 shadow-xl shadow-emerald-500/20"
-          >
-            {isCompressing ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Compression...</>
-            ) : isSubmitting ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Publication ({uploadProgress.toFixed(0)}%)... </>
-            ) : (
-              <><Sparkles className="mr-2 h-5 w-5" /> {pubMode === 'now' ? "Publier l'Épisode" : "Programmer l'Épisode"}</>
-            )}
-          </Button>
-        </div>
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
+          className="rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-10 shadow-xl"
+        >
+          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Sparkles className="mr-2 h-5 w-5" /> Publier</>}
+        </Button>
       </div>
 
       <div className="grid lg:grid-cols-[1fr,350px] gap-12">
@@ -346,140 +306,38 @@ export default function AddChapterPage(props: PageProps) {
           <Card className="bg-stone-900/50 border-white/5 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur-xl">
             <div className="space-y-10">
               <div className="space-y-3">
-                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Titre de l'épisode</Label>
+                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Titre de l'épisode</Label>
                 <Input 
                   placeholder="Ex: L'Éveil des Ancêtres" 
-                  className="h-14 text-xl bg-white/5 border-white/5 rounded-2xl focus:border-primary text-white font-display" 
+                  className="h-14 bg-white/5 border-white/5 rounded-2xl text-white font-display" 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
-              <div className="p-8 bg-white/5 border border-white/10 rounded-3xl space-y-6">
-                 <div className="space-y-1">
-                  <Label className="text-sm font-bold text-white flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" /> Mode de publication
-                  </Label>
-                  <p className="text-[10px] text-stone-500 uppercase font-bold tracking-tighter italic">Choisissez quand votre œuvre sera visible.</p>
-                </div>
-                <RadioGroup 
-                  value={pubMode} 
-                  onValueChange={(val: any) => setPubMode(val)}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                >
-                  <div className="relative">
-                    <RadioGroupItem value="now" id="pub-now" className="sr-only" />
-                    <Label 
-                      htmlFor="pub-now" 
-                      className={cn(
-                        "flex flex-col items-center justify-center p-6 border-2 rounded-2xl cursor-pointer transition-all",
-                        pubMode === 'now' ? "border-primary bg-primary/10 text-primary" : "border-white/5 bg-white/5 text-stone-500 hover:bg-white/10"
-                      )}
-                    >
-                      <Zap className="h-6 w-6 mb-2" />
-                      <span className="font-black text-xs uppercase">Publier maintenant</span>
-                    </Label>
-                  </div>
-                  <div className="relative">
-                    <RadioGroupItem value="scheduled" id="pub-later" className="sr-only" />
-                    <Label 
-                      htmlFor="pub-later" 
-                      className={cn(
-                        "flex flex-col items-center justify-center p-6 border-2 rounded-2xl cursor-pointer transition-all",
-                        pubMode === 'scheduled' ? "border-primary bg-primary/10 text-primary" : "border-white/5 bg-white/5 text-stone-500 hover:bg-white/10"
-                      )}
-                    >
-                      <Calendar className="h-6 w-6 mb-2" />
-                      <span className="font-black text-xs uppercase">Programmer</span>
-                    </Label>
-                  </div>
-                </RadioGroup>
-
-                {pubMode === 'scheduled' && (
-                  <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Date et heure de sortie</Label>
-                    <Input 
-                      type="datetime-local"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      className="h-12 bg-black/40 border-primary/20 rounded-xl text-stone-200"
-                    />
-                    <p className="text-[9px] text-stone-500 italic">L'épisode sera automatiquement débloqué à cette date.</p>
-                  </div>
-                )}
-              </div>
-
-               <div className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-bold text-white flex items-center gap-2">
-                      <Crown className="h-4 w-4 text-primary" /> Chapitre Premium
-                    </Label>
-                    <p className="text-[10px] text-stone-500 uppercase font-bold tracking-tighter italic">Réservé aux membres payant en AfriCoins</p>
-                  </div>
-                  <Switch checked={isPremium} onCheckedChange={setIsPremium} />
-                </div>
-
-                {isPremium && (
-                  <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                    <Label className="text-[10px] uppercase font-black tracking-widest text-primary ml-1">Prix en AfriCoins (1-50)</Label>
-                    <div className="flex items-center gap-4">
-                      <div className="relative flex-1">
-                        <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
-                        <Input 
-                          type="number"
-                          min={1}
-                          max={50}
-                          value={afriCoinsPrice}
-                          onChange={(e) => {
-                            let val = parseInt(e.target.value) || 0;
-                            if (val > 50) val = 50;
-                            setAfriCoinsPrice(val);
-                          }}
-                          className="h-14 pl-12 bg-black/40 border-primary/20 rounded-2xl text-xl font-black text-white"
-                        />
-                      </div>
-                      <Badge className="h-14 px-6 rounded-2xl bg-primary/10 text-primary border-primary/20 font-black text-sm">🪙 COINS</Badge>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <div className="space-y-4">
-                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Planches de l'épisode ({selectedImages.length})</Label>
-                
+                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Planches ({selectedImages.length})</Label>
                 <div className="grid gap-4">
                   {selectedImages.map((img, idx) => (
-                    <div key={img.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl group animate-in slide-in-from-left-2 duration-300">
-                      <div className="h-10 w-10 flex items-center justify-center bg-stone-800 rounded-xl font-black text-stone-500 shrink-0">
-                        {idx + 1}
-                      </div>
-                      <div className="relative h-20 w-14 rounded-lg overflow-hidden shadow-lg border border-white/10 shrink-0">
+                    <div key={img.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
+                      <div className="h-8 w-8 flex items-center justify-center bg-stone-800 rounded-lg font-black text-stone-500 shrink-0">{idx + 1}</div>
+                      <div className="relative h-16 w-12 rounded overflow-hidden shrink-0">
                         <Image src={img.preview} alt="Page" fill className="object-cover" />
-                        {isSubmitting && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                <p className="text-white font-bold text-xs">{img.progress.toFixed(0)}%</p>
-                            </div>
-                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-white truncate">{img.name}</p>
-                        <p className="text-[9px] text-stone-500 uppercase font-black">{(img.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-white" onClick={() => moveImage(idx, 'up')} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-white" onClick={() => moveImage(idx, 'down')} disabled={idx === selectedImages.length - 1}><ChevronDown className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-rose-500" onClick={() => removeImage(img.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveImage(idx, 'up')} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveImage(idx, 'down')} disabled={idx === selectedImages.length - 1}><ChevronDown className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-500" onClick={() => removeImage(img.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </div>
                   ))}
 
-                  <label className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/[0.02] hover:bg-white/[0.05] hover:border-primary/50 transition-all cursor-pointer group">
-                    <div className="bg-primary/10 p-4 rounded-full group-hover:scale-110 transition-transform mb-4 shadow-xl">
-                      <UploadCloud className="h-8 w-8 text-primary" />
-                    </div>
+                  <label className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/[0.02] hover:bg-white/[0.05] transition-all cursor-pointer group">
+                    <UploadCloud className="h-8 w-8 text-primary mb-4" />
                     <span className="font-display font-black text-white">Ajouter des planches</span>
-                    <span className="text-[10px] text-stone-500 uppercase tracking-widest mt-1">Multi-sélection autorisée (Optimisation auto)</span>
                     <input type="file" multiple accept="image/jpeg,image/png" className="hidden" onChange={handleFileChange} />
                   </label>
                 </div>
@@ -489,32 +347,14 @@ export default function AddChapterPage(props: PageProps) {
         </div>
 
         <aside className="space-y-8">
-          <Card className="bg-stone-950 border-none rounded-[2rem] p-8 text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 p-6 opacity-5"><Sparkles className="h-24 w-24 text-primary" /></div>
+          <Card className="bg-stone-950 border-none rounded-[2rem] p-8 text-white">
             <h4 className="text-sm font-black uppercase text-primary mb-6 tracking-widest flex items-center gap-2">
-              <Info className="h-4 w-4" /> Détails de l'Épisode
+              <Info className="h-4 w-4" /> Détails
             </h4>
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Numéro</span>
-                <span className="text-2xl font-black text-white">#{ (story?.chapterCount || 0) + 1 }</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Statut</span>
-                <Badge className={cn(
-                  "border-none uppercase text-[8px] font-black",
-                  pubMode === 'now' ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
-                )}>
-                  {pubMode === 'now' ? 'Direct' : 'Planifié'}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Type</span>
-                {isPremium ? (
-                  <Badge className="bg-primary text-black border-none uppercase text-[8px] font-black">Premium</Badge>
-                ) : (
-                  <Badge className="bg-emerald-500/10 text-emerald-500 border-none uppercase text-[8px] font-black">Gratuit</Badge>
-                )}
+                <span className="text-xs text-stone-500 font-bold uppercase">Épisode</span>
+                <span className="text-xl font-black text-white">#{ (story?.chapterCount || 0) + 1 }</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-xs text-stone-500 font-bold uppercase">Pages</span>
@@ -523,12 +363,12 @@ export default function AddChapterPage(props: PageProps) {
             </div>
           </Card>
 
-          <Card className="bg-primary/5 border border-primary/10 rounded-[2rem] p-8">
-            <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest">Conseil de l'Atelier</h4>
-            <p className="text-xs text-stone-400 leading-relaxed italic font-light">
-              "Programmer vos sorties à l'avance permet de maintenir un rythme régulier, ce que les algorithmes du Hub et les lecteurs apprécient particulièrement."
+          <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] flex gap-4">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+            <p className="text-[10px] text-amber-200/70 italic leading-relaxed">
+              En cas d'erreur de stockage, vérifiez que votre bucket Firebase Storage est bien initialisé dans votre console Firebase.
             </p>
-          </Card>
+          </div>
         </aside>
       </div>
     </div>
