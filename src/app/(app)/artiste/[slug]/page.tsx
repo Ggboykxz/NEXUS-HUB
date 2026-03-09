@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useEffect, useState } from 'react';
@@ -17,12 +18,12 @@ export default function ArtistPage(props: { params: Promise<{ slug: string }> })
   const params = use(props.params);
   const [data, setData] = useState<{ artist: UserProfile; stories: Story[] } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [indexError, setIndexError] = useState<string | null>(null);
+  const [indexError, setIndexError] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchArtistData() {
       try {
-        setIndexError(null);
+        setIndexError(false);
         // 1. Rechercher l'artiste par son slug
         const usersRef = collection(db, 'users');
         const userQuery = query(usersRef, where('slug', '==', params.slug), limit(1));
@@ -61,8 +62,7 @@ export default function ArtistPage(props: { params: Promise<{ slug: string }> })
             );
             const fallbackSnapshot = await getDocs(fallbackQuery);
             stories = fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
-            // On informe l'admin si nécessaire, mais on affiche la page
-            setIndexError(e.message);
+            setIndexError(true);
           } else {
             throw e;
           }

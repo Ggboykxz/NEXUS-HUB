@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -56,7 +57,7 @@ export default function CreationsDashboardPage() {
     return () => unsubscribe();
   }, []);
 
-  const { data: myStories = [], isLoading: fetchingStories, error } = useQuery({
+  const { data: myStories = [], isLoading: fetchingStories } = useQuery({
     queryKey: ['my-creations', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {

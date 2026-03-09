@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -192,7 +193,7 @@ export default function AddChapterPage(props: PageProps) {
 
   const handleSubmit = async () => {
     if (!title.trim() || selectedImages.length === 0) {
-      toast({ title: "Données manquantes", variant: "destructive" });
+      toast({ title: "Données manquantes", description: "Veuillez remplir le titre et ajouter au moins une planche.", variant: "destructive" });
       return;
     }
 
@@ -205,6 +206,10 @@ export default function AddChapterPage(props: PageProps) {
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
       const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
       const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+      if (!cloudName || !apiKey || !uploadPreset) {
+        throw new Error("Configuration Cloudinary manquante dans le fichier .env");
+      }
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
@@ -225,7 +230,11 @@ export default function AddChapterPage(props: PageProps) {
           body: formData
         });
 
-        if (!response.ok) throw new Error('Échec de l\'envoi vers Cloudinary');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Cloudinary Error Details:", errorData);
+          throw new Error(errorData.error?.message || 'Échec de l\'envoi vers Cloudinary');
+        }
 
         const result = await response.json();
         pagesData.push({ 
@@ -263,13 +272,13 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Épisode publié via Cloudinary !" });
+      toast({ title: "Épisode publié !", description: "Vos planches sont prêtes pour la lecture." });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
       toast({ 
         title: "Échec de la publication", 
-        description: error.message || "Une erreur est survenue lors de l'envoi vers Cloudinary.",
+        description: error.message || "Une erreur est survenue lors de l'envoi vers Cloudinary. Vérifiez votre configuration .env",
         variant: "destructive" 
       });
     } finally {
@@ -296,7 +305,7 @@ export default function AddChapterPage(props: PageProps) {
           disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
           className="rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-10 shadow-xl"
         >
-          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi direct ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-2 h-5 w-5" /> Publier via Cloudinary</>}
+          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-2 h-5 w-5" /> Publier l'épisode</>}
         </Button>
       </div>
 
@@ -348,24 +357,41 @@ export default function AddChapterPage(props: PageProps) {
         <aside className="space-y-8">
           <Card className="bg-stone-950 border-none rounded-[2rem] p-8 text-white">
             <h4 className="text-sm font-black uppercase text-primary mb-6 tracking-widest flex items-center gap-2">
-              <Zap className="h-4 w-4" /> Cloud CDN Actif
+              <Zap className="h-4 w-4" /> CDN Cloudinary
             </h4>
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Système</span>
-                <span className="text-sm font-black text-emerald-500">Cloudinary Signed</span>
+                <span className="text-xs text-stone-500 font-bold uppercase">Stockage</span>
+                <span className="text-sm font-black text-emerald-500">Cloud Actif</span>
               </div>
               <p className="text-[10px] text-stone-500 italic leading-relaxed">
-                Vos images sont désormais stockées sur Cloudinary et distribuées via un CDN mondial pour une lecture instantanée.
+                Vos images sont servies via un CDN mondial pour une lecture instantanée partout sur le continent.
               </p>
             </div>
           </Card>
 
-          <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] flex gap-4">
-            <Sparkles className="h-5 w-5 text-primary shrink-0" />
-            <p className="text-[10px] text-stone-400 italic leading-relaxed">
-              La clé secrète est protégée sur le serveur. Seule une signature temporaire est envoyée au client.
-            </p>
+          <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] flex flex-col gap-4">
+            <div className="flex gap-3">
+              <Crown className="h-5 w-5 text-primary shrink-0" />
+              <p className="text-[10px] text-stone-400 italic leading-relaxed">
+                Marquez cet épisode comme Premium pour le proposer à la vente contre des AfriCoins.
+              </p>
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <Label className="text-xs font-bold">Épisode Premium</Label>
+              <Switch checked={isPremium} onCheckedChange={setIsPremium} />
+            </div>
+            {isPremium && (
+              <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                <Label className="text-[9px] uppercase font-black text-stone-500">Prix (AfriCoins)</Label>
+                <Input 
+                  type="number" 
+                  value={afriCoinsPrice} 
+                  onChange={(e) => setAfriCoinsPrice(Number(e.target.value))} 
+                  className="bg-white/5 border-white/10 h-10 rounded-xl"
+                />
+              </div>
+            )}
           </div>
         </aside>
       </div>
