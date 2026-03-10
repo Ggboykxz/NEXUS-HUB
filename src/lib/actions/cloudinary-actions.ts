@@ -1,8 +1,11 @@
-
 'use server';
 
 import { v2 as cloudinary } from 'cloudinary';
 
+/**
+ * Configuration de Cloudinary.
+ * Note : Le SECRET doit rester strictement côté serveur.
+ */
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
@@ -12,20 +15,24 @@ cloudinary.config({
 
 /**
  * Génère une signature sécurisée pour l'upload depuis le client.
- * Seuls les paramètres envoyés au client doivent être signés.
+ * @param params Les paramètres à inclure dans la signature (ex: folder).
  */
 export async function getCloudinarySignature(params: Record<string, any> = {}) {
   const timestamp = Math.round(new Date().getTime() / 1000);
   
-  // Paramètres à signer (doivent correspondre exactement à ceux envoyés par le client)
-  const signatureParams = {
-    ...params,
-    timestamp,
-  };
+  // On s'assure que le secret est présent pour éviter une signature vide/invalide
+  if (!process.env.CLOUDINARY_API_SECRET) {
+    console.error("ERREUR : CLOUDINARY_API_SECRET est manquant dans le fichier .env");
+    throw new Error("Configuration serveur incomplète (Secret manquant).");
+  }
 
+  // Cloudinary signe les paramètres triés par ordre alphabétique
   const signature = cloudinary.utils.api_sign_request(
-    signatureParams,
-    process.env.CLOUDINARY_API_SECRET!
+    {
+      ...params,
+      timestamp,
+    },
+    process.env.CLOUDINARY_API_SECRET
   );
 
   return { 

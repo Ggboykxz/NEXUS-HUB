@@ -75,9 +75,12 @@ export default function SubmitPage() {
 
       if (coverFile) {
         const folder = 'nexushub/covers';
+        
+        // 1. Obtenir la signature du serveur
         const config = await getCloudinarySignature({ folder });
         const { timestamp, signature, apiKey, cloudName } = config;
         
+        // 2. Préparer le FormData pour l'API REST de Cloudinary
         const uploadData = new FormData();
         uploadData.append('file', coverFile);
         uploadData.append('api_key', apiKey!);
@@ -85,6 +88,7 @@ export default function SubmitPage() {
         uploadData.append('signature', signature);
         uploadData.append('folder', folder);
 
+        // 3. Envoi direct à Cloudinary
         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
           body: uploadData
@@ -95,7 +99,7 @@ export default function SubmitPage() {
           finalCoverUrl = result.secure_url;
         } else {
           const errorText = await res.text();
-          console.error("Cloudinary raw error:", errorText);
+          console.error("Cloudinary error response:", errorText);
           let errorMessage = "L'envoi de la couverture a échoué.";
           try {
             const errorData = JSON.parse(errorText);
