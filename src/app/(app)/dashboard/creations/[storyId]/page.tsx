@@ -9,7 +9,7 @@ import {
   ChevronRight, Eye, Heart, Wand2, Share2, 
   Globe, Clock, Loader2, Download, CheckCircle2, 
   FileArchive, PenSquare, Calendar, Zap, LayoutGrid,
-  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight
+  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight, Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
