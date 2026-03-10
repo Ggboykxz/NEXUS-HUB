@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StoryCard } from '@/components/story-card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import {
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
   MessageSquare, Settings as SettingsIcon, Share2, Plus, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
-  TrendingUp, Star, Award, Users
+  TrendingUp, Star, Award, Users, Clock
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
