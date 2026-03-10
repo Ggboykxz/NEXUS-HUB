@@ -18,11 +18,16 @@ import {
   Users,
   CheckCircle2,
   Film,
-  Building2
+  Building2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import type { Story } from '@/lib/types';
 
 export default function OriginalsPage() {
   const [timeLeft, setTimeLeft] = useState({ days: 12, hours: 5, minutes: 42, seconds: 18 });
@@ -41,29 +46,22 @@ export default function OriginalsPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const winners = [
-    {
-      title: "Les Veilleurs d'Akoma",
-      artist: "Jelani Adebayo",
-      year: "2025",
-      prize: "Grand Prix de la Narration",
-      image: "https://picsum.photos/seed/winner1/600/400"
-    },
-    {
-      title: "Néo-Dakar 2088",
-      artist: "Amina Diallo",
-      year: "2024",
-      prize: "Meilleur Design Afro-Futuriste",
-      image: "https://picsum.photos/seed/winner2/600/400"
-    },
-    {
-      title: "Le Sceptre du Soleil",
-      artist: "Kwame Osei",
-      year: "2024",
-      prize: "Coup de Coeur du Public",
-      image: "https://picsum.photos/seed/winner3/600/400"
+  // Fetching real "Originals" from database
+  const { data: winners = [], isLoading } = useQuery({
+    queryKey: ['originals-winners'],
+    queryFn: async () => {
+      const storiesRef = collection(db, 'stories');
+      const q = query(
+        storiesRef, 
+        where('isOriginal', '==', true),
+        where('isPublished', '==', true),
+        orderBy('views', 'desc'),
+        limit(3)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
     }
-  ];
+  });
 
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen">
@@ -180,37 +178,50 @@ export default function OriginalsPage() {
             <Button variant="link" className="text-primary font-black text-[10px] uppercase tracking-widest gap-2">Voir toutes les archives <ArrowRight className="h-4 w-4" /></Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {winners.map((winner, i) => (
-              <Card key={i} className="bg-stone-900 border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 hover:shadow-2xl">
-                <div className="relative h-64 overflow-hidden">
-                  <Image src={winner.image} alt={winner.title} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent" />
-                  <div className="absolute top-6 left-6">
-                    <Badge className="bg-black/60 backdrop-blur-md text-white border-white/10 font-black text-[9px] uppercase tracking-widest px-3">{winner.year}</Badge>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="bg-stone-900 h-96 animate-pulse rounded-[2.5rem]" />
+              ))}
+            </div>
+          ) : winners.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {winners.map((winner) => (
+                <Card key={winner.id} className="bg-stone-900 border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 hover:shadow-2xl">
+                  <div className="relative h-64 overflow-hidden">
+                    <Image src={winner.coverImage.imageUrl} alt={winner.title} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent" />
+                    <div className="absolute top-6 left-6">
+                      <Badge className="bg-black/60 backdrop-blur-md text-white border-white/10 font-black text-[9px] uppercase tracking-widest px-3">Nexus Original</Badge>
+                    </div>
                   </div>
-                </div>
-                <CardContent className="p-8 space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-display font-black text-white group-hover:text-primary transition-colors">{winner.title}</h3>
-                    <p className="text-xs text-stone-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                      <Users className="h-3 w-3 text-primary" /> par {winner.artist}
-                    </p>
-                  </div>
-                  <div className="pt-4 border-t border-white/5">
-                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                      <Sparkles className="h-3.5 w-3.5" /> {winner.prize}
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter className="px-8 pb-8 pt-0">
-                  <Button asChild variant="ghost" className="w-full rounded-xl bg-white/5 border border-white/10 text-white font-black hover:bg-primary hover:text-black">
-                    <Link href="#">Lire l'œuvre</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="p-8 space-y-4">
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-display font-black text-white group-hover:text-primary transition-colors truncate">{winner.title}</h3>
+                      <p className="text-xs text-stone-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Users className="h-3 w-3 text-primary" /> par {winner.artistName}
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-white/5">
+                      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5" /> Titre Certifié
+                      </p>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="px-8 pb-8 pt-0">
+                    <Button asChild variant="ghost" className="w-full rounded-xl bg-white/5 border border-white/10 text-white font-black hover:bg-primary hover:text-black">
+                      <Link href={`/webtoon-hub/${winner.slug}`}>Lire l'œuvre</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-4">
+              <Info className="h-10 w-10 text-stone-700 mx-auto" />
+              <p className="text-stone-500 italic">"Aucun Original n'a encore été couronné dans ces sables."</p>
+            </div>
+          )}
         </div>
       </section>
 
