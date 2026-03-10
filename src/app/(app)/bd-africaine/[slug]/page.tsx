@@ -2,10 +2,10 @@ import { getAdminServices } from '@/lib/firebase-admin';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Story, UserProfile, Chapter } from '@/lib/types';
-import StoryDetailClient from '../../webtoon/[slug]/story-detail-client'; // Assumant que c'est le client voulu
+import StoryDetailClient from '../../webtoon/[slug]/story-detail-client';
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -58,7 +58,8 @@ async function getBdData(slug: string) {
 
 // Amélioration: Ajout de métadonnées dynamiques pour le SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const data = await getBdData(params.slug);
+  const { slug } = await params;
+  const data = await getBdData(slug);
 
   if (!data) {
     return { title: 'Contenu introuvable' };
@@ -87,7 +88,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BdAfricaineDetailPage({ params }: PageProps) {
-  const data = await getBdData(params.slug);
+  const { slug } = await params;
+  const data = await getBdData(slug);
 
   if (!data) {
     notFound();
