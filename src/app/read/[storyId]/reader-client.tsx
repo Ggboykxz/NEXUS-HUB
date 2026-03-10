@@ -456,7 +456,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
         <div className="space-y-3">
           <Textarea 
             value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
+            onChange={(e) => setCommentText.set(e.target.value)}
             placeholder="Qu'avez-vous pensé de cet épisode ?" 
             className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-xs font-light"
             maxLength={550}
@@ -600,6 +600,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
   }, [chapters, initialChapterId]);
 
   const currentChapter = chapters?.[currentChapterIndex];
+  const nextChapter = chapters?.[currentChapterIndex + 1];
 
   // --- PREMIUM GATE CHECK ---
   const { data: isUnlocked, isLoading: loadingUnlock } = useQuery({
@@ -849,9 +850,10 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                 onUnlock={handleUnlock}
                 isUnlocking={isUnlocking}
               />
-            ) : loadingUnlock ? (
-              <div className="flex-1 flex items-center justify-center py-32">
+            ) : (loadingUnlock || (chapters.length === 0 && !currentChapter)) ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-32 space-y-6">
                 <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
+                {!currentChapter && chapters.length === 0 && <p className="text-stone-600 italic">Aucun chapitre disponible.</p>}
               </div>
             ) : (
               <>
@@ -879,9 +881,15 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                     <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
                   </div>
                   <div className="flex flex-col gap-4">
-                    <Button onClick={handleNextChapter} size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
-                      Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
-                    </Button>
+                    {nextChapter ? (
+                      <Button onClick={handleNextChapter} size="lg" className="w-full rounded-full h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
+                        Épisode {nextChapter.chapterNumber} <ChevronRight className="ml-2 h-6 w-6" />
+                      </Button>
+                    ) : (
+                      <Button asChild variant="outline" size="lg" className="w-full rounded-full h-16 border-white/10 text-white font-black text-xl hover:bg-white/5">
+                        <Link href={getStoryUrl(story)}>Retour à l'Atelier</Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </>
