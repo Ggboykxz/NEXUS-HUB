@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, getIdToken } from 'firebase/auth';
@@ -188,7 +188,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Identifiant @slug (Fixe)</Label>
-                      <Input value={`@${profile.slug}`} disabled className="rounded-2xl bg-white/5 border-white/5 h-14 opacity-50 cursor-not-allowed font-mono" />
+                      <Input value={`@${profile.slug}`} disabled className="rounded-2xl bg-white/5 border-white/10 h-14 opacity-50 cursor-not-allowed font-mono" />
                     </div>
                   </div>
                 </div>
