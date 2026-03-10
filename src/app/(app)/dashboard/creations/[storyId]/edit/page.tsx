@@ -127,14 +127,13 @@ export default function EditStoryPage(props: PageProps) {
         setIsUploading(true);
         try {
           const folder = `nexushub/covers/${storyId}`;
-          const { timestamp, signature, apiKey, cloudName, uploadPreset } = await getCloudinarySignature({ folder });
+          const { timestamp, signature, apiKey, cloudName } = await getCloudinarySignature({ folder });
 
           const uploadData = new FormData();
           uploadData.append('file', newCoverFile);
           uploadData.append('api_key', apiKey!);
           uploadData.append('timestamp', timestamp.toString());
           uploadData.append('signature', signature);
-          uploadData.append('upload_preset', uploadPreset);
           uploadData.append('folder', folder);
 
           const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -144,13 +143,19 @@ export default function EditStoryPage(props: PageProps) {
 
           if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(errorText || 'Échec Cloudinary');
+            console.error("Cloudinary raw error:", errorText);
+            let errorMessage = "L'envoi de la couverture a échoué.";
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.error?.message || errorMessage;
+            } catch (e) {}
+            throw new Error(errorMessage);
           }
           const result = await response.json();
           finalCoverUrl = result.secure_url;
         } catch (error: any) {
           console.error("Cloudinary error:", error);
-          throw new Error(error.message || "L'envoi de la couverture a échoué.");
+          throw new Error(error.message);
         } finally {
           setIsUploading(false);
         }
@@ -170,7 +175,7 @@ export default function EditStoryPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Légende mise à jour sur Cloudinary !" });
+      toast({ title: "Légende mise à jour !" });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });

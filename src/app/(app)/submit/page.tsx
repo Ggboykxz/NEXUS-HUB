@@ -75,15 +75,14 @@ export default function SubmitPage() {
 
       if (coverFile) {
         const folder = 'nexushub/covers';
-        // Récupération sécurisée de la config depuis le serveur incluant le dossier dans la signature
-        const { timestamp, signature, apiKey, cloudName, uploadPreset } = await getCloudinarySignature({ folder });
+        const config = await getCloudinarySignature({ folder });
+        const { timestamp, signature, apiKey, cloudName } = config;
         
         const uploadData = new FormData();
         uploadData.append('file', coverFile);
         uploadData.append('api_key', apiKey!);
         uploadData.append('timestamp', timestamp.toString());
         uploadData.append('signature', signature);
-        uploadData.append('upload_preset', uploadPreset);
         uploadData.append('folder', folder);
 
         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -96,14 +95,13 @@ export default function SubmitPage() {
           finalCoverUrl = result.secure_url;
         } else {
           const errorText = await res.text();
-          let errorData;
+          console.error("Cloudinary raw error:", errorText);
+          let errorMessage = "L'envoi de la couverture a échoué.";
           try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: { message: errorText } };
-          }
-          console.error("Cloudinary Error Details:", errorData);
-          throw new Error(errorData.error?.message || "L'envoi de la couverture a échoué.");
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (e) {}
+          throw new Error(errorMessage);
         }
       }
 
@@ -132,7 +130,7 @@ export default function SubmitPage() {
       toast({ title: "Légende Invoquée !", description: "Bienvenue dans votre Atelier de création." });
       router.push(`/dashboard/creations/${finalSlug}`);
     } catch (error: any) {
-      toast({ title: "Erreur de création", description: error.message || "Impossible de graver votre légende.", variant: "destructive" });
+      toast({ title: "Erreur de création", description: error.message, variant: "destructive" });
     } finally {
       setIsCreating(false);
     }

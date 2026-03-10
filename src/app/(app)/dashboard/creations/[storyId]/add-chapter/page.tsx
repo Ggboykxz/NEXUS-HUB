@@ -209,9 +209,8 @@ export default function AddChapterPage(props: PageProps) {
       const pagesData = [];
       const folder = `nexushub/chapters/${storyId}`;
       
-      // Récupération sécurisée de la config depuis le serveur
       const config = await getCloudinarySignature({ folder });
-      const { timestamp, signature, apiKey, cloudName, uploadPreset } = config;
+      const { timestamp, signature, apiKey, cloudName } = config;
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
@@ -221,7 +220,6 @@ export default function AddChapterPage(props: PageProps) {
         formData.append('api_key', apiKey!);
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
-        formData.append('upload_preset', uploadPreset);
         formData.append('folder', folder);
 
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -231,13 +229,13 @@ export default function AddChapterPage(props: PageProps) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          let errorData;
+          console.error("Cloudinary raw error:", errorText);
+          let errorMessage = "L'envoi vers Cloudinary a échoué.";
           try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: { message: errorText } };
-          }
-          throw new Error(errorData.error?.message || "L'envoi vers Cloudinary a échoué.");
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (e) {}
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -282,7 +280,7 @@ export default function AddChapterPage(props: PageProps) {
       console.error(error);
       toast({ 
         title: "Échec de la publication", 
-        description: error.message || "Une erreur est survenue lors de l'upload.",
+        description: error.message,
         variant: "destructive" 
       });
     } finally {
@@ -386,7 +384,7 @@ export default function AddChapterPage(props: PageProps) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
                   <div className="space-y-0.5">
-                    <Label className="text-xs font-bold flex items-center gap-2 text-primary"><Crown className="h-3.5 w-3.5" /> Premium</Label>
+                    <Label className="text-sm font-bold flex items-center gap-2 text-primary"><Crown className="h-3.5 w-3.5" /> Premium</Label>
                     <p className="text-[8px] text-stone-500 uppercase font-black">Accès payant</p>
                   </div>
                   <Switch checked={isPremium} onCheckedChange={setIsPremium} />
