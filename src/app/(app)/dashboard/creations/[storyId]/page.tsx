@@ -131,8 +131,8 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
           </div>
 
           <div className="flex flex-wrap justify-center md:flex-col gap-3 w-full md:w-auto shrink-0 relative z-10">
-            <Button asChild size="lg" className="flex-1 md:flex-none rounded-2xl h-14 bg-white text-black font-black px-10 shadow-xl hover:bg-stone-200 transition-all">
-              <Link href={`/read/${story.id}`}><Eye className="mr-3 h-5 w-5" /> Aperçu Public</Link>
+            <Button asChild size="lg" className="flex-1 md:flex-none rounded-2xl h-14 bg-primary text-black font-black px-10 shadow-xl shadow-primary/20 hover:scale-105 transition-all gold-shimmer">
+              <Link href={`/read/${story.id}`}><Eye className="mr-3 h-5 w-5 fill-current" /> Aperçu Immersion</Link>
             </Button>
             <div className="flex gap-3">
               <Button asChild variant="outline" className="flex-1 rounded-2xl h-14 border-white/10 text-white hover:bg-white/5 gap-3 px-6">
