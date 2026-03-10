@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -74,7 +75,9 @@ export default function SubmitPage() {
       let finalCoverUrl = 'https://picsum.photos/seed/placeholder/600/900';
 
       if (coverFile) {
+        // Récupération sécurisée de la config depuis le serveur
         const { timestamp, signature, apiKey, cloudName } = await getCloudinarySignature();
+        
         const uploadData = new FormData();
         uploadData.append('file', coverFile);
         uploadData.append('api_key', apiKey!);
@@ -91,6 +94,10 @@ export default function SubmitPage() {
         if (res.ok) {
           const result = await res.json();
           finalCoverUrl = result.secure_url;
+        } else {
+          const errorData = await res.json();
+          console.error("Cloudinary Error:", errorData);
+          throw new Error("L'envoi de la couverture a échoué.");
         }
       }
 
@@ -118,8 +125,8 @@ export default function SubmitPage() {
 
       toast({ title: "Légende Invoquée !", description: "Bienvenue dans votre Atelier de création." });
       router.push(`/dashboard/creations/${finalSlug}`);
-    } catch (error) {
-      toast({ title: "Erreur de création", description: "Impossible de graver votre légende pour le moment.", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Erreur de création", description: error.message || "Impossible de graver votre légende.", variant: "destructive" });
     } finally {
       setIsCreating(false);
     }
@@ -129,7 +136,6 @@ export default function SubmitPage() {
 
   return (
     <div className="container mx-auto max-w-5xl px-6 py-12 min-h-screen">
-      {/* HEADER AVEC STEPPER */}
       <header className="text-center mb-16 space-y-6">
         <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full mb-4">
           <Zap className="h-4 w-4 text-primary" />

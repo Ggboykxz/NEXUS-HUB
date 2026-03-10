@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -49,6 +50,7 @@ import { getCloudinarySignature } from '@/lib/actions/cloudinary-actions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { Story } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
 
 interface PageProps {
   params: Promise<{ storyId: string }>;
@@ -206,25 +208,21 @@ export default function AddChapterPage(props: PageProps) {
       const newChapterDocRef = doc(db, 'stories', storyId, 'chapters', chapterId);
       
       const pagesData = [];
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-      if (!cloudName || !apiKey || !uploadPreset) {
-        throw new Error("Configuration Cloudinary manquante. Vérifiez vos variables d'environnement.");
-      }
+      
+      // Récupération sécurisée de la config depuis le serveur via l'action serveur
+      const config = await getCloudinarySignature();
+      const { timestamp, signature, apiKey, cloudName } = config;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
         
-        const { timestamp, signature } = await getCloudinarySignature();
-
         const formData = new FormData();
         formData.append('file', img.file);
         formData.append('api_key', apiKey!);
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
-        formData.append('upload_preset', uploadPreset!);
+        formData.append('upload_preset', uploadPreset);
         formData.append('folder', `nexushub/chapters/${storyId}`);
 
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -234,7 +232,7 @@ export default function AddChapterPage(props: PageProps) {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || 'Échec de l\'envoi vers Cloudinary');
+          throw new Error(errorData.error?.message || "L'envoi vers Cloudinary a échoué.");
         }
 
         const result = await response.json();
@@ -279,7 +277,7 @@ export default function AddChapterPage(props: PageProps) {
       console.error(error);
       toast({ 
         title: "Échec de la publication", 
-        description: error.message,
+        description: error.message || "Une erreur est survenue lors de l'upload.",
         variant: "destructive" 
       });
     } finally {
