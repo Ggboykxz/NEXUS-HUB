@@ -65,12 +65,12 @@ const FAQ_DATA: FaqItem[] = [
 ];
 
 const CATEGORIES = [
-  { id: 'all', label: 'Tout', icon: HelpCircle },
-  { id: 'Lecture', label: 'Lecture', icon: BookOpen },
-  { id: 'Création', label: 'Création', icon: PenSquare },
-  { id: 'AfriCoins', label: 'AfriCoins', icon: Coins },
-  { id: 'Compte', label: 'Compte', icon: UserCircle },
-  { id: 'Technique', label: 'Technique', icon: Zap },
+  { id: 'all', label: 'Tout', icon: 'HelpCircle' },
+  { id: 'Lecture', label: 'Lecture', icon: 'BookOpen' },
+  { id: 'Création', label: 'Création', icon: 'PenSquare' },
+  { id: 'AfriCoins', label: 'AfriCoins', icon: 'Coins' },
+  { id: 'Compte', label: 'Compte', icon: 'UserCircle' },
+  { id: 'Technique', label: 'Technique', icon: 'Zap' },
 ];
 
 export default function FaqPage() {

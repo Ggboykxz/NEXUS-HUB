@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
-  HelpCircle, Search, X, Filter
+  HelpCircle, Search, X, Filter, BookOpen, PenSquare, UserCircle, Zap, Coins
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,25 @@ interface FaqItem {
   category: string;
 }
 
+interface Category {
+  id: string;
+  label: string;
+  icon: string;
+}
+
 interface SearchableFaqProps {
   faqData: FaqItem[];
-  categories: any[];
+  categories: Category[];
 }
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  HelpCircle,
+  BookOpen,
+  PenSquare,
+  UserCircle,
+  Zap,
+  Coins
+};
 
 export function SearchableFaq({ faqData, categories }: SearchableFaqProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,20 +108,23 @@ export function SearchableFaq({ faqData, categories }: SearchableFaqProps) {
 
       {/* CATEGORY FILTERS */}
       <div className="flex flex-wrap justify-center gap-3 bg-muted/30 p-2 rounded-[2rem] border border-border/50 max-w-fit mx-auto">
-        {categories.map((cat) => (
-          <Button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            variant={activeCategory === cat.id ? 'default' : 'ghost'}
-            className={cn(
-              "rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest h-11 px-6 transition-all",
-              activeCategory === cat.id ? "bg-primary text-black shadow-xl" : "text-stone-500 hover:text-white"
-            )}
-          >
-            <cat.icon className="h-4 w-4" />
-            {cat.label}
-          </Button>
-        ))}
+        {categories.map((cat) => {
+          const Icon = ICON_MAP[cat.icon] || HelpCircle;
+          return (
+            <Button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              variant={activeCategory === cat.id ? 'default' : 'ghost'}
+              className={cn(
+                "rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest h-11 px-6 transition-all",
+                activeCategory === cat.id ? "bg-primary text-black shadow-xl" : "text-stone-500 hover:text-white"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {cat.label}
+            </Button>
+          );
+        })}
       </div>
 
       {/* RESULTS INFO */}
