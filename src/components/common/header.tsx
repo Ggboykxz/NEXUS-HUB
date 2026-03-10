@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
+import { MobileNav } from './mobile-nav';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -125,7 +126,9 @@ export default function Header() {
     )}>
       <div className="container flex max-w-7xl items-center h-full px-6 lg:px-12">
         <div className={cn("w-full items-center justify-between", isSearchOpen ? 'hidden' : 'flex')}>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
+            <MobileNav navLinks={navLinks} />
+            
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(212,168,67,0.3)] transition-transform group-hover:scale-110">
                 <span className="font-display font-black text-stone-950 text-xl">N</span>
