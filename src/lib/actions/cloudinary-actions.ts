@@ -20,16 +20,17 @@ cloudinary.config({
 export async function getCloudinarySignature(params: Record<string, any> = {}) {
   const timestamp = Math.round(new Date().getTime() / 1000);
   
-  // On s'assure que le secret est présent pour éviter une signature vide/invalide
+  // Vérification de la présence du secret pour éviter les signatures invalides
   if (!process.env.CLOUDINARY_API_SECRET) {
     console.error("ERREUR : CLOUDINARY_API_SECRET est manquant dans le fichier .env");
     throw new Error("Configuration serveur incomplète (Secret manquant).");
   }
 
-  // Cloudinary signe les paramètres triés par ordre alphabétique
+  // Cloudinary signe les paramètres triés par ordre alphabétique.
+  // On ne signe que folder et timestamp pour correspondre à la requête cliente simplifiée.
   const signature = cloudinary.utils.api_sign_request(
     {
-      ...params,
+      folder: params.folder,
       timestamp,
     },
     process.env.CLOUDINARY_API_SECRET
