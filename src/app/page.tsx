@@ -17,12 +17,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/components/providers/language-provider';
 import { useAuth } from '@/hooks/use-auth';
-import { onAuthStateChanged } from 'firebase/auth';
 import {
   Play, TrendingUp, Sparkles, ChevronRight, BrainCircuit,
-  Headphones, Film, Star, Flame, Gift, History,
-  Users, Zap, Globe, Coins, Mic2, MessageSquare, CheckCircle2,
-  Heart, Trophy, Handshake, BookOpen, Settings, X
+  Headphones, History, Coins, BookOpen, Settings, X
 } from 'lucide-react';
 
 export default function RootHomePage() {
@@ -35,16 +32,15 @@ export default function RootHomePage() {
       try {
         const storiesRef = collection(db, 'stories');
         // Tentative de requête avec filtre. Si l'index manque, on bascule sur une version simplifiée.
-        let q;
         try {
-          q = query(storiesRef, where('isPublished', '==', true), orderBy('views', 'desc'), limit(15));
+          const q = query(storiesRef, where('isPublished', '==', true), orderBy('views', 'desc'), limit(15));
           const snap = await getDocs(q);
           return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
-        } catch (e) {
+        } catch (e: any) {
           console.warn("Firestore index missing or permissions error, falling back to simple query", e);
-          q = query(storiesRef, limit(15));
-          const snap = await getDocs(q);
-          return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)).filter(s => s.isPublished);
+          const qSimple = query(storiesRef, where('isPublished', '==', true), limit(15));
+          const snap = await getDocs(qSimple);
+          return snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
         }
       } catch (error) {
         console.error("Error fetching popular stories: ", error);
@@ -120,13 +116,16 @@ function UserHomeView({ profile, currentUser, popular, isLoadingPopular }: { pro
     enabled: !!currentUser,
     queryFn: async () => {
       try {
-        const q = query(
-          collection(db, 'users', currentUser.uid, 'library'),
-          orderBy('lastReadAt', 'desc'),
-          limit(3)
-        );
-        const snap = await getDocs(q);
-        return snap.docs.map(d => d.data() as LibraryEntry);
+        const libRef = collection(db, 'users', currentUser.uid, 'library');
+        try {
+          const q = query(libRef, orderBy('lastReadAt', 'desc'), limit(3));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => d.data() as LibraryEntry);
+        } catch (e) {
+          const qSimple = query(libRef, limit(3));
+          const snap = await getDocs(qSimple);
+          return snap.docs.map(d => d.data() as LibraryEntry);
+        }
       } catch (error) {
         console.error("Error fetching user library: ", error);
         return [];
