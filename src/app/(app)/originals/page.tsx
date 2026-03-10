@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   Film,
   Building2,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -46,20 +47,33 @@ export default function OriginalsPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetching real "Originals" from database
+  // Fetching real "Originals" from database with error handling for permissions/indexes
   const { data: winners = [], isLoading } = useQuery({
     queryKey: ['originals-winners'],
     queryFn: async () => {
-      const storiesRef = collection(db, 'stories');
-      const q = query(
-        storiesRef, 
-        where('isOriginal', '==', true),
-        where('isPublished', '==', true),
-        orderBy('views', 'desc'),
-        limit(3)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      try {
+        const storiesRef = collection(db, 'stories');
+        const q = query(
+          storiesRef, 
+          where('isOriginal', '==', true),
+          where('isPublished', '==', true),
+          orderBy('views', 'desc'),
+          limit(3)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Story));
+      } catch (error: any) {
+        console.warn("Firestore query failed, falling back to basic fetching:", error.message);
+        // Fallback: simple query if composite index is missing or permissions error
+        const storiesRef = collection(db, 'stories');
+        const qFallback = query(storiesRef, limit(10));
+        const snap = await getDocs(qFallback);
+        return snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Story))
+          .filter(s => s.isOriginal && s.isPublished)
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 3);
+      }
     }
   });
 
