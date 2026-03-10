@@ -2,7 +2,7 @@
 import { Timestamp } from 'firebase/firestore';
 
 /**
- * @fileOverview NexusHub Core Type Definitions - Version 4.3.0
+ * @fileOverview NexusHub Core Type Definitions - Version 4.4.0
  * Schéma consolidé pour Firestore incluant slugs uniques, rôles avancés et statistiques.
  */
 
@@ -30,6 +30,7 @@ export interface UserProfile {
   email: string;
   displayName: string;
   photoURL: string;
+  bannerURL?: string;              // Nouveau: Image de fond du profil
   slug: string;                    // @pseudo unique obligatoire
   role: UserRole;
   level: number;
@@ -41,6 +42,7 @@ export interface UserProfile {
     instagram?: string;
     tiktok?: string;
     facebook?: string;
+    website?: string;
   };
   afriCoins: number;
   subscribersCount: number;
@@ -48,7 +50,7 @@ export interface UserProfile {
   isCertified: boolean;
   isBanned: boolean;
   isVerified: boolean;
-  onboardingCompleted?: boolean;    // Nouveau: Statut du tutoriel d'accueil
+  onboardingCompleted?: boolean;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
   lastActive?: Timestamp | string;
@@ -96,7 +98,7 @@ export interface Story {
   genreSlug: string;
   genres: string[];                 // Multiple tags
   tags: string[];
-  region?: string;                  // Nouveau: Région d'origine
+  region?: string;                  // Région d'origine
   isPublished: boolean;
   isBanned: boolean;
   isOriginal: boolean;
@@ -132,7 +134,7 @@ export interface Chapter {
   pages: { imageUrl: string; width: number; height: number }[];
   isLocked: boolean;
   isPremium?: boolean;
-  afriCoinsPrice?: number;          // Nouveau: Prix en coins
+  afriCoinsPrice?: number;
   publishedAt: Timestamp | string;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
@@ -275,8 +277,8 @@ export interface Thread {
  * Helper SEO pour générer les URLs des histoires.
  */
 export const getStoryUrl = (story: { format: string, slug: string } | string) => {
-  if (typeof story === 'string') return `/read/${story}`; // Fallback pour les anciens appels basés sur l'ID
-  if (typeof story === 'object' && story.format === 'BD') return `/bd-africaine/${story.slug}`;
+  if (typeof story === 'string') return `/read/${story}`;
+  if (typeof story === 'object' && (story.format === 'BD' || story.format === 'One-shot')) return `/bd-africaine/${story.slug}`;
   if (typeof story === 'object') return `/webtoon-hub/${story.slug}`;
   return '/';
 };
