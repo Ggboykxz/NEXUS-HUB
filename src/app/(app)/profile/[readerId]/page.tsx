@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useState, useEffect } from 'react';
@@ -10,7 +9,7 @@ import {
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
   MessageSquare, Settings as SettingsIcon, Share2, Plus, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
-  TrendingUp, Star, Award
+  TrendingUp, Star, Award, Users
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
