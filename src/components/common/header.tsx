@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -252,6 +253,11 @@ export default function Header() {
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/library" className="flex items-center gap-3 font-bold text-xs"><Library className="h-4 w-4" /> Ma Bibliothèque</Link>
                     </DropdownMenuItem>
+                    {profile?.role?.includes('artist') && (
+                      <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
+                        <Link href="/dashboard/creations" className="flex items-center gap-3 font-bold text-xs"><Brush className="h-4 w-4" /> Mon Atelier</Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/settings" className="flex items-center gap-3 font-bold text-xs"><Settings className="h-4 w-4" /> Configuration</Link>
                     </DropdownMenuItem>
