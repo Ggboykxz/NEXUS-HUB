@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -10,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Crown, Eye, Heart, TrendingUp, Sparkles, Award, Trophy, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -58,11 +58,26 @@ export default function RankingsPage() {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>
-      ) : (
-        <div className="grid gap-6">
-          {popular.map((story, index) => (
+      <div className="grid gap-6">
+        {isLoading ? (
+          [...Array(10)].map((_, i) => (
+            <Card key={i} className="overflow-hidden bg-stone-900/20 border-white/5 rounded-2xl animate-pulse">
+              <CardContent className="p-0 flex items-center">
+                <div className="w-20 md:w-28 h-24 flex items-center justify-center border-r border-white/5 bg-stone-900/40">
+                  <Skeleton className="h-8 w-8 rounded bg-stone-800" />
+                </div>
+                <div className="flex-1 p-6 flex items-center gap-6">
+                  <Skeleton className="h-20 w-14 rounded-xl bg-stone-800" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-5 w-1/3 bg-stone-800" />
+                    <Skeleton className="h-3 w-1/4 bg-stone-800/50" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          popular.map((story, index) => (
             <Card key={story.id} className="group overflow-hidden transition-all bg-card/50 border-white/5 rounded-2xl hover:border-primary/30">
               <CardContent className="p-0 flex items-center">
                 <div className="w-20 md:w-28 h-full flex items-center justify-center border-r border-white/5 bg-white/[0.02] font-display font-black text-3xl text-stone-700">#{index + 1}</div>
@@ -84,9 +99,9 @@ export default function RankingsPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }

@@ -21,12 +21,49 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, where, limit } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+
+function StoryGridSkeleton({ count = 10 }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-[3/4] w-full bg-stone-900 animate-pulse rounded-2xl border border-white/5" />
+          <Skeleton className="h-4 w-3/4 bg-stone-900" />
+          <Skeleton className="h-3 w-1/2 bg-stone-900/50" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ArtistListSkeleton({ count = 6 }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(count)].map((_, i) => (
+        <Card key={i} className="bg-stone-900/20 border-white/5 rounded-[2rem] p-6 animate-pulse">
+          <div className="flex items-center gap-5">
+            <Skeleton className="h-20 w-20 rounded-full bg-stone-800" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-5 w-1/2 bg-stone-800" />
+              <Skeleton className="h-3 w-3/4 bg-stone-800/50" />
+              <div className="flex gap-2">
+                <Skeleton className="h-4 w-16 bg-stone-800/30 rounded-full" />
+                <Skeleton className="h-4 w-12 bg-stone-800/30 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
@@ -41,7 +78,6 @@ function SearchResultsContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
-  // --- PERSISTENCE LOGIC ---
   useEffect(() => {
     const saved = localStorage.getItem('nexushub-search-history');
     if (saved) {
@@ -69,16 +105,10 @@ function SearchResultsContent() {
     toast({ title: "Historique effacé" });
   };
 
-  // --- FILTERS STATE ---
   const [filters, setFilters] = useState({
-    country: 'Tous',
-    language: 'Toutes',
     status: 'Tous',
-    length: 'Toutes',
-    theme: 'Tous'
   });
 
-  // MULTI-FIELD FIRESTORE SEARCH FOR STORIES
   const { data: filteredStories = [], isLoading: loadingStories } = useQuery({
     queryKey: ['search-stories-firestore', searchTerm, filters.status],
     queryFn: async () => {
@@ -103,20 +133,13 @@ function SearchResultsContent() {
         limit(20)
       );
 
-      const qTags = query(
-        storiesRef,
-        where('tags', 'array-contains', searchTerm.toLowerCase()),
-        limit(20)
-      );
-
-      const [snapTitle, snapGenre, snapTags] = await Promise.all([
+      const [snapTitle, snapGenre] = await Promise.all([
         getDocs(qTitle),
-        getDocs(qGenre),
-        getDocs(qTags)
+        getDocs(qGenre)
       ]);
 
       const resultMap = new Map<string, Story>();
-      [...snapTitle.docs, ...snapGenre.docs, ...snapTags.docs].forEach(doc => {
+      [...snapTitle.docs, ...snapGenre.docs].forEach(doc => {
         const data = { id: doc.id, ...doc.data() } as Story;
         if (filters.status === 'Tous' || data.status === filters.status) {
           resultMap.set(doc.id, data);
@@ -127,7 +150,6 @@ function SearchResultsContent() {
     }
   });
 
-  // ARTIST SEARCH
   const { data: filteredArtists = [], isLoading: loadingArtists } = useQuery({
     queryKey: ['search-artists-firestore', searchTerm],
     queryFn: async () => {
@@ -213,9 +235,10 @@ function SearchResultsContent() {
     router.push(`/search?q=${encodeURIComponent(term)}`);
   };
 
+  const isAnythingLoading = loadingStories || loadingArtists;
+
   return (
     <div className="space-y-16">
-      {/* 1. NEXUS ARCHIVES HEADER */}
       <section className="relative p-12 rounded-[3rem] bg-stone-950 border border-primary/10 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_70%)]" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-10">
@@ -254,7 +277,6 @@ function SearchResultsContent() {
                   </div>
               </form>
 
-              {/* SEARCH HISTORY */}
               {searchHistory.length > 0 && !searchTerm && (
                 <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in duration-500">
                   <div className="flex items-center justify-between px-2">
@@ -281,80 +303,12 @@ function SearchResultsContent() {
                   </div>
                 </div>
               )}
-
-              {isListening && interimTranscript && (
-                <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
-                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                      <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                    </div>
-                    <p className="text-sm text-primary font-medium italic text-left leading-tight line-clamp-2">
-                      "{interimTranscript}..."
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-3">
-                {['Mythologie', 'Action', 'Afrofuturisme', 'Romance', 'Elite'].map(tag => (
-                    <Badge 
-                        key={tag} 
-                        variant="secondary" 
-                        className="px-5 py-2 cursor-pointer bg-white/5 text-stone-400 hover:bg-primary hover:text-black transition-all rounded-full border border-white/5 font-bold text-[10px] uppercase tracking-widest"
-                        onClick={() => { setSearchState(tag); addToHistory(tag); router.push(`/search?q=${tag}`) }}
-                    >
-                        #{tag}
-                    </Badge>
-                ))}
             </div>
         </div>
       </section>
 
-      {/* 2. RESULTS & TABS */}
       <div className="space-y-10">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-2">
-            <div className="flex flex-col gap-4 w-full md:w-auto">
-                <Button 
-                    onClick={() => setShowFilters(!showFilters)}
-                    variant="outline" 
-                    className={cn(
-                        "rounded-full gap-3 border-white/10 text-[10px] font-black uppercase tracking-[0.2em] h-12 px-8",
-                        showFilters && "bg-primary text-black"
-                    )}
-                >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {showFilters ? 'Fermer Filtres' : 'Affiner la quête'}
-                </Button>
-                
-                {showFilters && (
-                  <div className="animate-in slide-in-from-top-2 duration-300 p-6 bg-stone-900/50 border border-white/5 rounded-[2rem] space-y-6">
-                    <div className="flex items-center gap-3 text-amber-500 bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
-                      <AlertCircle className="h-5 w-5 shrink-0" />
-                      <p className="text-[10px] font-black uppercase tracking-widest leading-tight">
-                        Recherche avancée via Algolia disponible prochainement pour une expérience ultra-rapide et tolérante aux fautes.
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase text-stone-500 ml-1">Statut</label>
-                        <Select value={filters.status} onValueChange={(val) => setFilters({...filters, status: val})}>
-                          <SelectTrigger className="h-10 bg-white/5 border-white/10 rounded-xl text-xs font-bold">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Tous">Tous les statuts</SelectItem>
-                            <SelectItem value="En cours">En cours</SelectItem>
-                            <SelectItem value="Terminé">Terminé</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            </div>
-
             <div className="flex bg-muted/50 p-1 rounded-2xl border border-border/50 h-12 w-full md:w-auto">
                 <Button variant={activeTab === 'all' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('all')} className="rounded-xl flex-1 md:flex-none px-8 font-black text-[10px] uppercase tracking-widest">Tout</Button>
                 <Button variant={activeTab === 'stories' ? 'default' : 'ghost'} size="sm" onClick={() => setActiveTab('stories')} className="rounded-xl flex-1 md:flex-none px-8 font-black text-[10px] uppercase tracking-widest gap-2"><BookOpen className="h-3.5 w-3.5" /> Œuvres</Button>
@@ -363,10 +317,10 @@ function SearchResultsContent() {
         </div>
 
         <div className="min-h-[400px]">
-          {loadingStories || loadingArtists ? (
-            <div className="flex flex-col items-center justify-center py-32 gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-widest">Sondage des profondeurs...</p>
+          {isAnythingLoading ? (
+            <div className="space-y-20">
+              <StoryGridSkeleton count={10} />
+              <ArtistListSkeleton count={6} />
             </div>
           ) : (
             <div className="space-y-20 animate-in fade-in duration-700">
@@ -427,7 +381,7 @@ function SearchResultsContent() {
                       <Sparkles className="h-16 w-16 text-stone-700 animate-pulse" />
                   </div>
                   <h2 className="text-3xl font-bold font-display text-white mb-2">Les sables sont restés muets...</h2>
-                  <p className="text-stone-500 max-w-sm mx-auto mb-10 font-light italic">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Essayez d'autres mots-clés ou vérifiez la casse.</p>
+                  <p className="text-stone-500 max-sm mx-auto mb-10 font-light italic">"Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin." Essayez d'autres mots-clés ou vérifiez la casse.</p>
                   <Button 
                       variant="outline" 
                       className="rounded-full px-12 h-14 border-primary text-primary hover:bg-primary hover:text-black font-black uppercase text-xs tracking-widest" 
@@ -448,12 +402,7 @@ function SearchResultsContent() {
 export default function SearchPage() {
   return (
     <div className="container max-w-7xl mx-auto px-6 py-12">
-      <Suspense fallback={
-        <div className="h-96 flex flex-col items-center justify-center gap-6">
-            <div className="h-16 w-16 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(212,168,67,0.3)]" />
-            <p className="text-stone-500 font-display font-black animate-pulse uppercase tracking-[0.3em] text-[10px]">Consultation des archives Nexus...</p>
-        </div>
-      }>
+      <Suspense fallback={<StoryGridSkeleton count={10} />}>
         <SearchResultsContent />
       </Suspense>
     </div>

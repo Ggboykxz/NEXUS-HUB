@@ -1,4 +1,3 @@
-
 'use client';
 
 import { use, useEffect, useState } from 'react';
@@ -9,6 +8,30 @@ import ArtistDetailClient from './artist-detail-client';
 import { notFound } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function ArtistPageSkeleton() {
+  return (
+    <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
+      <div className="flex flex-col items-center text-center space-y-4">
+        <Skeleton className="h-32 w-32 rounded-full bg-stone-900 border-4 border-stone-800" />
+        <Skeleton className="h-8 w-48 bg-stone-900" />
+        <Skeleton className="h-4 w-24 bg-stone-900/50" />
+      </div>
+      <div className="bg-stone-900/30 border border-white/5 rounded-2xl p-8 space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48 bg-stone-800" />
+          <Skeleton className="h-4 w-32 bg-stone-800/50" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="aspect-[2/3] w-full bg-stone-900 animate-pulse rounded-xl border border-white/5" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Page de profil artiste utilisant le SDK Client.
@@ -80,11 +103,7 @@ export default function ArtistPage(props: { params: Promise<{ slug: string }> })
   }, [params.slug]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-950">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <ArtistPageSkeleton />;
   }
 
   if (!data) {
@@ -103,7 +122,7 @@ export default function ArtistPage(props: { params: Promise<{ slug: string }> })
             </p>
           </div>
           <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-black" asChild>
-            <a href="https://console.firebase.google.com/v1/r/project/studio-7543974359-3b6f7/firestore/indexes?create_composite=Cldwcm9qZWN0cy9zdHVkaW8tNzU0Mzk3NDM1OS0zYjZmNy9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvc3Rvcmllcy9pbmRleGVzL18QARoMCghhcnRpc3RJZBABGg8KC2lzUHVibGlzaGVkEAEaDQoJdXBkYXRlZEF0EAIaDAoIX19uYW1lX18QAg" target="_blank" rel="noopener noreferrer">
+            <a href="https://console.firebase.google.com/v1/r/project/studio-7543974359-3b6f7/firestore/indexes" target="_blank" rel="noopener noreferrer">
               Créer l'Index
             </a>
           </Button>
