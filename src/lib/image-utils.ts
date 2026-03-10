@@ -1,8 +1,9 @@
+
 /**
  * @fileOverview Utilitaires pour la transformation et l'optimisation automatique des images.
  */
 
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'demo';
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dfzrjuaap';
 
 export interface ImageTransformOptions {
   width?: number;
