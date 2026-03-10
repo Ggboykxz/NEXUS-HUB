@@ -9,7 +9,7 @@ import {
   ChevronRight, Eye, Heart, Wand2, Share2, 
   Globe, Clock, Loader2, Download, CheckCircle2, 
   FileArchive, PenSquare, Calendar, Zap, LayoutGrid,
-  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight, Layers
+  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight, Layers, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,6 +21,19 @@ import { useToast } from '@/hooks/use-toast';
 import type { Story, Chapter } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteStory } from '@/lib/actions/story-actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 /**
  * L'Atelier : Le centre de commande d'une série.
@@ -30,6 +43,8 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
   const { storyId } = use(props.params);
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [story, setStory] = useState<Story | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +84,23 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
     });
     return () => unsub();
   }, [storyId, router, toast]);
+
+  // Mutation pour la suppression
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await deleteStory(storyId);
+      if (!res.success) throw new Error(res.error);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-creations'] });
+      toast({ title: "Légende supprimée", description: "L'œuvre a été retirée des archives définitivement." });
+      router.push('/dashboard/creations');
+    },
+    onError: (e: any) => {
+      toast({ title: "Erreur", description: e.message || "Impossible de supprimer l'œuvre.", variant: "destructive" });
+    }
+  });
 
   const handleDownloadChapter = async (chapter: Chapter) => {
     if (downloadingId) return;
@@ -138,9 +170,35 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
               <Button asChild variant="outline" className="flex-1 rounded-2xl h-14 border-white/10 text-white hover:bg-white/5 gap-3 px-6">
                 <Link href={`/dashboard/creations/${storyId}/edit`}><Settings2 className="h-5 w-5" /> Paramètres</Link>
               </Button>
-              <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/10 transition-all">
-                <Trash2 className="h-5 w-5" />
-              </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/10 transition-all">
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-stone-900 border-white/5 text-white rounded-3xl">
+                  <AlertDialogHeader>
+                    <div className="mx-auto bg-rose-500/10 p-3 rounded-2xl w-fit mb-4">
+                      <AlertTriangle className="h-6 w-6 text-rose-500" />
+                    </div>
+                    <AlertDialogTitle className="text-center font-display font-black uppercase tracking-tight">Supprimer la Légende ?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center text-stone-400 italic">
+                      "Cette action est irréversible. Toutes les planches, les chapitres et l'histoire de cette saga seront perdus à jamais dans les sables du temps."
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="sm:justify-center gap-3 mt-6">
+                    <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white h-12 px-8">Annuler</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => deleteMutation.mutate()}
+                      disabled={deleteMutation.isPending}
+                      className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black h-12 px-8"
+                    >
+                      {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer la suppression"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>

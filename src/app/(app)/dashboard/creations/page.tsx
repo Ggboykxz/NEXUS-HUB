@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,13 +23,14 @@ import {
   Zap
 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, deleteDoc, doc, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, limit } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Story } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { deleteStory } from '@/lib/actions/story-actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,14 +89,16 @@ export default function CreationsDashboardPage() {
 
   const deleteStoryMutation = useMutation({
     mutationFn: async (storyId: string) => {
-      await deleteDoc(doc(db, 'stories', storyId));
+      const res = await deleteStory(storyId);
+      if (!res.success) throw new Error(res.error);
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-creations'] });
-      toast({ title: "Légende supprimée", description: "L'œuvre a été retirée des archives." });
+      toast({ title: "Légende supprimée", description: "L'œuvre et ses chapitres ont été retirés des archives." });
     },
-    onError: () => {
-      toast({ title: "Erreur", description: "Impossible de supprimer l'œuvre.", variant: "destructive" });
+    onError: (e: any) => {
+      toast({ title: "Erreur", description: e.message || "Impossible de supprimer l'œuvre.", variant: "destructive" });
     }
   });
 
@@ -194,9 +196,10 @@ export default function CreationsDashboardPage() {
                           <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white">Conserver le récit</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => deleteStoryMutation.mutate(story.id)}
+                            disabled={deleteStoryMutation.isPending}
                             className="rounded-xl bg-rose-600 font-black h-12 px-8"
                           >
-                            Confirmer la suppression
+                            {deleteStoryMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer la suppression"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -251,7 +254,7 @@ export default function CreationsDashboardPage() {
           </div>
           <div className="space-y-2">
             <h3 className="text-3xl font-display font-black text-white tracking-tighter">L'Ardoise est Vierge</h3>
-            <p className="text-stone-500 max-w-sm mx-auto italic font-light leading-relaxed">
+            <p className="text-stone-500 max-sm mx-auto italic font-light leading-relaxed">
               "Chaque grande épopée commence par une intention. Il est temps de graver votre première légende dans les archives de NexusHub."
             </p>
           </div>
