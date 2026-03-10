@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -29,7 +28,9 @@ import {
   Calendar,
   Zap,
   AlertTriangle,
-  Cloud
+  Cloud,
+  FileUp,
+  Settings2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
@@ -167,6 +168,7 @@ export default function AddChapterPage(props: PageProps) {
 
       const results = await Promise.all(compressionPromises);
       setSelectedImages(prev => [...prev, ...results]);
+      toast({ title: `${results.length} planches ajoutées`, description: "Optimisées pour le Web." });
     } catch (error) {
       toast({ title: "Erreur de traitement", variant: "destructive" });
     } finally {
@@ -200,7 +202,8 @@ export default function AddChapterPage(props: PageProps) {
     setIsSubmitting(true);
     try {
       const chapterNumber = (story?.chapterCount || 0) + 1;
-      const newChapterDocRef = doc(collection(db, 'stories', storyId, 'chapters'));
+      const chapterId = `ch${chapterNumber}-${Math.floor(Math.random() * 1000)}`;
+      const newChapterDocRef = doc(db, 'stories', storyId, 'chapters', chapterId);
       
       const pagesData = [];
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -208,13 +211,12 @@ export default function AddChapterPage(props: PageProps) {
       const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
       if (!cloudName || !apiKey || !uploadPreset) {
-        throw new Error("Configuration Cloudinary manquante dans le fichier .env");
+        throw new Error("Configuration Cloudinary manquante. Vérifiez vos variables d'environnement.");
       }
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
         
-        // Obtenir la signature du serveur
         const { timestamp, signature } = await getCloudinarySignature();
 
         const formData = new FormData();
@@ -232,7 +234,6 @@ export default function AddChapterPage(props: PageProps) {
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("Cloudinary Error Details:", errorData);
           throw new Error(errorData.error?.message || 'Échec de l\'envoi vers Cloudinary');
         }
 
@@ -250,7 +251,7 @@ export default function AddChapterPage(props: PageProps) {
       const scheduledTimestamp = pubMode === 'scheduled' ? Timestamp.fromDate(new Date(scheduledDate)) : null;
 
       await setDoc(newChapterDocRef, {
-        id: newChapterDocRef.id,
+        id: chapterId,
         storyId,
         title,
         chapterNumber,
@@ -272,13 +273,13 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Épisode publié !", description: "Vos planches sont prêtes pour la lecture." });
+      toast({ title: "Épisode publié !", description: "Vos planches sont prêtes pour la lecture mondiale." });
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
       toast({ 
         title: "Échec de la publication", 
-        description: error.message || "Une erreur est survenue lors de l'envoi vers Cloudinary. Vérifiez votre configuration .env",
+        description: error.message,
         variant: "destructive" 
       });
     } finally {
@@ -292,107 +293,152 @@ export default function AddChapterPage(props: PageProps) {
   }
 
   return (
-    <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-        <div className="space-y-2">
-          <Link href={`/dashboard/creations/${storyId}`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary font-bold text-xs uppercase tracking-widest">
-            <ArrowLeft className="h-4 w-4" /> Retour
+    <div className="container mx-auto max-w-6xl px-6 py-12 space-y-12 animate-in fade-in duration-1000">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-6 bg-stone-900/50 p-8 rounded-[3rem] border border-white/5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5"><FileUp className="h-48 w-48 text-primary" /></div>
+        <div className="space-y-3 relative z-10">
+          <Link href={`/dashboard/creations/${storyId}`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-bold text-[10px] uppercase tracking-widest mb-2">
+            <ArrowLeft className="h-4 w-4" /> Retour à l'Atelier
           </Link>
-          <h1 className="text-4xl font-bold font-display tracking-tighter text-white">Nouveau Chapitre</h1>
+          <h1 className="text-4xl font-display font-black text-white tracking-tighter">Nouveau Chapitre</h1>
+          <p className="text-stone-500 italic font-light text-sm">Série : <span className="text-primary font-bold">{story?.title}</span></p>
         </div>
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
-          className="rounded-xl h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-10 shadow-xl"
-        >
-          {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-2 h-5 w-5" /> Publier l'épisode</>}
-        </Button>
+        <div className="flex gap-3 w-full md:w-auto relative z-10">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
+            className="rounded-2xl h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-12 shadow-xl shadow-emerald-500/20 text-lg gold-shimmer"
+          >
+            {isSubmitting ? <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-3 h-6 w-6" /> Publier l'épisode</>}
+          </Button>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr,350px] gap-12">
+      <div className="grid lg:grid-cols-[1fr,380px] gap-12 items-start">
         <div className="space-y-8">
-          <Card className="bg-stone-900/50 border-white/5 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur-xl">
-            <div className="space-y-10">
+          <Card className="bg-stone-950 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <CardHeader className="p-8 pb-4">
+              <CardTitle className="text-xl font-display font-bold">Configuration du Récit</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 pt-0 space-y-10">
               <div className="space-y-3">
-                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Titre de l'épisode</Label>
+                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500 ml-1">Titre de l'épisode</Label>
                 <Input 
-                  placeholder="Ex: L'Éveil des Ancêtres" 
-                  className="h-14 bg-white/5 border-white/5 rounded-2xl text-white font-display" 
+                  placeholder="Ex: Le Réveil du Gardien" 
+                  className="h-14 bg-white/5 border-white/10 rounded-2xl text-white font-display text-lg" 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Planches ({selectedImages.length})</Label>
-                <div className="grid gap-4">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-1">
+                  <Label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Séquence des Planches ({selectedImages.length})</Label>
+                  <Button variant="ghost" onClick={() => setSelectedImages([])} className="h-6 text-[8px] font-black uppercase text-rose-500 hover:bg-rose-500/10">Tout effacer</Button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
                   {selectedImages.map((img, idx) => (
-                    <div key={img.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                      <div className="h-8 w-8 flex items-center justify-center bg-stone-800 rounded-lg font-black text-stone-500 shrink-0">{idx + 1}</div>
-                      <div className="relative h-16 w-12 rounded overflow-hidden shrink-0">
+                    <div key={img.id} className="flex items-center gap-6 p-4 bg-white/[0.02] border border-white/5 rounded-3xl group hover:border-primary/20 transition-all shadow-lg animate-in slide-in-from-bottom-2 duration-300">
+                      <div className="h-12 w-12 flex items-center justify-center bg-stone-900 rounded-2xl font-display font-black text-xl text-stone-700 group-hover:text-primary transition-colors">{idx + 1}</div>
+                      <div className="relative h-24 w-16 rounded-xl overflow-hidden shadow-2xl shrink-0 border border-white/10">
                         <Image src={img.preview} alt="Page" fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-white truncate">{img.name}</p>
+                        <p className="text-[10px] text-stone-500 italic mt-1">{(img.size / 1024).toFixed(0)} KB &bull; Web-ready</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveImage(idx, 'up')} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveImage(idx, 'down')} disabled={idx === selectedImages.length - 1}><ChevronDown className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-500" onClick={() => removeImage(img.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/5 rounded-lg" onClick={() => moveImage(idx, 'up')} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/5 rounded-lg" onClick={() => moveImage(idx, 'down')} disabled={idx === selectedImages.length - 1}><ChevronDown className="h-4 w-4" /></Button>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-500/5 rounded-xl hover:bg-rose-500/20" onClick={() => removeImage(img.id)}><Trash2 className="h-5 w-5" /></Button>
                       </div>
                     </div>
                   ))}
 
-                  <label className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/10 rounded-[2.5rem] bg-white/[0.02] hover:bg-white/[0.05] transition-all cursor-pointer group">
-                    <UploadCloud className="h-8 w-8 text-primary mb-4" />
-                    <span className="font-display font-black text-white">Ajouter des planches</span>
+                  <label className={cn(
+                    "flex flex-col items-center justify-center py-20 border-4 border-dashed rounded-[3rem] transition-all cursor-pointer group",
+                    selectedImages.length === 0 ? "bg-primary/[0.02] border-primary/20" : "bg-white/[0.02] border-white/10"
+                  )}>
+                    <UploadCloud className={cn("h-16 w-16 mb-6 transition-transform group-hover:scale-110", selectedImages.length === 0 ? "text-primary" : "text-stone-700")} />
+                    <span className="font-display font-black text-xl text-white">Importer les planches</span>
+                    <p className="text-stone-500 text-xs italic mt-2">JPG ou PNG &bull; Jusqu'à 10MB par fichier</p>
                     <input type="file" multiple accept="image/jpeg,image/png" className="hidden" onChange={handleFileChange} />
                   </label>
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </div>
 
-        <aside className="space-y-8">
-          <Card className="bg-stone-950 border-none rounded-[2rem] p-8 text-white">
+        <aside className="space-y-8 sticky top-24">
+          <Card className="bg-stone-900 border-none rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 p-6 opacity-5"><Zap className="h-32 w-32 text-primary" /></div>
             <h4 className="text-sm font-black uppercase text-primary mb-6 tracking-widest flex items-center gap-2">
-              <Zap className="h-4 w-4" /> CDN Cloudinary
+              <Settings2 className="h-4 w-4" /> Options de Sortie
             </h4>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-xs text-stone-500 font-bold uppercase">Stockage</span>
-                <span className="text-sm font-black text-emerald-500">Cloud Actif</span>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs font-bold flex items-center gap-2 text-primary"><Crown className="h-3.5 w-3.5" /> Premium</Label>
+                    <p className="text-[8px] text-stone-500 uppercase font-black">Accès payant</p>
+                  </div>
+                  <Switch checked={isPremium} onCheckedChange={setIsPremium} />
+                </div>
+                {isPremium && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                    <Label className="text-[10px] uppercase font-black text-stone-500 ml-1">Prix en AfriCoins</Label>
+                    <Input 
+                      type="number" 
+                      value={afriCoinsPrice} 
+                      onChange={(e) => setAfriCoinsPrice(Number(e.target.value))} 
+                      className="bg-white/5 border-white/10 h-12 rounded-xl text-lg font-black text-primary"
+                    />
+                  </div>
+                )}
               </div>
-              <p className="text-[10px] text-stone-500 italic leading-relaxed">
-                Vos images sont servies via un CDN mondial pour une lecture instantanée partout sur le continent.
-              </p>
+
+              <Separator className="bg-white/5" />
+
+              <div className="space-y-4">
+                <Label className="text-[10px] uppercase font-black text-stone-500 ml-1">Planification</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => setPubMode('now')} 
+                    variant={pubMode === 'now' ? 'default' : 'outline'}
+                    className={cn("rounded-xl h-11 text-[9px] font-black uppercase", pubMode === 'now' ? "bg-primary text-black" : "border-white/10 text-stone-500")}
+                  >
+                    Direct
+                  </Button>
+                  <Button 
+                    onClick={() => setPubMode('scheduled')} 
+                    variant={pubMode === 'scheduled' ? 'default' : 'outline'}
+                    className={cn("rounded-xl h-11 text-[9px] font-black uppercase", pubMode === 'scheduled' ? "bg-primary text-black" : "border-white/10 text-stone-500")}
+                  >
+                    Programmé
+                  </Button>
+                </div>
+                {pubMode === 'scheduled' && (
+                  <Input 
+                    type="datetime-local" 
+                    value={scheduledDate} 
+                    onChange={(e) => setScheduledDate(e.target.value)} 
+                    className="bg-white/5 border-white/10 h-12 rounded-xl text-xs" 
+                  />
+                )}
+              </div>
             </div>
           </Card>
 
-          <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] flex flex-col gap-4">
-            <div className="flex gap-3">
-              <Crown className="h-5 w-5 text-primary shrink-0" />
-              <p className="text-[10px] text-stone-400 italic leading-relaxed">
-                Marquez cet épisode comme Premium pour le proposer à la vente contre des AfriCoins.
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-2">
-              <Label className="text-xs font-bold">Épisode Premium</Label>
-              <Switch checked={isPremium} onCheckedChange={setIsPremium} />
-            </div>
-            {isPremium && (
-              <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                <Label className="text-[9px] uppercase font-black text-stone-500">Prix (AfriCoins)</Label>
-                <Input 
-                  type="number" 
-                  value={afriCoinsPrice} 
-                  onChange={(e) => setAfriCoinsPrice(Number(e.target.value))} 
-                  className="bg-white/5 border-white/10 h-10 rounded-xl"
-                />
-              </div>
-            )}
-          </div>
+          <Card className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8">
+            <h4 className="text-xs font-black uppercase text-primary mb-4 tracking-widest flex items-center gap-2"><Sparkles className="h-4 w-4" /> Nexus Insights</h4>
+            <p className="text-[10px] text-stone-400 leading-relaxed italic font-light">
+              "L'IA recommande de ne pas dépasser 40 planches par épisode pour maintenir un engagement optimal sur mobile. Votre moyenne actuelle est excellente."
+            </p>
+          </Card>
         </aside>
       </div>
     </div>
