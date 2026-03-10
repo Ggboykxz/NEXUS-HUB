@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -208,11 +207,11 @@ export default function AddChapterPage(props: PageProps) {
       const newChapterDocRef = doc(db, 'stories', storyId, 'chapters', chapterId);
       
       const pagesData = [];
+      const folder = `nexushub/chapters/${storyId}`;
       
-      // Récupération sécurisée de la config depuis le serveur via l'action serveur
-      const config = await getCloudinarySignature();
-      const { timestamp, signature, apiKey, cloudName } = config;
-      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
+      // Récupération sécurisée de la config depuis le serveur
+      const config = await getCloudinarySignature({ folder });
+      const { timestamp, signature, apiKey, cloudName, uploadPreset } = config;
 
       for (let i = 0; i < selectedImages.length; i++) {
         const img = selectedImages[i];
@@ -223,7 +222,7 @@ export default function AddChapterPage(props: PageProps) {
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
         formData.append('upload_preset', uploadPreset);
-        formData.append('folder', `nexushub/chapters/${storyId}`);
+        formData.append('folder', folder);
 
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
@@ -231,7 +230,13 @@ export default function AddChapterPage(props: PageProps) {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: { message: errorText } };
+          }
           throw new Error(errorData.error?.message || "L'envoi vers Cloudinary a échoué.");
         }
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -75,16 +74,17 @@ export default function SubmitPage() {
       let finalCoverUrl = 'https://picsum.photos/seed/placeholder/600/900';
 
       if (coverFile) {
-        // Récupération sécurisée de la config depuis le serveur
-        const { timestamp, signature, apiKey, cloudName } = await getCloudinarySignature();
+        const folder = 'nexushub/covers';
+        // Récupération sécurisée de la config depuis le serveur incluant le dossier dans la signature
+        const { timestamp, signature, apiKey, cloudName, uploadPreset } = await getCloudinarySignature({ folder });
         
         const uploadData = new FormData();
         uploadData.append('file', coverFile);
         uploadData.append('api_key', apiKey!);
         uploadData.append('timestamp', timestamp.toString());
         uploadData.append('signature', signature);
-        uploadData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default');
-        uploadData.append('folder', 'nexushub/covers');
+        uploadData.append('upload_preset', uploadPreset);
+        uploadData.append('folder', folder);
 
         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
           method: 'POST',
@@ -95,9 +95,15 @@ export default function SubmitPage() {
           const result = await res.json();
           finalCoverUrl = result.secure_url;
         } else {
-          const errorData = await res.json();
-          console.error("Cloudinary Error:", errorData);
-          throw new Error("L'envoi de la couverture a échoué.");
+          const errorText = await res.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: { message: errorText } };
+          }
+          console.error("Cloudinary Error Details:", errorData);
+          throw new Error(errorData.error?.message || "L'envoi de la couverture a échoué.");
         }
       }
 

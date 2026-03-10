@@ -126,30 +126,31 @@ export default function EditStoryPage(props: PageProps) {
       if (newCoverFile) {
         setIsUploading(true);
         try {
-          const { timestamp, signature } = await getCloudinarySignature();
-          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-          const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-          const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+          const folder = `nexushub/covers/${storyId}`;
+          const { timestamp, signature, apiKey, cloudName, uploadPreset } = await getCloudinarySignature({ folder });
 
           const uploadData = new FormData();
           uploadData.append('file', newCoverFile);
           uploadData.append('api_key', apiKey!);
           uploadData.append('timestamp', timestamp.toString());
           uploadData.append('signature', signature);
-          uploadData.append('upload_preset', uploadPreset!);
-          uploadData.append('folder', `nexushub/covers/${storyId}`);
+          uploadData.append('upload_preset', uploadPreset);
+          uploadData.append('folder', folder);
 
           const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
             body: uploadData
           });
 
-          if (!response.ok) throw new Error('Échec Cloudinary');
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Échec Cloudinary');
+          }
           const result = await response.json();
           finalCoverUrl = result.secure_url;
-        } catch (error) {
+        } catch (error: any) {
           console.error("Cloudinary error:", error);
-          throw new Error("L'envoi de la couverture a échoué.");
+          throw new Error(error.message || "L'envoi de la couverture a échoué.");
         } finally {
           setIsUploading(false);
         }
