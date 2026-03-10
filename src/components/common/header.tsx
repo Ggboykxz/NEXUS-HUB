@@ -1,14 +1,12 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
-  Menu, Search, ArrowLeft, UserCircle, LogOut, Settings,
-  ChevronDown, ChevronRight, CircleDollarSign, Brush, Library, 
-  Cloud, Zap, Flame, LayoutGrid, Bell, Coins, Layers, Book, 
-  Clock, CheckCircle2, TrendingUp, Eye, Globe, Sparkles, MessageSquare, ShoppingCart, Mic, X
+  Search, ArrowLeft, UserCircle, LogOut, Settings,
+  ChevronDown, Bell, Brush, Library, 
+  Cloud, Layers, Book, 
+  Clock, CheckCircle2, MessageSquare, ShoppingCart, Loader2
 } from 'lucide-react';
 import { navLinks as defaultNavLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -25,25 +23,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { useTranslation } from '../providers/language-provider';
-import { useGenres } from '../providers/genres-provider';
 import { db, auth } from '@/lib/firebase';
-import { collection, limit, query, onSnapshot, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, limit, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import type { Story } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { LanguageSwitcher } from './language-switcher';
 
 export default function Header() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { genres: uniqueGenres } = useGenres();
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, profile } = useAuth();
@@ -52,9 +44,6 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isCoinFlashing, setIsCoinFlashing] = useState(false);
   const prevCoinsRef = useRef<number | undefined>(undefined);
 
@@ -63,8 +52,8 @@ export default function Header() {
   }, []);
   
   const navLinks = defaultNavLinks.map(link => {
-    if (link.label === 'Artistes') return { label: 'Forums', href: '/forums', icon: MessageSquare };
-    if (link.label === 'AI Studio') return { label: 'Boutique', href: '/shop', icon: ShoppingCart };
+    if (link.label === 'Artistes') return { ...link, label: 'Forums', href: '/forums', icon: MessageSquare };
+    if (link.label === 'AI Studio') return { ...link, label: 'Boutique', href: '/shop', icon: ShoppingCart };
     return link;
   });
 
@@ -156,7 +145,7 @@ export default function Header() {
                       <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors text-[11px] uppercase font-black tracking-widest outline-none text-foreground/60">
                         {label} <ChevronDown className="h-3 w-3 opacity-50" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-[600px] p-0 rounded-[2.5rem] bg-stone-950 border-white/5 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+                      <DropdownMenuContent align="start" className="w-[600px] p-0 rounded-[2.5rem] bg-stone-950 border-white/5 shadow-2xl overflow-hidden">
                         <div className="flex h-full">
                           <div className="w-1/2 p-8 border-r border-white/5 space-y-6">
                             <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Exploration</p>
@@ -220,13 +209,6 @@ export default function Header() {
 
             {mounted && currentUser ? (
               <div className="flex items-center gap-3">
-                <Link href="/notifications" className="relative group">
-                  <Button variant="ghost" size="icon" className="rounded-full text-stone-400 group-hover:text-white">
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full border-2 border-stone-950 animate-pulse" />}
-                  </Button>
-                </Link>
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white/5 border border-white/10 rounded-full hover:border-primary/30 transition-all group">
@@ -253,7 +235,7 @@ export default function Header() {
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/library" className="flex items-center gap-3 font-bold text-xs"><Library className="h-4 w-4" /> Ma Bibliothèque</Link>
                     </DropdownMenuItem>
-                    {profile?.role?.includes('artist') && (
+                    {profile?.role?.toLowerCase().includes('artist') && (
                       <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                         <Link href="/dashboard/creations" className="flex items-center gap-3 font-bold text-xs"><Brush className="h-4 w-4" /> Mon Atelier</Link>
                       </DropdownMenuItem>
@@ -302,9 +284,6 @@ export default function Header() {
                 <Search className="h-5 w-5" />
               </Button>
             </div>
-            <Button type="button" variant="outline" className="hidden sm:flex rounded-2xl h-14 border-white/10 gap-3 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black">
-              <Mic className="h-4 w-4" /> Recherche Vocale
-            </Button>
           </form>
         </div>
       </div>

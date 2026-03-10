@@ -1,9 +1,7 @@
-import { 
-  HelpCircle, BookOpen, PenSquare, UserCircle, Zap, Coins, Languages, ShieldCheck, ChevronRight 
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SearchableFaq } from '@/components/faq/searchable-faq';
+import { ChevronRight, Languages, ShieldCheck } from 'lucide-react';
 
 interface FaqItem {
   question: string;
@@ -78,7 +76,6 @@ export default function FaqPage() {
     <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
       <SearchableFaq faqData={FAQ_DATA} categories={CATEGORIES} />
 
-      {/* QUICK HELP FOOTER */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-24">
         <Card className="p-8 border-none bg-emerald-500/[0.03] rounded-[2.5rem] shadow-xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:-rotate-12 transition-transform duration-1000"><Languages className="h-32 w-32 text-emerald-500" /></div>

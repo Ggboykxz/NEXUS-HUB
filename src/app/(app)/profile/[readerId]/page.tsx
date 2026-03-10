@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
-  MessageSquare, Settings as SettingsIcon, Share2, Plus, 
+  Settings as SettingsIcon, Share2, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
   TrendingUp, Star, Award, Users, Clock
 } from 'lucide-react';
@@ -16,11 +16,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, documentId, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, limit, orderBy, documentId, onSnapshot } from 'firebase/firestore';
 import type { UserProfile, Story, LibraryEntry } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ReaderProfilePage(props: { params: Promise<{ readerId: string }> }) {
   const params = use(props.params);
@@ -142,7 +143,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* 1. BANNER & AVATAR HERO */}
       <header className="relative group">
         <div className="relative h-64 md:h-80 w-full overflow-hidden">
           <Image 
@@ -210,7 +210,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
         </div>
       </header>
 
-      {/* 2. STATS BAR */}
       <section className="container max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
@@ -228,7 +227,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
         </div>
       </section>
 
-      {/* 3. TABS CONTENT */}
       <main className="container max-w-6xl mx-auto px-6">
         <Tabs defaultValue="library" className="w-full">
           <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-md mx-auto mb-16 w-full flex">

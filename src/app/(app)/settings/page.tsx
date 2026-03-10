@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CldUploadWidget } from 'next-cloudinary';
 import { 
   Settings, Coins, Camera, Loader2, 
-  ShieldCheck, Smartphone, CreditCard, Bitcoin, Check,
-  History, Banknote, ChevronRight,
-  ShieldAlert, LogOut, Trash2, UserCircle, Globe,
-  Lock, Bell, Palette, Sparkles, MessageSquare, Zap
+  ShieldAlert, UserCircle, Globe,
+  Lock, Banknote, History, ChevronRight, Plus, Trash2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,14 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, getIdToken } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -35,7 +31,6 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isRevoking, setIsRevoking] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -106,7 +101,7 @@ export default function SettingsPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   if (!profile) return null;
 
-  const isArtist = profile.role?.startsWith('artist');
+  const isArtist = profile.role?.toLowerCase().includes('artist');
 
   return (
     <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
@@ -143,7 +138,6 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* --- IDENTITY TAB --- */}
         <TabsContent value="identity" className="space-y-8 animate-in fade-in duration-500">
           <Card className="border-none bg-stone-900/50 shadow-2xl rounded-[3rem] overflow-hidden">
             <div className="relative h-48 md:h-64 bg-stone-900 group">
@@ -237,7 +231,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* --- ECONOMY TAB --- */}
         <TabsContent value="economy" className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="md:col-span-1 bg-stone-900/50 border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center text-center space-y-6">
@@ -285,7 +278,6 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        {/* --- SECURITY TAB --- */}
         <TabsContent value="security" className="space-y-8 animate-in fade-in duration-500">
           <Card className="bg-stone-900/50 border-white/5 rounded-[3rem] p-10 max-w-2xl mx-auto space-y-10">
             <div className="flex items-center gap-6 pb-10 border-b border-white/5">
@@ -297,20 +289,6 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-8">
-              <div className="flex items-center justify-between p-8 bg-white/5 rounded-[2.5rem] border border-white/5 group hover:border-rose-500/30 transition-all">
-                <div className="space-y-1">
-                  <h4 className="font-bold text-white">Révoquer toutes les sessions</h4>
-                  <p className="text-xs text-stone-500 leading-relaxed italic">"En cas de doute, déconnectez instantanément tous les autres appareils."</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => toast({ title: "Sécurité activée", description: "Sessions révoquées avec succès." })}
-                  className="rounded-xl border-white/10 text-stone-400 hover:bg-rose-500 hover:text-white"
-                >
-                  Tout révoquer
-                </Button>
-              </div>
-
               <div className="flex items-center justify-between p-8 bg-rose-500/[0.02] rounded-[2.5rem] border border-rose-500/10 group hover:border-rose-500/30 transition-all">
                 <div className="space-y-1">
                   <h4 className="font-bold text-rose-500">Supprimer le compte</h4>
