@@ -12,6 +12,7 @@ service cloud.firestore {
     }
 
     // Allow anyone to read all documents (Stories, Chapters, Artist Profiles, etc.)
+    // Except for private conversations which are handled below
     match /{document=**} {
       allow read: if true;
     }
@@ -33,6 +34,29 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    // Messaging System Rules
+    match /conversations/{convId} {
+      // Allow reading and writing to a conversation if the user is a participant
+      allow read, update, delete: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
+
+      match /messages/{messageId} {
+        // Participants of the parent conversation can read/write messages
+        allow read, write: if isAuthenticated(); 
+      }
+    }
+
+    match /typing/{convId} {
+      // Typing indicators are accessible to authenticated users
+      allow read, write: if isAuthenticated();
+    }
+
+    // Live Chat Rules
+    match /liveEvents/{eventId}/messages/{messageId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+
     // Generic allow write for other collections if authenticated
     match /stories/{storyId}/{document=**} {
       allow write: if isAuthenticated();
@@ -40,12 +64,17 @@ service cloud.firestore {
     match /forumThreads/{threadId}/{document=**} {
       allow write: if isAuthenticated();
     }
-    match /liveEvents/{eventId}/{document=**} {
-      allow write: if isAuthenticated();
-    }
     match /reports/{reportId} {
       allow create: if true; // Allow anonymous reports
-      allow update, delete: if isAuthenticated(); // Admin logic usually handled via SDK
+      allow update, delete: if isAuthenticated(); // Admin logic
+    }
+    
+    // Support for awards and festivals
+    match /awardNominees/{id} {
+      allow write: if isAuthenticated();
+    }
+    match /festivals/{id} {
+      allow write: if isAuthenticated();
     }
   }
 }
