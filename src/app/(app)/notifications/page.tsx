@@ -8,7 +8,7 @@ import {
   Bell, Check, Clock, Heart, MessageSquare, Star, 
   Trash2, Award, Loader2, Sparkles, BookOpen, 
   Users, Coins, Settings, Info, CheckCircle2,
-  AlertTriangle, Eraser
+  AlertTriangle, Eraser, ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +76,6 @@ export default function NotificationsPage() {
     return () => unsubscribeNotifications();
   }, [currentUser]);
 
-  // --- FILTERING LOGIC ---
   const filteredNotifications = useMemo(() => {
     return notifications.filter(n => {
       if (activeFilter === 'all') return true;
@@ -88,7 +87,6 @@ export default function NotificationsPage() {
     });
   }, [notifications, activeFilter]);
 
-  // --- GROUPING LOGIC ---
   const groupedNotifications = useMemo(() => {
     const groups: Record<string, any[]> = {
       "Aujourd'hui": [],
@@ -184,7 +182,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-6 py-12 space-y-12">
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-4">
@@ -192,8 +189,8 @@ export default function NotificationsPage() {
               <Bell className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-black font-display tracking-tighter">Messagerie</h1>
-              <p className="text-stone-500 italic font-light">"Les sables du temps vous apportent des nouvelles."</p>
+              <h1 className="text-4xl font-black font-display tracking-tighter">Notifications</h1>
+              <p className="text-stone-500 italic font-light">"Restez au cœur de vos récits et de votre communauté."</p>
             </div>
           </div>
         </div>
@@ -233,7 +230,6 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* FILTER TABS */}
       <Tabs value={activeFilter} onValueChange={(val) => setActiveFilter(val as NotifFilter)} className="w-full">
         <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 border border-border/50 grid grid-cols-5 w-full">
           <TabsTrigger value="all" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
@@ -305,7 +301,7 @@ export default function NotificationsPage() {
                                       <Sparkles className="h-4 w-4 text-primary" />
                                     </div>
                                   )}
-                                  <p className="text-xs text-stone-400 font-medium italic">"Appuyez pour voir les détails"</p>
+                                  <p className="text-xs text-stone-400 font-medium italic flex items-center gap-1">Voir les détails <ChevronRight className="h-3 w-3" /></p>
                                 </div>
                               </Link>
                             </div>
@@ -360,7 +356,7 @@ export default function NotificationsPage() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-2xl font-display font-black text-white tracking-tighter">Aucune alerte ici</h3>
-                <p className="text-stone-500 max-w-xs mx-auto italic font-light">"Les archives sont vides pour cette catégorie. Parcourez le Hub pour susciter de nouvelles interactions !"</p>
+                <p className="text-stone-500 max-w-xs mx-auto italic font-light">"Les sables du temps sont calmes. Revenez plus tard pour de nouvelles épopées."</p>
               </div>
               <Button asChild variant="outline" className="rounded-full px-10 h-12 border-primary text-primary font-black uppercase text-xs tracking-widest">
                 <Link href="/stories">Explorer le catalogue</Link>

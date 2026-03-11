@@ -34,6 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { MobileNav } from './mobile-nav';
 import { Logo } from '@/components/icons/logo';
+import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, profile } = useAuth();
+  const unreadCount = useUnreadNotifications();
 
   const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -199,17 +201,23 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
-              <Cloud className="h-3.5 w-3.5 text-stone-500" />
-              <span className="text-[9px] font-black uppercase text-stone-500 tracking-widest">Nexus-Cloud Link</span>
-            </div>
-
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} className="rounded-full text-stone-400 hover:text-white hover:bg-white/5">
               <Search className="h-5 w-5" />
             </Button>
 
             {mounted && currentUser ? (
               <div className="flex items-center gap-3">
+                <Link href="/notifications" className="relative group">
+                  <Button variant="ghost" size="icon" className="rounded-full text-stone-400 hover:text-white hover:bg-white/5">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 h-4 min-w-4 flex items-center justify-center bg-rose-600 text-white text-[8px] font-black rounded-full px-1 border-2 border-stone-950 animate-in zoom-in duration-300">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white/5 border border-white/10 rounded-full hover:border-primary/30 transition-all group">
@@ -235,6 +243,9 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/library" className="flex items-center gap-3 font-bold text-xs"><Library className="h-4 w-4" /> Ma Bibliothèque</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
+                      <Link href="/messages" className="flex items-center gap-3 font-bold text-xs"><MessageSquare className="h-4 w-4" /> Messages</Link>
                     </DropdownMenuItem>
                     {profile?.role?.toLowerCase().includes('artist') && (
                       <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
