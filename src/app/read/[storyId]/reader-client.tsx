@@ -40,6 +40,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Card } from '@/components/ui/card';
+import { Logo } from '@/components/icons/logo';
 
 const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -98,7 +99,9 @@ function ReaderHeader({ story, chapter, onModeChange, activeMode, onSettingsTogg
       !isVisible && "-translate-y-full"
     )}>
       <div className="flex items-center gap-4 flex-1">
-        <Link href="/" className="font-display font-black text-lg tracking-tighter text-white gold-resplendant">NexusHub<span className="text-primary">.</span></Link>
+        <Link href="/" className="group">
+          <Logo className="h-8 w-auto group-hover:scale-110 transition-transform" />
+        </Link>
         <div className="w-px h-5 bg-white/10 hidden md:block" />
         <div className="flex items-center gap-2 text-sm text-stone-400">
           <Link href={storyUrl} className="hover:text-primary transition-colors hidden sm:block font-medium truncate max-w-[120px] text-stone-400">{story.title}</Link>
@@ -882,8 +885,8 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                       <Image
                         src={getReaderPageOptimized(page.imageUrl, activeMode, isLowData)}
                         alt={`Page ${index + 1}`}
-                        width={activeMode === 'scroll' ? 1000 : 1200}
-                        height={activeMode === 'scroll' ? (1000 * (page.height / page.width)) : 1800}
+                        width={1000}
+                        height={1000 * (page.height / page.width)}
                         className={cn(
                           "w-full h-auto",
                           activeMode === 'pages' && "h-full object-contain md:object-cover"
@@ -907,7 +910,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                       </Button>
                     ) : (
                       <Button asChild variant="outline" size="lg" className="w-full rounded-full h-16 border-white/10 text-white font-black text-xl hover:bg-white/5">
-                        <Link href={getStoryUrl(story)}>Retour à l'Atelier</Link>
+                        <Link href={getStoryUrl(story)}>Retour à la Légende</Link>
                       </Button>
                     )}
                   </div>

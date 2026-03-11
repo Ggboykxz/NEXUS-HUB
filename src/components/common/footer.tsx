@@ -29,8 +29,7 @@ export default function Footer() {
           {/* Brand and Description */}
           <div className="lg:col-span-4 space-y-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <Logo className="h-12 w-auto transition-transform group-hover:scale-110" />
-              <span className="font-display font-black text-2xl tracking-tighter text-white gold-resplendant">NexusHub<span className="text-primary">.</span></span>
+              <Logo className="h-16 w-auto transition-transform group-hover:scale-110" />
             </Link>
             
             <p className="text-stone-400 text-sm leading-relaxed max-w-sm italic font-light">

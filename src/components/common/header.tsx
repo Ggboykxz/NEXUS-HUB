@@ -131,8 +131,7 @@ export default function Header() {
             <MobileNav navLinks={navLinks} />
             
             <Link href="/" className="flex items-center gap-2 group">
-              <Logo className="h-8 md:h-10 transition-transform group-hover:scale-110 group-hover:rotate-2" />
-              <span className="font-display font-black text-xl tracking-tighter text-white gold-resplendant hidden sm:inline">NexusHub<span className="text-primary">.</span></span>
+              <Logo className="h-10 md:h-12 transition-transform group-hover:scale-110" />
             </Link>
 
             <nav className="hidden md:flex items-center gap-x-8">

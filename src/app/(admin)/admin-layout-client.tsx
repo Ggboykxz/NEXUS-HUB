@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/icons/logo';
 
 /**
  * Composant client gérant la logique d'autorisation du Nexus Core.
@@ -76,8 +77,9 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       {/* Admin Sidebar */}
       <aside className="w-64 border-r border-white/5 bg-stone-900/50 backdrop-blur-xl sticky top-0 h-screen hidden md:flex flex-col">
         <div className="p-8 border-b border-white/5">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-display font-black text-xl gold-resplendant">Nexus<span className="text-primary">Admin</span></span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <Logo className="h-10 w-auto group-hover:scale-110 transition-transform" />
+            <Badge variant="outline" className="border-primary/30 text-primary text-[8px] font-black uppercase tracking-widest px-2">ADMIN</Badge>
           </Link>
         </div>
         
