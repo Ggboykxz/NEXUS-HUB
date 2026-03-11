@@ -43,7 +43,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
       
       unsubProfile = onSnapshot(userRef, (snap) => {
         if (snap.exists()) {
-          const userData = snap.data() as UserProfile;
+          const userData = { uid: snap.id, ...snap.data() } as UserProfile;
           setProfile(userData);
           setLoading(false);
         } else {
@@ -63,6 +63,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
   useEffect(() => {
     if (!profile) return;
 
+    // Check privacy settings: if not 'me', respect showHistory preference
     const canSeeLibrary = profile.preferences?.privacy?.showHistory || isMe;
     
     if (canSeeLibrary) {
@@ -76,6 +77,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
 
         if (entries.length > 0) {
           const storyIds = entries.map(e => e.storyId);
+          // Chunk story IDs for documentId() query (max 10-30 depending on config)
           const storiesRef = collection(db, 'stories');
           const qStories = query(storiesRef, where(documentId(), 'in', storyIds.slice(0, 10)));
           const storiesSnap = await getDocs(qStories);
@@ -86,6 +88,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
             return { ...storyData, progress: entry?.progress || 0 };
           });
 
+          // Sort stories to match library lastRead order
           const sortedStories = fetchedStories.sort((a, b) => {
             const indexA = storyIds.indexOf(a.id);
             const indexB = storyIds.indexOf(b.id);
@@ -96,6 +99,9 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
         } else {
           setDisplayStories([]);
         }
+        setLoadingLibrary(false);
+      }, (error) => {
+        console.warn("Library fetch error (maybe index missing):", error);
         setLoadingLibrary(false);
       });
 
