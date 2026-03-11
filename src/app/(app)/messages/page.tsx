@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,8 @@ import {
   Paperclip, SendHorizonal, Smile, MoreVertical, Search, 
   Phone, Video, Check, Loader2, MessageSquare, Users, 
   Settings, Info, Trash2, Heart, CircleDollarSign, Zap,
-  ChevronRight, ArrowLeft, MoreHorizontal, ShieldCheck
+  ChevronRight, ArrowLeft, MoreHorizontal, ShieldCheck, Clock
 } from "lucide-react";
-import Link from "next/link";
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
 import { 
@@ -21,7 +20,6 @@ import {
   limit, 
   getDocs, 
   doc, 
-  getDoc, 
   onSnapshot, 
   orderBy, 
   addDoc, 
@@ -29,13 +27,24 @@ import {
   setDoc,
   deleteField,
   where,
-  updateDoc,
   writeBatch
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { format, isToday, isYesterday, isThisWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+/**
+ * Formate la date pour la liste des conversations (façon WhatsApp)
+ */
+const formatChatDate = (date: Date) => {
+  if (isToday(date)) return format(date, 'HH:mm');
+  if (isYesterday(date)) return 'Hier';
+  if (isThisWeek(date)) return format(date, 'EEEE', { locale: fr });
+  return format(date, 'dd/MM/yy');
+};
 
 export default function MessagesPage() {
   const { toast } = useToast();
@@ -46,7 +55,7 @@ export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [lastMessages, setLastMessages] = useState<Record<string, string>>({});
+  const [lastMessages, setLastMessages] = useState<Record<string, { text: string, time: any }>>({});
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
@@ -83,12 +92,12 @@ export default function MessagesPage() {
     fetchContacts();
   }, [currentUser]);
 
-  // 3. Écoute globale des conversations (Dernier message + Compteurs non-lus)
+  // 3. Écoute globale des conversations (WhatsApp Style Sorting)
   useEffect(() => {
     if (!currentUser) return;
 
     const convsRef = collection(db, 'conversations');
-    const q = query(convsRef, where('participants', 'array-contains', currentUser.uid));
+    const q = query(convsRef, where('participants', 'array-contains', currentUser.uid), orderBy('updatedAt', 'desc'));
 
     const unsub = onSnapshot(q, (snapshot) => {
       snapshot.docs.forEach(convDoc => {
@@ -96,13 +105,15 @@ export default function MessagesPage() {
         const otherUserId = data.participants.find((id: string) => id !== currentUser.uid);
         
         if (otherUserId) {
-          // Update last message preview
           setLastMessages(prev => ({
             ...prev,
-            [otherUserId]: data.lastMessage || ''
+            [otherUserId]: {
+              text: data.lastMessage || '',
+              time: data.updatedAt
+            }
           }));
 
-          // Track unread count for this conversation
+          // Track unread count
           const msgsRef = collection(db, 'conversations', convDoc.id, 'messages');
           const unreadQ = query(
             msgsRef, 
@@ -123,7 +134,7 @@ export default function MessagesPage() {
     return () => unsub();
   }, [currentUser]);
 
-  // 4. Écoute des messages et indicateurs de saisie en temps réel
+  // 4. Écoute des messages et indicateurs de saisie
   useEffect(() => {
     if (!currentUser || !selectedChat) {
       setMessages([]);
@@ -133,7 +144,6 @@ export default function MessagesPage() {
     const participants = [currentUser.uid, selectedChat.uid].sort();
     const convId = participants.join('_');
 
-    // Listener des messages
     const msgsRef = collection(db, 'conversations', convId, 'messages');
     const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(100));
 
@@ -144,7 +154,6 @@ export default function MessagesPage() {
       }));
       setMessages(newMessages);
       
-      // Marquer comme lu immédiatement si on est sur la conversation
       const batch = writeBatch(db);
       let needsUpdate = false;
       
@@ -164,7 +173,6 @@ export default function MessagesPage() {
       setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     });
 
-    // Listener du statut de saisie
     const typingRef = doc(db, 'typing', convId);
     const unsubTyping = onSnapshot(typingRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -187,6 +195,23 @@ export default function MessagesPage() {
       unsubTyping();
     };
   }, [currentUser, selectedChat]);
+
+  // 5. Groupement des messages par jour
+  const groupedMessages = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    messages.forEach(msg => {
+      const date = msg.createdAt?.toDate ? msg.createdAt.toDate() : new Date();
+      let dateKey = 'Aujourd\'hui';
+      if (!isToday(date)) {
+        if (isYesterday(date)) dateKey = 'Hier';
+        else dateKey = format(date, 'd MMMM yyyy', { locale: fr });
+      }
+      
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(msg);
+    });
+    return groups;
+  }, [messages]);
 
   const updateTypingStatus = async (isTyping: boolean) => {
     if (!currentUser || !selectedChat) return;
@@ -246,6 +271,15 @@ export default function MessagesPage() {
     }
   };
 
+  // Tri des utilisateurs par activité récente (last message time)
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const timeA = lastMessages[a.uid]?.time?.seconds || 0;
+      const timeB = lastMessages[b.uid]?.time?.seconds || 0;
+      return timeB - timeA;
+    });
+  }, [users, lastMessages]);
+
   if (loading) {
     return (
       <div className="h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-stone-950 gap-4">
@@ -259,81 +293,80 @@ export default function MessagesPage() {
     <div className="h-[calc(100vh-4rem)] flex overflow-hidden bg-stone-950 text-white font-sans">
       {/* 1. SIDEBAR CONTACTS */}
       <aside className={cn(
-        "w-full md:w-80 lg:w-[380px] border-r border-white/5 bg-stone-900/50 backdrop-blur-xl flex flex-col transition-all duration-500",
+        "w-full md:w-80 lg:w-[400px] border-r border-white/5 bg-stone-900/50 backdrop-blur-xl flex flex-col transition-all duration-500",
         selectedChat ? "hidden md:flex" : "flex"
       )}>
-        <div className="p-8 border-b border-white/5 space-y-8">
+        <div className="p-6 md:p-8 border-b border-white/5 space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-black font-display tracking-tighter gold-resplendant">Nexus Chat</h2>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-500"><Settings className="h-5 w-5" /></Button>
+            <h2 className="text-3xl font-black font-display tracking-tighter gold-resplendant">Discussions</h2>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-500"><Users className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-500"><Settings className="h-5 w-5" /></Button>
+            </div>
           </div>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/5 p-1 rounded-2xl h-12">
-              <TabsTrigger value="direct" className="rounded-xl text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">Voyageurs</TabsTrigger>
-              <TabsTrigger value="team" className="rounded-xl text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Équipes</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-600 group-focus-within:text-primary transition-colors" />
             <Input 
-              placeholder="Chercher une alliance..." 
-              className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 text-xs focus-visible:ring-primary shadow-inner" 
+              placeholder="Rechercher un voyageur..." 
+              className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 text-xs focus-visible:ring-primary shadow-inner placeholder:text-stone-700" 
             />
           </div>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-4 space-y-2">
-            {activeTab === 'direct' ? (
-              users.map((user) => {
-                const unreadCount = unreadCounts[user.uid] || 0;
-                const lastMsg = lastMessages[user.uid] || 'Commencer une discussion';
-                return (
-                  <div 
-                    key={user.uid} 
-                    onClick={() => setSelectedChat(user)}
-                    className={cn(
-                      "flex items-center gap-4 p-4 rounded-[2rem] cursor-pointer transition-all border-2 border-transparent group",
-                      selectedChat?.uid === user.uid ? "bg-primary/10 border-primary/20" : "hover:bg-white/5"
-                    )}
-                  >
-                    <div className="relative shrink-0">
-                      <Avatar className="h-14 w-14 border-2 border-stone-800 ring-2 ring-transparent group-hover:ring-primary/30 transition-all shadow-xl">
-                        <AvatarImage src={user.photoURL} className="object-cover" />
-                        <AvatarFallback className="bg-primary/5 text-primary font-black text-xl">{user.displayName?.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <span className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-4 border-stone-900 shadow-lg" />
+          <div className="py-2">
+            {sortedUsers.map((user) => {
+              const unreadCount = unreadCounts[user.uid] || 0;
+              const lastMsgData = lastMessages[user.uid];
+              const lastMsgText = lastMsgData?.text || 'Démarrer la discussion';
+              const lastMsgDate = lastMsgData?.time?.toDate ? lastMsgData.time.toDate() : null;
+
+              return (
+                <div 
+                  key={user.uid} 
+                  onClick={() => setSelectedChat(user)}
+                  className={cn(
+                    "flex items-center gap-4 px-6 py-4 cursor-pointer transition-all border-l-4 border-transparent relative",
+                    selectedChat?.uid === user.uid ? "bg-primary/5 border-l-primary" : "hover:bg-white/[0.02]"
+                  )}
+                >
+                  <div className="relative shrink-0">
+                    <Avatar className="h-14 w-14 border-2 border-stone-800 shadow-xl">
+                      <AvatarImage src={user.photoURL} className="object-cover" />
+                      <AvatarFallback className="bg-primary/5 text-primary font-black text-xl">{user.displayName?.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-stone-900 shadow-lg" />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0 py-1">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <p className={cn("font-black truncate text-sm", selectedChat?.uid === user.uid ? "text-primary" : "text-white")}>
+                        {user.displayName}
+                      </p>
+                      {lastMsgDate && (
+                        <span className={cn("text-[10px] font-bold uppercase tracking-tighter", unreadCount > 0 ? "text-primary" : "text-stone-600")}>
+                          {formatChatDate(lastMsgDate)}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-1">
-                        <p className={cn("font-black truncate text-sm transition-colors", selectedChat?.uid === user.uid ? "text-primary" : "text-white")}>{user.displayName}</p>
-                        <span className="text-[8px] text-stone-600 font-bold uppercase tracking-tighter">Live</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={cn(
-                          "text-xs truncate font-light italic leading-tight",
-                          unreadCount > 0 ? "text-white font-bold" : "text-stone-500"
-                        )}>
-                          {lastMsg}
-                        </p>
-                        {unreadCount > 0 && (
-                          <Badge className="bg-rose-600 text-white border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300 shrink-0">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                          </Badge>
-                        )}
-                      </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={cn(
+                        "text-xs truncate font-light leading-tight",
+                        unreadCount > 0 ? "text-white font-bold" : "text-stone-500"
+                      )}>
+                        {lastMsgText}
+                      </p>
+                      {unreadCount > 0 && (
+                        <Badge className="bg-primary text-black border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300 shrink-0 shadow-[0_0_10px_rgba(212,168,67,0.3)]">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                );
-              })
-            ) : (
-              <div className="p-12 text-center space-y-6 opacity-40">
-                <div className="bg-white/5 p-6 rounded-full w-fit mx-auto"><Users className="h-12 w-12 text-stone-500" /></div>
-                <p className="text-[10px] text-stone-600 uppercase font-black tracking-[0.3em] leading-relaxed">Les Salons d'Équipe <br/> arrivent avec Nexus Pro.</p>
-              </div>
-            )}
+                </div>
+              );
+            })}
           </div>
         </ScrollArea>
       </aside>
@@ -342,93 +375,91 @@ export default function MessagesPage() {
       <main className="flex-1 flex flex-col bg-stone-950 relative">
         {selectedChat ? (
           <>
-            <div className="p-6 md:px-10 border-b border-white/5 flex items-center justify-between bg-stone-900/30 backdrop-blur-3xl z-20">
-              <div className="flex items-center gap-5">
+            <div className="p-4 md:px-10 h-20 border-b border-white/5 flex items-center justify-between bg-stone-900/30 backdrop-blur-3xl z-20">
+              <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="md:hidden h-10 w-10 rounded-full text-stone-500"><ArrowLeft className="h-5 w-5" /></Button>
                 <div className="relative">
-                  <Avatar className="h-12 w-12 border-2 border-primary/30 shadow-[0_0_20px_rgba(212,168,67,0.2)]">
+                  <Avatar className="h-11 w-11 border-2 border-primary/20">
                     <AvatarImage src={selectedChat.photoURL} className="object-cover" />
                     <AvatarFallback className="bg-primary/10 text-primary font-black">{selectedChat.displayName?.slice(0, 2)}</AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-stone-900" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-display font-black text-white tracking-tight leading-none">{selectedChat.displayName}</h3>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em]">{selectedChat.role?.replace('_', ' ') || 'Voyageur'}</p>
+                  <h3 className="text-base font-black text-white tracking-tight leading-none">{selectedChat.displayName}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    {isOtherUserTyping ? (
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest italic animate-pulse">En train d'écrire...</span>
+                    ) : (
+                      <p className="text-[9px] text-stone-500 uppercase font-black tracking-[0.2em]">{selectedChat.role?.replace('_', ' ') || 'Voyageur'}</p>
+                    )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl border-white/10 text-stone-400 hover:text-primary transition-all hidden sm:flex"><Phone className="h-5 w-5" /></Button>
-                <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl border-white/10 text-stone-400 hover:text-primary transition-all hidden sm:flex"><Video className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl text-stone-500 hover:text-white"><MoreHorizontal className="h-5 w-5" /></Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-stone-500 hover:text-primary"><Phone className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-stone-500 hover:text-primary"><Video className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-stone-500 hover:text-white"><MoreHorizontal className="h-5 w-5" /></Button>
               </div>
             </div>
 
-            <ScrollArea className="flex-1 px-6 md:px-10 py-8">
-              <div className="max-w-4xl mx-auto space-y-10 pb-10">
-                {messages.map((msg) => {
-                  const isMe = msg.senderId === currentUser?.uid;
-                  return (
-                    <div key={msg.id} className={cn(
-                      "flex gap-4 max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-2 duration-500",
-                      isMe ? "ml-auto flex-row-reverse" : "mr-auto"
-                    )}>
-                      <div className={cn("space-y-2", isMe ? "text-right" : "text-left")}>
-                        <div className={cn(
-                          "p-5 rounded-[2.5rem] shadow-2xl text-sm leading-relaxed transition-all relative group",
-                          isMe 
-                            ? "bg-primary text-black font-medium rounded-tr-none shadow-primary/10" 
-                            : "bg-stone-900 border border-white/5 text-stone-200 rounded-tl-none"
-                        )}>
-                          <p>{msg.text}</p>
-                          {isMe && (
-                            <div className="absolute -bottom-4 right-2">
-                              {msg.read ? (
-                                <div className="flex items-center gap-0.5">
-                                  <Check className="h-3 w-3 text-emerald-500" />
-                                  <Check className="h-3 w-3 text-emerald-500 -ml-2" />
-                                </div>
-                              ) : (
-                                <Check className="h-3 w-3 text-stone-600" />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-[8px] text-stone-600 font-black uppercase tracking-widest px-4">
-                          {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
-                        </p>
-                      </div>
+            <ScrollArea className="flex-1 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed opacity-95">
+              <div className="max-w-4xl mx-auto space-y-10 px-6 py-10 pb-20">
+                {Object.entries(groupedMessages).map(([date, msgs]) => (
+                  <div key={date} className="space-y-8">
+                    <div className="flex justify-center">
+                      <Badge variant="outline" className="bg-stone-900/80 backdrop-blur-md border-white/5 text-[10px] uppercase font-black tracking-widest text-stone-500 px-4 py-1 rounded-full shadow-xl">
+                        {date}
+                      </Badge>
                     </div>
-                  );
-                })}
+                    {msgs.map((msg) => {
+                      const isMe = msg.senderId === currentUser?.uid;
+                      return (
+                        <div key={msg.id} className={cn(
+                          "flex gap-3 max-w-[85%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-2 duration-500",
+                          isMe ? "ml-auto flex-row-reverse" : "mr-auto"
+                        )}>
+                          <div className={cn("space-y-1.5", isMe ? "items-end" : "items-start")}>
+                            <div className={cn(
+                              "p-4 rounded-2xl shadow-2xl text-sm leading-relaxed relative group",
+                              isMe 
+                                ? "bg-primary text-black font-medium rounded-tr-none" 
+                                : "bg-stone-900 border border-white/5 text-stone-200 rounded-tl-none"
+                            )}>
+                              <p className="whitespace-pre-wrap">{msg.text}</p>
+                              <div className={cn(
+                                "flex items-center gap-1.5 mt-1 justify-end",
+                                isMe ? "text-stone-950/60" : "text-stone-500"
+                              )}>
+                                <span className="text-[8px] font-black uppercase">
+                                  {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'HH:mm') : ''}
+                                </span>
+                                {isMe && (
+                                  <div className="flex">
+                                    <Check className={cn("h-3 w-3", msg.read ? "text-emerald-600" : "text-stone-600")} />
+                                    {msg.read && <Check className="h-3 w-3 -ml-2 text-emerald-600" />}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
                 <div ref={scrollEndRef} />
               </div>
             </ScrollArea>
 
-            {isOtherUserTyping && (
-              <div className="px-10 py-4 absolute bottom-[100px] left-0 right-0 z-30 pointer-events-none">
-                <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-xl w-fit px-6 py-2.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-500">
-                  <div className="flex gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                  </div>
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest italic">{selectedChat.displayName} rédige...</span>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSendMessage} className="p-8 bg-stone-900/50 border-t border-white/5 backdrop-blur-3xl relative z-40">
-              <div className="max-w-4xl mx-auto flex items-center gap-5">
-                <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary transition-all rounded-full h-12 w-12 bg-white/5 border border-white/5 shrink-0"><Paperclip className="h-5 w-5" /></Button>
+            <form onSubmit={handleSendMessage} className="p-6 bg-stone-900/80 border-t border-white/5 backdrop-blur-3xl relative z-40">
+              <div className="max-w-4xl mx-auto flex items-center gap-4">
+                <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-11 w-11 bg-white/5 border border-white/5 shrink-0"><Paperclip className="h-5 w-5" /></Button>
                 <div className="relative flex-1 group">
                   <Input 
                     value={messageText}
                     onChange={handleInputChange}
                     placeholder="Écrivez votre message..." 
-                    className="pr-14 bg-white/5 border-white/10 rounded-2xl h-14 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-700 transition-all text-sm" 
+                    className="pr-14 bg-white/5 border-white/10 rounded-2xl h-14 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-700 transition-all text-sm border-none" 
                   />
                   <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-600 hover:text-primary h-10 w-10 transition-colors">
                     <Smile className="h-5 w-5" />
@@ -438,7 +469,7 @@ export default function MessagesPage() {
                   type="submit" 
                   disabled={!messageText.trim() || isSending}
                   size="icon" 
-                  className="rounded-2xl h-14 w-14 bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 transition-all active:scale-90 group shrink-0"
+                  className="rounded-full h-14 w-14 bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/30 transition-all active:scale-90 group shrink-0"
                 >
                   {isSending ? <Loader2 className="h-6 w-6 animate-spin text-black" /> : <SendHorizonal className="h-6 w-6 text-black group-hover:translate-x-1 transition-transform" />}
                 </Button>
@@ -456,11 +487,11 @@ export default function MessagesPage() {
             <div className="space-y-4">
                 <h3 className="text-4xl md:text-5xl font-display font-black text-white tracking-tighter gold-resplendant">Messagers du Nexus</h3>
                 <p className="text-stone-500 max-sm font-light italic leading-relaxed text-xl">
-                  "Sélectionnez un compagnon de route dans la liste pour engager le dialogue et forger de nouvelles alliances."
+                  "Sélectionnez un compagnon de route pour engager le dialogue."
                 </p>
             </div>
             <div className="flex items-center gap-3 text-[10px] font-black uppercase text-stone-700 tracking-[0.3em]">
-              <ShieldCheck className="h-4 w-4" /> Cryptage Quantum Actif
+              <ShieldCheck className="h-4 w-4" /> Nexus Cryptage Actif
             </div>
           </div>
         )}
