@@ -80,7 +80,7 @@ export default function SubmitPage() {
         const config = await getCloudinarySignature({ folder });
         const { timestamp, signature, apiKey, cloudName } = config;
         
-        // 2. Préparer le FormData pour l'API REST de Cloudinary
+        // 2. Préparer le FormData
         const uploadData = new FormData();
         uploadData.append('file', coverFile);
         uploadData.append('api_key', apiKey!);
@@ -99,13 +99,7 @@ export default function SubmitPage() {
           finalCoverUrl = result.secure_url;
         } else {
           const errorText = await res.text();
-          console.error("Cloudinary error response:", errorText);
-          let errorMessage = "L'envoi de la couverture a échoué.";
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.error?.message || errorMessage;
-          } catch (e) {}
-          throw new Error(errorMessage);
+          throw new Error("L'envoi de la couverture a échoué.");
         }
       }
 
@@ -284,11 +278,12 @@ export default function SubmitPage() {
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
-                  <div className="relative group w-64 aspect-[2/3] rounded-[2.5rem] overflow-hidden border-4 border-white/10 shadow-2xl transition-all hover:border-primary/50">
+                  {/* Strict aspect ratio preview for the cover */}
+                  <div className="relative group w-64 aspect-[2/3] rounded-[2.5rem] overflow-hidden border-4 border-white/10 shadow-2xl transition-all hover:border-primary/50 bg-stone-900">
                     {coverPreview ? (
                       <Image src={coverPreview} alt="Preview" fill className="object-cover" />
                     ) : (
-                      <div className="absolute inset-0 bg-stone-900 flex flex-col items-center justify-center text-center p-6 space-y-4">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-4">
                         <Palette className="h-12 w-12 text-stone-800" />
                         <p className="text-[10px] text-stone-700 uppercase font-black tracking-widest">Aucune image sélectionnée</p>
                       </div>
@@ -296,7 +291,7 @@ export default function SubmitPage() {
                     <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-4 border-dashed border-primary/40 m-3 rounded-[2rem]">
                       <UploadCloud className="h-10 w-10 text-white mb-2 animate-bounce" />
                       <span className="text-[10px] font-black uppercase text-white tracking-widest">Choisir l'image</span>
-                      <p className="text-[8px] text-stone-400 mt-1">Ratio conseillé 2:3</p>
+                      <p className="text-[8px] text-stone-400 mt-1">Ratio forcé 2:3</p>
                       <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                     </label>
                   </div>
@@ -327,24 +322,16 @@ export default function SubmitPage() {
               <p className="text-xs text-stone-400 leading-relaxed italic font-light">
                 {step === 1 && "Un bon synopsis doit poser le 'Qui', le 'Où' et surtout le 'Pourquoi' dès les premières lignes."}
                 {step === 2 && "Le format Webtoon est recommandé pour maximiser vos revenus via mobile (90% de notre audience)."}
-                {step === 3 && "Privilégiez une image claire avec un seul personnage principal pour attirer l'œil dans les classements."}
+                {step === 3 && "Les images sont maintenant cadrées automatiquement par IA pour centrer vos personnages."}
               </p>
               <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                 <Sparkles className="h-5 w-5 text-amber-500" />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase text-white truncate">Statut Initial</p>
-                  <p className="text-[8px] text-stone-500 italic">Programme Draft Activé</p>
+                  <p className="text-[10px] font-black uppercase text-white truncate">Cadrage Intelligent</p>
+                  <p className="text-[8px] text-stone-500 italic">Technologie g_auto active</p>
                 </div>
               </div>
             </div>
-          </Card>
-
-          <Card className="bg-emerald-500/[0.03] border border-emerald-500/10 rounded-[2.5rem] p-8 text-center space-y-4">
-            <div className="mx-auto bg-emerald-500/10 p-3 rounded-full w-fit"><Check className="h-6 w-6 text-emerald-500" /></div>
-            <h4 className="font-bold text-white text-sm">Propriété Garantie</h4>
-            <p className="text-[10px] text-stone-500 italic leading-relaxed">
-              Vos droits d'auteur sont protégés. NexusHub n'agit que comme plateforme de diffusion et agent de promotion.
-            </p>
           </Card>
         </aside>
       </div>

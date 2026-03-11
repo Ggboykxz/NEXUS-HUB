@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import Image from 'next/image';
 import { 
   BookOpen, Heart, Users, Award, ShieldCheck, 
   Share2, MessageSquare, Zap, Star, Globe, 
-  ChevronRight, TrendingUp, Flame, LayoutGrid, Plus
+  ChevronRight, TrendingUp, Flame, LayoutGrid, Plus, Eye, Layers
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -19,6 +18,7 @@ import { StoryCard } from '@/components/story-card';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { getBannerOptimized, getAvatarThumbnail } from '@/lib/image-utils';
 
 export default function ArtistDetailClient({ artist, artistStories }: { artist: UserProfile; artistStories: Story[] }) {
   const { toast } = useToast();
@@ -64,13 +64,16 @@ export default function ArtistDetailClient({ artist, artistStories }: { artist: 
     }
   };
 
+  const optimizedBanner = getBannerOptimized(artist.bannerURL || "https://picsum.photos/seed/artist-banner/1200/600");
+  const optimizedAvatar = getAvatarThumbnail(artist.photoURL);
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* 1. ARTIST HERO BANNER */}
       <header className="relative group">
-        <div className="relative h-72 md:h-96 w-full overflow-hidden">
+        <div className="relative h-72 md:h-96 w-full overflow-hidden bg-stone-900">
           <Image 
-            src={artist.bannerURL || "https://picsum.photos/seed/artist-banner/1200/600"} 
+            src={optimizedBanner} 
             alt="Artist Banner" 
             fill 
             className="object-cover opacity-40 transition-transform duration-[15000ms] group-hover:scale-110"
@@ -83,7 +86,7 @@ export default function ArtistDetailClient({ artist, artistStories }: { artist: 
           <div className="flex flex-col md:flex-row items-end gap-10 md:gap-16">
             <div className="relative shrink-0 mx-auto md:mx-0 group/avatar">
               <Avatar className="h-48 w-48 md:h-64 md:w-64 border-[10px] border-background ring-4 ring-primary/20 shadow-[0_0_60px_rgba(212,168,67,0.3)] transition-transform duration-700 hover:scale-105">
-                <AvatarImage src={artist.photoURL} alt={artist.displayName} className="object-cover" />
+                <AvatarImage src={optimizedAvatar} alt={artist.displayName} className="object-cover" />
                 <AvatarFallback className="bg-stone-900 text-primary text-6xl font-black">{artist.displayName.slice(0, 2)}</AvatarFallback>
               </Avatar>
               {artist.isCertified && (
@@ -193,7 +196,7 @@ export default function ArtistDetailClient({ artist, artistStories }: { artist: 
                 ))}
               </div>
             </div>
-            <div className="relative aspect-video rounded-[3rem] overflow-hidden border-8 border-white/5 shadow-2xl group">
+            <div className="relative aspect-video rounded-[3rem] overflow-hidden border-8 border-white/5 shadow-2xl group bg-stone-800">
               <Image src="https://res.cloudinary.com/demo/image/upload/v1/samples/people/artist-working.jpg" alt="Atelier" fill className="object-cover opacity-60 transition-transform duration-[5000ms] group-hover:scale-110" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center p-8 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] scale-90 md:scale-100">

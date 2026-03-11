@@ -24,6 +24,7 @@ import { useAuthModal } from './providers/auth-modal-provider';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, serverTimestamp, onSnapshot, increment, updateDoc } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
+import { getCoverThumbnail, getAvatarThumbnail } from '@/lib/image-utils';
 
 interface StoryCardProps {
   story: Story;
@@ -144,25 +145,25 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
   };
 
   const storyUrl = getStoryUrl(story);
-  const coverUrl = story.coverImage.imageUrl;
+  // Utilise l'URL optimisée avec ratio 2:3 forcé
+  const coverUrl = getCoverThumbnail(story.coverImage.imageUrl);
 
   return (
     <div className={cn("group relative transition-all duration-500 animate-in fade-in zoom-in-95", className)}>
-      {/* Main Card Container with Gold Glow */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-stone-100 mb-3 shadow-sm transition-all duration-700 ease-in-out hover:shadow-[0_0_30px_hsl(var(--primary)/0.3)] border border-transparent hover:border-primary/20">
+      {/* Aspect Ratio 2:3 strictly enforced */}
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-stone-900 mb-3 shadow-sm transition-all duration-700 ease-in-out hover:shadow-[0_0_30px_hsl(var(--primary)/0.3)] border border-white/5 hover:border-primary/30">
         <Link href={storyUrl} aria-label={`Voir les détails de ${story.title}`} prefetch={true}>
             <Image
               src={coverUrl}
               alt={story.title}
               fill
-              className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-[1.08]"
+              className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
               sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
               placeholder="blur"
               blurDataURL={story.coverImage.blurHash || DEFAULT_BLUR}
             />
         </Link>
         
-        {/* Floating Static Badges (Hidden on hover) */}
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none">
             {story.sponsoredBy ? (
                 <Badge className="gap-1 px-2 py-0.5 bg-black/60 text-emerald-400 backdrop-blur-md border-emerald-500/30 shadow-lg text-[8px] uppercase font-black tracking-widest">
@@ -191,7 +192,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
           </Badge>
         )}
 
-        {/* Reading Progress */}
         {progress !== undefined && progress > 0 && progress < 100 && (
           <div className="absolute bottom-0 left-0 w-full h-[4px] bg-black/40 z-20 transition-opacity duration-300 group-hover:opacity-0">
             <div 
@@ -207,7 +207,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
           </Badge>
         )}
         
-        {/* NEW SLIDING HOVER OVERLAY */}
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-5">
             <div className="transform translate-y-12 group-hover:translate-y-0 transition-transform duration-500 ease-out space-y-4">
                 <Badge className="bg-primary/20 text-primary border border-primary/20 text-[9px] font-black uppercase px-2.5 py-0.5 w-fit backdrop-blur-md">
@@ -269,7 +268,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
         </div>
       </div>
 
-      {/* Metadata Section */}
       <div className="space-y-1 px-1">
         <div className="flex items-center justify-between gap-2">
           <Link href={storyUrl} className="min-w-0" prefetch={true}>
@@ -282,7 +280,6 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
           )}
         </div>
         
-        {/* ARTIST NAME FADES IN WITH DELAY ON HOVER */}
         <div className="flex items-center gap-1 text-[10px] transition-all duration-500 delay-300 opacity-60 group-hover:opacity-100 group-hover:translate-x-1">
             <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1" prefetch={true}>
                 <span className="font-bold truncate max-w-[100px] text-stone-400 group-hover:text-stone-300">{artistInfo?.displayName || 'Artiste'}</span>
