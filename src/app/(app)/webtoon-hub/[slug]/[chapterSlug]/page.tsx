@@ -20,7 +20,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, limit, getDocs, orderBy, updateDoc, increment, doc } from 'firebase/firestore';
 import type { Story, Chapter } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
-import { getOptimizedImage } from '@/lib/image-utils';
+import { getReaderPageOptimized } from '@/lib/image-utils';
 import { SponsoredPanel } from '@/components/ads/sponsored-panel';
 import { augmentedReadingAction } from '@/ai/flows/augmented-reading-flow';
 import {
@@ -176,7 +176,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
         
         <div className="flex items-center gap-4 flex-1">
           <Button asChild variant="ghost" size="icon" className="text-primary h-9 w-9 rounded-full bg-white/5 hover:bg-primary/10">
-            <Link href={`/webtoon-hub/${story.slug}`}><ArrowLeft className="h-5 w-5" /></Link>
+            <Link href={getStoryUrl(story)}><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
           <div className="flex flex-col min-w-0">
             <span className="text-[9px] uppercase font-black text-primary tracking-[0.2em] leading-none mb-1 truncate max-w-[120px]">{story.title}</span>
@@ -215,7 +215,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
           )}
         >
           <div className={cn(
-            "mx-auto py-14",
+            "mx-auto py-14 transition-all duration-500",
             activeMode === 'scroll' ? "max-w-[800px] flex flex-col items-center" : "max-w-7xl px-6",
             (activeMode === 'pages' && isDoublePage) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "flex flex-col items-center"
           )}>
@@ -223,19 +223,19 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
               <div 
                 key={index} 
                 className={cn(
-                  "relative w-full aspect-[2/3] group cursor-pointer",
-                  activeMode === 'pages' && "shadow-2xl border border-white/5 rounded-lg overflow-hidden mb-8"
+                  "relative w-full animate-in fade-in duration-700",
+                  activeMode === 'scroll' ? "aspect-auto h-auto mb-0" : "aspect-[2/3] shadow-2xl border border-white/5 rounded-lg overflow-hidden mb-8"
                 )}
               >
                 <Image
-                  src={getOptimizedImage(page.imageUrl, { 
-                    width: 1000, 
-                    quality: isLowData ? 30 : 90, 
-                    lowData: isLowData 
-                  })}
+                  src={getReaderPageOptimized(page.imageUrl, activeMode, isLowData)}
                   alt={`Page ${index + 1}`}
-                  fill
-                  className="object-contain md:object-cover"
+                  width={activeMode === 'scroll' ? 1000 : 1200}
+                  height={activeMode === 'scroll' ? (1000 * (page.height / page.width)) : 1800}
+                  className={cn(
+                    "w-full h-auto",
+                    activeMode === 'pages' && "h-full object-contain md:object-cover"
+                  )}
                   priority={index < 2}
                 />
               </div>
@@ -248,9 +248,17 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
                   <h2 className="text-4xl font-display font-black gold-resplendant mb-4">Épisode Terminé</h2>
                   <p className="text-stone-400 text-sm italic font-light">"Chaque fin est le commencement d'une nouvelle légende."</p>
                 </div>
-                <Button size="lg" className="w-full rounded-full px-12 h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
-                  Épisode Suivant <ChevronRight className="ml-2 h-6 w-6" />
-                </Button>
+                {allChapters[chapter.chapterNumber] ? (
+                  <Button asChild size="lg" className="w-full rounded-full px-12 h-16 font-black text-xl gold-shimmer shadow-2xl bg-primary text-black">
+                    <Link href={`/webtoon-hub/${story.slug}/${allChapters[chapter.chapterNumber].slug}`}>
+                      Épisode {chapter.chapterNumber + 1} <ChevronRight className="ml-2 h-6 w-6" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="lg" className="w-full rounded-full h-16 border-white/10 text-white font-black text-xl hover:bg-white/5">
+                    <Link href={getStoryUrl(story)}>Retour à la Légende</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

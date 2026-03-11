@@ -9,7 +9,7 @@ export interface ImageTransformOptions {
   height?: number;
   quality?: number | 'auto';
   format?: 'auto' | 'webp' | 'avif' | 'jpg';
-  crop?: 'fill' | 'scale' | 'thumb' | 'fit' | 'pad' | 'lfill';
+  crop?: 'fill' | 'scale' | 'thumb' | 'fit' | 'pad' | 'lfill' | 'limit';
   gravity?: 'auto' | 'center' | 'face' | 'north' | 'south';
   lowData?: boolean;
   aspectRatio?: string; // e.g. "2:3", "1:1", "16:9"
@@ -95,5 +95,19 @@ export function getBannerOptimized(url: string) {
     crop: 'lfill',
     gravity: 'auto',
     quality: 'auto'
+  });
+}
+
+/**
+ * Helper pour les pages de lecture (Webtoon / BD)
+ * Gère l'adaptation à la largeur tout en préservant les détails
+ */
+export function getReaderPageOptimized(url: string, mode: 'scroll' | 'pages', lowData: boolean = false) {
+  return getOptimizedImage(url, {
+    width: mode === 'scroll' ? 1000 : 1200,
+    crop: mode === 'scroll' ? 'limit' : 'fit',
+    quality: lowData ? 30 : 85,
+    format: 'auto',
+    lowData
   });
 }

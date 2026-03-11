@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { getOptimizedImage } from '@/lib/image-utils';
+import { getReaderPageOptimized } from '@/lib/image-utils';
 import type { Story, UserProfile, Chapter, LibraryEntry } from '@/lib/types';
 import { getStoryUrl } from '@/lib/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -456,7 +456,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
         <div className="space-y-3">
           <Textarea 
             value={commentText}
-            onChange={(e) => setCommentText.set(e.target.value)}
+            onChange={(e) => setCommentText(e.target.value)}
             placeholder="Qu'avez-vous pensé de cet épisode ?" 
             className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl p-4 text-xs font-light"
             maxLength={550}
@@ -585,6 +585,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
   const [brightness, setBrightness] = useState(100);
   const [swipeIndicator, setSwipeIndicator] = useState<'prev' | 'next' | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [isLowData, setIsLowData] = useState(false);
   
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -842,7 +843,10 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
       
       <div className="flex pt-14 min-h-[calc(100vh-56px)]">
         <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
-          <div className="w-full max-w-[800px] mx-auto flex flex-col items-center min-h-full">
+          <div className={cn(
+            "w-full mx-auto flex flex-col items-center min-h-full transition-all duration-500",
+            activeMode === 'scroll' ? "max-w-[800px]" : "max-w-7xl px-4 md:px-12"
+          )}>
             {showPremiumGate ? (
               <PremiumGate 
                 chapter={currentChapter} 
@@ -857,23 +861,39 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
               </div>
             ) : (
               <>
-                {pages.map((page, index) => (
-                  <div 
-                    key={index} 
-                    data-page-index={index}
-                    className="relative w-full aspect-[2/3] animate-in fade-in duration-1000 chapter-page" 
-                    style={{ filter: `brightness(${brightness}%)` }}
-                  >
-                    <Image
-                      src={getOptimizedImage(page.imageUrl, { width: 1000, quality: 90 })}
-                      alt={`Page ${index + 1}`}
-                      fill
-                      className="object-contain md:object-cover"
-                      priority={index < 2}
-                      sizes="(max-width: 768px) 100vw, 800px"
-                    />
-                  </div>
-                ))}
+                <div className={cn(
+                  "w-full flex flex-col items-center gap-0",
+                  activeMode === 'pages' && "gap-8 py-8"
+                )}>
+                  {pages.map((page, index) => (
+                    <div 
+                      key={index} 
+                      data-page-index={index}
+                      className={cn(
+                        "relative w-full animate-in fade-in duration-1000 chapter-page shadow-sm transition-all",
+                        activeMode === 'scroll' ? "aspect-auto h-auto" : "aspect-[2/3] rounded-lg overflow-hidden border border-white/5 shadow-2xl"
+                      )} 
+                      style={{ 
+                        filter: `brightness(${brightness}%)`,
+                        // En mode scroll on laisse l'image prendre sa hauteur naturelle
+                        height: activeMode === 'scroll' ? 'auto' : undefined
+                      }}
+                    >
+                      <Image
+                        src={getReaderPageOptimized(page.imageUrl, activeMode, isLowData)}
+                        alt={`Page ${index + 1}`}
+                        width={activeMode === 'scroll' ? 1000 : 1200}
+                        height={activeMode === 'scroll' ? (1000 * (page.height / page.width)) : 1800}
+                        className={cn(
+                          "w-full h-auto",
+                          activeMode === 'pages' && "h-full object-contain md:object-cover"
+                        )}
+                        priority={index < 2}
+                        sizes={activeMode === 'scroll' ? "(max-width: 768px) 100vw, 800px" : "(max-width: 768px) 100vw, 1200px"}
+                      />
+                    </div>
+                  ))}
+                </div>
 
                 <div className="py-32 px-6 text-center space-y-8 w-full max-w-lg mx-auto">
                   <div className="bg-primary/10 p-10 rounded-[3rem] border border-primary/20 backdrop-blur-xl relative overflow-hidden group">
@@ -940,6 +960,15 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
             <div className="space-y-6">
               <div className="flex justify-between items-center"><label className="text-[10px] uppercase font-black tracking-widest text-stone-500">Luminosité</label><span>{brightness}%</span></div>
               <Slider min={70} max={100} step={1} value={[brightness]} onValueChange={(val) => { setBrightness(val[0]); localStorage.setItem('reader-brightness', val[0].toString()); }} />
+            </div>
+            <div className="space-y-6 pt-6 border-t border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-bold text-white">Mode Low-Data</Label>
+                  <p className="text-[10px] text-stone-500">Compresse les planches pour économiser vos données.</p>
+                </div>
+                <Switch checked={isLowData} onCheckedChange={setIsLowData} />
+              </div>
             </div>
           </div>
         </SheetContent>
