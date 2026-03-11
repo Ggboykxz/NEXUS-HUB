@@ -1,66 +1,13 @@
+
+'use client';
+
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import { SearchableFaq } from '@/components/faq/searchable-faq';
+import { ChevronRight, Languages, ShieldCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { SearchableFaq } from '@/components/faq/searchable-faq';
-import { ChevronRight, Languages, ShieldCheck } from 'lucide-react';
-
-interface FaqItem {
-  question: string;
-  answer: string;
-  category: 'Lecture' | 'Création' | 'AfriCoins' | 'Compte' | 'Technique';
-}
-
-const FAQ_DATA: FaqItem[] = [
-  {
-    category: 'Lecture',
-    question: "Comment puis-je lire hors-ligne ?",
-    answer: "Grâce à notre support PWA, vous pouvez installer l'application sur votre mobile. Une fois un chapitre ouvert, il est mis en cache et reste accessible même sans connexion internet."
-  },
-  {
-    category: 'Lecture',
-    question: "Quelle est la différence entre le mode Webtoon et BD ?",
-    answer: "Le mode Webtoon propose un défilement vertical infini optimisé pour mobile. Le mode BD utilise une pagination classique, idéale pour les albums et les tablettes en mode paysage."
-  },
-  {
-    category: 'Création',
-    question: "Comment devenir artiste Pro sur NexusHub ?",
-    answer: "Le statut Pro est accordé aux artistes du programme Draft ayant atteint 5 000 vues cumulées et dont le travail a été validé par notre comité éditorial pour sa qualité narrative."
-  },
-  {
-    category: 'Création',
-    question: "Quels sont les formats d'image acceptés ?",
-    answer: "Nous acceptons les formats JPG, PNG et WebP. Pour une lecture optimale, nous recommandons une largeur de 800px pour les Webtoons et un ratio 2:3 pour les couvertures."
-  },
-  {
-    category: 'AfriCoins',
-    question: "Qu'est-ce que les AfriCoins et comment les acheter ?",
-    answer: "Les AfriCoins sont la monnaie virtuelle de NexusHub. Vous pouvez les acheter via Mobile Money (Airtel, Orange, Moov), carte bancaire ou cryptomonnaies pour débloquer du contenu Premium."
-  },
-  {
-    category: 'AfriCoins',
-    question: "Comment sont rémunérés les artistes ?",
-    answer: "Les artistes Pro et Elite perçoivent jusqu'à 70% des revenus générés par les AfriCoins dépensés sur leurs œuvres, ainsi que l'intégralité des dons directs des lecteurs."
-  },
-  {
-    category: 'Compte',
-    question: "Comment changer mon pseudo ou ma photo de profil ?",
-    answer: "Rendez-vous dans vos Paramètres, onglet 'Profil'. Vous pouvez y modifier votre identité numérique, votre biographie et vos liens vers les réseaux sociaux."
-  },
-  {
-    category: 'Compte',
-    question: "Comment supprimer mon compte et mes données ?",
-    answer: "Vous pouvez demander la suppression de votre compte via le formulaire de contact. Conformément au RGPD, toutes vos données personnelles seront effacées de nos serveurs sous 30 jours."
-  },
-  {
-    category: 'Technique',
-    question: "Quelles langues sont supportées ?",
-    answer: "NexusHub est multilingue : Français, Anglais, Swahili, Wolof, Yoruba et Hausa sont actuellement supportés avec l'aide de notre IA de traduction culturelle."
-  },
-  {
-    category: 'Technique',
-    question: "Quels outils sont disponibles pour l'accessibilité ?",
-    answer: "Nous proposons la dictée vocale pour les scénaristes et des interfaces contrastées pour les lecteurs malvoyants. Notre lecteur supporte également les lecteurs d'écran standards."
-  }
-];
 
 const CATEGORIES = [
   { id: 'all', label: 'Tout', icon: 'HelpCircle' },
@@ -72,9 +19,25 @@ const CATEGORIES = [
 ];
 
 export default function FaqPage() {
+  const { data: faqData = [], isLoading } = useQuery({
+    queryKey: ['faq-data'],
+    queryFn: async () => {
+      const q = query(collection(db, 'faq'), orderBy('order', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => doc.data() as any);
+    }
+  });
+
   return (
     <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
-      <SearchableFaq faqData={FAQ_DATA} categories={CATEGORIES} />
+      {isLoading ? (
+        <div className="py-32 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-stone-500 uppercase font-black text-[10px] tracking-widest">Ouverture du centre d'aide...</p>
+        </div>
+      ) : (
+        <SearchableFaq faqData={faqData} categories={CATEGORIES} />
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-24">
         <Card className="p-8 border-none bg-emerald-500/[0.03] rounded-[2.5rem] shadow-xl relative overflow-hidden group">

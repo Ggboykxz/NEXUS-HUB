@@ -1,12 +1,16 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Award, Star, Users, Trophy, Vote, CheckCircle2, ChevronRight, Flame, Sparkles, Heart } from 'lucide-react';
+import { Award, Star, Users, Trophy, Vote, CheckCircle2, ChevronRight, Flame, Sparkles, Heart, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 
 export default function NexusHubAwardsPage() {
   const [activeCategory, setActiveCategory] = useState('Meilleure Série');
@@ -19,12 +23,26 @@ export default function NexusHubAwardsPage() {
     "Coup de Coeur Public"
   ];
 
-  const nominees = [
-    { id: 1, title: "Chroniques d'Orisha", artist: "Jelani Adebayo", votes: 4500, image: "https://picsum.photos/seed/nom1/400/600" },
-    { id: 2, title: "Cyber-Reines", artist: "Amina Diallo", votes: 3200, image: "https://picsum.photos/seed/nom2/400/600" },
-    { id: 3, title: "Légendes de Kasaï", artist: "Koffi Osei", votes: 2800, image: "https://picsum.photos/seed/nom3/400/600" },
-    { id: 4, title: "Le Sceptre du Soleil", artist: "Zoe Mensah", votes: 1500, image: "https://picsum.photos/seed/nom4/400/600" },
-  ];
+  const { data: nominees = [], isLoading } = useQuery({
+    queryKey: ['awards-nominees', activeCategory],
+    queryFn: async () => {
+      try {
+        const q = query(
+          collection(db, 'awardNominees'),
+          where('category', '==', activeCategory),
+          orderBy('votes', 'desc'),
+          limit(12)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      } catch (e) {
+        // Fallback simple if index missing
+        const qSimple = query(collection(db, 'awardNominees'), where('category', '==', activeCategory), limit(12));
+        const snap = await getDocs(qSimple);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      }
+    }
+  });
 
   return (
     <div className="flex flex-col bg-stone-950 min-h-screen text-white">
@@ -71,28 +89,36 @@ export default function NexusHubAwardsPage() {
           <Badge className="bg-emerald-500 text-white border-none uppercase tracking-widest px-3 py-1">Fin des votes : 31 Déc.</Badge>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {nominees.map((nom) => (
-            <Card key={nom.id} className="bg-stone-900 border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 hover:shadow-2xl">
-              <div className="relative aspect-[3/4] overflow-hidden">
-                <Image src={nom.image} alt={nom.title} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60" />
-                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-black text-primary border border-primary/20">
-                  <Flame className="h-3 w-3 fill-current" /> {nom.votes.toLocaleString()} votes
+        {isLoading ? (
+          <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
+        ) : nominees.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {nominees.map((nom: any) => (
+              <Card key={nom.id} className="bg-stone-900 border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-primary/30 transition-all duration-500 hover:shadow-2xl">
+                <div className="relative aspect-[3/4] overflow-hidden">
+                  <Image src={nom.image || "https://picsum.photos/seed/nom/400/600"} alt={nom.title} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60" />
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-black text-primary border border-primary/20">
+                    <Flame className="h-3 w-3 fill-current" /> {nom.votes?.toLocaleString() || 0} votes
+                  </div>
                 </div>
-              </div>
-              <CardContent className="p-8 text-center space-y-4">
-                <div>
-                  <h3 className="text-xl font-display font-black text-white group-hover:text-primary transition-colors truncate">{nom.title}</h3>
-                  <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-1">par {nom.artist}</p>
-                </div>
-                <Button className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white font-black hover:bg-primary hover:text-black transition-all group-hover:gold-shimmer">
-                  Voter pour cette oeuvre
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <CardContent className="p-8 text-center space-y-4">
+                  <div>
+                    <h3 className="text-xl font-display font-black text-white group-hover:text-primary transition-colors truncate">{nom.title}</h3>
+                    <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest mt-1">par {nom.artist}</p>
+                  </div>
+                  <Button className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white font-black hover:bg-primary hover:text-black transition-all group-hover:gold-shimmer">
+                    Voter pour cette oeuvre
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
+            <p className="text-stone-500 italic">Aucun nommé dans cette catégorie pour le moment.</p>
+          </div>
+        )}
       </section>
 
       {/* 3. TROPHY PREVIEW */}
