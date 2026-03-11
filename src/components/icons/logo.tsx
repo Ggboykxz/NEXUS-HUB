@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
 
+/**
+ * Logo officiel de NexusHub - Version Symbole Uniquement.
+ * Représente le livre ouvert et les plumes croisées.
+ */
 export function Logo({ className }: { className?: string }) {
   return (
     <svg
@@ -7,12 +11,12 @@ export function Logo({ className }: { className?: string }) {
       viewBox="0 0 512 512"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="NexusHub Official Logo"
+      aria-label="NexusHub Official Symbol"
     >
-      {/* Outer Glow / Base */}
-      <circle cx="256" cy="256" r="220" fill="currentColor" fillOpacity="0.03" className="text-primary" />
+      {/* Halo de lueur dorée en arrière-plan */}
+      <circle cx="256" cy="256" r="220" fill="currentColor" fillOpacity="0.05" className="text-primary" />
       
-      {/* Open Book Symbol */}
+      {/* Le Livre Ouvert (Symbole du Savoir et du Récit) */}
       <path
         d="M256 380C256 380 180 360 100 360V160C180 160 256 180 256 180M256 380C256 380 332 360 412 360V160C332 160 256 180 256 180"
         stroke="currentColor"
@@ -22,39 +26,31 @@ export function Logo({ className }: { className?: string }) {
         className="text-foreground"
       />
       
-      {/* Book Internal Pages (Subtle Details) */}
-      <path d="M130 200H230M130 240H230M130 280H200" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.1" className="text-foreground" />
-      <path d="M382 200H282M382 240H282M382 280H312" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.1" className="text-foreground" />
-
-      {/* Crossed Stylized Pens */}
+      {/* Plumes Croisées (Symbole de la Création et de l'Art) */}
       <g className="text-primary">
         <path
-          d="M100 100L412 412"
+          d="M120 120L392 392"
           stroke="currentColor"
-          strokeWidth="28"
+          strokeWidth="24"
           strokeLinecap="round"
           className="drop-shadow-lg"
         />
         <path
-          d="M412 100L100 412"
+          d="M392 120L120 392"
           stroke="currentColor"
-          strokeWidth="28"
+          strokeWidth="24"
           strokeLinecap="round"
           className="drop-shadow-lg"
         />
         
-        {/* Pen Nibs Details */}
-        <path d="M85 85L115 115L125 105L95 75L85 85Z" fill="currentColor" />
-        <path d="M427 85L397 115L387 105L417 75L427 85Z" fill="currentColor" />
+        {/* Détails des pointes de plumes */}
+        <path d="M105 105L135 135L145 125L115 95L105 105Z" fill="currentColor" />
+        <path d="M407 105L377 135L367 125L397 95L407 105Z" fill="currentColor" />
       </g>
 
-      {/* Central Nexus Core */}
-      <circle cx="256" cy="256" r="40" fill="currentColor" className="text-primary" stroke="currentColor" strokeWidth="10" className="text-stone-950" />
-      <circle cx="256" cy="256" r="20" fill="currentColor" className="text-stone-950" />
-      
-      {/* Dynamic Accents */}
-      <circle cx="100" cy="360" r="10" fill="currentColor" className="text-primary" />
-      <circle cx="412" cy="360" r="10" fill="currentColor" className="text-primary" />
+      {/* Cœur du Nexus (Point de convergence) */}
+      <circle cx="256" cy="256" r="30" fill="currentColor" className="text-primary" />
+      <circle cx="256" cy="256" r="15" fill="currentColor" className="text-stone-950" />
     </svg>
   );
 }

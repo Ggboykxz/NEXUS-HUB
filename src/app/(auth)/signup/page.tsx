@@ -98,6 +98,8 @@ export function SignupForm() {
         afriCoins: selectedRole === 'reader' ? 50 : (selectedRole === 'artist_draft' ? 100 : 75),
         subscribersCount: 0,
         followedCount: 0,
+        isArtist: selectedRole === 'artist_draft',
+        isTranslator: selectedRole === 'translator',
         preferences: { 
           language: 'fr', 
           theme: 'dark',
@@ -112,12 +114,11 @@ export function SignupForm() {
       
       toast({ title: "Destinée scellée !", description: `Bienvenue dans le Hub, ${selectedRole === 'artist_draft' ? 'Créateur' : 'Voyageur'}.` });
       
-      // 4. Redirection directe selon le rôle pour éviter les délais de propagation
+      // 4. Redirection directe selon le rôle
       const destination = selectedRole.startsWith('artist') 
         ? '/dashboard/creations' 
         : (selectedRole === 'translator' ? '/dashboard/translations' : `/profile/${user.uid}`);
       
-      // Utilisation de replace pour une navigation propre sans retour arrière vers le signup
       window.location.replace(destination);
 
     } catch (error: any) {
@@ -125,8 +126,6 @@ export function SignupForm() {
       let message = "Une erreur est survenue lors de l'inscription.";
       if (error.code === 'auth/email-already-in-use') {
         message = "Cette adresse email est déjà utilisée par un autre compte.";
-      } else if (error.code === 'auth/invalid-email') {
-        message = "L'adresse email n'est pas valide.";
       }
       toast({ title: "Action impossible", description: message, variant: "destructive" });
       setIsLoading(false);
