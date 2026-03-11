@@ -216,7 +216,7 @@ export default function MagicalReaderPage({ params: paramsPromise, defaultMode =
         >
           <div className={cn(
             "mx-auto py-14 transition-all duration-500",
-            activeMode === 'scroll' ? "max-w-[800px] flex flex-col items-center" : "max-w-7xl px-6",
+            activeMode === 'scroll' ? "max-w-[650px] flex flex-col items-center" : "max-w-5xl px-6",
             (activeMode === 'pages' && isDoublePage) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "flex flex-col items-center"
           )}>
             {pages.map((page, index) => (

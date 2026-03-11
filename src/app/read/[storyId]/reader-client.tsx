@@ -848,7 +848,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
         <main className="flex-1 min-w-0" style={{ backgroundColor: readerBg }}>
           <div className={cn(
             "w-full mx-auto flex flex-col items-center min-h-full transition-all duration-500",
-            activeMode === 'scroll' ? "max-w-[800px]" : "max-w-7xl px-4 md:px-12"
+            activeMode === 'scroll' ? "max-w-[650px]" : "max-w-5xl px-4 md:px-12"
           )}>
             {showPremiumGate ? (
               <PremiumGate 
@@ -878,7 +878,6 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                       )} 
                       style={{ 
                         filter: `brightness(${brightness}%)`,
-                        // En mode scroll on laisse l'image prendre sa hauteur naturelle
                         height: activeMode === 'scroll' ? 'auto' : undefined
                       }}
                     >
@@ -892,7 +891,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
                           activeMode === 'pages' && "h-full object-contain md:object-cover"
                         )}
                         priority={index < 2}
-                        sizes={activeMode === 'scroll' ? "(max-width: 768px) 100vw, 800px" : "(max-width: 768px) 100vw, 1200px"}
+                        sizes={activeMode === 'scroll' ? "(max-width: 768px) 100vw, 650px" : "(max-width: 768px) 100vw, 1000px"}
                       />
                     </div>
                   ))}
