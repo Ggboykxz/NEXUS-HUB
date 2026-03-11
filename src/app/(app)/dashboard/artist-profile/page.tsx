@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +9,7 @@ import {
   Award, Brush, Users, TrendingUp, Sparkles, 
   ChevronRight, Globe, Share2, Eye, Heart, 
   Zap, BrainCircuit, Landmark, Palette, Settings,
-  ArrowUpRight, ShieldCheck, Star, MessageSquare
+  ArrowUpRight, ShieldCheck, Star, MessageSquare, Coins
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
