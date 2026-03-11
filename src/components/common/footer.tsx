@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/icons/logo';
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -28,9 +29,7 @@ export default function Footer() {
           {/* Brand and Description */}
           <div className="lg:col-span-4 space-y-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(212,168,67,0.3)] transition-transform group-hover:scale-110">
-                <span className="font-display font-black text-stone-950 text-2xl">N</span>
-              </div>
+              <Logo className="h-12 w-auto transition-transform group-hover:scale-110" />
               <span className="font-display font-black text-2xl tracking-tighter text-white gold-resplendant">NexusHub<span className="text-primary">.</span></span>
             </Link>
             

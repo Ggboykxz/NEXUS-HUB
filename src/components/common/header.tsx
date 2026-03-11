@@ -33,6 +33,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { MobileNav } from './mobile-nav';
+import { Logo } from '@/components/icons/logo';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -130,9 +131,7 @@ export default function Header() {
             <MobileNav navLinks={navLinks} />
             
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(212,168,67,0.3)] transition-transform group-hover:scale-110">
-                <span className="font-display font-black text-stone-950 text-xl">N</span>
-              </div>
+              <Logo className="h-8 md:h-10 transition-transform group-hover:scale-110 group-hover:rotate-2" />
               <span className="font-display font-black text-xl tracking-tighter text-white gold-resplendant hidden sm:inline">NexusHub<span className="text-primary">.</span></span>
             </Link>
 
