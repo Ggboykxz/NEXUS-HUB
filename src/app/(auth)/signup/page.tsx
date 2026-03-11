@@ -80,7 +80,7 @@ export function SignupForm() {
       
       await updateProfile(user, { displayName: values.name });
       
-      // 2. Construction de l'objet profil pour Firestore
+      // 2. Construction de l'objet profil complet pour Firestore
       const finalProfile = {
         uid: user.uid,
         email: user.email || "",
@@ -95,24 +95,30 @@ export function SignupForm() {
         isBanned: false,
         isCertified: false,
         bio: "",
+        afriCoins: selectedRole === 'reader' ? 50 : (selectedRole === 'artist_draft' ? 100 : 75),
+        subscribersCount: 0,
+        followedCount: 0,
         preferences: { 
           language: 'fr', 
           theme: 'dark',
           privacy: { showCurrentReading: true, showHistory: true }
         },
-        ...(selectedRole === 'reader' && { afriCoins: 50, readingStats: { chaptersRead: 0, totalReadTime: 0, preferredGenres: [] }, readingStreak: { currentCount: 0, lastReadDate: "", longestStreak: 0 } }),
-        ...(selectedRole === 'artist_draft' && { afriCoins: 100, subscribersCount: 0, followedCount: 0, portfolioUrl: "" }),
-        ...(selectedRole === 'translator' && { afriCoins: 75, translatorLanguages: ['fr'], translationsCount: 0 }),
+        readingStats: { preferredGenres: {}, totalReadTime: 0, chaptersRead: 0, favoriteArtists: [] },
+        readingStreak: { currentCount: 0, lastReadDate: "", longestStreak: 0 },
       };
 
-      // 3. Sauvegarde du profil complet dans la base de données Firestore
+      // 3. Sauvegarde du profil dans Firestore
       await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
       
-      toast({ title: "Bienvenue au Hub !", description: "Votre profil a été initialisé. Redirection en cours..." });
+      toast({ title: "Destinée scellée !", description: `Bienvenue dans le Hub, ${selectedRole === 'artist_draft' ? 'Créateur' : 'Voyageur'}.` });
       
-      // 4. Redirection vers la salle d'attente /profile/me qui gèrera la redirection finale
-      // C'est le fix définitif qui résout la race condition.
-      window.location.replace('/profile/me');
+      // 4. Redirection directe selon le rôle pour éviter les délais de propagation
+      const destination = selectedRole.startsWith('artist') 
+        ? '/dashboard/creations' 
+        : (selectedRole === 'translator' ? '/dashboard/translations' : `/profile/${user.uid}`);
+      
+      // Utilisation de replace pour une navigation propre sans retour arrière vers le signup
+      window.location.replace(destination);
 
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -192,7 +198,7 @@ export function SignupForm() {
                         </FormItem>
                       )} />
 
-                      <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl font-black text-lg bg-primary text-black gold-shimmer shadow-xl shadow-primary/20">
+                      <Button type="button" onClick={handleNextStep} className="w-full h-16 rounded-2xl bg-primary text-black font-black text-lg gold-shimmer shadow-xl shadow-primary/20">
                         Étape suivante <ChevronRight className="ml-2 h-5 w-5" />
                       </Button>
                     </div>
