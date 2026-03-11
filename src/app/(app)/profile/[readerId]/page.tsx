@@ -9,7 +9,7 @@ import {
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
   Settings as SettingsIcon, Share2, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
-  TrendingUp, Star, Award, Users, Clock
+  TrendingUp, Star, Award, Users, Clock, MessageSquare
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -131,7 +131,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
           <EyeOff className="h-12 w-12 text-stone-700" />
         </div>
         <h2 className="text-3xl font-display font-black text-white">Profil Introuvable</h2>
-        <p className="text-stone-500 italic max-w-sm mx-auto">"Ce voyageur semble avoir disparu dans les sables du temps."</p>
+        <p className="text-stone-500 italic max-sm mx-auto">"Ce voyageur semble avoir disparu dans les sables du temps."</p>
         <Button asChild variant="outline" className="rounded-full border-primary text-primary">
           <Link href="/">Retour à l'accueil</Link>
         </Button>

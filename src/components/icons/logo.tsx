@@ -10,66 +10,51 @@ export function Logo({ className }: { className?: string }) {
       aria-label="NexusHub Official Logo"
     >
       {/* Outer Glow / Base */}
-      <circle cx="256" cy="200" r="180" fill="currentColor" fillOpacity="0.03" className="text-primary" />
+      <circle cx="256" cy="256" r="220" fill="currentColor" fillOpacity="0.03" className="text-primary" />
       
-      {/* Open Book Path */}
+      {/* Open Book Symbol */}
       <path
-        d="M256 300C256 300 180 280 100 280V120C180 120 256 140 256 140M256 300C256 300 332 280 412 280V120C332 120 256 140 256 140"
+        d="M256 380C256 380 180 360 100 360V160C180 160 256 180 256 180M256 380C256 380 332 360 412 360V160C332 160 256 180 256 180"
         stroke="currentColor"
-        strokeWidth="12"
+        strokeWidth="16"
         strokeLinejoin="round"
+        strokeLinecap="round"
         className="text-foreground"
       />
       
-      {/* Book Internal Pages */}
-      <path d="M120 150H230M120 185H230M120 220H200" stroke="currentColor" strokeWidth="6" strokeLinecap="round" opacity="0.2" className="text-foreground" />
-      <path d="M392 150H282M392 185H282M392 220H312" stroke="currentColor" strokeWidth="6" strokeLinecap="round" opacity="0.2" className="text-foreground" />
+      {/* Book Internal Pages (Subtle Details) */}
+      <path d="M130 200H230M130 240H230M130 280H200" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.1" className="text-foreground" />
+      <path d="M382 200H282M382 240H282M382 280H312" stroke="currentColor" strokeWidth="8" strokeLinecap="round" opacity="0.1" className="text-foreground" />
 
-      {/* Crossed Fountain Pens */}
+      {/* Crossed Stylized Pens */}
       <g className="text-primary">
-        {/* Pen 1 */}
         <path
-          d="M80 80L432 320"
+          d="M100 100L412 412"
           stroke="currentColor"
-          strokeWidth="24"
+          strokeWidth="28"
           strokeLinecap="round"
+          className="drop-shadow-lg"
         />
-        <path d="M70 70L95 95L105 85L80 60L70 70Z" fill="currentColor" />
+        <path
+          d="M412 100L100 412"
+          stroke="currentColor"
+          strokeWidth="28"
+          strokeLinecap="round"
+          className="drop-shadow-lg"
+        />
         
-        {/* Pen 2 */}
-        <path
-          d="M432 80L80 320"
-          stroke="currentColor"
-          strokeWidth="24"
-          strokeLinecap="round"
-        />
-        <path d="M442 70L417 95L407 85L432 60L442 70Z" fill="currentColor" />
+        {/* Pen Nibs Details */}
+        <path d="M85 85L115 115L125 105L95 75L85 85Z" fill="currentColor" />
+        <path d="M427 85L397 115L387 105L417 75L427 85Z" fill="currentColor" />
       </g>
 
-      {/* Central Connector Circle */}
-      <circle cx="256" cy="200" r="30" fill="currentColor" className="text-primary" stroke="currentColor" strokeWidth="8" className="text-stone-950" />
-      <circle cx="256" cy="200" r="15" fill="currentColor" className="text-stone-950" />
-
-      {/* Stylized Text "NEXUSHUB" at the bottom */}
-      <text
-        x="256"
-        y="420"
-        textAnchor="middle"
-        fill="currentColor"
-        style={{
-          fontFamily: 'var(--font-cinzel), serif',
-          fontWeight: 900,
-          fontSize: '72px',
-          letterSpacing: '0.05em'
-        }}
-        className="text-foreground"
-      >
-        NEXUSHUB
-      </text>
+      {/* Central Nexus Core */}
+      <circle cx="256" cy="256" r="40" fill="currentColor" className="text-primary" stroke="currentColor" strokeWidth="10" className="text-stone-950" />
+      <circle cx="256" cy="256" r="20" fill="currentColor" className="text-stone-950" />
       
-      {/* Accent Dots */}
-      <circle cx="100" cy="280" r="8" fill="currentColor" className="text-primary" />
-      <circle cx="412" cy="280" r="8" fill="currentColor" className="text-primary" />
+      {/* Dynamic Accents */}
+      <circle cx="100" cy="360" r="10" fill="currentColor" className="text-primary" />
+      <circle cx="412" cy="360" r="10" fill="currentColor" className="text-primary" />
     </svg>
   );
 }

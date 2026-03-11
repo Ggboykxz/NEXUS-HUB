@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons/logo';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Composant client gérant la logique d'autorisation du Nexus Core.
