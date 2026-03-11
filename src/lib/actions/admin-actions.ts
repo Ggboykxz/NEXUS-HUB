@@ -10,14 +10,18 @@ async function verifyAdmin() {
   const session = (await cookies()).get('__session')?.value;
   if (!session) throw new Error('Accès interdit');
 
-  const decoded = await adminAuth.verifySessionCookie(session);
-  const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
-  
-  if (userDoc.data()?.role !== 'admin') {
-    throw new Error('Droits administrateur requis');
-  }
+  try {
+    const decoded = await adminAuth.verifySessionCookie(session);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    
+    if (userDoc.data()?.role !== 'admin') {
+      throw new Error('Droits administrateur requis');
+    }
 
-  return { adminDb };
+    return { adminDb, requesterUid: decoded.uid };
+  } catch (e) {
+    throw new Error('Session admin invalide');
+  }
 }
 
 /**
@@ -54,6 +58,24 @@ export async function validateArtist(artistUid: string, approve: boolean) {
     await adminDb.collection('users').doc(artistUid).update({
       role: approve ? 'artist_pro' : 'artist_draft',
       isCertified: approve,
+      updatedAt: new Date().toISOString()
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Promeut un utilisateur au rang d'Administrateur.
+ */
+export async function promoteUserToAdmin(targetUid: string) {
+  try {
+    const { adminDb } = await verifyAdmin();
+    await adminDb.collection('users').doc(targetUid).update({
+      role: 'admin',
       updatedAt: new Date().toISOString()
     });
 
