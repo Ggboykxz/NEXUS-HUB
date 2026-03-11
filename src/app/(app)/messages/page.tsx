@@ -46,6 +46,7 @@ export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [lastMessages, setLastMessages] = useState<Record<string, string>>({});
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
@@ -82,25 +83,26 @@ export default function MessagesPage() {
     fetchContacts();
   }, [currentUser]);
 
-  // 3. Écoute globale des compteurs de non-lus (Style WhatsApp)
+  // 3. Écoute globale des conversations (Dernier message + Compteurs non-lus)
   useEffect(() => {
     if (!currentUser) return;
 
-    // On écoute les conversations où l'utilisateur est participant
     const convsRef = collection(db, 'conversations');
     const q = query(convsRef, where('participants', 'array-contains', currentUser.uid));
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const counts: Record<string, number> = {};
-      
       snapshot.docs.forEach(convDoc => {
         const data = convDoc.data();
         const otherUserId = data.participants.find((id: string) => id !== currentUser.uid);
         
-        // Pour chaque conversation, on va compter les messages non-lus
-        // Note: Dans une app réelle, on stockerait ce compte directement dans la conv metadata
-        // Ici on crée un listener par conv active pour le prototype
         if (otherUserId) {
+          // Update last message preview
+          setLastMessages(prev => ({
+            ...prev,
+            [otherUserId]: data.lastMessage || ''
+          }));
+
+          // Track unread count for this conversation
           const msgsRef = collection(db, 'conversations', convDoc.id, 'messages');
           const unreadQ = query(
             msgsRef, 
@@ -156,11 +158,9 @@ export default function MessagesPage() {
 
       if (needsUpdate) {
         batch.commit();
-        // Reset local count pour réactivité immédiate
         setUnreadCounts(prev => ({ ...prev, [selectedChat.uid]: 0 }));
       }
 
-      // Scroll auto
       setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     });
 
@@ -229,7 +229,6 @@ export default function MessagesPage() {
         type: 'text'
       });
 
-      // Update conversation metadata pour le tri de la liste
       const convRef = doc(db, 'conversations', convId);
       await setDoc(convRef, {
         lastMessage: messageText.trim(),
@@ -290,6 +289,7 @@ export default function MessagesPage() {
             {activeTab === 'direct' ? (
               users.map((user) => {
                 const unreadCount = unreadCounts[user.uid] || 0;
+                const lastMsg = lastMessages[user.uid] || 'Commencer une discussion';
                 return (
                   <div 
                     key={user.uid} 
@@ -311,12 +311,15 @@ export default function MessagesPage() {
                         <p className={cn("font-black truncate text-sm transition-colors", selectedChat?.uid === user.uid ? "text-primary" : "text-white")}>{user.displayName}</p>
                         <span className="text-[8px] text-stone-600 font-bold uppercase tracking-tighter">Live</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-stone-500 truncate font-light italic leading-tight">
-                          {user.role === 'artist_pro' ? 'Artiste Pro' : 'Voyageur Nexus'}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn(
+                          "text-xs truncate font-light italic leading-tight",
+                          unreadCount > 0 ? "text-white font-bold" : "text-stone-500"
+                        )}>
+                          {lastMsg}
                         </p>
-                        {unreadCount > 0 && selectedChat?.uid !== user.uid && (
-                          <Badge className="bg-rose-600 text-white border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300">
+                        {unreadCount > 0 && (
+                          <Badge className="bg-rose-600 text-white border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300 shrink-0">
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </Badge>
                         )}
@@ -339,7 +342,6 @@ export default function MessagesPage() {
       <main className="flex-1 flex flex-col bg-stone-950 relative">
         {selectedChat ? (
           <>
-            {/* Header de discussion */}
             <div className="p-6 md:px-10 border-b border-white/5 flex items-center justify-between bg-stone-900/30 backdrop-blur-3xl z-20">
               <div className="flex items-center gap-5">
                 <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="md:hidden h-10 w-10 rounded-full text-stone-500"><ArrowLeft className="h-5 w-5" /></Button>
@@ -364,14 +366,8 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            {/* Zone des messages */}
             <ScrollArea className="flex-1 px-6 md:px-10 py-8">
               <div className="max-w-4xl mx-auto space-y-10 pb-10">
-                <div className="flex flex-col items-center gap-2 mb-12">
-                  <Badge variant="outline" className="bg-white/5 text-stone-600 border-white/5 text-[8px] px-6 py-1 rounded-full uppercase tracking-[0.4em] font-black">Conversation Cryogénisée</Badge>
-                  <p className="text-[8px] text-stone-700 uppercase font-bold tracking-widest">Aujourd'hui</p>
-                </div>
-
                 {messages.map((msg) => {
                   const isMe = msg.senderId === currentUser?.uid;
                   return (
@@ -411,7 +407,6 @@ export default function MessagesPage() {
               </div>
             </ScrollArea>
 
-            {/* Indicateur de saisie */}
             {isOtherUserTyping && (
               <div className="px-10 py-4 absolute bottom-[100px] left-0 right-0 z-30 pointer-events-none">
                 <div className="flex items-center gap-3 bg-stone-900/90 backdrop-blur-xl w-fit px-6 py-2.5 rounded-full border border-white/10 shadow-2xl animate-in slide-in-from-left-4 duration-500">
@@ -425,7 +420,6 @@ export default function MessagesPage() {
               </div>
             )}
 
-            {/* Input Form */}
             <form onSubmit={handleSendMessage} className="p-8 bg-stone-900/50 border-t border-white/5 backdrop-blur-3xl relative z-40">
               <div className="max-w-4xl mx-auto flex items-center gap-5">
                 <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary transition-all rounded-full h-12 w-12 bg-white/5 border border-white/5 shrink-0"><Paperclip className="h-5 w-5" /></Button>
