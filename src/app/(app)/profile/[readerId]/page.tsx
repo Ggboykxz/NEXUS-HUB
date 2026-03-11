@@ -9,7 +9,8 @@ import {
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
   Settings as SettingsIcon, Share2, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
-  TrendingUp, Star, Award, Users, Clock, MessageSquare
+  TrendingUp, Star, Award, Users, Clock, MessageSquare, Layers, 
+  HeartPulse, Palette, Landmark
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,6 +34,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
   const [isMe, setIsMe] = useState(false);
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [displayStories, setDisplayStories] = useState<(Story & { progress?: number })[]>([]);
+  const [artistStories, setArtistStories] = useState<Story[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   useEffect(() => {
@@ -59,6 +61,31 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
     init();
     return () => unsubProfile?.();
   }, [params.readerId]);
+
+  // Fetch Artist Stories if applicable
+  useEffect(() => {
+    if (profile?.role?.toLowerCase().includes('artist')) {
+      async function fetchMyWorks() {
+        const q = query(
+          collection(db, 'stories'), 
+          where('artistId', '==', params.readerId),
+          where('isPublished', '==', true),
+          orderBy('updatedAt', 'desc'),
+          limit(10)
+        );
+        try {
+          const snap = await getDocs(q);
+          setArtistStories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)));
+        } catch (e) {
+          // Fallback if index missing
+          const qFallback = query(collection(db, 'stories'), where('artistId', '==', params.readerId), limit(10));
+          const snap = await getDocs(qFallback);
+          setArtistStories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)).filter(s => s.isPublished));
+        }
+      }
+      fetchMyWorks();
+    }
+  }, [profile, params.readerId]);
 
   useEffect(() => {
     if (!profile) return;
@@ -139,68 +166,69 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
     );
   }
 
+  const isArtist = profile.role?.toLowerCase().includes('artist');
   const isLibraryPublic = profile.preferences?.privacy?.showHistory || isMe;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="relative group">
-        <div className="relative h-64 md:h-80 w-full overflow-hidden">
+        <div className="relative h-64 md:h-96 w-full overflow-hidden">
           <Image 
             src={profile.bannerURL || "https://picsum.photos/seed/nexus-banner/1200/400"} 
             alt="Banner" 
             fill 
-            className="object-cover opacity-40 transition-transform duration-[10000ms] group-hover:scale-110"
+            className="object-cover opacity-40 transition-transform duration-[15000ms] group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/40" />
         </div>
 
-        <div className="container max-w-6xl mx-auto px-6 relative -mt-32 md:-mt-40 z-10">
+        <div className="container max-w-6xl mx-auto px-6 relative -mt-32 md:-mt-48 z-10">
           <div className="flex flex-col md:flex-row items-end gap-8 md:gap-12">
             <div className="relative shrink-0 mx-auto md:mx-0">
-              <Avatar className="h-40 w-40 md:h-52 md:w-52 border-[6px] border-background ring-4 ring-primary/20 shadow-2xl transition-transform duration-700 hover:scale-105">
+              <Avatar className="h-40 w-40 md:h-64 md:w-64 border-[8px] border-background ring-4 ring-primary/20 shadow-2xl transition-transform duration-700 hover:scale-105">
                 <AvatarImage src={profile.photoURL} alt={profile.displayName} className="object-cover" />
                 <AvatarFallback className="bg-stone-900 text-primary text-5xl font-black">{profile.displayName.slice(0, 2)}</AvatarFallback>
               </Avatar>
               {profile.isCertified && (
-                <div className="absolute bottom-2 right-2 bg-primary text-black p-2 rounded-full border-4 border-background shadow-xl">
-                  <ShieldCheck className="h-6 w-6 stroke-[3]" />
+                <div className="absolute bottom-4 right-4 bg-primary text-black p-3 rounded-full border-4 border-background shadow-xl animate-in zoom-in duration-500 delay-300">
+                  <ShieldCheck className="h-8 w-8 stroke-[3]" />
                 </div>
               )}
             </div>
 
-            <div className="flex-1 text-center md:text-left pb-4 md:pb-8 space-y-6 w-full">
+            <div className="flex-1 text-center md:text-left pb-4 md:pb-12 space-y-6 w-full">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                  <h1 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter gold-resplendant">{profile.displayName}</h1>
+                  <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter gold-resplendant">{profile.displayName}</h1>
                   <Badge className={cn(
-                    "uppercase tracking-widest text-[9px] font-black px-3 py-1 border-none",
-                    profile.role?.includes('artist') ? "bg-orange-500 text-black" : "bg-emerald-500 text-white"
+                    "uppercase tracking-widest text-[10px] font-black px-4 py-1.5 border-none shadow-xl",
+                    isArtist ? "bg-orange-500 text-black" : "bg-emerald-500 text-white"
                   )}>
                     {profile.role?.replace('_', ' ')}
                   </Badge>
                 </div>
-                <p className="text-stone-400 font-light italic text-lg leading-relaxed max-w-2xl mx-auto md:mx-0">
+                <p className="text-stone-400 font-light italic text-xl leading-relaxed max-w-3xl mx-auto md:mx-0 border-l-4 border-primary/20 pl-8">
                   "{profile.bio || "Le voyageur qui ne pose pas de questions ne trouvera jamais son chemin."}"
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center md:justify-start gap-3">
+              <div className="flex flex-wrap justify-center md:justify-start gap-4">
                 {isMe ? (
-                  <Button asChild size="lg" className="rounded-full px-10 font-black bg-primary text-black gold-shimmer h-14 shadow-xl shadow-primary/20">
-                    <Link href="/settings"><SettingsIcon className="mr-2 h-5 w-5" /> Gérer mon Sanctuaire</Link>
+                  <Button asChild size="lg" className="rounded-full px-10 font-black bg-primary text-black gold-shimmer h-16 shadow-xl shadow-primary/20 text-lg">
+                    <Link href="/settings"><SettingsIcon className="mr-3 h-6 w-6" /> Gérer mon Sanctuaire</Link>
                   </Button>
                 ) : (
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     <Button 
                       onClick={handleFollow}
                       variant={isFollowing ? 'secondary' : 'default'} 
                       size="lg"
-                      className={cn("rounded-full px-12 font-black h-14 transition-all", isFollowing ? "bg-white/5 text-white border-white/10" : "bg-primary text-black gold-shimmer")}
+                      className={cn("rounded-full px-14 font-black h-16 text-lg transition-all", isFollowing ? "bg-white/5 text-white border-white/10" : "bg-primary text-black gold-shimmer")}
                     >
                       {isFollowing ? 'Abonné' : 'Suivre'}
                     </Button>
-                    <Button variant="outline" size="icon" className="h-14 w-14 rounded-full border-white/10 text-white hover:bg-white/5 backdrop-blur-md">
-                      <Share2 className="h-6 w-6" />
+                    <Button variant="outline" size="icon" className="h-16 w-16 rounded-full border-white/10 text-white hover:bg-white/5 backdrop-blur-md">
+                      <Share2 className="h-7 w-7" />
                     </Button>
                   </div>
                 )}
@@ -211,35 +239,66 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
       </header>
 
       <section className="container max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { label: 'Niveau Nexus', val: profile.level || 1, icon: Trophy, color: 'text-primary' },
             { label: 'Abonnés', val: profile.subscribersCount || 0, icon: Users, color: 'text-emerald-500' },
-            { label: 'Chapitres', val: profile.readingStats?.chaptersRead || 0, icon: BookOpen, color: 'text-blue-500' },
-            { label: 'Streak', val: (profile.readingStreak?.currentCount || 0) + 'j', icon: Flame, color: 'text-orange-500' },
+            { label: 'Lectures', val: profile.readingStats?.chaptersRead || 0, icon: BookOpen, color: 'text-blue-500' },
+            { label: 'Série', val: (profile.readingStreak?.currentCount || 0) + 'j', icon: Flame, color: 'text-orange-500' },
           ].map((stat, i) => (
-            <Card key={i} className="bg-stone-900/30 border-white/5 rounded-3xl p-6 hover:bg-stone-900/50 transition-all text-center space-y-2">
-              <div className={cn("bg-white/5 p-2 rounded-xl w-fit mx-auto mb-2", stat.color)}><stat.icon className="h-5 w-5" /></div>
-              <p className="text-[9px] uppercase font-black text-stone-500 tracking-[0.2em]">{stat.label}</p>
-              <p className="text-2xl font-black text-white">{stat.val}</p>
+            <Card key={i} className="bg-stone-900/30 border-white/5 rounded-[2rem] p-8 hover:bg-stone-900/50 transition-all text-center space-y-3 shadow-xl">
+              <div className={cn("bg-white/5 p-3 rounded-2xl w-fit mx-auto mb-2", stat.color)}><stat.icon className="h-6 w-6" /></div>
+              <p className="text-[10px] uppercase font-black text-stone-500 tracking-[0.2em]">{stat.label}</p>
+              <p className="text-3xl font-black text-white">{stat.val}</p>
             </Card>
           ))}
         </div>
       </section>
 
       <main className="container max-w-6xl mx-auto px-6">
-        <Tabs defaultValue="library" className="w-full">
-          <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 border border-border/50 max-w-md mx-auto mb-16 w-full flex">
-            <TabsTrigger value="library" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-              <BookOpen className="h-4 w-4" /> Vitrine
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-              <History className="h-4 w-4" /> Journal
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="rounded-xl flex-1 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black">
-              <Zap className="h-4 w-4" /> Talent
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue={isArtist ? "creations" : "library"} className="w-full">
+          <div className="flex justify-center mb-16">
+            <TabsList className="bg-muted/50 p-1.5 rounded-[2rem] h-16 border border-border/50 max-w-2xl w-full flex shadow-inner">
+              {isArtist && (
+                <TabsTrigger value="creations" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
+                  <Palette className="h-4 w-4" /> Séries
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="library" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
+                <BookOpen className="h-4 w-4" /> Vitrine
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
+                <History className="h-4 w-4" /> Journal
+              </TabsTrigger>
+              <TabsTrigger value="achievements" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
+                <Zap className="h-4 w-4" /> Talent
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {isArtist && (
+            <TabsContent value="creations" className="space-y-12 animate-in fade-in duration-700">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-3xl font-display font-black flex items-center gap-4 text-white uppercase tracking-tighter">
+                  <Palette className="h-8 w-8 text-primary" /> Œuvres Originales
+                </h3>
+                <Badge variant="outline" className="border-white/10 text-stone-500 uppercase font-black text-[10px] px-4 py-1">{artistStories.length} titres</Badge>
+              </div>
+              
+              {artistStories.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-16">
+                  {artistStories.map(story => (
+                    <StoryCard key={story.id} story={story} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-24 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-6">
+                  <div className="mx-auto w-20 h-20 bg-white/5 rounded-full flex items-center justify-center opacity-20"><Zap className="h-10 w-10 text-stone-500" /></div>
+                  <p className="text-stone-500 italic font-light">"Cet artiste prépare ses prochaines légendes dans l'ombre."</p>
+                </div>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="library" className="space-y-16 animate-in fade-in duration-700">
             {profile.preferences?.privacy?.showCurrentReading && libraryEntries[0] && (
@@ -279,24 +338,24 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
 
             <section className="space-y-10">
               <div className="flex items-center justify-between px-2">
-                <h3 className="text-2xl font-display font-black flex items-center gap-3 text-white uppercase tracking-tighter">
-                  <Heart className="h-6 w-6 text-rose-500 fill-rose-500" /> Coups de Cœur
+                <h3 className="text-3xl font-display font-black flex items-center gap-4 text-white uppercase tracking-tighter">
+                  <Heart className="h-8 w-8 text-rose-500 fill-rose-500" /> Coups de Cœur
                 </h3>
               </div>
 
               {!isLibraryPublic ? (
-                <div className="text-center py-24 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 flex flex-col items-center gap-4">
+                <div className="text-center py-24 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5 flex flex-col items-center gap-4">
                   <Lock className="h-12 w-12 text-stone-700 opacity-20" />
                   <p className="text-stone-500 italic font-light">"Ce voyageur garde ses archives secrètes."</p>
                 </div>
               ) : displayStories.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-16">
                   {displayStories.map(story => (
                     <StoryCard key={story.id} story={story} progress={story.progress} />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-24 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-6">
+                <div className="text-center py-24 bg-stone-900/30 rounded-[3.5rem] border-2 border-dashed border-white/5 space-y-6">
                   <Sparkles className="h-12 w-12 text-stone-700 mx-auto opacity-20" />
                   <p className="text-stone-500 italic font-light">"Aucune œuvre dans cette vitrine pour le moment."</p>
                 </div>
@@ -332,8 +391,12 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
                 { label: 'Oracle de l\'Encre', level: 'Niveau 4', icon: Award, color: 'text-primary', desc: 'A commenté plus de 50 chapitres.' },
                 { label: 'Mécène de Légende', level: 'Or', icon: Zap, color: 'text-amber-500', desc: 'A soutenu 10 artistes avec des AfriCoins.' },
                 { label: 'Voyageur Assidu', level: '30j', icon: TrendingUp, color: 'text-emerald-500', desc: 'Plus longue série de lecture ininterrompue.' },
+                { label: 'Gardien du Hub', level: 'Actif', icon: ShieldCheck, color: 'text-blue-500', desc: 'Aidez à la modération communautaire.' },
+                { label: 'Scribe Prolifique', level: 'Top 5%', icon: MessageSquare, color: 'text-rose-500', desc: 'Participation active aux débats de chapitres.' },
+                { label: 'Explorateur', level: 'Découvert', icon: Globe, color: 'text-cyan-500', desc: 'A lu au moins un titre de chaque pays représenté.' },
               ].map((badge, i) => (
-                <Card key={i} className="bg-stone-950 border-white/5 rounded-[2.5rem] p-10 text-center space-y-6 group hover:border-primary/20 transition-all shadow-2xl">
+                <Card key={i} className="bg-stone-950 border-white/5 rounded-[2.5rem] p-10 text-center space-y-6 group hover:border-primary/20 transition-all shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:rotate-12 transition-transform duration-700"><badge.icon className="h-24 w-24" /></div>
                   <div className={cn("p-6 rounded-[2.5rem] w-fit mx-auto transition-transform group-hover:scale-110 bg-white/5 shadow-inner", badge.color)}>
                     <badge.icon className="h-12 w-12" />
                   </div>
