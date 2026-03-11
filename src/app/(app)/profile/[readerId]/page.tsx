@@ -1,3 +1,4 @@
+
 'use client';
 
 import { use, useEffect, useState } from 'react';
@@ -9,8 +10,7 @@ import {
   Heart, BookOpen, Sparkles, Flame, Trophy, ShieldCheck, 
   Settings as SettingsIcon, Share2, 
   History, Zap, Lock, EyeOff, Loader2, Globe, ArrowRight,
-  TrendingUp, Star, Award, Users, Clock, MessageSquare, Layers, 
-  HeartPulse, Palette, Landmark
+  TrendingUp, Star, Award, Users, Clock, MessageSquare, Layers
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,7 +22,6 @@ import type { UserProfile, Story, LibraryEntry } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ReaderProfilePage(props: { params: Promise<{ readerId: string }> }) {
   const params = use(props.params);
@@ -34,7 +33,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
   const [isMe, setIsMe] = useState(false);
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [displayStories, setDisplayStories] = useState<(Story & { progress?: number })[]>([]);
-  const [artistStories, setArtistStories] = useState<Story[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   useEffect(() => {
@@ -61,31 +59,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
     init();
     return () => unsubProfile?.();
   }, [params.readerId]);
-
-  // Fetch Artist Stories if applicable
-  useEffect(() => {
-    if (profile?.role?.toLowerCase().includes('artist')) {
-      async function fetchMyWorks() {
-        const q = query(
-          collection(db, 'stories'), 
-          where('artistId', '==', params.readerId),
-          where('isPublished', '==', true),
-          orderBy('updatedAt', 'desc'),
-          limit(10)
-        );
-        try {
-          const snap = await getDocs(q);
-          setArtistStories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)));
-        } catch (e) {
-          // Fallback if index missing
-          const qFallback = query(collection(db, 'stories'), where('artistId', '==', params.readerId), limit(10));
-          const snap = await getDocs(qFallback);
-          setArtistStories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Story)).filter(s => s.isPublished));
-        }
-      }
-      fetchMyWorks();
-    }
-  }, [profile, params.readerId]);
 
   useEffect(() => {
     if (!profile) return;
@@ -166,7 +139,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
     );
   }
 
-  const isArtist = profile.role?.toLowerCase().includes('artist');
   const isLibraryPublic = profile.preferences?.privacy?.showHistory || isMe;
 
   return (
@@ -189,22 +161,14 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
                 <AvatarImage src={profile.photoURL} alt={profile.displayName} className="object-cover" />
                 <AvatarFallback className="bg-stone-900 text-primary text-5xl font-black">{profile.displayName.slice(0, 2)}</AvatarFallback>
               </Avatar>
-              {profile.isCertified && (
-                <div className="absolute bottom-4 right-4 bg-primary text-black p-3 rounded-full border-4 border-background shadow-xl animate-in zoom-in duration-500 delay-300">
-                  <ShieldCheck className="h-8 w-8 stroke-[3]" />
-                </div>
-              )}
             </div>
 
             <div className="flex-1 text-center md:text-left pb-4 md:pb-12 space-y-6 w-full">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                   <h1 className="text-4xl md:text-7xl font-display font-black text-white tracking-tighter gold-resplendant">{profile.displayName}</h1>
-                  <Badge className={cn(
-                    "uppercase tracking-widest text-[10px] font-black px-4 py-1.5 border-none shadow-xl",
-                    isArtist ? "bg-orange-500 text-black" : "bg-emerald-500 text-white"
-                  )}>
-                    {profile.role?.replace('_', ' ')}
+                  <Badge className="bg-emerald-500 text-white uppercase tracking-widest text-[10px] font-black px-4 py-1.5 border-none shadow-xl">
+                    Voyageur Nexus
                   </Badge>
                 </div>
                 <p className="text-stone-400 font-light italic text-xl leading-relaxed max-w-3xl mx-auto md:mx-0 border-l-4 border-primary/20 pl-8">
@@ -215,7 +179,7 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
               <div className="flex flex-wrap justify-center md:justify-start gap-4">
                 {isMe ? (
                   <Button asChild size="lg" className="rounded-full px-10 font-black bg-primary text-black gold-shimmer h-16 shadow-xl shadow-primary/20 text-lg">
-                    <Link href="/settings"><SettingsIcon className="mr-3 h-6 w-6" /> Gérer mon Sanctuaire</Link>
+                    <Link href="/settings"><SettingsIcon className="mr-3 h-6 w-6" /> Mon Sanctuaire</Link>
                   </Button>
                 ) : (
                   <div className="flex gap-4">
@@ -256,14 +220,9 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
       </section>
 
       <main className="container max-w-6xl mx-auto px-6">
-        <Tabs defaultValue={isArtist ? "creations" : "library"} className="w-full">
+        <Tabs defaultValue="library" className="w-full">
           <div className="flex justify-center mb-16">
-            <TabsList className="bg-muted/50 p-1.5 rounded-[2rem] h-16 border border-border/50 max-w-2xl w-full flex shadow-inner">
-              {isArtist && (
-                <TabsTrigger value="creations" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
-                  <Palette className="h-4 w-4" /> Séries
-                </TabsTrigger>
-              )}
+            <TabsList className="bg-muted/50 p-1.5 rounded-[2rem] h-16 border border-border/50 max-w-md w-full flex shadow-inner">
               <TabsTrigger value="library" className="rounded-[1.5rem] flex-1 gap-2 font-black text-[11px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-black transition-all">
                 <BookOpen className="h-4 w-4" /> Vitrine
               </TabsTrigger>
@@ -275,30 +234,6 @@ export default function ReaderProfilePage(props: { params: Promise<{ readerId: s
               </TabsTrigger>
             </TabsList>
           </div>
-
-          {isArtist && (
-            <TabsContent value="creations" className="space-y-12 animate-in fade-in duration-700">
-              <div className="flex items-center justify-between px-2">
-                <h3 className="text-3xl font-display font-black flex items-center gap-4 text-white uppercase tracking-tighter">
-                  <Palette className="h-8 w-8 text-primary" /> Œuvres Originales
-                </h3>
-                <Badge variant="outline" className="border-white/10 text-stone-500 uppercase font-black text-[10px] px-4 py-1">{artistStories.length} titres</Badge>
-              </div>
-              
-              {artistStories.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-16">
-                  {artistStories.map(story => (
-                    <StoryCard key={story.id} story={story} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-24 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5 space-y-6">
-                  <div className="mx-auto w-20 h-20 bg-white/5 rounded-full flex items-center justify-center opacity-20"><Zap className="h-10 w-10 text-stone-500" /></div>
-                  <p className="text-stone-500 italic font-light">"Cet artiste prépare ses prochaines légendes dans l'ombre."</p>
-                </div>
-              )}
-            </TabsContent>
-          )}
 
           <TabsContent value="library" className="space-y-16 animate-in fade-in duration-700">
             {profile.preferences?.privacy?.showCurrentReading && libraryEntries[0] && (

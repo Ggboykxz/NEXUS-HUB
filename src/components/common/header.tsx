@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import {
   Search, ArrowLeft, UserCircle, LogOut, Settings,
   ChevronDown, Bell, Brush, Library, 
   Cloud, Layers, Book, 
-  Clock, CheckCircle2, MessageSquare, ShoppingCart, Loader2
+  Clock, CheckCircle2, MessageSquare, ShoppingCart, Loader2, Award
 } from 'lucide-react';
 import { navLinks as defaultNavLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
@@ -238,23 +239,35 @@ export default function Header() {
                         <Badge variant="outline" className="text-[8px] uppercase border-primary/30 text-primary">{profile?.role}</Badge>
                       </div>
                     </div>
+                    
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
-                      <Link href={`/profile/${currentUser.uid}`} className="flex items-center gap-3 font-bold text-xs"><UserCircle className="h-4 w-4" /> Mon Profil</Link>
+                      <Link href={`/profile/${currentUser.uid}`} className="flex items-center gap-3 font-bold text-xs"><UserCircle className="h-4 w-4" /> Mon Profil Voyageur</Link>
                     </DropdownMenuItem>
+
+                    {profile?.role?.toLowerCase().includes('artist') && (
+                      <>
+                        <DropdownMenuSeparator className="bg-white/5" />
+                        <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-emerald-500/10">
+                          <Link href="/dashboard/artist-profile" className="flex items-center gap-3 font-bold text-xs text-emerald-500"><Award className="h-4 w-4" /> Mon Profil Artiste</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
+                          <Link href="/dashboard/creations" className="flex items-center gap-3 font-bold text-xs"><Brush className="h-4 w-4" /> Mon Atelier</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/library" className="flex items-center gap-3 font-bold text-xs"><Library className="h-4 w-4" /> Ma Bibliothèque</Link>
                     </DropdownMenuItem>
+                    
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/messages" className="flex items-center gap-3 font-bold text-xs"><MessageSquare className="h-4 w-4" /> Messages</Link>
                     </DropdownMenuItem>
-                    {profile?.role?.toLowerCase().includes('artist') && (
-                      <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
-                        <Link href="/dashboard/creations" className="flex items-center gap-3 font-bold text-xs"><Brush className="h-4 w-4" /> Mon Atelier</Link>
-                      </DropdownMenuItem>
-                    )}
+                    
                     <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/10">
                       <Link href="/settings" className="flex items-center gap-3 font-bold text-xs"><Settings className="h-4 w-4" /> Configuration</Link>
                     </DropdownMenuItem>
+                    
                     <DropdownMenuSeparator className="bg-white/5" />
                     <DropdownMenuItem onClick={handleLogout} className="rounded-xl h-11 cursor-pointer text-rose-500 focus:bg-rose-500/10 focus:text-rose-500 font-black text-xs gap-3">
                       <LogOut className="h-4 w-4" /> Quitter le Hub
