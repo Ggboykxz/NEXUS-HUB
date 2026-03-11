@@ -8,9 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { 
   Paperclip, SendHorizonal, Smile, MoreVertical, Search, 
-  Phone, Video, Check, Loader2, MessageSquare, Users, 
-  Settings, Info, Trash2, Heart, CircleDollarSign, Zap,
-  ChevronRight, ArrowLeft, MoreHorizontal, ShieldCheck, Clock
+  Phone, Video, Check, CheckCheck, Loader2, MessageSquare, 
+  ChevronRight, ArrowLeft, ShieldCheck, Zap, Mic, Plus
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
@@ -35,9 +34,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isYesterday, isThisWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-/**
- * Formate la date pour la liste des conversations (façon WhatsApp)
- */
 const formatChatDate = (date: Date) => {
   if (isToday(date)) return format(date, 'HH:mm');
   if (isYesterday(date)) return 'Hier';
@@ -61,7 +57,6 @@ export default function MessagesPage() {
   const scrollEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Suivi de l'Auth
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -69,13 +64,12 @@ export default function MessagesPage() {
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Chargement des contacts
   useEffect(() => {
     async function fetchContacts() {
       if (!currentUser) return;
       try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, limit(50));
+        const q = query(usersRef, limit(100));
         const snap = await getDocs(q);
         const fetched = snap.docs
           .map(d => ({ ...d.data() } as UserProfile))
@@ -91,7 +85,6 @@ export default function MessagesPage() {
     fetchContacts();
   }, [currentUser]);
 
-  // 3. Écoute globale des conversations (Tri par activité)
   useEffect(() => {
     if (!currentUser) return;
 
@@ -112,7 +105,6 @@ export default function MessagesPage() {
             }
           }));
 
-          // Track unread count
           const msgsRef = collection(db, 'conversations', convDoc.id, 'messages');
           const unreadQ = query(
             msgsRef, 
@@ -133,7 +125,6 @@ export default function MessagesPage() {
     return () => unsub();
   }, [currentUser]);
 
-  // 4. Écoute des messages et indicateurs de saisie
   useEffect(() => {
     if (!currentUser || !selectedChat) {
       setMessages([]);
@@ -144,7 +135,7 @@ export default function MessagesPage() {
     const convId = participants.join('_');
 
     const msgsRef = collection(db, 'conversations', convId, 'messages');
-    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(100));
+    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(150));
 
     const unsubMessages = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map(doc => ({
@@ -169,7 +160,7 @@ export default function MessagesPage() {
         setUnreadCounts(prev => ({ ...prev, [selectedChat.uid]: 0 }));
       }
 
-      setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     });
 
     const typingRef = doc(db, 'typing', convId);
@@ -195,7 +186,6 @@ export default function MessagesPage() {
     };
   }, [currentUser, selectedChat]);
 
-  // 5. Groupement des messages par jour
   const groupedMessages = useMemo(() => {
     const groups: Record<string, any[]> = {};
     messages.forEach(msg => {
@@ -286,23 +276,23 @@ export default function MessagesPage() {
     return (
       <div className="h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-stone-950 gap-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-[0.3em]">Ouverture des canaux...</p>
+        <p className="text-stone-500 font-display font-black uppercase text-[10px] tracking-[0.3em]">Nexus Dispatcher...</p>
       </div>
     );
   }
 
   return (
     <div className="h-[calc(100vh-4rem)] flex overflow-hidden bg-stone-950 text-white font-sans">
-      {/* 1. SIDEBAR CONTACTS (WhatsApp Left Panel) */}
+      {/* 1. SIDEBAR CONTACTS */}
       <aside className={cn(
-        "w-full md:w-80 lg:w-[400px] border-r border-white/5 bg-stone-900/50 backdrop-blur-xl flex flex-col transition-all duration-500",
+        "w-full md:w-80 lg:w-[420px] border-r border-white/5 bg-stone-900/50 backdrop-blur-3xl flex flex-col transition-all duration-500",
         selectedChat ? "hidden md:flex" : "flex"
       )}>
-        <div className="p-6 border-b border-white/5 space-y-6">
-          <div className="flex justify-between items-center">
+        <div className="p-5 border-b border-white/5 space-y-5">
+          <div className="flex justify-between items-center px-1">
             <h2 className="text-2xl font-black font-display tracking-tight text-white">Discussions</h2>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-400"><MessageSquare className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-400"><Plus className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/5 text-stone-400"><MoreVertical className="h-5 w-5" /></Button>
             </div>
           </div>
@@ -323,7 +313,7 @@ export default function MessagesPage() {
             {filteredUsers.map((user) => {
               const unreadCount = unreadCounts[user.uid] || 0;
               const lastMsgData = lastMessages[user.uid];
-              const lastMsgText = lastMsgData?.text || 'Démarrer la discussion';
+              const lastMsgText = lastMsgData?.text || 'Commencer une conversation';
               const lastMsgDate = lastMsgData?.time?.toDate ? lastMsgData.time.toDate() : null;
 
               return (
@@ -331,7 +321,7 @@ export default function MessagesPage() {
                   key={user.uid} 
                   onClick={() => setSelectedChat(user)}
                   className={cn(
-                    "flex items-center gap-4 px-6 py-4 cursor-pointer transition-all relative group",
+                    "flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-all relative",
                     selectedChat?.uid === user.uid ? "bg-white/5" : "hover:bg-white/[0.02]"
                   )}
                 >
@@ -345,11 +335,11 @@ export default function MessagesPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-0.5">
-                      <p className="font-bold truncate text-sm text-white">
+                      <p className="font-bold truncate text-[14px] text-stone-100">
                         {user.displayName}
                       </p>
                       {lastMsgDate && (
-                        <span className={cn("text-[10px] font-medium", unreadCount > 0 ? "text-primary" : "text-stone-500")}>
+                        <span className={cn("text-[10px] font-medium", unreadCount > 0 ? "text-emerald-500" : "text-stone-500")}>
                           {formatChatDate(lastMsgDate)}
                         </span>
                       )}
@@ -362,7 +352,7 @@ export default function MessagesPage() {
                         {lastMsgText}
                       </p>
                       {unreadCount > 0 && (
-                        <Badge className="bg-primary text-black border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300 shrink-0">
+                        <Badge className="bg-emerald-500 text-black border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300 shrink-0">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </Badge>
                       )}
@@ -375,16 +365,16 @@ export default function MessagesPage() {
         </ScrollArea>
       </aside>
 
-      {/* 2. MAIN CHAT AREA (WhatsApp Chat Panel) */}
-      <main className="flex-1 flex flex-col bg-stone-950 relative">
+      {/* 2. MAIN CHAT AREA */}
+      <main className="flex-1 flex flex-col bg-[#0a0a0a] relative">
         {selectedChat ? (
           <>
             {/* Header */}
-            <div className="p-4 md:px-8 h-16 border-b border-white/5 flex items-center justify-between bg-stone-900/50 backdrop-blur-3xl z-20">
+            <div className="p-4 md:px-6 h-16 border-b border-white/5 flex items-center justify-between bg-stone-900/80 backdrop-blur-2xl z-20 shadow-lg">
               <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="md:hidden h-10 w-10 rounded-full text-stone-500"><ArrowLeft className="h-5 w-5" /></Button>
-                <div className="relative cursor-pointer" onClick={() => window.location.href = `/profile/${selectedChat.uid}`}>
-                  <Avatar className="h-10 w-10 border border-white/10">
+                <div className="relative cursor-pointer group" onClick={() => window.location.href = `/profile/${selectedChat.uid}`}>
+                  <Avatar className="h-10 w-10 border border-white/10 group-hover:border-primary/50 transition-all">
                     <AvatarImage src={selectedChat.photoURL} className="object-cover" />
                     <AvatarFallback className="bg-stone-800 text-stone-400 font-bold">{selectedChat.displayName?.slice(0, 2)}</AvatarFallback>
                   </Avatar>
@@ -393,7 +383,7 @@ export default function MessagesPage() {
                   <h3 className="text-sm font-bold text-white leading-tight">{selectedChat.displayName}</h3>
                   <div className="flex items-center gap-2">
                     {isOtherUserTyping ? (
-                      <span className="text-[10px] font-bold text-primary italic animate-pulse">en train d'écrire...</span>
+                      <span className="text-[10px] font-bold text-emerald-500 italic animate-pulse">en train d'écrire...</span>
                     ) : (
                       <p className="text-[10px] text-stone-500 font-medium">en ligne</p>
                     )}
@@ -408,12 +398,15 @@ export default function MessagesPage() {
             </div>
 
             {/* Chat Messages */}
-            <ScrollArea className="flex-1 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed opacity-[0.98]">
-              <div className="max-w-4xl mx-auto space-y-8 px-6 py-8">
+            <ScrollArea className="flex-1 relative">
+              {/* WhatsApp doodle pattern background */}
+              <div className="absolute inset-0 bg-[url('https://res.cloudinary.com/dfzrjuaap/image/upload/v1740330000/whatsapp-bg-pattern.png')] opacity-[0.04] pointer-events-none z-0" />
+              
+              <div className="max-w-4xl mx-auto space-y-10 px-6 py-8 relative z-10">
                 {Object.entries(groupedMessages).map(([date, msgs]) => (
                   <div key={date} className="space-y-6">
                     <div className="flex justify-center">
-                      <Badge variant="outline" className="bg-stone-900/80 backdrop-blur-md border-white/5 text-[9px] uppercase font-bold text-stone-500 px-3 py-0.5 rounded-lg shadow-xl">
+                      <Badge variant="outline" className="bg-stone-900/90 backdrop-blur-md border-white/5 text-[9px] uppercase font-bold text-stone-500 px-4 py-1 rounded-xl shadow-2xl">
                         {date}
                       </Badge>
                     </div>
@@ -421,27 +414,38 @@ export default function MessagesPage() {
                       const isMe = msg.senderId === currentUser?.uid;
                       return (
                         <div key={msg.id} className={cn(
-                          "flex gap-3 max-w-[85%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-1 duration-300",
+                          "flex gap-3 max-w-[85%] md:max-w-[75%] animate-in fade-in slide-in-from-bottom-1 duration-300",
                           isMe ? "ml-auto" : "mr-auto"
                         )}>
                           <div className={cn(
-                            "p-3 rounded-2xl shadow-xl text-sm leading-relaxed relative",
+                            "p-3 rounded-2xl shadow-xl text-[14px] leading-relaxed relative",
                             isMe 
                               ? "bg-primary text-black font-medium rounded-tr-none" 
-                              : "bg-stone-900 border border-white/5 text-stone-200 rounded-tl-none"
+                              : "bg-[#1f1f1f] border border-white/5 text-stone-200 rounded-tl-none"
                           )}>
+                            {/* Tails implementation */}
+                            <div className={cn(
+                              "absolute top-0 w-3 h-3",
+                              isMe 
+                                ? "-right-2 bg-primary rounded-bl-full" 
+                                : "-left-2 bg-[#1f1f1f] rounded-br-full"
+                            )} />
+                            
                             <p className="whitespace-pre-wrap">{msg.text}</p>
                             <div className={cn(
                               "flex items-center gap-1.5 mt-1 justify-end",
                               isMe ? "text-stone-900/60" : "text-stone-500"
                             )}>
-                              <span className="text-[8px] font-bold">
+                              <span className="text-[9px] font-bold">
                                 {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), 'HH:mm') : ''}
                               </span>
                               {isMe && (
                                 <div className="flex">
-                                  <Check className={cn("h-3 w-3", msg.read ? "text-emerald-600" : "text-stone-600")} />
-                                  {msg.read && <Check className="h-3 w-3 -ml-2 text-emerald-600" />}
+                                  {msg.read ? (
+                                    <CheckCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                  ) : (
+                                    <Check className="h-3.5 w-3.5 text-stone-600" />
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -456,17 +460,19 @@ export default function MessagesPage() {
             </ScrollArea>
 
             {/* Input Area */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-stone-900 border-t border-white/5 backdrop-blur-3xl">
+            <form onSubmit={handleSendMessage} className="p-4 bg-stone-900/90 border-t border-white/5 backdrop-blur-3xl">
               <div className="max-w-4xl mx-auto flex items-center gap-3">
-                <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-10 w-10 shrink-0"><Smile className="h-5 w-5" /></Button>
-                <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-10 w-10 shrink-0"><Paperclip className="h-5 w-5" /></Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-10 w-10 transition-colors"><Smile className="h-6 w-6" /></Button>
+                  <Button type="button" variant="ghost" size="icon" className="text-stone-500 hover:text-primary rounded-full h-10 w-10 transition-colors"><Paperclip className="h-5 w-5" /></Button>
+                </div>
                 
                 <div className="relative flex-1 group">
                   <Input 
                     value={messageText}
                     onChange={handleInputChange}
                     placeholder="Écrivez un message..." 
-                    className="bg-white/5 border-none rounded-xl h-11 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-700 transition-all text-sm" 
+                    className="bg-white/5 border-none rounded-full h-11 text-white focus-visible:ring-primary shadow-inner placeholder:text-stone-700 transition-all text-sm px-6" 
                   />
                 </div>
                 
@@ -474,29 +480,43 @@ export default function MessagesPage() {
                   type="submit" 
                   disabled={!messageText.trim() || isSending}
                   size="icon" 
-                  className="rounded-full h-11 w-11 bg-primary hover:bg-primary/90 shadow-xl transition-all active:scale-90 shrink-0"
+                  className={cn(
+                    "rounded-full h-11 w-11 transition-all active:scale-90 shrink-0 shadow-2xl",
+                    !messageText.trim() ? "bg-white/5 text-stone-500" : "bg-primary hover:bg-primary/90 text-black"
+                  )}
                 >
-                  {isSending ? <Loader2 className="h-5 w-5 animate-spin text-black" /> : <SendHorizonal className="h-5 w-5 text-black" />}
+                  {isSending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : !messageText.trim() ? (
+                    <Mic className="h-5 w-5" />
+                  ) : (
+                    <SendHorizonal className="h-5 w-5" />
+                  )}
                 </Button>
               </div>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-8 animate-in zoom-in-95 duration-700">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-10 animate-in zoom-in-95 duration-1000">
             <div className="relative">
-                <div className="bg-primary/10 p-12 rounded-[3rem] border border-primary/10 shadow-inner">
-                  <MessageSquare className="h-20 w-20 text-primary opacity-20" />
+                <div className="bg-primary/10 p-16 rounded-full border border-primary/10 shadow-inner relative overflow-hidden group">
+                  <Logo className="h-24 w-24 opacity-20 grayscale group-hover:grayscale-0 transition-all duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent" />
                 </div>
-                <Zap className="absolute -top-4 -right-4 h-12 w-12 text-primary animate-pulse fill-current" />
+                <Zap className="absolute -top-4 -right-4 h-12 w-12 text-primary animate-pulse fill-current drop-shadow-[0_0_15px_rgba(212,168,67,0.5)]" />
             </div>
-            <div className="space-y-3">
-                <h3 className="text-3xl font-display font-black text-white tracking-tight gold-resplendant">NexusHub Web</h3>
-                <p className="text-stone-500 max-w-xs mx-auto font-light italic leading-relaxed text-sm">
-                  "Envoyez et recevez des messages sans laisser votre téléphone allumé. <br/> Le Hub synchronise tout."
+            <div className="space-y-4 max-w-sm">
+                <h3 className="text-4xl font-display font-black text-white tracking-tight gold-resplendant">NexusHub pour Web</h3>
+                <p className="text-stone-500 font-light italic leading-relaxed text-sm">
+                  "Envoyez et recevez des messages sans laisser votre téléphone allumé. Le Hub synchronise toutes vos légendes en temps réel."
                 </p>
             </div>
-            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-stone-800 tracking-[0.3em] pt-10">
-              <ShieldCheck className="h-4 w-4" /> Chiffrement de Bout en Bout
+            
+            <div className="pt-12 border-t border-white/5 w-full max-w-xs flex flex-col items-center gap-4">
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase text-stone-700 tracking-[0.4em]">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" /> Chiffrement de Bout en Bout
+              </div>
+              <p className="text-[8px] text-stone-800 font-bold uppercase tracking-widest">Version 2.5.0 - Secure Node</p>
             </div>
           </div>
         )}
