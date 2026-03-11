@@ -29,7 +29,8 @@ import {
   setDoc,
   deleteField,
   where,
-  updateDoc
+  updateDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
@@ -44,6 +45,7 @@ export default function MessagesPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedChat, setSelectedChat] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
@@ -58,13 +60,13 @@ export default function MessagesPage() {
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Chargement des contacts (autres utilisateurs pour le prototype)
+  // 2. Chargement des contacts
   useEffect(() => {
     async function fetchContacts() {
       if (!currentUser) return;
       try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, limit(20));
+        const q = query(usersRef, limit(50));
         const snap = await getDocs(q);
         const fetched = snap.docs
           .map(d => ({ ...d.data() } as UserProfile))
@@ -80,7 +82,46 @@ export default function MessagesPage() {
     fetchContacts();
   }, [currentUser]);
 
-  // 3. Écoute des messages et indicateurs de saisie en temps réel
+  // 3. Écoute globale des compteurs de non-lus (Style WhatsApp)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // On écoute les conversations où l'utilisateur est participant
+    const convsRef = collection(db, 'conversations');
+    const q = query(convsRef, where('participants', 'array-contains', currentUser.uid));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const counts: Record<string, number> = {};
+      
+      snapshot.docs.forEach(convDoc => {
+        const data = convDoc.data();
+        const otherUserId = data.participants.find((id: string) => id !== currentUser.uid);
+        
+        // Pour chaque conversation, on va compter les messages non-lus
+        // Note: Dans une app réelle, on stockerait ce compte directement dans la conv metadata
+        // Ici on crée un listener par conv active pour le prototype
+        if (otherUserId) {
+          const msgsRef = collection(db, 'conversations', convDoc.id, 'messages');
+          const unreadQ = query(
+            msgsRef, 
+            where('senderId', '!=', currentUser.uid),
+            where('read', '==', false)
+          );
+          
+          onSnapshot(unreadQ, (msgSnap) => {
+            setUnreadCounts(prev => ({
+              ...prev,
+              [otherUserId]: msgSnap.size
+            }));
+          });
+        }
+      });
+    });
+
+    return () => unsub();
+  }, [currentUser]);
+
+  // 4. Écoute des messages et indicateurs de saisie en temps réel
   useEffect(() => {
     if (!currentUser || !selectedChat) {
       setMessages([]);
@@ -92,7 +133,7 @@ export default function MessagesPage() {
 
     // Listener des messages
     const msgsRef = collection(db, 'conversations', convId, 'messages');
-    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(50));
+    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(100));
 
     const unsubMessages = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map(doc => ({
@@ -101,13 +142,23 @@ export default function MessagesPage() {
       }));
       setMessages(newMessages);
       
-      // Marquer comme lu
-      snapshot.docs.forEach(async (d) => {
+      // Marquer comme lu immédiatement si on est sur la conversation
+      const batch = writeBatch(db);
+      let needsUpdate = false;
+      
+      snapshot.docs.forEach((d) => {
         const data = d.data();
         if (data.senderId !== currentUser.uid && !data.read) {
-          await updateDoc(d.ref, { read: true });
+          batch.update(d.ref, { read: true });
+          needsUpdate = true;
         }
       });
+
+      if (needsUpdate) {
+        batch.commit();
+        // Reset local count pour réactivité immédiate
+        setUnreadCounts(prev => ({ ...prev, [selectedChat.uid]: 0 }));
+      }
 
       // Scroll auto
       setTimeout(() => scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -178,7 +229,7 @@ export default function MessagesPage() {
         type: 'text'
       });
 
-      // Update conversation metadata
+      // Update conversation metadata pour le tri de la liste
       const convRef = doc(db, 'conversations', convId);
       await setDoc(convRef, {
         lastMessage: messageText.trim(),
@@ -237,33 +288,43 @@ export default function MessagesPage() {
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-2">
             {activeTab === 'direct' ? (
-              users.map((user) => (
-                <div 
-                  key={user.uid} 
-                  onClick={() => setSelectedChat(user)}
-                  className={cn(
-                    "flex items-center gap-4 p-4 rounded-[2rem] cursor-pointer transition-all border-2 border-transparent group",
-                    selectedChat?.uid === user.uid ? "bg-primary/10 border-primary/20" : "hover:bg-white/5"
-                  )}
-                >
-                  <div className="relative shrink-0">
-                    <Avatar className="h-14 w-14 border-2 border-stone-800 ring-2 ring-transparent group-hover:ring-primary/30 transition-all shadow-xl">
-                      <AvatarImage src={user.photoURL} className="object-cover" />
-                      <AvatarFallback className="bg-primary/5 text-primary font-black text-xl">{user.displayName?.slice(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <span className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-4 border-stone-900 shadow-lg" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-1">
-                      <p className={cn("font-black truncate text-sm transition-colors", selectedChat?.uid === user.uid ? "text-primary" : "text-white")}>{user.displayName}</p>
-                      <span className="text-[8px] text-stone-600 font-bold uppercase tracking-tighter">Live</span>
+              users.map((user) => {
+                const unreadCount = unreadCounts[user.uid] || 0;
+                return (
+                  <div 
+                    key={user.uid} 
+                    onClick={() => setSelectedChat(user)}
+                    className={cn(
+                      "flex items-center gap-4 p-4 rounded-[2rem] cursor-pointer transition-all border-2 border-transparent group",
+                      selectedChat?.uid === user.uid ? "bg-primary/10 border-primary/20" : "hover:bg-white/5"
+                    )}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="h-14 w-14 border-2 border-stone-800 ring-2 ring-transparent group-hover:ring-primary/30 transition-all shadow-xl">
+                        <AvatarImage src={user.photoURL} className="object-cover" />
+                        <AvatarFallback className="bg-primary/5 text-primary font-black text-xl">{user.displayName?.slice(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <span className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-4 border-stone-900 shadow-lg" />
                     </div>
-                    <p className="text-xs text-stone-500 truncate font-light italic leading-tight">
-                      {user.role === 'artist_pro' ? 'Artiste Pro' : 'Voyageur Nexus'}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline mb-1">
+                        <p className={cn("font-black truncate text-sm transition-colors", selectedChat?.uid === user.uid ? "text-primary" : "text-white")}>{user.displayName}</p>
+                        <span className="text-[8px] text-stone-600 font-bold uppercase tracking-tighter">Live</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-stone-500 truncate font-light italic leading-tight">
+                          {user.role === 'artist_pro' ? 'Artiste Pro' : 'Voyageur Nexus'}
+                        </p>
+                        {unreadCount > 0 && selectedChat?.uid !== user.uid && (
+                          <Badge className="bg-rose-600 text-white border-none h-5 min-w-5 flex items-center justify-center p-0 rounded-full text-[10px] font-black animate-in zoom-in duration-300">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-12 text-center space-y-6 opacity-40">
                 <div className="bg-white/5 p-6 rounded-full w-fit mx-auto"><Users className="h-12 w-12 text-stone-500" /></div>
@@ -326,8 +387,17 @@ export default function MessagesPage() {
                             : "bg-stone-900 border border-white/5 text-stone-200 rounded-tl-none"
                         )}>
                           <p>{msg.text}</p>
-                          {msg.read && isMe && (
-                            <Check className="absolute -bottom-4 right-2 h-3 w-3 text-emerald-500" />
+                          {isMe && (
+                            <div className="absolute -bottom-4 right-2">
+                              {msg.read ? (
+                                <div className="flex items-center gap-0.5">
+                                  <Check className="h-3 w-3 text-emerald-500" />
+                                  <Check className="h-3 w-3 text-emerald-500 -ml-2" />
+                                </div>
+                              ) : (
+                                <Check className="h-3 w-3 text-stone-600" />
+                              )}
+                            </div>
                           )}
                         </div>
                         <p className="text-[8px] text-stone-600 font-black uppercase tracking-widest px-4">
@@ -391,7 +461,7 @@ export default function MessagesPage() {
             </div>
             <div className="space-y-4">
                 <h3 className="text-4xl md:text-5xl font-display font-black text-white tracking-tighter gold-resplendant">Messagers du Nexus</h3>
-                <p className="text-stone-500 max-w-sm font-light italic leading-relaxed text-xl">
+                <p className="text-stone-500 max-sm font-light italic leading-relaxed text-xl">
                   "Sélectionnez un compagnon de route dans la liste pour engager le dialogue et forger de nouvelles alliances."
                 </p>
             </div>
