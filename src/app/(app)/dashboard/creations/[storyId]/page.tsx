@@ -60,7 +60,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       try {
         const snap = await getDoc(doc(db, 'stories', storyId));
         if (snap.exists()) {
-          const data = snap.data() as Story;
+          const data = snap.data();
           if (data.artistId !== user.uid) {
             router.push('/dashboard/creations');
             toast({ title: "Accès refusé", variant: "destructive" });

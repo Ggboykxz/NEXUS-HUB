@@ -11,7 +11,7 @@ import {
   TrendingUp, AlertTriangle, ShieldCheck, UserPlus
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, getDocs, limit, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, limit, orderBy, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';

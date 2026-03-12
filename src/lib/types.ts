@@ -138,6 +138,7 @@ export interface Chapter {
   publishedAt: Timestamp | string;
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
+  pageStats?: Record<string, any>;
 }
 
 export interface ComicPage {
