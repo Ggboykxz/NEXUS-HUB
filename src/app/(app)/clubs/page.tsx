@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +60,7 @@ export default function ReadingClubsPage() {
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('Tous');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Form State for new club
@@ -165,10 +166,20 @@ export default function ReadingClubsPage() {
     }
   });
 
-  const filteredClubs = clubs.filter((c: any) => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClubs = useMemo(() => clubs.filter((c: any) => {
+    const searchMatch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        c.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!searchMatch) return false;
+
+    if (activeCategory === 'Tous') return true;
+    
+    if (activeCategory === 'Privés') {
+        return c.isPrivate === true;
+    }
+    
+    return c.category === activeCategory;
+  }), [clubs, searchQuery, activeCategory]);
 
   const categories = [
     { name: "Tous", icon: Globe },
@@ -292,10 +303,24 @@ export default function ReadingClubsPage() {
 
       {/* 2. SEARCH & FILTERS */}
       <section className="space-y-10">
+        <div className="flex justify-between items-center">
+             <h2 className="text-3xl font-display font-bold text-white">
+                Explorer les Cercles <span className="text-stone-500 font-sans text-xl ml-2">({filteredClubs.length} clubs)</span>
+             </h2>
+        </div>
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50 overflow-x-auto w-full md:w-auto scrollbar-hide">
                 {categories.map((cat) => (
-                    <Button key={cat.name} variant="ghost" size="sm" className="rounded-xl text-[10px] font-black uppercase tracking-tighter gap-2 whitespace-nowrap">
+                    <Button 
+                      key={cat.name} 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setActiveCategory(cat.name)}
+                      className={cn(
+                        "rounded-xl text-[10px] font-black uppercase tracking-tighter gap-2 whitespace-nowrap",
+                        activeCategory === cat.name && "bg-primary text-black"
+                      )}
+                    >
                         <cat.icon className="h-3.5 w-3.5" /> {cat.name}
                     </Button>
                 ))}

@@ -1,17 +1,15 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Award, PlayCircle, Video, Users, BrainCircuit, 
-  ChevronRight, CheckCircle2, Zap, Clock, Star, Loader2,
-  Filter, Search, MessageSquare, Send, Calendar, AlertCircle
+  BrainCircuit, 
+  Loader2,
+  Search
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, limit, orderBy } from 'firebase/firestore';
@@ -22,22 +20,21 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getMentorMatch } from '@/lib/actions/mentor-actions';
+import Image from 'next/image';
 
 export default function MentorshipPage() {
   const { openAuthModal } = useAuthModal();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'matching' | 'masterclasses' | 'live'>('matching');
+  const [activeTab, setActiveTab] = useState<'matching' | 'masterclasses'>('matching');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
@@ -54,7 +51,8 @@ export default function MentorshipPage() {
   const mentorListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    return auth.onAuthStateChanged(user => setCurrentUser(user));
+    const unsubscribe = auth.onAuthStateChanged(user => setCurrentUser(user));
+    return () => unsubscribe();
   }, []);
 
   const { data: mentors = [], isLoading: loadingMentors } = useQuery<UserProfile[]>({
@@ -86,31 +84,29 @@ export default function MentorshipPage() {
       const mentorIds = results.map(r => r.mentorId);
       setRecommendedMentorIds(mentorIds);
       
-      // Scroll to the list
+      toast({ title: "Analyse IA terminée", description: "Les mentors recommandés sont mis en avant." });
+
       setTimeout(() => {
           mentorListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100)
 
     } catch (error) {
-      toast({ title: "Erreur de l'analyse", description: "L'analyse IA a échoué. Veuillez réessayer.", variant: "destructive" });
+      toast({ title: "Erreur de l'analyse", description: "L'analyse IA a échoué. Les mentors les plus populaires sont affichés.", variant: "destructive" });
     } finally {
       setIsAnalyzing(false);
     }
   }
 
   const filteredMentors = useMemo(() => {
-    let sortedMentors = [...mentors];
-
-    // If there are recommendations, bring them to the top
-    if (recommendedMentorIds.length > 0) {
-        sortedMentors.sort((a, b) => {
-            const aIsRecommended = recommendedMentorIds.includes(a.uid);
-            const bIsRecommended = recommendedMentorIds.includes(b.uid);
-            if (aIsRecommended && !bIsRecommended) return -1;
-            if (!aIsRecommended && bIsRecommended) return 1;
-            return 0;
-        });
-    }
+    const top3RecommendedIds = recommendedMentorIds.slice(0, 3);
+    
+    let sortedMentors = [...mentors].sort((a, b) => {
+        const aIsRecommended = top3RecommendedIds.includes(a.uid);
+        const bIsRecommended = top3RecommendedIds.includes(b.uid);
+        if (aIsRecommended && !bIsRecommended) return -1;
+        if (!aIsRecommended && bIsRecommended) return 1;
+        return (b.sessions || 0) - (a.sessions || 0); // Fictional secondary sort
+    });
 
     return sortedMentors.filter(mentor => {
       const matchesSearch = mentor.displayName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -141,8 +137,9 @@ export default function MentorshipPage() {
       toast({ title: "Demande envoyée !" });
       setSelectedMentor(null);
       setRequestMessage('');
+      setRequestProject('');
     } catch (e) {
-      toast({ title: "Erreur", variant: "destructive" });
+      toast({ title: "Erreur lors de l'envoi", description: "Veuillez réessayer.", variant: "destructive" });
     } finally {
       setIsRequesting(false);
     }
@@ -207,17 +204,17 @@ export default function MentorshipPage() {
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
               ) : filteredMentors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredMentors.map((mentor) => {
-                      const isRecommended = recommendedMentorIds.includes(mentor.uid);
+                  {filteredMentors.map((mentor, index) => {
+                      const isRecommended = recommendedMentorIds.slice(0, 3).includes(mentor.uid);
                       return (
-                        <Card key={mentor.uid} className={cn("bg-card/50 rounded-[2.5rem] p-8 flex flex-col hover:border-primary/30 transition-all relative", isRecommended && "border-primary/30 bg-primary/5")}>
+                        <Card key={mentor.uid} className={cn("bg-card/50 rounded-[2.5rem] p-8 flex flex-col hover:border-primary/30 transition-all relative", isRecommended && "border-primary bg-primary/10")}>
                           {isRecommended && (
                               <Badge className="absolute top-6 right-6 border-primary bg-primary/10 text-primary text-[10px] font-bold">✦ Recommandé</Badge>
                           )}
                           <div className="flex items-center gap-5 mb-6">
                             <Avatar className="h-20 w-20 border-4 border-background ring-4 ring-primary/10">
                               <AvatarImage src={mentor.photoURL} />
-                              <AvatarFallback className="bg-primary/10 text-primary">{mentor.displayName[0]}</AvatarFallback>
+                              <AvatarFallback className="bg-primary/10 text-primary">{mentor.displayName?.[0]}</AvatarFallback>
                             </Avatar>
                             <div>
                               <h4 className="font-display font-black text-xl text-white truncate">{mentor.displayName}</h4>
@@ -272,19 +269,28 @@ export default function MentorshipPage() {
             <DialogTitle className="text-3xl font-display font-black gold-resplendant">Postuler auprès de {selectedMentor?.displayName}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest">Titre du projet (optionnel)</Label>
+                <Input 
+                  value={requestProject} 
+                  onChange={(e) => setRequestProject(e.target.value)}
+                  placeholder="Ex: Mon premier webtoon, L'Héritage des Ancêtres..." 
+                  className="bg-white/5 border-white/10 rounded-2xl p-4" 
+                />
+              </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest">Motivation</Label>
+              <Label className="text-[10px] uppercase font-black text-stone-500 tracking-widest">Message de motivation</Label>
               <Textarea 
                 value={requestMessage} 
                 onChange={(e) => setRequestMessage(e.target.value)}
-                placeholder="Pourquoi souhaitez-vous être suivi par ce maître ?" 
+                placeholder="Pourquoi souhaitez-vous être suivi par ce maître ? Présentez-vous et votre projet."
                 className="min-h-[150px] bg-white/5 border-white/10 rounded-2xl italic font-light p-6" 
               />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleMentorshipRequest} disabled={isRequesting} className="w-full h-14 rounded-xl bg-primary text-black font-black">
-              {isRequesting ? <Loader2 className="animate-spin" /> : "Transmettre ma demande"}
+            <Button onClick={handleMentorshipRequest} disabled={isRequesting || !requestMessage.trim()} className="w-full h-14 rounded-xl bg-primary text-black font-black">
+              {isRequesting ? <Loader2 className="animate-spin" /> : "Transmettre ma Demande"}
             </Button>
           </DialogFooter>
         </DialogContent>

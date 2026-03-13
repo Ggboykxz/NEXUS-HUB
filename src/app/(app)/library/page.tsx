@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { checkAndAwardDailyStreak } from '@/lib/actions/reward-actions';
 
 export default function LibraryPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -44,12 +45,27 @@ export default function LibraryPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       setLoading(false);
+      if (user) {
+        try {
+          const { awarded, coins, streakDays } = await checkAndAwardDailyStreak(user.uid);
+          if (awarded) {
+            toast({
+              title: `🔥 Série de ${streakDays} jours !`,
+              description: `+${coins} AfriCoins ont été ajoutés à votre portefeuille.`
+            });
+            // Optionally, refetch user data if it includes africoins balance
+            queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
+          }
+        } catch (error) {
+          console.error("Failed to check for daily streak award:", error);
+        }
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [toast, queryClient]);
 
   // --- FETCH PROGRESS (READING HISTORY / EN COURS) ---
   const { data: progressList = [], isLoading: isLoadingLib } = useQuery({

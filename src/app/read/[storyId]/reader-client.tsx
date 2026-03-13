@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/icons/logo';
+import { checkAndAwardDailyStreak } from '@/lib/actions/reward-actions';
 
 const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -781,10 +782,22 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
       if (user) {
         const snap = await getDoc(doc(db, 'users', user.uid));
         if (snap.exists()) setUserProfile(snap.data() as UserProfile);
+        try {
+            const { awarded, coins, streakDays } = await checkAndAwardDailyStreak(user.uid);
+            if (awarded) {
+                toast({
+                    title: `🔥 Streak ${streakDays} jours !`,
+                    description: `+${coins} AfriCoins gagnés`,
+                });
+                queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
+            }
+        } catch (error) {
+            console.error("Failed to check daily streak on reader page", error);
+        }
       }
     });
     return unsub;
-  }, []);
+  }, [toast, queryClient]);
 
   useEffect(() => {
     const handleScroll = () => {
