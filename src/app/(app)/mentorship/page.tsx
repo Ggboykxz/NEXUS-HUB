@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getMentorMatch } from '@/lib/actions/mentor-actions';
 
 export default function MentorshipPage() {
   const { openAuthModal } = useAuthModal();
@@ -41,11 +42,16 @@ export default function MentorshipPage() {
 
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [recommendedMentorIds, setRecommendedMentorIds] = useState<string[]>([]);
 
   const [isRequesting, setIsRequesting] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<UserProfile | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [requestProject, setRequestProject] = useState('');
+  
+  const mentorListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return auth.onAuthStateChanged(user => setCurrentUser(user));
@@ -72,14 +78,47 @@ export default function MentorshipPage() {
     }
   });
 
+  const handleAnalysis = async () => {
+    if (!currentUser) return openAuthModal("lancer l'analyse");
+    setIsAnalyzing(true);
+    try {
+      const results = await getMentorMatch(currentUser.uid);
+      const mentorIds = results.map(r => r.mentorId);
+      setRecommendedMentorIds(mentorIds);
+      
+      // Scroll to the list
+      setTimeout(() => {
+          mentorListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100)
+
+    } catch (error) {
+      toast({ title: "Erreur de l'analyse", description: "L'analyse IA a échoué. Veuillez réessayer.", variant: "destructive" });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
   const filteredMentors = useMemo(() => {
-    return mentors.filter(mentor => {
+    let sortedMentors = [...mentors];
+
+    // If there are recommendations, bring them to the top
+    if (recommendedMentorIds.length > 0) {
+        sortedMentors.sort((a, b) => {
+            const aIsRecommended = recommendedMentorIds.includes(a.uid);
+            const bIsRecommended = recommendedMentorIds.includes(b.uid);
+            if (aIsRecommended && !bIsRecommended) return -1;
+            if (!aIsRecommended && bIsRecommended) return 1;
+            return 0;
+        });
+    }
+
+    return sortedMentors.filter(mentor => {
       const matchesSearch = mentor.displayName.toLowerCase().includes(searchTerm.toLowerCase());
       const specialties = (mentor as any).mentorSpecialties || [];
       const matchesSpecialty = specialtyFilter === 'all' || specialties.includes(specialtyFilter);
       return matchesSearch && matchesSpecialty;
     });
-  }, [mentors, searchTerm, specialtyFilter]);
+  }, [mentors, searchTerm, specialtyFilter, recommendedMentorIds]);
 
   const handleMentorshipRequest = async () => {
     if (!currentUser) { openAuthModal('demander un mentorat'); return; }
@@ -131,35 +170,69 @@ export default function MentorshipPage() {
                 <div className="bg-primary/10 p-4 rounded-2xl w-fit"><BrainCircuit className="h-8 w-8 text-primary" /></div>
                 <h2 className="text-2xl font-display font-black uppercase tracking-tighter">Matching IA</h2>
                 <p className="text-muted-foreground text-sm italic">"L'IA Nexus analyse votre style pour vous suggérer le mentor idéal."</p>
-                <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase bg-primary text-black gold-shimmer">Lancer l'Analyse</Button>
+                <Button onClick={handleAnalysis} disabled={isAnalyzing} className="w-full h-14 rounded-2xl font-black text-xs uppercase bg-primary text-black gold-shimmer">
+                  {isAnalyzing ? <Loader2 className="h-5 w-5 animate-spin"/> : "Lancer l'Analyse"}
+                </Button>
               </div>
             </Card>
 
-            <div className="lg:col-span-2 space-y-8">
+            <div ref={mentorListRef} className="lg:col-span-2 space-y-8">
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="relative flex-1 w-full">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-600" />
+                        <Input
+                            placeholder="Rechercher par nom..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-11 h-12 rounded-xl bg-white/5 border-white/10 text-sm w-full"
+                        />
+                    </div>
+                    <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                        <SelectTrigger className="h-12 w-full md:w-[240px] rounded-xl bg-white/5 border-white/10">
+                            <SelectValue placeholder="Filtrer par spécialité" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-stone-900 border-white/10 text-white">
+                            <SelectItem value="all">Toutes les spécialités</SelectItem>
+                            <SelectItem value="Scénario">Scénario</SelectItem>
+                            <SelectItem value="Dessin">Dessin</SelectItem>
+                            <SelectItem value="Colorisation">Colorisation</SelectItem>
+                            <SelectItem value="Marketing">Marketing</SelectItem>
+                            <SelectItem value="Numérique">Numérique</SelectItem>
+                            <SelectItem value="Traditionnel">Traditionnel</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
               {loadingMentors ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
               ) : filteredMentors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredMentors.map((mentor) => (
-                    <Card key={mentor.uid} className="bg-card/50 rounded-[2.5rem] p-8 flex flex-col hover:border-primary/30 transition-all">
-                      <div className="flex items-center gap-5 mb-6">
-                        <Avatar className="h-20 w-20 border-4 border-background ring-4 ring-primary/10">
-                          <AvatarImage src={mentor.photoURL} />
-                          <AvatarFallback className="bg-primary/10 text-primary">{mentor.displayName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-display font-black text-xl text-white truncate">{mentor.displayName}</h4>
-                          <Badge variant="outline" className="text-[8px] uppercase border-emerald-500/30 text-emerald-500 mt-1">Mentor Certifié</Badge>
-                        </div>
-                      </div>
-                      <p className="text-xs text-stone-400 line-clamp-3 italic mb-6">"{mentor.bio || "Prêt à transmettre l'héritage créatif."}"</p>
-                      <Button onClick={() => setSelectedMentor(mentor)} className="w-full h-11 bg-primary text-black font-black text-[10px] uppercase">Demander un mentorat</Button>
-                    </Card>
-                  ))}
+                  {filteredMentors.map((mentor) => {
+                      const isRecommended = recommendedMentorIds.includes(mentor.uid);
+                      return (
+                        <Card key={mentor.uid} className={cn("bg-card/50 rounded-[2.5rem] p-8 flex flex-col hover:border-primary/30 transition-all relative", isRecommended && "border-primary/30 bg-primary/5")}>
+                          {isRecommended && (
+                              <Badge className="absolute top-6 right-6 border-primary bg-primary/10 text-primary text-[10px] font-bold">✦ Recommandé</Badge>
+                          )}
+                          <div className="flex items-center gap-5 mb-6">
+                            <Avatar className="h-20 w-20 border-4 border-background ring-4 ring-primary/10">
+                              <AvatarImage src={mentor.photoURL} />
+                              <AvatarFallback className="bg-primary/10 text-primary">{mentor.displayName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-display font-black text-xl text-white truncate">{mentor.displayName}</h4>
+                              <Badge variant="outline" className="text-[8px] uppercase border-emerald-500/30 text-emerald-500 mt-1">Mentor Certifié</Badge>
+                            </div>
+                          </div>
+                          <p className="text-xs text-stone-400 line-clamp-3 italic mb-6">"{mentor.bio || "Prêt à transmettre l'héritage créatif."}"</p>
+                          <Button onClick={() => setSelectedMentor(mentor)} className="w-full h-11 bg-primary text-black font-black text-[10px] uppercase mt-auto">Demander un mentorat</Button>
+                        </Card>
+                      )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-24 bg-stone-900/30 rounded-[3rem] border-2 border-dashed border-white/5">
-                  <p className="text-stone-500 italic">Aucun mentor disponible pour le moment.</p>
+                  <p className="text-stone-500 italic">Aucun mentor ne correspond à vos filtres.</p>
                 </div>
               )}
             </div>
