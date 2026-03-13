@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Globe, MapPin, Calendar, Users, Info, Search, Map, ChevronRight, Sparkles, Filter, Ticket, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';

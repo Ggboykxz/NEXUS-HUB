@@ -11,7 +11,7 @@ import {
   TrendingUp, Wallet, Users, BookOpen, ArrowLeft, Globe, 
   Target, Zap, Sparkles, MapPin, AlertCircle, ChevronRight, 
   Coins, ArrowUpRight, BrainCircuit, Timer, Flame, Loader2, Brush,
-  Layout
+  Layout, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';

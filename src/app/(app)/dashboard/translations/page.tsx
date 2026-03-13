@@ -65,7 +65,7 @@ export default function TranslationsDashboardPage() {
               <Star className="h-4 w-4" /> Vos Langues
             </h4>
             <div className="flex flex-wrap gap-2">
-              {profile?.translatorLanguages?.map((lang: string) => (
+              {profile?.languages?.map((lang: string) => (
                 <Badge key={lang} className="bg-white/5 text-stone-300 border-white/10 uppercase text-[10px] px-3">{lang}</Badge>
               )) || <p className="text-xs text-stone-500 italic">Aucune langue configurée.</p>}
             </div>

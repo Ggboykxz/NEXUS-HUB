@@ -33,6 +33,7 @@ import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isYesterday, isThisWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Logo } from '@/components/icons/logo';
 
 const formatChatDate = (date: Date) => {
   if (isToday(date)) return format(date, 'HH:mm');

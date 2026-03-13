@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Zap, Trophy, Calendar, Award, PlayCircle, Timer, Globe, Users, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function EventsHubPage() {
   const mainEvents = [

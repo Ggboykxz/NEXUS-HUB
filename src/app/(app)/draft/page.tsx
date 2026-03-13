@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Rocket, MessageSquare, Users, Sparkles, ChevronRight, Target, Coins, Award, ArrowUpRight, Star } from 'lucide-react';
+import { Rocket, MessageSquare, Users, Sparkles, ChevronRight, Target, Coins, Award, ArrowUpRight, Star, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';

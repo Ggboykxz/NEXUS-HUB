@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Globe, Map, Sparkles, Film, Palette, Layers, Zap, Landmark, 
   ScrollText, Mic, Accessibility, MessageSquareQuote, Newspaper, 
-  ArrowRight, Loader2, Save, BookOpen, AlertCircle, CheckCircle2
+  ArrowRight, Loader2, Save, BookOpen, AlertCircle, CheckCircle2, Languages
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';

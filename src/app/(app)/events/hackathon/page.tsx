@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Timer, Trophy, Star, Users, LayoutGrid, CheckCircle2, Zap, Cloud, Globe, ArrowRight } from 'lucide-react';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Timer, Trophy, Star, Users, LayoutGrid, CheckCircle2, Zap, Cloud, Globe, ArrowRight, Award } from 'lucide-react';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function HackathonPage() {
   const [timeLeft, setTimeLeft] = useState({ h: 23, m: 59, s: 59 });
