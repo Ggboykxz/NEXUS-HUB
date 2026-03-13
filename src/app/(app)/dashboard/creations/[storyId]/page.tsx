@@ -9,12 +9,13 @@ import {
   ChevronRight, Eye, Heart, Wand2, Share2, 
   Globe, Clock, Loader2, Download, CheckCircle2, 
   FileArchive, PenSquare, Calendar, Zap, LayoutGrid,
-  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight, Layers, AlertTriangle
+  Settings2, BarChart3, Cloud, Trash2, ArrowUpRight, Layers, AlertTriangle,
+  Rocket
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +23,7 @@ import type { Story, Chapter } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteStory } from '@/lib/actions/story-actions';
+import { deleteStory, publishStory } from '@/lib/actions/story-actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,6 +85,40 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
     });
     return () => unsub();
   }, [storyId, router, toast]);
+
+  // Mutation pour la publication
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      if (!story || !chapters.length) throw new Error("L\'œuvre ou les chapitres ne sont pas chargés.");
+      
+      const batch = writeBatch(db);
+      
+      // 1. Mettre à jour le statut de l'œuvre
+      const storyRef = doc(db, "stories", storyId);
+      batch.update(storyRef, { isPublished: true, status: 'ongoing', publishedAt: new Date() });
+
+      // 2. Mettre à jour le statut de tous les chapitres
+      chapters.forEach(chapter => {
+        const chapterRef = doc(db, "stories", storyId, "chapters", chapter.id);
+        batch.update(chapterRef, { isPublished: true, publishedAt: new Date() });
+      });
+
+      await batch.commit();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['story', storyId] });
+      queryClient.invalidateQueries({ queryKey: ['my-creations'] });
+      setStory(prev => prev ? { ...prev, isPublished: true, status: 'ongoing' } : null);
+      toast({ 
+        title: "Félicitations ! Votre œuvre est maintenant publique !",
+        description: "Elle est désormais visible par toute la communauté Nexus.",
+        className: "bg-emerald-500 border-emerald-700 text-white",
+      });
+    },
+    onError: (e: any) => {
+      toast({ title: "Erreur de publication", description: e.message || "Un problème est survenu.", variant: "destructive" });
+    }
+  });
 
   // Mutation pour la suppression
   const deleteMutation = useMutation({
@@ -151,6 +186,11 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
               <Badge variant={story.isPublished ? "default" : "secondary"} className={cn("text-[9px] uppercase font-black px-4 py-1", story.isPublished ? "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)]")}>
                 {story.isPublished ? 'Live on Hub' : 'Brouillon privé'}
               </Badge>
+              {!story.isPublished && chapters.length > 0 && (
+                <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} size="sm" className="rounded-full h-7 bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest px-4 py-1 hover:bg-emerald-600 transition-all gap-2 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                  {publishMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />} Publier l'œuvre
+                </Button>
+              )}
             </div>
             
             <div>

@@ -1,6 +1,5 @@
 
 import * as admin from 'firebase-admin';
-import serviceAccount from '../../serviceAccountKey.json';
 
 /**
  * Initialisation sécurisée du SDK Admin pour les environnements serveurs (Sitemap, Metadata).

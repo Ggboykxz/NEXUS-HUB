@@ -60,6 +60,7 @@ export async function toggleStoryPublication(storyId: string, isPublished: boole
     const { uid, adminDb } = await getAuthenticatedArtist();
     await adminDb.collection('stories').doc(storyId).update({
       isPublished,
+      status: isPublished ? 'published' : 'draft',
       updatedAt: FieldValue.serverTimestamp()
     });
     

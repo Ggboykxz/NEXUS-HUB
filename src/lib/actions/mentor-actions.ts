@@ -68,7 +68,7 @@ export async function getMentorMatch(userId: string): Promise<{ mentorId: string
     if (Array.isArray(matches) && matches.length > 0) {
         return matches.slice(0, 3).map(match => ({
             mentorId: match.mentorId,
-            reason: match.reason || 'Recommandation de l'IA Nexus',
+            reason: match.reason || 'Recommandation de l\'IA Nexus',
         }));
     }
     // If AI returns empty/invalid data, throw to trigger fallback

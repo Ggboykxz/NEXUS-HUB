@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Bot, PenSquare, Film, Mic, Palette, Users, Code, Wand2, BrainCircuit, Loader2, ClipboardCopy, Check, Download, History, X, Trash2, Save, Share2

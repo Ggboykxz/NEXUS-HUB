@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Coin, 
+  Coins, 
   Gift, 
   Zap, 
   ShieldCheck, 
@@ -126,7 +126,7 @@ export default function AfriCoinsPage() {
               {pack.popular && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-black font-black text-[9px] uppercase tracking-widest">Populaire</Badge>}
               
               <div className="mx-auto bg-gradient-to-br from-amber-400 to-amber-600 p-4 rounded-full w-fit mb-4 shadow-lg shadow-amber-500/10">
-                  <Coin className="h-8 w-8 text-black" />
+                  <Coins className="h-8 w-8 text-black" />
               </div>
               
               <p className="text-4xl font-black text-white">{pack.coins.toLocaleString('fr-FR')}</p>
@@ -166,7 +166,7 @@ export default function AfriCoinsPage() {
         <DialogContent className="bg-stone-900 border-white/5 text-white rounded-[2.5rem] p-10 max-w-lg">
           <DialogHeader className="text-center space-y-4">
             <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                <Coin className="h-8 w-8 text-primary" />
+                <Coins className="h-8 w-8 text-primary" />
             </div>
             <DialogTitle className="text-3xl font-display font-black gold-resplendant">Confirmer votre achat</DialogTitle>
           </DialogHeader>
