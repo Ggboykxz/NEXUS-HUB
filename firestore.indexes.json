@@ -16,6 +16,24 @@
     },
     {
       "collectionGroup": "stories",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "isPro",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "views",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "stories",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -33,7 +51,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "artistId",
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isPublished",
           "order": "ASCENDING"
         },
         {
