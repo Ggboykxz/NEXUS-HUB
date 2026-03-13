@@ -8,7 +8,7 @@ import {
   Bell, Check, Clock, Heart, MessageSquare, Star, 
   Trash2, Award, Loader2, Sparkles, BookOpen, 
   Users, Coins, Settings, Info, CheckCircle2,
-  AlertTriangle, Eraser, ChevronRight
+  AlertTriangle, Eraser, ChevronRight, Flame
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";

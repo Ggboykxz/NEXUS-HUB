@@ -7,6 +7,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useAuthModal } from './providers/auth-modal-provider';
 import { auth } from '@/lib/firebase';
 import { getOptimizedImage } from '@/lib/image-utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ProductCardProps {
   product: Product;

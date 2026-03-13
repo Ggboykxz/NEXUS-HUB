@@ -5,6 +5,12 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SponsoredPanelProps {
   className?: string;
@@ -40,7 +46,16 @@ export function SponsoredPanel({ className }: SponsoredPanelProps) {
         </div>
 
         <div className="absolute top-4 right-4 opacity-40 hover:opacity-100 transition-opacity">
-          <Info className="h-4 w-4 text-white cursor-help" title="Pourquoi cette publicité ? NexusHub sélectionne des partenaires en affinité avec la culture africaine." />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-4 w-4 text-white cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Pourquoi cette publicité ? NexusHub sélectionne des partenaires en affinité avec la culture africaine.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
       

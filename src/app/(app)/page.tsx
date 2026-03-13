@@ -382,7 +382,7 @@ function LandingView({ popular, isLoading, heroLoaded, setHeroLoaded }: any) {
             <StoryGridSkeleton count={5} />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {popular.slice(0, 5).map((story) => (
+              {popular.slice(0, 5).map((story: Story) => (
                 <StoryCard key={story.id} story={story} />
               ))}
             </div>

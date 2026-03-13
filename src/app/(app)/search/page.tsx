@@ -9,7 +9,7 @@ import {
   Search, Users, BookOpen, X, Sparkles, Mic, MicOff, 
   Filter, MapPin, Languages, Clock, Hash, Globe, 
   ChevronDown, SlidersHorizontal, CheckCircle2, History,
-  LayoutGrid, Star, Zap, Loader2, Waveform, AlertCircle, Trash2
+  LayoutGrid, Star, Zap, Loader2, AlertCircle, Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

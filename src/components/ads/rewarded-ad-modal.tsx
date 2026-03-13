@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Coins, Flame, Timer, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface RewardedAdModalProps {
   isOpen: boolean;

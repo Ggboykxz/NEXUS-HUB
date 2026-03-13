@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ProductCard } from '@/components/product-card';
-import { Store, Shirt, Palette, Sparkles, Download, PackageOpen, Loader2 } from 'lucide-react';
+import { Store, Shirt, Palette, Sparkles, Download, PackageOpen, Loader2, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

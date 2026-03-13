@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Play, Heart, MessageSquare, Share2, Star, Eye, Clock, 
   ChevronRight, Award, Zap, Crown, Flame, Check, Info,
-  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle, Loader2, Globe, Layers, BookOpen, User
+  TrendingUp, CircleDollarSign, Headphones, Music, Share, Flag, AlertTriangle, Loader2, Globe, Layers, BookOpen, User,
+  Sparkles
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/components/providers/language-provider';
+import { Card } from '@/components/ui/card';
 
 interface StoryDetailClientProps {
   story: Story;

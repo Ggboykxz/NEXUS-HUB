@@ -1,5 +1,6 @@
 
 import * as admin from 'firebase-admin';
+import serviceAccount from '../../serviceAccountKey.json';
 
 /**
  * Initialisation sécurisée du SDK Admin pour les environnements serveurs (Sitemap, Metadata).
@@ -8,14 +9,14 @@ import * as admin from 'firebase-admin';
 export function getAdminServices() {
   if (!admin.apps.length) {
     try {
-      // Tentative d'initialisation via les variables d'environnement
-      // Note: Pour un fonctionnement complet en production, une clé de compte de service est recommandée.
       admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
       });
     } catch (e) {
-      console.warn("Firebase Admin failed to initialize. Server-side features might be limited.");
+      console.error("Firebase Admin initialization error:", e);
+      throw new Error("Firebase Admin initialization failed. Check your service account credentials.");
     }
   }
 

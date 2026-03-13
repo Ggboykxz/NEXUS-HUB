@@ -24,6 +24,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthModal } from '@/components/providers/auth-modal-provider';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -589,6 +591,17 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
   const [swipeIndicator, setSwipeIndicator] = useState<'prev' | 'next' | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [isLowData, setIsLowData] = useState(false);
+
+  const { data: artist } = useQuery<UserProfile | null>({
+    queryKey: ['artist', (story as any).artistId],
+    queryFn: async () => {
+      if (!(story as any).artistId) return null;
+      const artistRef = doc(db, 'users', (story as any).artistId);
+      const artistSnap = await getDoc(artistRef);
+      return artistSnap.exists() ? (artistSnap.data() as UserProfile) : null;
+    },
+    enabled: !!(story as any).artistId
+  });
   
   const lastScrollY = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
