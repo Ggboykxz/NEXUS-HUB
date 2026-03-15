@@ -220,8 +220,8 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
                 <div className="flex items-center gap-2">
                     <Button asChild className="flex-1 h-11 rounded-xl bg-primary text-black font-black uppercase text-xs gold-shimmer shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">
                         <Link href={storyUrl} onClick={(e) => e.stopPropagation()} prefetch={true}>
-                            <Play className="mr-2 h-4 w-4 fill-current" />
-                            Lire
+                            <Info className="mr-2 h-4 w-4 fill-current" />
+                            Détails
                         </Link>
                     </Button>
                     
@@ -283,7 +283,7 @@ export function StoryCard({ story, className, progress }: StoryCardProps) {
         <div className="flex items-center gap-1 text-[10px] transition-all duration-500 delay-300 opacity-60 group-hover:opacity-100 group-hover:translate-x-1">
             <Link href={artistInfo?.slug ? `/artiste/${artistInfo.slug}` : '#'} className="hover:text-primary transition-colors flex items-center gap-1" prefetch={true}>
                 <span className="font-bold truncate max-w-[100px] text-stone-400 group-hover:text-stone-300">{artistInfo?.displayName || 'Artiste'}</span>
-                {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.5 text-orange-400" />}
+                {artistInfo?.role?.includes('pro') ? <Award className="h-2.5 w-2.5 text-emerald-500" /> : <PenSquare className="h-2.5 w-2.s text-orange-400" />}
             </Link>
         </div>
 
