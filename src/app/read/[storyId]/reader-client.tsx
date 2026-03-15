@@ -8,7 +8,7 @@ import { notFound, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
-  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize, X, Palette, Sun, HelpCircle, Keyboard
+  Book, Layers, Heart, MessageSquare, ChevronRight, ChevronLeft, Bookmark, Settings, Star, Coins, Eye, Award, Check, Share2, Loader2, Headphones, Music, Volume2, VolumeX, Info, Zap, Flame, Crown, Lock, Flag, AlertTriangle, Maximize, Minimize, X, Palette, Sun, HelpCircle, Keyboard, Wand2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,10 +40,12 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Card } from '@/components/ui/card';
 import { Logo } from '@/components/icons/logo';
 import { checkAndAwardDailyStreak } from '@/lib/actions/reward-actions';
+import { augmentedReadingAction } from '@/ai/flows/augmented-reading-flow';
 
 const sanitize = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -546,7 +548,7 @@ function CommentsTab({ storyId, chapterId, currentUser, openAuthModal }: { story
   );
 }
 
-function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, isLiked, commentsCount, isVisible }: any) {
+function FloatingTools({ onLike, onComment, onBookmark, onShare, onAugmentedRead, isBookmarked, isLiked, commentsCount, isVisible }: any) {
   return (
     <div className={cn(
       "fixed top-1/2 -translate-y-1/2 right-6 lg:right-[340px] z-40 flex flex-col gap-3 group transition-all duration-500",
@@ -565,7 +567,77 @@ function FloatingTools({ onLike, onComment, onBookmark, onShare, isBookmarked, i
       <Button onClick={onShare} variant="outline" size="icon" className="h-12 w-12 rounded-full border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl transition-all hover:scale-110">
         <Share2 className="h-5 w-5" />
       </Button>
+      <Button onClick={onAugmentedRead} variant="outline" size="icon" className="h-12 w-12 rounded-full border-primary/30 bg-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 transition-all hover:scale-110 hover:bg-primary/20 text-primary">
+        <Wand2 className="h-5 w-5" />
+      </Button>
     </div>
+  )
+}
+
+function AugmentedReadingPanel({ storyTitle, context, open, onOpenChange }: { storyTitle: string, context: string, open: boolean, onOpenChange: (open: boolean) => void }) {
+  const [activeTab, setActiveTab] = useState('summary');
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (type: 'summary' | 'glossary' | 'chat') => {
+      return augmentedReadingAction({ type, storyTitle, context, userQuery: inputValue });
+    },
+    onMutate: () => {
+      setIsLoading(true);
+      setResult(null);
+    },
+    onSuccess: (data) => setResult(data.result),
+    onError: (e: any) => setResult("Une erreur est survenue lors de la communication avec l'assistant."),
+    onSettled: () => setIsLoading(false),
+  });
+
+  const handleAction = (type: 'summary' | 'glossary' | 'chat') => {
+    mutation.mutate(type);
+  };
+  
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="bg-stone-950/95 backdrop-blur-2xl border-t-primary/20 border-t-2 text-white p-8 rounded-t-[3rem] h-[80vh]">
+        <SheetHeader className="mb-8 text-center">
+          <SheetTitle className="text-2xl font-display font-black text-white flex items-center justify-center gap-3">
+            <Wand2 className="h-6 w-6 text-primary" /> Assistant de Lecture
+          </SheetTitle>
+          <DialogDescription className="text-stone-500 italic">Votre guide personnel dans l'univers de "{storyTitle}"</DialogDescription>
+        </SheetHeader>
+        <div className="grid grid-cols-[200px,1fr] gap-8 h-[calc(100%-120px)]">
+          <div className="flex flex-col gap-2 border-r border-white/5 pr-8">
+            <Button onClick={() => setActiveTab('summary')} variant={activeTab === 'summary' ? 'secondary' : 'ghost'}>Résumé</Button>
+            <Button onClick={() => setActiveTab('glossary')} variant={activeTab === 'glossary' ? 'secondary' : 'ghost'}>Glossaire</Button>
+            <Button onClick={() => setActiveTab('chat')} variant={activeTab === 'chat' ? 'secondary' : 'ghost'}>Chat</Button>
+          </div>
+          <div className="flex flex-col">
+            <ScrollArea className="flex-1 pr-6 -mr-6">
+              {isLoading && <Loader2 className="animate-spin mx-auto my-12" />}
+              {result && <p className="whitespace-pre-wrap font-light leading-relaxed text-stone-300">{result}</p>}
+            </ScrollArea>
+            <div className="pt-6 mt-auto">
+              {activeTab === 'summary' && (
+                <Button onClick={() => handleAction('summary')} className="w-full">Rattrapage rapide</Button>
+              )}
+              {activeTab === 'glossary' && (
+                <>
+                  <Input value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Ex: Masque Goli" />
+                  <Button onClick={() => handleAction('glossary')} className="w-full mt-2">Expliquer le terme</Button>
+                </>
+              )}
+              {activeTab === 'chat' && (
+                <>
+                  <Textarea value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Posez une question sur l'histoire..." />
+                  <Button onClick={() => handleAction('chat')} className="w-full mt-2">Demander à l'IA</Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -582,6 +654,7 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isAugmentedReadingOpen, setAugmentedReadingOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -965,8 +1038,16 @@ export default function ReaderClient({ story, chapters }: { story: Story, chapte
         isBookmarked={isBookmarked}
         onShare={handleShare}
         onComment={() => { setSidebarOpen(true); setSidebarTab('comments'); }}
+        onAugmentedRead={() => setAugmentedReadingOpen(true)}
         commentsCount={0}
         isVisible={isHeaderVisible && !showPremiumGate}
+      />
+
+      <AugmentedReadingPanel
+        storyTitle={story.title}
+        context={`Lecture du chapitre ${currentChapter?.chapterNumber}: ${currentChapter?.title}`}
+        open={isAugmentedReadingOpen}
+        onOpenChange={setAugmentedReadingOpen}
       />
 
       <Sheet open={showSettings} onOpenChange={setShowSettings}>

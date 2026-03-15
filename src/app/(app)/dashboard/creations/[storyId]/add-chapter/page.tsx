@@ -199,6 +199,10 @@ export default function AddChapterPage(props: PageProps) {
       toast({ title: "Données manquantes", description: "Veuillez remplir le titre et ajouter au moins une planche.", variant: "destructive" });
       return;
     }
+    if (pubMode === 'scheduled' && !scheduledDate) {
+      toast({ title: "Date de programmation requise", description: "Veuillez choisir une date et une heure pour la publication.", variant: "destructive" });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -248,7 +252,7 @@ export default function AddChapterPage(props: PageProps) {
         setUploadProgress(((i + 1) / selectedImages.length) * 100);
       }
 
-      const chapterStatus = pubMode === 'now' ? 'Publié' : 'Programmé';
+      const chapterStatus = pubMode === 'now' ? 'published' : 'scheduled';
       const scheduledTimestamp = pubMode === 'scheduled' ? Timestamp.fromDate(new Date(scheduledDate)) : null;
 
       await setDoc(newChapterDocRef, {
@@ -274,7 +278,12 @@ export default function AddChapterPage(props: PageProps) {
         updatedAt: serverTimestamp()
       });
 
-      toast({ title: "Épisode publié !", description: "Vos planches sont prêtes pour la lecture mondiale." });
+      if (pubMode === 'now') {
+        toast({ title: "Épisode publié !", description: "Vos planches sont prêtes pour la lecture mondiale." });
+      } else {
+        toast({ title: "Épisode programmé !", description: `Votre épisode sera publié le ${new Date(scheduledDate).toLocaleString()}.` });
+      }
+      
       router.push(`/dashboard/creations/${storyId}`);
     } catch (error: any) {
       console.error(error);
@@ -288,6 +297,9 @@ export default function AddChapterPage(props: PageProps) {
       setUploadProgress(0);
     }
   };
+
+  const buttonText = pubMode === 'now' ? "Publier l'épisode" : "Programmer l'épisode";
+  const buttonIcon = pubMode === 'now' ? <Cloud className="mr-3 h-6 w-6" /> : <Clock className="mr-3 h-6 w-6" />;
 
   if (loading) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
@@ -310,7 +322,7 @@ export default function AddChapterPage(props: PageProps) {
             disabled={isSubmitting || isCompressing || !title.trim() || selectedImages.length === 0}
             className="rounded-2xl h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-12 shadow-xl shadow-emerald-500/20 text-lg gold-shimmer"
           >
-            {isSubmitting ? <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <><Cloud className="mr-3 h-6 w-6" /> Publier l'épisode</>}
+            {isSubmitting ? <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Envoi ({uploadProgress.toFixed(0)}%)</> : <>{buttonIcon} {buttonText}</>}
           </Button>
         </div>
       </div>

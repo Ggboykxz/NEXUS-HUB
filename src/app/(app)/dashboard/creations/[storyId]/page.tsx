@@ -23,7 +23,7 @@ import type { Story, Chapter } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteStory, publishStory } from '@/lib/actions/story-actions';
+import { deleteStory } from '@/lib/actions/story-actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+const ChapterStatus = ({ chapter }: { chapter: Chapter }) => {
+  const status = chapter.status || 'draft'; // Fallback for older data
+
+  switch (status) {
+    case 'published':
+      return (
+        <div className="flex items-center gap-2 text-[10px] text-emerald-500 font-black uppercase">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          <span>Publié le {chapter.publishedAt ? new Date((chapter.publishedAt as any).seconds * 1000).toLocaleDateString() : 'N/A'}</span>
+        </div>
+      );
+    case 'scheduled':
+      return (
+        <div className="flex items-center gap-2 text-[10px] text-amber-500 font-black uppercase">
+          <Clock className="h-3.5 w-3.5" />
+          <span>Programmé: {chapter.scheduledAt ? new Date((chapter.scheduledAt as any).seconds * 1000).toLocaleString() : 'N/A'}</span>
+        </div>
+      );
+    default:
+      return (
+        <div className="flex items-center gap-2 text-[10px] text-stone-500 font-black uppercase">
+          <PenSquare className="h-3.5 w-3.5" />
+          <span>Brouillon</span>
+        </div>
+      );
+  }
+};
 
 /**
  * L'Atelier : Le centre de commande d'une série.
@@ -59,18 +87,21 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       }
 
       try {
-        const snap = await getDoc(doc(db, 'stories', storyId));
-        if (snap.exists()) {
-          const data = snap.data();
+        const storyRef = doc(db, 'stories', storyId);
+        const chaptersRef = collection(db, 'stories', storyId, 'chapters');
+        
+        const storySnap = await getDoc(storyRef);
+
+        if (storySnap.exists()) {
+          const data = storySnap.data();
           if (data.artistId !== user.uid) {
             router.push('/dashboard/creations');
             toast({ title: "Accès refusé", variant: "destructive" });
             return;
           }
-          setStory({ id: snap.id, ...data } as Story);
+          setStory({ id: storySnap.id, ...data } as Story);
 
-          const chaptersRef = collection(db, 'stories', storyId, 'chapters');
-          const q = query(chaptersRef, orderBy('chapterNumber', 'asc'));
+          const q = query(chaptersRef, orderBy('chapterNumber', 'desc'));
           const chaptersSnap = await getDocs(q);
           setChapters(chaptersSnap.docs.map(d => ({ id: d.id, ...d.data() } as Chapter)));
         } else {
@@ -78,6 +109,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
         }
       } catch (error) {
         console.error(error);
+        toast({ title: "Erreur de chargement", description: "Impossible de récupérer les données de l'œuvre.", variant: "destructive"});
         router.push('/dashboard/creations');
       } finally {
         setLoading(false);
@@ -86,21 +118,21 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
     return () => unsub();
   }, [storyId, router, toast]);
 
-  // Mutation pour la publication
+  // Mutation pour la publication de l'œuvre complète
   const publishMutation = useMutation({
     mutationFn: async () => {
       if (!story || !chapters.length) throw new Error("L\'œuvre ou les chapitres ne sont pas chargés.");
       
       const batch = writeBatch(db);
       
-      // 1. Mettre à jour le statut de l'œuvre
       const storyRef = doc(db, "stories", storyId);
       batch.update(storyRef, { isPublished: true, status: 'ongoing', publishedAt: new Date() });
 
-      // 2. Mettre à jour le statut de tous les chapitres
       chapters.forEach(chapter => {
-        const chapterRef = doc(db, "stories", storyId, "chapters", chapter.id);
-        batch.update(chapterRef, { isPublished: true, publishedAt: new Date() });
+        if (chapter.status !== 'published') {
+            const chapterRef = doc(db, "stories", storyId, "chapters", chapter.id);
+            batch.update(chapterRef, { status: 'published', publishedAt: new Date() });
+        }
       });
 
       await batch.commit();
@@ -109,6 +141,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
       queryClient.invalidateQueries({ queryKey: ['story', storyId] });
       queryClient.invalidateQueries({ queryKey: ['my-creations'] });
       setStory(prev => prev ? { ...prev, isPublished: true, status: 'ongoing' } : null);
+      setChapters(prev => prev.map(c => ({...c, status: 'published'})))
       toast({ 
         title: "Félicitations ! Votre œuvre est maintenant publique !",
         description: "Elle est désormais visible par toute la communauté Nexus.",
@@ -186,11 +219,6 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
               <Badge variant={story.isPublished ? "default" : "secondary"} className={cn("text-[9px] uppercase font-black px-4 py-1", story.isPublished ? "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)]")}>
                 {story.isPublished ? 'Live on Hub' : 'Brouillon privé'}
               </Badge>
-              {!story.isPublished && chapters.length > 0 && (
-                <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} size="sm" className="rounded-full h-7 bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest px-4 py-1 hover:bg-emerald-600 transition-all gap-2 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                  {publishMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />} Publier l'œuvre
-                </Button>
-              )}
             </div>
             
             <div>
@@ -203,6 +231,11 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
           </div>
 
           <div className="flex flex-wrap justify-center md:flex-col gap-3 w-full md:w-auto shrink-0 relative z-10">
+            {!story.isPublished && chapters.length > 0 && (
+                <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} size="lg" className="flex-1 md:flex-none rounded-2xl h-14 bg-emerald-500 text-white font-black px-10 shadow-xl shadow-emerald-500/30 hover:scale-105 transition-all animate-pulse gap-3">
+                  {publishMutation.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : <Rocket className="h-5 w-5" />} Publier l'œuvre
+                </Button>
+            )}
             <Button asChild size="lg" className="flex-1 md:flex-none rounded-2xl h-14 bg-primary text-black font-black px-10 shadow-xl shadow-primary/20 hover:scale-105 transition-all gold-shimmer">
               <Link href={`/read/${story.id}`}><Eye className="mr-3 h-5 w-5 fill-current" /> Aperçu Immersion</Link>
             </Button>
@@ -295,9 +328,7 @@ export default function StoryDashboardPage(props: { params: Promise<{ storyId: s
                   <div className="flex-1 min-w-0 text-center sm:text-left space-y-2">
                     <p className="font-bold text-xl text-white truncate">{chap.title}</p>
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-4">
-                      <p className="text-[10px] text-stone-500 font-black uppercase flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 text-primary" /> {chap.publishedAt ? new Date((chap.publishedAt as any).seconds * 1000).toLocaleDateString() : 'En attente'}
-                      </p>
+                      <ChapterStatus chapter={chap} />
                       <Badge className={cn("text-[8px] font-black uppercase px-3 h-5 border-none", chap.isPremium ? "bg-amber-500 text-black" : "bg-emerald-500 text-white")}>
                         {chap.isPremium ? 'Premium' : 'Public'}
                       </Badge>
