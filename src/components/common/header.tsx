@@ -9,7 +9,7 @@ import {
   Cloud, Layers, Book, 
   Clock, CheckCircle2, MessageSquare, ShoppingCart, Loader2, Award
 } from 'lucide-react';
-import { navLinks as defaultNavLinks, type NavLink } from '@/lib/navigation';
+import { navLinks, type NavLink } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
@@ -55,12 +55,6 @@ export default function Header() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  
-  const navLinks = defaultNavLinks.map(link => {
-    if (link.label === 'Artistes') return { ...link, label: 'Forums', href: '/forums', icon: MessageSquare };
-    if (link.label === 'AI Studio') return { ...link, label: 'Boutique', href: '/shop', icon: ShoppingCart };
-    return link;
-  });
 
   const { data: trendingStories = [] } = useQuery({
     queryKey: ['mega-menu-trending'],
@@ -111,18 +105,6 @@ export default function Header() {
     }
   };
 
-  const getNavLabel = (link: NavLink) => {
-    const keyMap: Record<string, string> = {
-      "Parcourir": "nav.browse",
-      "Classements": "nav.rankings",
-      "Forums": "nav.forums",
-      "Boutique": "nav.shop",
-      "Originals": "nav.originals",
-      "NexusHub Pro": "nav.pro"
-    };
-    return t(keyMap[link.label] || link.label);
-  };
-
   return (
     <header className={cn(
       "sticky top-0 z-50 w-full transition-all duration-500 border-b",
@@ -140,10 +122,9 @@ export default function Header() {
             <nav className="hidden md:flex items-center gap-x-8">
               {navLinks.slice(0, 5).map((link, idx) => {
                 const isActive = pathname === link.href;
-                const isBrowse = link.label === "Parcourir";
-                const label = getNavLabel(link);
+                const label = t(link.label);
 
-                if (isBrowse) {
+                if (link.isGenreDropdown) {
                   return (
                     <DropdownMenu key={idx}>
                       <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors text-[11px] uppercase font-black tracking-widest outline-none text-foreground/60">
@@ -152,25 +133,20 @@ export default function Header() {
                       <DropdownMenuContent align="start" className="w-[600px] p-0 rounded-[2.5rem] bg-stone-950 border-white/5 shadow-2xl overflow-hidden">
                         <div className="flex h-full">
                           <div className="w-1/2 p-8 border-r border-white/5 space-y-6">
-                            <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Exploration</p>
+                            <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">{t('nav.explore')}</p>
                             <div className="grid gap-2">
-                              {[
-                                { label: 'Webtoon Hub', href: '/webtoon-hub', icon: Layers, color: 'text-primary' },
-                                { label: 'BD Africaine', href: '/bd-africaine', icon: Book, color: 'text-emerald-500' },
-                                { label: 'Séries en Cours', href: '/ongoing', icon: Clock, color: 'text-blue-500' },
-                                { label: 'Séries Terminées', href: '/completed', icon: CheckCircle2, color: 'text-orange-500' },
-                              ].map((item) => (
+                              {link.subLinks?.map((item) => (
                                 <DropdownMenuItem key={item.href} asChild className="rounded-2xl h-14 cursor-pointer focus:bg-white/5">
                                   <Link href={item.href} className="flex items-center gap-4">
-                                    <div className={cn("p-2.5 rounded-xl bg-white/5", item.color)}><item.icon className="h-5 w-5" /></div>
-                                    <span className="font-bold text-sm">{item.label}</span>
+                                    {item.icon && <div className={cn("p-2.5 rounded-xl bg-white/5", item.color)}><item.icon className="h-5 w-5" /></div>}
+                                    <span className="font-bold text-sm">{t(item.label)}</span>
                                   </Link>
                                 </DropdownMenuItem>
                               ))}
                             </div>
                           </div>
                           <div className="w-1/2 bg-white/[0.02] p-8 space-y-6">
-                            <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.3em]">Tendances</p>
+                            <p className="text-[10px] font-black uppercase text-stone-500 tracking-[0.3em]">{t('nav.trending_now')}</p>
                             {trendingStories.map((story) => (
                               <Link key={story.id} href={`/webtoon-hub/${story.slug}`} className="flex items-center gap-4 group/item">
                                 <div className="relative h-16 w-12 rounded-lg overflow-hidden border border-white/10 shrink-0">
@@ -195,6 +171,7 @@ export default function Header() {
                     isActive ? "text-primary" : "text-stone-400 hover:text-white"
                   )}>
                     {label}
+                    {link.badge && <Badge variant={link.badge.variant} className='ml-2'>{t(link.badge.label)}</Badge>}
                   </Link>
                 );
               })}

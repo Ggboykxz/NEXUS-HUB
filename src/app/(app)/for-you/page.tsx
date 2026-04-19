@@ -1,42 +1,28 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { useMemo } from 'react';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit, orderBy, documentId } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import { StoryCard } from '@/components/story-card';
-import { BookHeart, Sparkles, ArrowLeft, Heart, Zap, History, Globe, Smile, Filter, Users, Loader2 } from 'lucide-react';
+import { BookHeart, Sparkles, ArrowLeft, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useTranslation } from '@/components/providers/language-provider';
 import { Badge } from '@/components/ui/badge';
 import type { Story, LibraryEntry } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/providers/auth-provider';
 
 export default function ForYouPage() {
   const { t } = useTranslation();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeMood, setActiveTab] = useState('all');
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    return () => unsubscribe();
-  }, []);
-
-  const moods = [
-    { id: 'all', label: 'Tout', icon: Sparkles },
-    { id: 'epic', label: 'Épique', icon: Zap },
-    { id: 'happy', label: 'Joyeux', icon: Smile },
-    { id: 'dark', label: 'Sombre', icon: History },
-    { id: 'short', label: 'Court', icon: BookHeart },
-  ];
+  const { currentUser } = useAuth();
 
   // 1. FETCH USER LIBRARY METADATA
   const { data: libraryMetadata, isLoading: loadingLibrary } = useQuery({
     queryKey: ['user-library-meta', currentUser?.uid],
     enabled: !!currentUser,
     queryFn: async () => {
+      if (!currentUser) return null;
       const libRef = collection(db, 'users', currentUser.uid, 'library');
       const snap = await getDocs(query(libRef, orderBy('lastReadAt', 'desc'), limit(20)));
       const entries = snap.docs.map(d => d.data() as LibraryEntry);
@@ -153,9 +139,8 @@ export default function ForYouPage() {
                   {t('home.because_you_liked')} <span className="text-primary">{libraryMetadata.topGenre}</span>
                 </h2>
               </div>
-            </div>
             
-            {loadingGenre ? (
+            {loadingLibrary || loadingGenre ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {[...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-stone-900 animate-pulse rounded-2xl" />)}
               </div>
@@ -181,9 +166,8 @@ export default function ForYouPage() {
                   {t('home.new_from_artists')}
                 </h2>
               </div>
-            </div>
             
-            {loadingArtists ? (
+            {loadingLibrary || loadingArtists ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {[...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-stone-900 animate-pulse rounded-2xl" />)}
               </div>
@@ -200,7 +184,7 @@ export default function ForYouPage() {
         )}
 
         {/* FALLBACK: TRENDING GLOBAL */}
-        {!libraryMetadata?.topGenre && (
+        {!currentUser || !libraryMetadata?.topGenre && (
           <section className="space-y-8">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
@@ -211,15 +195,14 @@ export default function ForYouPage() {
                   Les Incontournables
                 </h2>
               </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {loadingGlobal ? (
-                [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-stone-900 animate-pulse rounded-2xl" />)
-              ) : (
-                globalTrending.map(s => <StoryCard key={s.id} story={s} />)
-              )}
-            </div>
-          </section>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {loadingGlobal ? (
+                  [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/4] bg-stone-900 animate-pulse rounded-2xl" />)
+                ) : (
+                  globalTrending.map(s => <StoryCard key={s.id} story={s} />)
+                )}
+              </div>
+            </section>
         )}
       </div>
       

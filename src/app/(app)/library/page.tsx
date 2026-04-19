@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { StoryCard } from '@/components/story-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { db } from '@/lib/firebase';
 import { 
   collection, query, orderBy, getDocs, doc, deleteDoc, 
   where, documentId, writeBatch, limit 
@@ -37,35 +36,32 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { checkAndAwardDailyStreak } from '@/lib/actions/reward-actions';
+import { useAuth } from '@/components/providers/auth-provider';
 
 export default function LibraryPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { currentUser, loading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-      if (user) {
+    if (currentUser) {
+      const checkStreak = async () => {
         try {
-          const { awarded, coins, streakDays } = await checkAndAwardDailyStreak(user.uid);
+          const { awarded, coins, streakDays } = await checkAndAwardDailyStreak(currentUser.uid);
           if (awarded) {
             toast({
               title: `🔥 Série de ${streakDays} jours !`,
               description: `+${coins} AfriCoins ont été ajoutés à votre portefeuille.`
             });
-            // Optionally, refetch user data if it includes africoins balance
-            queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
+            queryClient.invalidateQueries({ queryKey: ['user-profile', currentUser.uid] });
           }
         } catch (error) {
           console.error("Failed to check for daily streak award:", error);
         }
-      }
-    });
-    return () => unsubscribe();
-  }, [toast, queryClient]);
+      };
+      checkStreak();
+    }
+  }, [currentUser, toast, queryClient]);
 
   // --- FETCH PROGRESS (READING HISTORY / EN COURS) ---
   const { data: progressList = [], isLoading: isLoadingLib } = useQuery({

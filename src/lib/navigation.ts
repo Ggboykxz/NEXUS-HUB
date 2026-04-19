@@ -1,8 +1,10 @@
-import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid, Languages, BrainCircuit } from "lucide-react";
+import { BookOpen, Crown, MessageSquare, Store, Users, Award, PenSquare, Globe, Newspaper, Info, Coins, HelpCircle, Mail, Trophy, UserCircle, Zap, Calendar, Star, LayoutGrid, Languages, BrainCircuit, Layers, Clock, CheckCircle2 } from "lucide-react";
 
 export type NavSubLink = {
   href: string;
   label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  color?: string;
 };
 
 export type NavLink = {
@@ -20,60 +22,60 @@ export type NavLink = {
 export const navLinks: NavLink[] = [
   { 
     href: "/stories", 
-    label: "Parcourir", 
+    label: "nav.browse", 
     icon: BookOpen, 
     isGenreDropdown: true,
     subLinks: [
-        { href: "/webtoon-hub", label: "Webtoons" },
-        { href: "/bd-africaine", label: "Bandes Dessinées" },
-        { href: "/ongoing", label: "Séries en Cours" },
-        { href: "/completed", label: "Séries Terminées" },
+        { href: "/webtoon-hub", label: "nav.webtoons", icon: Layers, color: 'text-primary' },
+        { href: "/bd-africaine", label: "nav.comics", icon: Book, color: 'text-emerald-500' },
+        { href: "/ongoing", label: "nav.ongoing", icon: Clock, color: 'text-blue-500' },
+        { href: "/completed", label: "nav.completed", icon: CheckCircle2, color: 'text-orange-500' },
     ]
   },
   {
     href: "/originals",
-    label: "Originals",
+    label: "nav.originals",
     icon: Trophy,
-    badge: { label: 'LIVE', variant: 'orange' }
+    badge: { label: 'nav.live_badge', variant: 'orange' }
   },
   {
     href: "/dashboard/ai-studio",
-    label: "AI Studio",
+    label: "nav.ai_studio",
     icon: BrainCircuit,
-    badge: { label: 'NEW', variant: 'emerald' }
+    badge: { label: 'nav.new_badge', variant: 'emerald' }
   },
   { 
     href: "/rankings", 
-    label: "Classements", 
+    label: "nav.rankings", 
     icon: Crown,
     subLinks: [
-      { href: "/rankings?tab=popular", label: "Populaires" },
-      { href: "/rankings?tab=trending", label: "Tendance" },
-      { href: "/rankings?tab=newest", label: "Nouveautés" },
+      { href: "/rankings?tab=popular", label: "nav.popular" },
+      { href: "/rankings?tab=trending", label: "nav.trending" },
+      { href: "/rankings?tab=newest", label: "nav.newest" },
     ]
   },
   { 
     href: "/forums", 
-    label: "Forums", 
+    label: "nav.forums", 
     icon: MessageSquare,
     subLinks: [
-        { href: "/forums", label: "Tous les forums" },
-        { href: "/mentorship", label: "Programme de Mentorat" },
-        { href: "/dashboard/world-building", label: "Outils de World Building" },
-        { href: "/blog", label: "Blog & Ressources" },
+        { href: "/forums", label: "nav.all_forums" },
+        { href: "/mentorship", label: "nav.mentorship" },
+        { href: "/dashboard/world-building", label: "nav.world_building" },
+        { href: "/blog", label: "nav.blog" },
     ]
   },
   { 
     href: "/pro", 
-    label: "NexusHub Pro", 
+    label: "nav.pro", 
     icon: Award, 
-    badge: { label: 'Pro', variant: 'green' },
+    badge: { label: 'nav.pro_badge', variant: 'green' },
     subLinks: [
-      { href: "/pro", label: "Avantages Pro" },
-      { href: "/draft", label: "Espace Draft" },
-      { href: "/africoins", label: "Économie AfriCoins" },
-      { href: "/submit", label: "Soumettre une œuvre" },
+      { href: "/pro", label: "nav.pro_benefits" },
+      { href: "/draft", label: "nav.draft_space" },
+      { href: "/africoins", label: "nav.africoins_economy" },
+      { href: "/submit", label: "nav.submit_work" },
     ]
   },
-  { href: "/shop", label: "Boutique", icon: Store },
+  { href: "/shop", label: "nav.shop", icon: Store },
 ];

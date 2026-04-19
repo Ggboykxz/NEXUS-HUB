@@ -55,7 +55,7 @@ function LoginForm() {
         ? callbackUrl 
         : (role.startsWith('artist') ? '/dashboard/creations' : '/');
       
-      window.location.replace(target);
+      router.replace(target);
 
     } catch (error) {
       console.error("Login redirect error:", error);

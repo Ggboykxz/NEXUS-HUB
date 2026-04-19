@@ -28,6 +28,7 @@ import {
   updateProfile, 
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Le pseudo doit contenir au moins 2 caractères." }),
@@ -42,6 +43,7 @@ const signupSchema = z.object({
 type SignupValues = z.infer<typeof signupSchema>;
 
 export function SignupForm() {
+  const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -119,7 +121,7 @@ export function SignupForm() {
         ? '/dashboard/creations' 
         : (selectedRole === 'translator' ? '/dashboard/translations' : `/profile/${user.uid}`);
       
-      window.location.replace(destination);
+      router.replace(destination);
 
     } catch (error: any) {
       console.error("Signup error:", error);

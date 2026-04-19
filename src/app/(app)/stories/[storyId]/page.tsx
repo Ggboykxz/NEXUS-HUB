@@ -1,52 +1,51 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Story } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * Page de redirection intelligente par ID.
  * Résout l'ID d'une histoire vers son URL SEO finale selon son format (BD vs Webtoon).
  */
-export default function StoryIdRedirectPage(props: { params: Promise<{ storyId: string }> }) {
-  const { storyId } = use(props.params);
+export default function StoryIdRedirectPage({ params }: { params: { storyId: string } }) {
+  const { storyId } = params;
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+
+  const { data: story, isLoading, isError } = useQuery<Story | null>({
+    queryKey: ['story-redirect', storyId],
+    queryFn: async () => {
+      const storySnap = await getDoc(doc(db, 'stories', storyId));
+      if (!storySnap.exists()) {
+        return null;
+      }
+      return { id: storySnap.id, ...storySnap.data() } as Story;
+    },
+  });
 
   useEffect(() => {
-    async function resolveStory() {
-      try {
-        const storySnap = await getDoc(doc(db, 'stories', storyId));
-        
-        if (!storySnap.exists()) {
-          setError(true);
-          setLoading(false);
-          return;
-        }
-
-        const story = { id: storySnap.id, ...storySnap.data() } as Story;
-        
-        // Déterminer l'URL cible selon le format pour rediriger vers le bon groupe de routes
-        const targetUrl = story.format === 'BD' 
-          ? `/bd-africaine/${story.slug}` 
-          : `/webtoon-hub/${story.slug}`;
-
-        router.replace(targetUrl);
-      } catch (err) {
-        console.error("Resolution error:", err);
-        setError(true);
-        setLoading(false);
-      }
+    if (isLoading) {
+      return;
     }
 
-    resolveStory();
-  }, [storyId, router]);
+    if (isError || !story) {
+      notFound();
+      return;
+    }
 
-  if (error) {
+    // Determine the target URL based on the format to redirect to the correct route group
+    const targetUrl = story.format === 'BD' 
+      ? `/bd-africaine/${story.slug}` 
+      : `/webtoon-hub/${story.slug}`;
+
+    router.replace(targetUrl);
+  }, [story, isLoading, isError, router]);
+
+  if (isError) {
     notFound();
   }
 

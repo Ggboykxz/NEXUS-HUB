@@ -4,26 +4,44 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { UserProfile } from '@/lib/types';
 
 /**
  * Dispatcher intelligent post-authentification.
  * Oriente l'utilisateur vers le tableau de bord approprié selon son rôle.
  */
 export default function ProfileMePage() {
-  const { currentUser, profile, loading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    // On attend que l'état d'authentification soit stabilisé
-    if (loading) return;
+  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile | null>({
+    queryKey: ['user-profile', currentUser?.uid],
+    queryFn: async () => {
+      if (!currentUser) return null;
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
+      }
+      return null;
+    },
+    enabled: !!currentUser,
+  });
 
-    // Si pas d'utilisateur connecté, retour au login
+  useEffect(() => {
+    const loading = authLoading || profileLoading;
+    if (loading) {
+      return; // Wait until all data is loaded
+    }
+
     if (!currentUser) {
       router.replace('/login');
       return;
     }
 
-    // Une fois le profil chargé, on redirige selon le rôle
     if (profile) {
       const role = profile.role?.toLowerCase() || '';
       
@@ -34,14 +52,15 @@ export default function ProfileMePage() {
       } else if (role === 'admin') {
         router.replace('/dashboard');
       } else {
-        // Lecteurs (standard et premium)
+        // Readers (standard and premium)
         router.replace(`/profile/${currentUser.uid}`);
       }
     } else {
-      // Cas rare où le profil n'est pas encore créé (onboarding)
+      // Profile doesn't exist yet (e.g., during onboarding)
+      // or user document is missing. Redirect to a safe place.
       router.replace('/');
     }
-  }, [currentUser, profile, loading, router]);
+  }, [currentUser, profile, authLoading, profileLoading, router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-stone-950">

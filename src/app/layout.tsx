@@ -6,6 +6,7 @@ import { LanguageProvider } from '@/components/providers/language-provider';
 import { AuthModalProvider } from '@/components/providers/auth-modal-provider';
 import { GenresProvider } from '@/components/providers/genres-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
 
 const cinzel = Cinzel_Decorative({
   subsets: ['latin'],
@@ -69,12 +70,14 @@ export default function RootLayout({
       >
         <QueryProvider>
           <LanguageProvider>
-            <AuthModalProvider>
-              <GenresProvider>
-                {children}
-                <Toaster />
-              </GenresProvider>
-            </AuthModalProvider>
+            <AuthProvider>
+              <AuthModalProvider>
+                <GenresProvider>
+                  {children}
+                  <Toaster />
+                </GenresProvider>
+              </AuthModalProvider>
+            </AuthProvider>
           </LanguageProvider>
         </QueryProvider>
         <script src="/register-sw.js" defer></script>

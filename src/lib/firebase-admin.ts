@@ -1,5 +1,6 @@
 
 import * as admin from 'firebase-admin';
+import serviceAccount from './serviceAccountKey.json';
 
 /**
  * Initialisation sécurisée du SDK Admin pour les environnements serveurs (Sitemap, Metadata).
@@ -8,7 +9,7 @@ import * as admin from 'firebase-admin';
 export function getAdminServices() {
 
   // Vérifie que la clé de service est chargée pour éviter les erreurs de build cryptiques
-  if (!serviceAccount?.project_id) {
+  if (!(serviceAccount as admin.ServiceAccount)?.project_id) {
     console.error("Firebase Admin Error: Le fichier serviceAccountKey.json est manquant ou invalide.");
     // Retourne des services "vides" pour ne pas planter le build, 
     // mais les opérations échoueront au runtime.

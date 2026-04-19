@@ -8,18 +8,13 @@ import { SearchableFaq } from '@/components/faq/searchable-faq';
 import { ChevronRight, Languages, ShieldCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-
-const CATEGORIES = [
-  { id: 'all', label: 'Tout', icon: 'HelpCircle' },
-  { id: 'Lecture', label: 'Lecture', icon: 'BookOpen' },
-  { id: 'Création', label: 'Création', icon: 'PenSquare' },
-  { id: 'AfriCoins', label: 'AfriCoins', icon: 'Coins' },
-  { id: 'Compte', label: 'Compte', icon: 'UserCircle' },
-  { id: 'Technique', label: 'Technique', icon: 'Zap' },
-];
+import { useTranslation } from 'next-i18next';
 
 export default function FaqPage() {
-  const { data: faqData = [], isLoading } = useQuery({
+  const { i18n } = useTranslation();
+  const currentLanguage = i18n.language;
+
+  const { data: faqData = [], isLoading: isLoadingFaqs } = useQuery({
     queryKey: ['faq-data'],
     queryFn: async () => {
       const q = query(collection(db, 'faq'), orderBy('order', 'asc'));
@@ -27,6 +22,21 @@ export default function FaqPage() {
       return snap.docs.map(doc => doc.data() as any);
     }
   });
+
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['faq-categories'],
+    queryFn: async () => {
+      const q = query(collection(db, 'faq_categories'), orderBy('order', 'asc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => doc.data() as any);
+    },
+    select: (data) => data.map(cat => ({
+      ...cat,
+      label: currentLanguage === 'fr' ? cat.label : cat.label_en,
+    }))
+  });
+
+  const isLoading = isLoadingFaqs || isLoadingCategories;
 
   return (
     <div className="container mx-auto max-w-5xl px-6 py-12 space-y-12">
@@ -36,7 +46,7 @@ export default function FaqPage() {
           <p className="text-stone-500 uppercase font-black text-[10px] tracking-widest">Ouverture du centre d'aide...</p>
         </div>
       ) : (
-        <SearchableFaq faqData={faqData} categories={CATEGORIES} />
+        <SearchableFaq faqData={faqData} categories={categories} />
       )}
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-24">

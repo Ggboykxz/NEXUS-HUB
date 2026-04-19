@@ -13,14 +13,17 @@ import { Coins, Flame, Timer, Sparkles, CheckCircle2, ShieldCheck } from 'lucide
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/components/providers/language-provider';
 
 interface RewardedAdModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReward: () => void;
+  videoUrl: string;
 }
 
-export function RewardedAdModal({ isOpen, onClose, onReward }: RewardedAdModalProps) {
+export function RewardedAdModal({ isOpen, onClose, onReward, videoUrl }: RewardedAdModalProps) {
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState(6);
   const [isCompleted, setIsCompleted] = useState(false);
   const { toast } = useToast();
@@ -43,8 +46,8 @@ export function RewardedAdModal({ isOpen, onClose, onReward }: RewardedAdModalPr
   const handleClaim = () => {
     onReward();
     toast({
-      title: "Récompense obtenue !",
-      description: "+1 AfriCoin ajouté à votre solde.",
+      title: t('rewarded_ad.toast_title'),
+      description: t('rewarded_ad.toast_description'),
     });
     onClose();
   };
@@ -57,7 +60,7 @@ export function RewardedAdModal({ isOpen, onClose, onReward }: RewardedAdModalPr
             autoPlay 
             muted 
             className="w-full h-full object-cover"
-            src="https://res.cloudinary.com/demo/video/upload/v1/samples/sea_turtle.mp4"
+            src={videoUrl}
           />
           <div className="absolute inset-0 bg-black/20" />
           
@@ -73,9 +76,9 @@ export function RewardedAdModal({ isOpen, onClose, onReward }: RewardedAdModalPr
             <div className="mx-auto bg-primary/10 p-3 rounded-2xl w-fit mb-2">
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
-            <DialogTitle className="text-xl font-display font-black text-white">Pub Récompensée</DialogTitle>
+            <DialogTitle className="text-xl font-display font-black text-white">{t('rewarded_ad.title')}</DialogTitle>
             <DialogDescription className="text-stone-400 text-xs italic font-light">
-              "Regardez cette courte séquence pour soutenir vos artistes et gagner un coin."
+              {t('rewarded_ad.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -83,25 +86,25 @@ export function RewardedAdModal({ isOpen, onClose, onReward }: RewardedAdModalPr
             {!isCompleted ? (
               <div className="space-y-2">
                 <Progress value={(6 - countdown) * (100 / 6)} className="h-1.5 bg-white/5" />
-                <p className="text-[10px] text-stone-600 uppercase font-black tracking-widest">Génération du AfriCoin...</p>
+                <p className="text-[10px] text-stone-600 uppercase font-black tracking-widest">{t('rewarded_ad.progress_text')}</p>
               </div>
             ) : (
               <Button 
                 onClick={handleClaim} 
                 className="w-full h-12 rounded-xl bg-primary text-black font-black gold-shimmer animate-in zoom-in-95 duration-300"
               >
-                Récupérer mon 🪙
+                {t('rewarded_ad.claim_button')}
               </Button>
             )}
           </div>
 
           <div className="flex justify-center items-center gap-4 pt-2">
             <div className="flex items-center gap-1 text-[8px] font-bold text-stone-600 uppercase tracking-widest">
-              <ShieldCheck className="h-2.5 w-2.5" /> Ad-Safe
+              <ShieldCheck className="h-2.5 w-2.5" /> {t('rewarded_ad.ad_safe')}
             </div>
             <div className="h-1 w-1 rounded-full bg-stone-800" />
             <div className="flex items-center gap-1 text-[8px] font-bold text-stone-600 uppercase tracking-widest">
-              <Flame className="h-2.5 w-2.5" /> +1 Exp
+              <Flame className="h-2.5 w-2.5" /> {t('rewarded_ad.exp_gain')}
             </div>
           </div>
         </div>
